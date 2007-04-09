@@ -1,0 +1,3 @@
+fix aligned bug (test/t1.py)
+introduce container displayers (repr, xml, tree-view)
+figure out a reasonable way to check and generate crc

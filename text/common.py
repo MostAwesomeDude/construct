@@ -1,6 +1,9 @@
-from core import *
-from adapters import *
-from macros import *
+"""
+common constructs for typical programming languages (numbers, strings, ...)
+"""
+from construct.core import *
+from construct.adapters import *
+from construct.macros import *
 
 
 #===============================================================================
@@ -225,16 +228,75 @@ def HexNumber(name):
     """hexadecimal number"""
     return TextualIntAdapter(GreedyRange(Digit(name)), 16)
 
-def StringUpto(name, charset):
-    """a string that stretches up to a terminator, or EOF. unlike CString, 
-    StringUpto will no consume the terminator char.
-    * name - the name of the field
-    * charset - the set of terminator characters"""
-    return StringAdapter(OptionalGreedyRange(CharNoneOf(name, charset)))
+class TextualFloatAdapter(Adapter):
+    def _decode(self, obj, context):
+        whole, frac, exp = obj
+        mantissa = "".join(whole) + "." + "".join(frac)
+        if exp:
+            sign, value = exp
+            if not sign:
+                sign = ""
+            return float(mantissa + "e" + sign + "".join(value))
+        else:
+            return float(mantissa)
+    def _encode(self, obj, context):
+        obj = str(obj)
+        exp = None
+        if "e" in obj:
+            obj, exp = obj.split("e")
+            sign = exp[0]
+            value = exp[1:]
+            exp = [sign, value]
+        whole, frac = obj.split(".")
+        return [whole, frac, exp]
 
-def Line(name):
-    r"""a textual line (up to "\n")"""
-    return StringUpto(name, "\n")
+def FloatNumber(name):
+    return TextualFloatAdapter(
+        Sequence(name, 
+            GreedyRange(Digit("whole")),
+            Literal("."),
+            GreedyRange(Digit("frac")),
+            Optional(
+                Sequence("exp",
+                    Literal("e"),
+                    Optional(CharOf("sign", "+-")),
+                    GreedyRange(Digit("value")),
+                )
+            )
+        )
+    )
+
+def StringUpto(name, terminators, consume_terminator = False, allow_eof = True):
+    """a string that stretches up to a terminator, or EOF. this is a more
+    flexible version of CString.
+    * name - the name of the field
+    * terminator - the set of terminator characters
+    * consume_terminator - whether to consume the terminator character. the 
+      default is False.
+    * allow_eof - whether to allow EOF to terminate the string. the default
+      is True. this option is applicable only if consume_terminator is set. 
+    """
+    con = StringAdapter(OptionalGreedyRange(CharNoneOf(name, terminators)))
+    if not consume_terminator:
+        return con
+    if allow_eof:
+        term = Optional(CharOf(None, terminators))
+    else:
+        term = CharOf(None, terminators)
+    return IndexingAdapter(Sequence("foo", con, term), index = 0)
+
+def Line(name, consume_terminator = True, allow_eof = True):
+    r"""a textual line (up to "\n")
+    * name - the name of the field
+    * consume_terminator - whether to consume the newline character. the 
+      default is True.
+    * allow_eof - whether to allow EOF to terminate the string. the default 
+      is True. this option is applicable only if consume_terminator is set.
+    """
+    return StringUpto(name, "\n", 
+        consume_terminator = consume_terminator, 
+        allow_eof = allow_eof
+    )
 
 class IdentifierAdapter(Adapter):
     """
@@ -264,7 +326,6 @@ def Identifier(name,
             OptionalGreedyRange(CharOf("tail", tailset)),
         )
     )
-
 
 
 

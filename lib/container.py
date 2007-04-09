@@ -54,7 +54,7 @@ class Container(object):
     
     @recursion_lock("<...>")
     def __repr__(self):
-        attrs = sorted("%s = %r" % (k, v) 
+        attrs = sorted("%s = %s" % (k, repr(v))
             for k, v in self.__dict__.iteritems() 
             if not k.startswith("_"))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(attrs))
@@ -77,12 +77,25 @@ class Container(object):
             return "%s()" % (self.__class__.__name__,)
         attrs.insert(0, self.__class__.__name__ + ":")
         return "\n".join(attrs)
+    
+    def __introspect__(self):
+        for k in self.__attrs__:
+            v = self.__dict__[k]
+            if not k.startswith("_"):
+                yield "kv", (k, v)
+
 
 class FlagsContainer(Container):
     """
     A container providing pretty-printing for flags. Only set flags are 
     displayed. 
     """
+    def __inspect__(self):
+        for k in self.__attrs__:
+            v = self.__dict__[k]
+            if not k.startswith("_") and v:
+                yield "kv", (k, v)
+    
     def __pretty_str__(self, nesting = 1, indentation = "    "):
         attrs = []
         ind = indentation * nesting

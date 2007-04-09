@@ -53,8 +53,11 @@ class NamedSequence(Adapter):
             setattr(obj2, name, item)
         return obj2
 
+def Magic(bytes):
+    return Const(Bytes(None, len(bytes)), bytes)
+
 msdos_header = Struct("msdos_header",
-    Const(Bytes("magic", 2), "MZ"),
+    Magic("MZ"),
     ULInt16("partPag"),
     ULInt16("page_count"),
     ULInt16("relocation_count"),
@@ -154,7 +157,7 @@ symbol_table = Struct("symbol_table",
 )
 
 coff_header = Struct("coff_header",
-    Const(Bytes("magic", 4), "PE\x00\x00"),
+    Magic("PE\x00\x00"),
     Enum(ULInt16("machine_type"),
         UNKNOWN = 0x0,
         AM33 = 0x1d3,
@@ -208,7 +211,7 @@ coff_header = Struct("coff_header",
 )
 
 def PEPlusField(name):
-    return IfThenElse(name, lambda ctx: ctx.pe_type == "PE32Plus",
+    return IfThenElse(name, lambda ctx: ctx.pe_type == "PE32_plus",
         ULInt64(None),
         ULInt32(None),
     )
@@ -217,7 +220,7 @@ optional_header = Struct("optional_header",
     # standard fields
     Enum(ULInt16("pe_type"),
         PE32 = 0x10b,
-        PE32plus = 0x20b,
+        PE32_plus = 0x20b,
     ),
     ULInt8("major_linker_version"),
     ULInt8("minor_linker_version"),

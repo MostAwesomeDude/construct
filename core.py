@@ -681,7 +681,7 @@ class Switch(Construct):
             raise SwitchError("no default case defined")
         def _sizeof(self, context):
             raise SwitchError("no default case defined")
-    NoDefault = NoDefault("NoDefault")
+    NoDefault = NoDefault("No default value specified")
     
     __slots__ = ["subcons", "keyfunc", "cases", "default", "include_key"]
     
@@ -1160,7 +1160,7 @@ class Pass(Construct):
     
     Notes:
     * this construct is a singleton. do not try to instatiate it, as it 
-      will not work :)
+      will not work...
     
     Example:
     Pass
@@ -1177,11 +1177,13 @@ Pass = Pass(None)
 class Terminator(Construct):
     """
     Asserts the end of the stream has been reached at the point it's placed.
-    You can use this to ensure no more unparsed data follows.
+    You can use this to ensure no more unparsed data follows. 
     
     Notes:
+    * this construct is only meaningful for parsing. for building, it's 
+      a no-op.
     * this construct is a singleton. do not try to instatiate it, as it 
-      will not work :)
+      will not work...
     
     Example:
     Terminator

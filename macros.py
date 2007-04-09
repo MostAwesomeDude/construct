@@ -196,7 +196,7 @@ def Array(count, subcon):
 def PrefixedArray(subcon, length_field = UBInt8("length")):
     """an array prefixed by a length field.
     * subcon - the subcon to be repeated
-    * length_field - an integer construct
+    * length_field - a construct returning an integer
     """
     return LengthValueAdapter(
         Sequence(subcon.name, 
@@ -235,7 +235,7 @@ def Bitwise(subcon):
     * subcon - a bitwise construct (usually BitField)
     """
     # subcons larger than MAX_BUFFER will be wrapped by Restream instead 
-    # of Buffered. implementation details, don't stick your nose :)
+    # of Buffered. implementation details, don't stick your nose in :)
     MAX_BUFFER = 1024 * 8
     def resizer(length):
         if length & 7:
@@ -269,14 +269,24 @@ def Aligned(subcon, modulus = 4, pattern = "\x00"):
     else:
         def padlength(ctx):
             return (modulus - (subcon._sizeof(ctx) % modulus)) % modulus
-    return IndexingAdapter(
-        Sequence(subcon.name, 
-            subcon, 
-            Padding(padlength, pattern = pattern),
-            nested = False,
-        ),
-        0
+    return SeqOfOne(subcon.name, 
+        subcon, 
+        # ??????
+        # ??????
+        # ??????
+        # ??????
+        Padding(padlength, pattern = pattern),
+        nested = False,
     )
+
+def SeqOfOne(name, *args, **kw):
+    """a sequence of one element. only the first element is meaningful, the
+    rest are discarded
+    * name - the name of the sequence
+    * args - subconstructs
+    * kw - any keyword arguments to Sequence
+    """
+    return IndexingAdapter(Sequence(name, *args, **kw), index = 0)
 
 def Embedded(subcon):
     """embeds a struct into the enclosing struct.
@@ -486,7 +496,8 @@ def OnDemandPointer(offsetfunc, subcon, force_build = True):
         force_build = force_build
     )
 
-
+def Magic(data):
+    return ConstAdapter(Field(None, len(data)), data)
 
 
 
