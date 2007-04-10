@@ -22,6 +22,12 @@ def UTCTimeStamp(name):
     return UTCTimeStampAdapter(ULInt32(name))
 
 class NamedSequence(Adapter):
+    """
+    creates a mapping between the elements of a sequence and their respective
+    names. this is useful for sequences of a variable length, where each
+    element in the sequence has a name (as is the case with the data 
+    directories of the PE header)
+    """
     __slots__ = ["mapping", "rev_mapping"]
     prefix = "unnamed_"
     def __init__(self, subcon, mapping):
@@ -53,8 +59,6 @@ class NamedSequence(Adapter):
             setattr(obj2, name, item)
         return obj2
 
-def Magic(bytes):
-    return Const(Bytes(None, len(bytes)), bytes)
 
 msdos_header = Struct("msdos_header",
     Magic("MZ"),
@@ -229,8 +233,9 @@ optional_header = Struct("optional_header",
     ULInt32("uninitialized_data_size"),
     ULInt32("entry_point_pointer"),
     ULInt32("base_of_code"),
+    
+    # only in PE32 files
     If(lambda ctx: ctx.pe_type == "PE32",
-        # only in PE32 files
         ULInt32("base_of_data")
     ),
     

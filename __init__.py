@@ -1,4 +1,4 @@
-r"""
+"""
 .   ####                                                               #### 
    ##     ####  ##  ##  #### ###### #####  ##  ##  #### ######        ##  ##
    ##    ##  ## ### ## ##      ##   ##  ## ##  ## ##      ##    ####      ##
@@ -9,7 +9,7 @@ r"""
                  Parsing made even more fun (and faster too)
 
 Homepage:
-    http://construct.wikispaces.com
+    http://construct.wikispaces.com (including online tutorial)
 
 Typical usage:
     >>> from construct import *
@@ -22,16 +22,16 @@ Hands-on example:
     ...     UBInt16("b"),
     ... )
     >>>
-    >>> s.parse("\x01\x02\x03")
+    >>> s.parse("\\x01\\x02\\x03")
     Container(a = 1, b = 515)
     >>> 
-    >>> print s.parse("\x01\x02\x03")
+    >>> print s.parse("\\x01\\x02\\x03")
     Container:
         a = 1
         b = 515
     >>> 
     >>> s.build(Container(a = 1, b = 0x0203))
-    "\x01\x02\x03"
+    "\\x01\\x02\\x03"
 """
 from core import *
 from adapters import *
@@ -43,7 +43,7 @@ from debug import Probe, Debugger
 # meta data
 #===============================================================================
 __author__ = "tomer filiba (tomerfiliba [at] gmail.com)"
-__version__ = "2.01"
+__version__ = "2.03"
 
 #===============================================================================
 # shorthands
