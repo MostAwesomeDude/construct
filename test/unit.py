@@ -364,6 +364,10 @@ tests = [
         1, "\x01", None],
     [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).build, 
         1, "\x00\x01", None],
+    
+    [Magic("MZ").parse, "MZ", "MZ", None],
+    [Magic("MZ").parse, "ELF", None, ConstError],
+    [Magic("MZ").build, None, "MZ", None],
 ]
 
 
