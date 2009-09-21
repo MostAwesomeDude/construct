@@ -1,6 +1,8 @@
 """
 Executable and Linkable Format (ELF), 32 bit, big or little endian
 Used on *nix systems as a replacement of the older a.out format
+
+Big-endian support kindly submitted by Craig McQueen (mcqueen-c#edsrd1!yzk!co!jp)
 """
 from construct import *
 
