@@ -12,6 +12,14 @@ Contents:
    :maxdepth: 2
 
    basics
+   bitwise
+   adaptors
+   meta
+   string
+   misc
+   text
+   extending
+   debugging
 
 Indices and tables
 ==================
