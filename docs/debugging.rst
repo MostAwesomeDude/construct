@@ -26,8 +26,6 @@ object is ready.
 ...     UBInt8("baz"),
 ... )
 >>> foo.parse("spam spam spam spam bacon and eggs")
- 
-================================================================================
 Probe <unnamed 1>
 Container:
     stream_position = 1
@@ -71,11 +69,12 @@ egg
             'stream' : <cStringIO.StringI object at 0x0097A230>
         }
     ]
-================================================================================
 Container(bar = 115, baz = 112)
 
 
 Debugger
+========
+
 The Debugger is a pdb-based full python debugger. Unlike Probe, Debugger is a
 subconstruct (it wraps an inner construct), so you simply put it around the
 problematic construct. If no exception occurs, the return value is passed
@@ -108,7 +107,6 @@ Container:
     eggs = 3
 >>>
 >>> print foo.parse("\x01\x04\x03")
-================================================================================
 Debugging exception of MappingAdapter('spam'):
   File "d:\projects\construct\debug.py", line 112, in _parse
     return self.subcon._parse(stream, context)
@@ -145,7 +143,6 @@ MappingError: no decoding mapping for 4
 (Pdb)
 (Pdb) self.retval = "QWERTY"
 (Pdb) q
-================================================================================
 Container:
     bar = 1
     spam = 'QWERTY'
