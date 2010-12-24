@@ -1,3 +1,7 @@
+===================
+Extending Construct
+===================
+
 Adapters
 Adapters are the standard way to extend and customize the library. Adapters
 operate at the object level (unlike constructs, which operate at the stream

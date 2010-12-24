@@ -1,3 +1,7 @@
+============
+Text parsing
+============
+
 What has text to do with Construct?
 As you already know at this stage of the tutorial, Construct works with binary
 data. That is, all sorts of data structures, file formats, and protocols, that
