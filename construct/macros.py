@@ -211,8 +211,31 @@ def OpenRange(mincount, subcon):
     return Range(mincount, maxint, subcon)
 
 def GreedyRange(subcon):
-    """an open range (1 or more times) of repeated subcon.
-    * subcon - the subcon to repeat"""
+    """
+    Repeats the given unit one or more times.
+
+    :param ``Construct`` subcon: construct to repeat
+
+    >>> from construct import GreedyRepeater, UBInt8
+    >>> c = GreedyRepeater(UBInt8("foo"))
+    >>> c.parse("\\x01")
+    [1]
+    >>> c.parse("\\x01\\x02\\x03")
+    [1, 2, 3]
+    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
+    [1, 2, 3, 4, 5, 6]
+    >>> c.parse("")
+    Traceback (most recent call last):
+      ...
+    construct.core.RepeaterError: expected 1..2147483647, found 0
+    >>> c.build([1,2])
+    '\\x01\\x02'
+    >>> c.build([])
+    Traceback (most recent call last):
+      ...
+    construct.core.RepeaterError: expected 1..2147483647, found 0
+    """
+
     return OpenRange(1, subcon)
 
 def OptionalGreedyRange(subcon):

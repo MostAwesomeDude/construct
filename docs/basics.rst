@@ -317,35 +317,7 @@ Traceback (most recent call last):
 construct.core.RepeaterError: expected 4..4, found 5
 >>>
 
-
-GreedyRepeater
---------------
-
-Repeats the given unit one or more times.
-
->>> c = GreedyRepeater(UBInt8("foo"))
->>> c.parse("\x01")
-[1]
->>> c.parse("\x01\x02\x03")
-[1, 2, 3]
->>> c.parse("\x01\x02\x03\x04\x05\x06")
-[1, 2, 3, 4, 5, 6]
- 
-# but at least once!
->>> c.parse("")
-Traceback (most recent call last):
-  .
-  .
-construct.core.RepeaterError: expected 1..2147483647, found 0
- 
-# same goes for building
->>> c.build([1,2])
-'\x01\x02'
->>> c.build([])
-Traceback (most recent call last):
-  .
-  .
-construct.core.RepeaterError: expected 1..2147483647, found 0
+.. autofunction:: construct.GreedyRepeater
 
 .. autofunction:: construct.OptionalGreedyRepeater
 
