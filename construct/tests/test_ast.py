@@ -1,6 +1,7 @@
+import unittest
+
 from construct import *
 from construct.text import *
-
 
 class NodeAdapter(Adapter):
     def __init__(self, factory, subcon):
@@ -117,27 +118,6 @@ def myeval(text):
 # test
 #===============================================================================
 if __name__ == "__main__":
-    print myeval("2*3+4")
-    #>>> myeval("2*3+4")
-    #Node:
-    #    name = 'binop'
-    #    rhs = Node:
-    #        name = 'literal'
-    #        value = 4
-    #    lhs = Node:
-    #        name = 'binop'
-    #        rhs = Node:
-    #            name = 'literal'
-    #            value = 3
-    #        lhs = Node:
-    #            name = 'literal'
-    #            value = 2
-    #        op = '*'
-    #    op = '+'
-    #10
-    
-    print "-" * 80
-    
     print myeval("2*(3+4)")
     #>>> myeval("2*(3+4)")
     #Node:
@@ -158,27 +138,17 @@ if __name__ == "__main__":
     #14
     #>>>
 
+class TestSomethingSomething(unittest.TestCase):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def test_that_one_thing(self):
+        node = expr.parse("2*3+4")
+        self.assertEqual(node.name, "binop")
+        self.assertEqual(node.op, "+")
+        self.assertEqual(node.rhs.name, "literal")
+        self.assertEqual(node.rhs.value, 4)
+        self.assertEqual(node.lhs.name, "binop")
+        self.assertEqual(node.lhs.op, "*")
+        self.assertEqual(node.lhs.rhs.name, "literal")
+        self.assertEqual(node.lhs.rhs.value, 3)
+        self.assertEqual(node.lhs.lhs.name, "literal")
+        self.assertEqual(node.lhs.lhs.value, 2)
