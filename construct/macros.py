@@ -375,43 +375,69 @@ def EmbeddedBitStruct(*subcons):
 #===============================================================================
 # strings
 #===============================================================================
-def String(name, length, encoding = None, padchar = None, 
-           paddir = "right", trimdir = "right"):
-    """a fixed-length, optionally padded string of characters
-    * name - the name of the field
-    * length - the length (integer)
-    * encoding - the encoding to use (e.g., "utf8"), or None, for raw bytes.
-      default is None
-    * padchar - the padding character (commonly "\x00"), or None to 
-      disable padding. default is None
-    * paddir - the direction where padding is placed ("right", "left", or 
-      "center"). the default is "right". this argument is meaningless if 
-      padchar is None.
-    * trimdir - the direction where trimming will take place ("right" or 
-      "left"). the default is "right". trimming is only meaningful for
-      building, when the given string is too long. this argument is 
-      meaningless if padchar is None.
+def String(name, length, encoding=None, padchar=None, paddir="right",
+    trimdir="right"):
     """
-    con = StringAdapter(Field(name, length), encoding = encoding)
+    A configurable, fixed-length string field.
+
+    The padding character must be specified for padding and trimming to work.
+
+    :param str name: name
+    :param int length: length, in bytes
+    :param str encoding: encoding (e.g. "utf8") or None for no encoding
+    :param str padchar: optional character to pad out strings
+    :param str paddir: direction to pad out strings; one of "right", "left",
+                       or "both"
+    :param str trim: direction to trim strings; one of "right", "left"
+
+    >>> from construct import String
+    >>> String("foo", 5).parse("hello")
+    'hello'
+    >>>
+    >>> String("foo", 12, encoding = "utf8").parse("hello joh\\xd4\\x83n")
+    u'hello joh\\u0503n'
+    >>>
+    >>> foo = String("foo", 10, padchar = "X", paddir = "right")
+    >>> foo.parse("helloXXXXX")
+    'hello'
+    >>> foo.build("hello")
+    'helloXXXXX'
+    """
+
+    con = StringAdapter(Field(name, length), encoding=encoding)
     if padchar is not None:
-        con = PaddedStringAdapter(con, 
-            padchar = padchar, 
-            paddir = paddir, 
-            trimdir = trimdir
-        )
+        con = PaddedStringAdapter(con, padchar=padchar, paddir=paddir,
+            trimdir=trimdir)
     return con
 
-def PascalString(name, length_field = UBInt8("length"), encoding = None):
-    """a string prefixed with a length field. the data must directly follow 
-    the length field.
-    * name - the name of the 
-    * length_field - a numeric construct (i.e., UBInt8) that holds the 
-      length. default is an unsigned, 8-bit integer field. note that this
-      argument must pass an instance of a construct, not a class 
-      (`UBInt8("length")` rather than `UBInt8`)
-    * encoding - the encoding to use (e.g., "utf8"), or None, for raw bytes.
-      default is None
+def PascalString(name, length_field=UBInt8("length"), encoding=None):
     """
+    A length-prefixed string.
+
+    ``PascalString`` is named after the string types of Pascal, which are
+    length-prefixed. Lisp strings also follow this convention.
+
+    The length field will appear in the same ``Container`` as the
+    ``PascalString``, with the given name.
+
+    :param str name: name
+    :param ``Construct`` length_field: a field which will store the length of
+                                       the string
+    :param str encoding: encoding (e.g. "utf8") or None for no encoding
+
+    >>> foo = PascalString("foo")
+    >>> foo.parse("\\x05hello")
+    'hello'
+    >>> foo.build("hello world")
+    '\\x0bhello world'
+    >>>
+    >>> foo = PascalString("foo", length_field = UBInt16("length"))
+    >>> foo.parse("\\x00\\x05hello")
+    'hello'
+    >>> foo.build("hello")
+    '\\x00\\x05hello'
+    """
+
     return StringAdapter(
         LengthValueAdapter(
             Sequence(name,
@@ -419,28 +445,50 @@ def PascalString(name, length_field = UBInt8("length"), encoding = None):
                 Field("data", lambda ctx: ctx[length_field.name]),
             )
         ),
-        encoding = encoding,
+        encoding=encoding,
     )
 
-def CString(name, terminators = "\x00", encoding = None, 
-            char_field = Field(None, 1)):
-    r"""a c-style string (string terminated by a terminator char)
-    * name - the name fo the string
-    * terminators - a sequence of terminator chars. default is "\x00".
-    * encoding - the encoding to use (e.g., "utf8"), or None, for raw bytes.
-      default is None
-    * char_field - the construct that represents a single character. default
-      is a one-byte character. note that this argument must be an instance
-      of a construct, not a construct class (`Field("char", 1)` rather than
-      `Field`)
+def CString(name, terminators="\x00", encoding=None,
+    char_field=Field(None, 1)):
+    """
+    A string ending in a terminator.
+
+    ``CString`` is similar to the strings of C, C++, and other related
+    programming languages.
+
+    By default, the terminator is the NULL byte (0x00).
+
+    :param str name: name
+    :param iterable terminators: sequence of valid terminators, in order of
+                                 preference
+    :param str encoding: encoding (e.g. "utf8") or None for no encoding
+    :param ``Construct`` char_field: construct representing a single character
+
+    >>> foo = CString("foo")
+    >>>
+    >>> foo.parse("hello\\x00")
+    'hello'
+    >>> foo.build("hello")
+    'hello\\x00'
+    >>>
+    >>> foo = CString("foo", terminators = "XYZ")
+    >>>
+    >>> foo.parse("helloX")
+    'hello'
+    >>> foo.parse("helloY")
+    'hello'
+    >>> foo.parse("helloZ")
+    'hello'
+    >>> foo.build("hello")
+    'helloX'
     """
     return Rename(name,
         CStringAdapter(
-            RepeatUntil(lambda obj, ctx: obj in terminators, 
+            RepeatUntil(lambda obj, ctx: obj in terminators,
                 char_field,
             ),
-            terminators = terminators,
-            encoding = encoding,
+            terminators=terminators,
+            encoding=encoding,
         )
     )
 
