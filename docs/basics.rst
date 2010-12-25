@@ -347,25 +347,7 @@ Traceback (most recent call last):
   .
 construct.core.RepeaterError: expected 1..2147483647, found 0
 
-
-OptionalGreedyRepeater
-----------------------
-
-Repeats the given unit zero or more times. This repeater essentially can't
-fail, as it accepts lists of any length (0..maxint).
-
->>> c = OptionalGreedyRepeater(UBInt8("foo"))
->>> c.parse("")
-[]
->>> c.parse("\x01\x02")
-[1, 2]
- 
-# building
->>> c.build([])
-''
->>> c.build([1,2])
-'\x01\x02'
-
+.. autofunction:: construct.OptionalGreedyRepeater
 
 Nesting
 -------

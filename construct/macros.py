@@ -216,8 +216,24 @@ def GreedyRange(subcon):
     return OpenRange(1, subcon)
 
 def OptionalGreedyRange(subcon):
-    """an open range (0 or more times) of repeated subcon.
-    * subcon - the subcon to repeat"""
+    """
+    Repeats the given unit zero or more times. This repeater can't
+    fail, as it accepts lists of any length.
+
+    :param ``Construct`` subcon: construct to repeat
+
+    >>> from construct import OptionalGreedyRepeater, UBInt8
+    >>> c = OptionalGreedyRepeater(UBInt8("foo"))
+    >>> c.parse("")
+    []
+    >>> c.parse("\\x01\\x02")
+    [1, 2]
+    >>> c.build([])
+    ''
+    >>> c.build([1,2])
+    '\\x01\\x02'
+    """
+
     return OpenRange(0, subcon)
 
 
