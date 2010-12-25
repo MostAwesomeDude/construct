@@ -108,36 +108,6 @@ class EvalVisitor(object):
 
 ev = EvalVisitor()
 
-def myeval(text):
-    ast = expr.parse(text)
-    print ast
-    return ast.accept(ev)
-
-
-#===============================================================================
-# test
-#===============================================================================
-if __name__ == "__main__":
-    print myeval("2*(3+4)")
-    #>>> myeval("2*(3+4)")
-    #Node:
-    #    name = 'binop'
-    #    rhs = Node:
-    #        name = 'binop'
-    #        rhs = Node:
-    #            name = 'literal'
-    #            value = 4
-    #        lhs = Node:
-    #            name = 'literal'
-    #            value = 3
-    #        op = '+'
-    #    lhs = Node:
-    #        name = 'literal'
-    #        value = 2
-    #    op = '*'
-    #14
-    #>>>
-
 class TestSomethingSomething(unittest.TestCase):
 
     def test_that_one_thing(self):
@@ -152,3 +122,16 @@ class TestSomethingSomething(unittest.TestCase):
         self.assertEqual(node.lhs.rhs.value, 3)
         self.assertEqual(node.lhs.lhs.name, "literal")
         self.assertEqual(node.lhs.lhs.value, 2)
+
+    def test_that_other_thing(self):
+        node = expr.parse("2*(3+4)")
+        self.assertEqual(node.name, "binop")
+        self.assertEqual(node.op, "*")
+        self.assertEqual(node.rhs.name, "binop")
+        self.assertEqual(node.rhs.op, "+")
+        self.assertEqual(node.rhs.rhs.name, "literal")
+        self.assertEqual(node.rhs.rhs.value, 4)
+        self.assertEqual(node.rhs.lhs.name, "literal")
+        self.assertEqual(node.rhs.lhs.value, 3)
+        self.assertEqual(node.lhs.name, "literal")
+        self.assertEqual(node.lhs.value, 2)
