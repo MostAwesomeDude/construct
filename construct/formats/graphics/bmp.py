@@ -110,26 +110,3 @@ if __name__ == "__main__":
     obj = bitmap_file.parse_stream(open("../../test/bitmap8.bmp", "rb"))
     print obj 
     print repr(obj.pixels.value)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
