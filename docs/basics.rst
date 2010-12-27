@@ -249,45 +249,7 @@ will be covered in the Meta constructs tutorial.
 We have four kinds of static repeaters. In fact, for those of you who wish to
 go under the hood, three of these repeaters are but wrappers around Repeater.
 
-Repeater
---------
-
-The general-case repeater. Repeats the given unit for at least mincount times,
-and up to maxcount times. If an exception occurs (EOF, validation error), the
-repeater exits. If less than mincount units have been successfully parsed, a
-RepeaterError is raised.
-
-# at least 3 times, at most 7 times
->>> c = Repeater(3, 7, UBInt8("foo"))
- 
-# parsing
->>> c.parse("\x01\x02")
-Traceback (most recent call last):
-  .
-  .
-construct.core.RepeaterError: expected 3..7, found 2
->>> c.parse("\x01\x02\x03")
-[1, 2, 3]
->>> c.parse("\x01\x02\x03\x04\x05\x06")
-[1, 2, 3, 4, 5, 6]
->>> c.parse("\x01\x02\x03\x04\x05\x06\x07")
-[1, 2, 3, 4, 5, 6, 7]
->>> c.parse("\x01\x02\x03\x04\x05\x06\x07\x08\x09")
-[1, 2, 3, 4, 5, 6, 7]
- 
-# building
->>> c.build([1,2])
-Traceback (most recent call last):
-  .
-  .
-construct.core.RepeaterError: expected 3..7, found 2
->>> c.build([1,2,3,4])
-'\x01\x02\x03\x04'
->>> c.build([1,2,3,4,5,6,7,8])
-Traceback (most recent call last):
-  .
-  .
-construct.core.RepeaterError: expected 3..7, found 8
+.. autofunction:: construct.Repeater
 
 .. autofunction:: construct.StrictRepeater
 

@@ -352,18 +352,49 @@ class Range(Subconstruct):
     A range-array. The subcon will iterate between `mincount` to `maxcount`
     times. If less than `mincount` elements are found, raises RangeError.
     See also GreedyRange and OptionalGreedyRange.
-    
-    Notes:
-    * requires a seekable stream.
-    
+
+    The general-case repeater. Repeats the given unit for at least mincount
+    times, and up to maxcount times. If an exception occurs (EOF, validation
+    error), the repeater exits. If less than mincount units have been
+    successfully parsed, a RepeaterError is raised.
+
+    .. note::
+       This object requires a seekable stream for parsing.
+
     Parameters:
-    * mincount - the minimal count (an integer)
-    * maxcount - the maximal count (an integer)
-    * subcon - the subcon to repeat
-    
+
+     * mincount - the minimal count (an integer)
+     * maxcount - the maximal count (an integer)
+     * subcon - the subcon to repeat
+
     Example:
     Range(5, 8, UBInt8("foo"))
+
+    >>> c = Repeater(3, 7, UBInt8("foo"))
+    >>> c.parse("\\x01\\x02")
+    Traceback (most recent call last):
+      ...
+    construct.core.RepeaterError: expected 3..7, found 2
+    >>> c.parse("\\x01\\x02\\x03")
+    [1, 2, 3]
+    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
+    [1, 2, 3, 4, 5, 6]
+    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06\\x07")
+    [1, 2, 3, 4, 5, 6, 7]
+    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09")
+    [1, 2, 3, 4, 5, 6, 7]
+    >>> c.build([1,2])
+    Traceback (most recent call last):
+      ...
+    construct.core.RepeaterError: expected 3..7, found 2
+    >>> c.build([1,2,3,4])
+    '\\x01\\x02\\x03\\x04'
+    >>> c.build([1,2,3,4,5,6,7,8])
+    Traceback (most recent call last):
+      ...
+    construct.core.RepeaterError: expected 3..7, found 8
     """
+
     __slots__ = ["mincount", "maxcout"]
     def __init__(self, mincount, maxcout, subcon):
         Subconstruct.__init__(self, subcon)
