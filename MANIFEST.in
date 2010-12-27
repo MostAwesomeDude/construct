@@ -1,0 +1,5 @@
+include README.rst
+include todo.txt
+include docs/*.rst
+include docs/conf.py
+include docs/Makefile
