@@ -1,3 +1,8 @@
 fix aligned bug (test/t1.py)
 introduce container displayers (repr, xml, tree-view)
 figure out a reasonable way to check and generate crc
+
+ * Discovered that repeater errors are incorrect now. StrictRepeater raises
+   ArrayError, GreedyRepeater and OptionalGreedyRepeater raise RangeError, and
+   nobody raises RepeaterError; in fact, it's no longer defined. Should these
+   be reunified?

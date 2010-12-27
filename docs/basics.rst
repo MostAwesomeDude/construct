@@ -289,33 +289,7 @@ Traceback (most recent call last):
   .
 construct.core.RepeaterError: expected 3..7, found 8
 
-
-StrictRepeater
---------------
-
-Repeats the given unit for a fixed number of times. For example:
-
->>> c = StrictRepeater(4, UBInt8("foo"))
->>> c
-<Repeater('foo')>
- 
-# parsing
->>> c.parse("\x01\x02\x03\x04")
-[1, 2, 3, 4]
->>> c.parse("\x01\x02\x03\x04\x05\x06")
-[1, 2, 3, 4]
- 
-# building
->>> c.build([5,6,7,8])
-'\x05\x06\x07\x08'
- 
-# the built object must contains of exactly 4 items!
->>> c.build([5,6,7,8,9])
-Traceback (most recent call last):
-  .
-  .
-construct.core.RepeaterError: expected 4..4, found 5
->>>
+.. autofunction:: construct.StrictRepeater
 
 .. autofunction:: construct.GreedyRepeater
 

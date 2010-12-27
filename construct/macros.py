@@ -181,11 +181,27 @@ def NFloat64(name):
 # arrays
 #===============================================================================
 def Array(count, subcon):
-    """array of subcon repeated count times.
-    * subcon - the subcon.
-    * count - an integer, or a function taking the context as an argument, 
-      returning the count
     """
+    Repeats the given unit a fixed number of times.
+
+    :param int count: number of times to repeat
+    :param ``Construct`` subcon: construct to repeat
+
+    >>> c = StrictRepeater(4, UBInt8("foo"))
+    >>> c
+    <Repeater('foo')>
+    >>> c.parse("\\x01\\x02\\x03\\x04")
+    [1, 2, 3, 4]
+    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
+    [1, 2, 3, 4]
+    >>> c.build([5,6,7,8])
+    '\\x05\\x06\\x07\\x08'
+    >>> c.build([5,6,7,8,9])
+    Traceback (most recent call last):
+      ...
+    construct.core.RepeaterError: expected 4..4, found 5
+    """
+
     if callable(count):
         con = MetaArray(count, subcon)
     else:

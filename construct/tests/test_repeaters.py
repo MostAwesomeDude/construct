@@ -1,7 +1,30 @@
 import unittest
 
-from construct import GreedyRepeater, OptionalGreedyRepeater, UBInt8
-from construct import RangeError
+from construct import UBInt8
+from construct import StrictRepeater, GreedyRepeater, OptionalGreedyRepeater
+from construct import ArrayError, RangeError
+
+class TestStrictRepeater(unittest.TestCase):
+
+    def setUp(self):
+        self.c = StrictRepeater(4, UBInt8("foo"))
+
+    def test_trivial(self):
+        pass
+
+    def test_parse(self):
+        self.assertEqual(self.c.parse("\x01\x02\x03\x04"), [1, 2, 3, 4])
+        self.assertEqual(self.c.parse("\x01\x02\x03\x04\x05\x06"),
+            [1, 2, 3, 4])
+
+    def test_build(self):
+        self.assertEqual(self.c.build([5, 6, 7, 8]), "\x05\x06\x07\x08")
+
+    def test_build_oversized(self):
+        self.assertRaises(ArrayError, self.c.build, [5, 6, 7, 8, 9])
+
+    def test_build_undersized(self):
+        self.assertRaises(ArrayError, self.c.build, [5, 6, 7])
 
 class TestGreedyRepeater(unittest.TestCase):
 
