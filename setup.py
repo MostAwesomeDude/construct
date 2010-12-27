@@ -8,4 +8,9 @@ setup(
     packages=find_packages(),
     license="Public Domain",
     long_description=open("README.rst").read(),
+    url="https://github.com/MostAwesomeDude/construct",
+    author="Tomer Filiba",
+    author_email="tomerfiliba at gmail dot com",
+    maintainer="Corbin Simpson",
+    maintainer_email="MostAwesomeDude@gmail.com",
 )
