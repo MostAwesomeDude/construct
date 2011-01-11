@@ -7,6 +7,7 @@ setup(
     version="2.04",
     packages=find_packages(),
     license="Public Domain",
+    description="a powerful declarative parser for binary data",
     long_description=open("README.rst").read(),
     url="https://github.com/MostAwesomeDude/construct",
     author="Tomer Filiba",

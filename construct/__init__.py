@@ -43,7 +43,7 @@ from debug import Probe, Debugger
 # meta data
 #===============================================================================
 __author__ = "tomer filiba (tomerfiliba [at] gmail.com)"
-__version__ = "2.03"
+__version__ = "2.04"
 
 #===============================================================================
 # shorthands
