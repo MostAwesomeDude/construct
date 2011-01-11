@@ -59,34 +59,7 @@ Important notes
 BitField
 ========
 
-BitFields, as the name suggests, are fields that operate on raw, unaligned
-bits, and therefore must be enclosed in a BitStruct. Using them is very
-similar to all normal fields: they take a name and a length (in bits).
-
->>> foo = BitStruct("foo",
-...     BitField("a", 3),
-...     Flag("b"),
-...     Padding(3),
-...     Nibble("c"),
-...     BitField("d", 5),
-... )
->>> foo.parse("\xe1\x1f")
-Container(a = 7, b = False, c = 8, d = 31)
- 
-# using nested structs
->>> foo = BitStruct("foo",
-...     BitField("a", 3),
-...     Flag("b"),
-...     Padding(3),
-...     Nibble("c"),
-...     Struct("bar",
-...             Nibble("d"),
-...             Bit("e"),
-...     )
-... )
->>> foo.parse("\xe1\x1f")
-Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
-
+.. autofunction:: construct.BitField
 
 Convenience wrappers for BitField
 ---------------------------------
