@@ -159,40 +159,6 @@ the _validate method; this allows you to write validators for more complex
 things, such as making sure a CRC field (or even a cryptographic hash) is
 correct, etc.
 
-OneOf
------
+.. autoclass:: construct.NoneOf
 
-Validates that the object is one of the valid objects set.
-
-# parsing
->>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\x05")
-5
->>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\x08")
-Traceback (most recent call last):
-  .
-  .
-construct.core.ValidationError: ('invalid object', 8)
->>>
- 
-# building
->>> OneOf(UBInt8("foo"), [4,5,6,7]).build(5)
-'\x05'
->>> OneOf(UBInt8("foo"), [4,5,6,7]).build(9)
-Traceback (most recent call last):
-  .
-  .
-construct.core.ValidationError: ('invalid object', 9)
-
-
-NoneOf
-------
-
-Validates that the object is not one of the invalid objects set.
-
->>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\x08")
-8
->>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\x06")
-Traceback (most recent call last):
-  .
-  .
-construct.core.ValidationError: ('invalid object', 6)
+.. autoclass:: construct.OneOf

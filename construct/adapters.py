@@ -420,11 +420,24 @@ class Validator(Adapter):
 
 class OneOf(Validator):
     """
-    Validates that the value is one of the listed values
-    
-    Parameters:
-    * subcon - the subcon to validate
-    * valids - a set of valid values
+    Validates that the object is one of the listed values.
+
+    :param ``Construct`` subcon: object to validate
+    :param iterable valids: a set of valid values
+
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x05")
+    5
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+    Traceback (most recent call last):
+        ...
+    construct.core.ValidationError: ('invalid object', 8)
+    >>>
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(5)
+    '\\x05'
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(9)
+    Traceback (most recent call last):
+        ...
+    construct.core.ValidationError: ('invalid object', 9)
     """
     __slots__ = ["valids"]
     def __init__(self, subcon, valids):
@@ -435,11 +448,17 @@ class OneOf(Validator):
 
 class NoneOf(Validator):
     """
-    Validates that the value is none of the listed values
-    
-    Parameters:
-    * subcon - the subcon to validate
-    * invalids - a set of invalid values
+    Validates that the object is none of the listed values.
+
+    :param ``Construct`` subcon: object to validate
+    :param iterable invalids: a set of invalid values
+
+    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+    8
+    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x06")
+    Traceback (most recent call last):
+        ...
+    construct.core.ValidationError: ('invalid object', 6)
     """
     __slots__ = ["invalids"]
     def __init__(self, subcon, invalids):
@@ -447,36 +466,3 @@ class NoneOf(Validator):
         self.invalids = invalids
     def _validate(self, obj, context):
         return obj not in self.invalids
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
