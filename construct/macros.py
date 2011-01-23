@@ -10,7 +10,7 @@ def Field(name, length):
     """a field
     * name - the name of the field
     * length - the length of the field. the length can be either an integer
-      (StaticField), or a function that takes the context as an argument and 
+      (StaticField), or a function that takes the context as an argument and
       returns the length (MetaField)
     """
     if callable(length):
@@ -64,14 +64,14 @@ def BitField(name, length, swapped = False, signed = False, bytesize = 8):
 def Padding(length, pattern = "\x00", strict = False):
     r"""a padding field (value is discarded)
     * length - the length of the field. the length can be either an integer,
-      or a function that takes the context as an argument and returns the 
+      or a function that takes the context as an argument and returns the
       length
     * pattern - the padding pattern (character) to use. default is "\x00"
-    * strict - whether or not to raise an exception is the actual padding 
+    * strict - whether or not to raise an exception is the actual padding
       pattern mismatches the desired pattern. default is False.
     """
-    return PaddingAdapter(Field(None, length), 
-        pattern = pattern, 
+    return PaddingAdapter(Field(None, length),
+        pattern = pattern,
         strict = strict,
     )
 
@@ -80,10 +80,10 @@ def Flag(name, truth = 1, falsehood = 0, default = False):
     * name - the name of the field
     * truth - the numeric value of truth. the default is 1.
     * falsehood - the numeric value of falsehood. the default is 0.
-    * default - the default value to assume, when the value is neither 
+    * default - the default value to assume, when the value is neither
       `truth` nor `falsehood`. the default is False.
     """
-    return SymmetricMapping(Field(name, 1), 
+    return SymmetricMapping(Field(name, 1),
         {True : chr(truth), False : chr(falsehood)},
         default = default,
     )
@@ -238,8 +238,8 @@ def PrefixedArray(subcon, length_field = UBInt8("length")):
     * length_field - a construct returning an integer
     """
     return LengthValueAdapter(
-        Sequence(subcon.name, 
-            length_field, 
+        Sequence(subcon.name,
+            length_field,
             Array(lambda ctx: ctx[length_field.name], subcon),
             nested = False
         )
@@ -312,7 +312,7 @@ def Bitwise(subcon):
     """converts the stream to bits, and passes the bitstream to subcon
     * subcon - a bitwise construct (usually BitField)
     """
-    # subcons larger than MAX_BUFFER will be wrapped by Restream instead 
+    # subcons larger than MAX_BUFFER will be wrapped by Restream instead
     # of Buffered. implementation details, don't stick your nose in :)
     MAX_BUFFER = 1024 * 8
     def resizer(length):
@@ -320,15 +320,15 @@ def Bitwise(subcon):
             raise SizeofError("size must be a multiple of 8", length)
         return length >> 3
     if not subcon._is_flag(subcon.FLAG_DYNAMIC) and subcon.sizeof() < MAX_BUFFER:
-        con = Buffered(subcon, 
-            encoder = decode_bin, 
-            decoder = encode_bin, 
+        con = Buffered(subcon,
+            encoder = decode_bin,
+            decoder = encode_bin,
             resizer = resizer
         )
     else:
-        con = Restream(subcon, 
-            stream_reader = BitStreamReader, 
-            stream_writer = BitStreamWriter, 
+        con = Restream(subcon,
+            stream_reader = BitStreamReader,
+            stream_writer = BitStreamWriter,
             resizer = resizer)
     return con
 
@@ -347,8 +347,8 @@ def Aligned(subcon, modulus = 4, pattern = "\x00"):
     else:
         def padlength(ctx):
             return (modulus - (subcon._sizeof(ctx) % modulus)) % modulus
-    return SeqOfOne(subcon.name, 
-        subcon, 
+    return SeqOfOne(subcon.name,
+        subcon,
         # ??????
         # ??????
         # ??????
@@ -393,25 +393,25 @@ def Alias(newname, oldname):
 def SymmetricMapping(subcon, mapping, default = NotImplemented):
     """defines a symmetrical mapping: a->b, b->a.
     * subcon - the subcon to map
-    * mapping - the encoding mapping (a dict); the decoding mapping is 
+    * mapping - the encoding mapping (a dict); the decoding mapping is
       achieved by reversing this mapping
-    * default - the default value to use when no mapping is found. if no 
+    * default - the default value to use when no mapping is found. if no
       default value is given, and exception is raised. setting to Pass would
       return the value "as is" (unmapped)
     """
     reversed_mapping = dict((v, k) for k, v in mapping.iteritems())
-    return MappingAdapter(subcon, 
-        encoding = mapping, 
-        decoding = reversed_mapping, 
+    return MappingAdapter(subcon,
+        encoding = mapping,
+        decoding = reversed_mapping,
         encdefault = default,
-        decdefault = default, 
+        decdefault = default,
     )
 
 def Enum(subcon, **kw):
-    """a set of named values mapping. 
+    """a set of named values mapping.
     * subcon - the subcon to map
     * kw - keyword arguments which serve as the encoding mapping
-    * _default_ - an optional, keyword-only argument that specifies the 
+    * _default_ - an optional, keyword-only argument that specifies the
       default value to use when the mapping is undefined. if not given,
       and exception is raised when the mapping is undefined. use `Pass` to
       pass the unmapped value as-is
@@ -599,9 +599,9 @@ def If(predicate, subcon, elsevalue = None):
     * elsevalue - the value that will be used should the predicate return False.
       by default this value is None.
     """
-    return IfThenElse(subcon.name, 
-        predicate, 
-        subcon, 
+    return IfThenElse(subcon.name,
+        predicate,
+        subcon,
         Value("elsevalue", lambda ctx: elsevalue)
     )
 
@@ -610,42 +610,17 @@ def If(predicate, subcon, elsevalue = None):
 # misc
 #===============================================================================
 def OnDemandPointer(offsetfunc, subcon, force_build = True):
-    """an on-demand pointer. 
-    * offsetfunc - a function taking the context as an argument and returning 
+    """an on-demand pointer.
+    * offsetfunc - a function taking the context as an argument and returning
       the absolute stream position
-    * subcon - the subcon that will be parsed from the `offsetfunc()` stream 
+    * subcon - the subcon that will be parsed from the `offsetfunc()` stream
       position on demand
     * force_build - see OnDemand. by default True.
     """
-    return OnDemand(Pointer(offsetfunc, subcon), 
-        advance_stream = False, 
+    return OnDemand(Pointer(offsetfunc, subcon),
+        advance_stream = False,
         force_build = force_build
     )
 
 def Magic(data):
     return ConstAdapter(Field(None, len(data)), data)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
