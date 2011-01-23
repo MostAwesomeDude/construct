@@ -30,7 +30,7 @@ class TerminatorError(ConstructError):
 class Construct(object):
     """
     The mother of all constructs!
-    
+
     User API:
     * parse(buf) - parses an in-memory buffer (usually a string)
     * parse_stream(stream) - parses a stream (in-memory, file, pipe, ...)
@@ -38,44 +38,44 @@ class Construct(object):
     * build_stream(obj, stream) - builds the object into the given stream
     * sizeof(context) - calculates the size of the construct, if possible,
       based on the context
-    
+
     Overriable methods for subclassing:
     * _parse(stream, context) - low-level parse from stream
     * _build(obj, stream, context) - low-level build to stream
     * _sizeof(context) - low-level compute size
-    
+
     Flags API:
     * _set_flag(flag) - sets the given flag/flags
     * _clear_flag(flag) - clears the given flag/flags
     * _inherit_flags(*subcons) - inherits the flag of subcons
     * _is_flag(flag) - is the flag set? (predicate)
-    
+
     Overridable methods for the copy-API:
     * __getstate__() - returns a dict of the attributes of self
     * __setstate__(attrs) - sets the attrs to self
-    
+
     Attributes:
-    All constructs have a name and flags. The name is used for naming 
+    All constructs have a name and flags. The name is used for naming
     struct-members and context dicts. Note that the name must be a string or
     None (if the name is not needed). A single underscore ("_") is a reserved
     name, and so are names starting with a less-than character ("<"). The name
     should be descriptive, short, and valid as a python identifier (although
-    these rules are not enforced). 
-    
+    these rules are not enforced).
+
     The flags specify additional behavioral information about this construct.
-    The flags are used by enclosing constructs to determine a proper course 
+    The flags are used by enclosing constructs to determine a proper course
     of action. Usually, flags are "inherited", i.e., an enclosing construct
     inherits the flags of its subconstruct. The enclosing construct may
     set new flags or clear existing ones, as necessary.
-        
-    For example, if FLAG_COPY_CONTEXT is set, repeaters will pass a copy of 
+
+    For example, if FLAG_COPY_CONTEXT is set, repeaters will pass a copy of
     the context for each iteration, which is necessary for OnDemand parsing.
     """
     FLAG_COPY_CONTEXT          = 0x0001
     FLAG_DYNAMIC               = 0x0002
     FLAG_EMBED                 = 0x0004
     FLAG_NESTING               = 0x0008
-    
+
     __slots__ = ["name", "conflags"]
     def __init__(self, name, flags = 0):
         if name is not None:
@@ -87,7 +87,7 @@ class Construct(object):
         self.conflags = flags
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.name)
-    
+
     def _set_flag(self, flag):
         self.conflags |= flag
     def _clear_flag(self, flag):
@@ -97,7 +97,7 @@ class Construct(object):
             self._set_flag(sc.conflags)
     def _is_flag(self, flag):
         return bool(self.conflags & flag)
-    
+
     def __getstate__(self):
         attrs = {}
         if hasattr(self, "__dict__"):
@@ -120,7 +120,7 @@ class Construct(object):
         self2 = object.__new__(self.__class__)
         self2.__setstate__(self.__getstate__())
         return self2
-    
+
     def parse(self, data):
         """parses data given as a buffer or a string (in-memory)"""
         return self.parse_stream(StringIO(data))
@@ -129,7 +129,7 @@ class Construct(object):
         return self._parse(stream, AttrDict())
     def _parse(self, stream, context):
         raise NotImplementedError()
-    
+
     def build(self, obj):
         """builds an object in a string (in memory)"""
         stream = StringIO()
@@ -140,9 +140,9 @@ class Construct(object):
         self._build(obj, stream, AttrDict())
     def _build(self, obj, stream, context):
         raise NotImplementedError()
-    
+
     def sizeof(self, context = None):
-        """calculates the size of the construct (if possible) using the 
+        """calculates the size of the construct (if possible) using the
         given context"""
         if context is None:
             context = AttrDict()
@@ -152,9 +152,9 @@ class Construct(object):
 
 class Subconstruct(Construct):
     """
-    Abstract subconstruct (wraps an inner construct, inheriting it's 
-    name and flags). 
-    
+    Abstract subconstruct (wraps an inner construct, inheriting it's
+    name and flags).
+
     Parameters:
     * subcon - the construct to wrap
     """
@@ -172,7 +172,7 @@ class Subconstruct(Construct):
 class Adapter(Subconstruct):
     """
     Abstract adapter: calls _decode for parsing and _encode for building.
-    
+
     Parameters:
     * subcon - the construct to wrap
     """
@@ -208,11 +208,11 @@ def _write_stream(stream, length, data):
 class StaticField(Construct):
     """
     A field of a fixed size
-    
+
     Parameters:
     * name - the name of the field
     * length - the length (an integer)
-    
+
     Example:
     StaticField("foo", 5)
     """
@@ -231,21 +231,21 @@ class FormatField(StaticField):
     """
     A field that uses python's built-in struct module to pack/unpack data
     according to a format string.
-    Note: this field has been originally implemented as an Adapter, but it 
+    Note: this field has been originally implemented as an Adapter, but it
     was made a construct for performance reasons.
-    
+
     Parameters:
     * name - the name
     * endianity - "<" for little endian, ">" for big endian, or "=" for native
     * format - a single format character
-    
+
     Example:
     FormatField("foo", ">", "L")
     """
     __slots__ = ["packer"]
     def __init__(self, name, endianity, format):
         if endianity not in (">", "<", "="):
-            raise ValueError("endianity must be be '=', '<', or '>'", 
+            raise ValueError("endianity must be be '=', '<', or '>'",
                 endianity)
         if len(format) != 1:
             raise ValueError("must specify one and only one format char")
@@ -273,12 +273,12 @@ class MetaField(Construct):
     """
     A field of a meta-length. The length is computed at runtime based on
     the context.
-    
+
     Parameters:
     * name - the name of the field
     * lengthfunc - a function that takes the context as a parameter and return
       the length of the field
-    
+
     Example:
     MetaField("foo", lambda ctx: 5)
     """
@@ -300,15 +300,15 @@ class MetaField(Construct):
 #===============================================================================
 class MetaArray(Subconstruct):
     """
-    An array (repeater) of a meta-count. The array will iterate exactly 
+    An array (repeater) of a meta-count. The array will iterate exactly
     `countfunc()` times. Will raise ArrayError if less elements are found.
     See also Array, Range and RepeatUntil.
-    
+
     Parameters:
     * countfunc - a function that takes the context as a parameter and returns
       the number of elements of the array (count)
     * subcon - the subcon to repeat `countfunc()` times
-    
+
     Example:
     MetaArray(lambda ctx: 5, UBInt8("foo"))
     """
@@ -418,13 +418,13 @@ class Range(Subconstruct):
                     c += 1
         except ConstructError, ex:
             if c < self.mincount:
-                raise RangeError("expected %d to %d, found %d" % 
+                raise RangeError("expected %d to %d, found %d" %
                     (self.mincount, self.maxcout, c), ex)
             stream.seek(pos)
         return obj
     def _build(self, obj, stream, context):
         if len(obj) < self.mincount or len(obj) > self.maxcout:
-            raise RangeError("expected %d to %d, found %d" % 
+            raise RangeError("expected %d to %d, found %d" %
                 (self.mincount, self.maxcout, len(obj)))
         cnt = 0
         try:
@@ -438,7 +438,7 @@ class Range(Subconstruct):
                     cnt += 1
         except ConstructError, ex:
             if cnt < self.mincount:
-                raise RangeError("expected %d to %d, found %d" % 
+                raise RangeError("expected %d to %d, found %d" %
                     (self.mincount, self.maxcout, len(obj)), ex)
     def _sizeof(self, context):
         raise SizeofError("can't calculate size")
@@ -446,14 +446,14 @@ class Range(Subconstruct):
 class RepeatUntil(Subconstruct):
     """
     An array that repeat until the predicate indicates it to stop. Note that
-    the last element (which caused the repeat to exit) is included in the 
+    the last element (which caused the repeat to exit) is included in the
     return value.
-    
+
     Parameters:
     * predicate - a predicate function that takes (obj, context) and returns
       True if the stop-condition is met, or False to continue.
     * subcon - the subcon to repeat.
-    
+
     Example:
     # will read chars until \x00 (inclusive)
     RepeatUntil(lambda obj, ctx: obj == "\x00",
@@ -512,14 +512,14 @@ class Struct(Construct):
     A sequence of named constructs, similar to structs in C. The elements are
     parsed and built in the order they are defined.
     See also Embedded.
-    
+
     Parameters:
     * name - the name of the structure
     * subcons - a sequence of subconstructs that make up this structure.
-    * nested - a keyword-only argument that indicates whether this struct 
-      creates a nested context. The default is True. This parameter is 
+    * nested - a keyword-only argument that indicates whether this struct
+      creates a nested context. The default is True. This parameter is
       considered "advanced usage", and may be removed in the future.
-    
+
     Example:
     Struct("foo",
         UBInt8("first_element"),
@@ -580,14 +580,14 @@ class Sequence(Struct):
     A sequence of unnamed constructs. The elements are parsed and built in the
     order they are defined.
     See also Embedded.
-    
+
     Parameters:
     * name - the name of the structure
     * subcons - a sequence of subconstructs that make up this structure.
-    * nested - a keyword-only argument that indicates whether this struct 
-      creates a nested context. The default is True. This parameter is 
+    * nested - a keyword-only argument that indicates whether this struct
+      creates a nested context. The default is True. This parameter is
       considered "advanced usage", and may be removed in the future.
-    
+
     Example:
     Sequence("foo",
         UBInt8("first_element"),
@@ -634,24 +634,24 @@ class Sequence(Struct):
 
 class Union(Construct):
     """
-    a set of overlapping fields (like unions in C). when parsing, 
+    a set of overlapping fields (like unions in C). when parsing,
     all fields read the same data; when building, only the first subcon
-    (called "master") is used. 
-    
+    (called "master") is used.
+
     Parameters:
     * name - the name of the union
-    * master - the master subcon, i.e., the subcon used for building and 
+    * master - the master subcon, i.e., the subcon used for building and
       calculating the total size
     * subcons - additional subcons
-    
+
     Example:
     Union("what_are_four_bytes",
         UBInt32("one_dword"),
         Struct("two_words", UBInt16("first"), UBInt16("second")),
-        Struct("four_bytes", 
-            UBInt8("a"), 
-            UBInt8("b"), 
-            UBInt8("c"), 
+        Struct("four_bytes",
+            UBInt8("a"),
+            UBInt8("b"),
+            UBInt8("c"),
             UBInt8("d")
         ),
     )
@@ -676,22 +676,22 @@ class Union(Construct):
 class Switch(Construct):
     """
     A conditional branch. Switch will choose the case to follow based on
-    the return value of keyfunc. If no case is matched, and no default value 
+    the return value of keyfunc. If no case is matched, and no default value
     is given, SwitchError will be raised.
     See also Pass.
-    
+
     Parameters:
     * name - the name of the construct
-    * keyfunc - a function that takes the context and returns a key, which 
+    * keyfunc - a function that takes the context and returns a key, which
       will ne used to choose the relevant case.
-    * cases - a dictionary mapping keys to constructs. the keys can be any 
+    * cases - a dictionary mapping keys to constructs. the keys can be any
       values that may be returned by keyfunc.
     * default - a default value to use when the key is not found in the cases.
       if not supplied, an exception will be raised when the key is not found.
       You can use the builtin construct Pass for 'do-nothing'.
     * include_key - whether or not to include the key in the return value
       of parsing. defualt is False.
-    
+
     Example:
     Struct("foo",
         UBInt8("type"),
@@ -704,7 +704,7 @@ class Switch(Construct):
         ),
     )
     """
-    
+
     class NoDefault(Construct):
         def _parse(self, stream, context):
             raise SwitchError("no default case defined")
@@ -713,10 +713,10 @@ class Switch(Construct):
         def _sizeof(self, context):
             raise SwitchError("no default case defined")
     NoDefault = NoDefault("No default value specified")
-    
+
     __slots__ = ["subcons", "keyfunc", "cases", "default", "include_key"]
-    
-    def __init__(self, name, keyfunc, cases, default = NoDefault, 
+
+    def __init__(self, name, keyfunc, cases, default = NoDefault,
                  include_key = False):
         Construct.__init__(self, name)
         self._inherit_flags(*cases.values())
@@ -748,17 +748,17 @@ class Select(Construct):
     """
     Selects the first matching subconstruct. It will literally try each of
     the subconstructs, until one matches.
-    
+
     Notes:
     * requires a seekable stream.
-    
+
     Parameters:
     * name - the name of the construct
     * subcons - the subcons to try (order-sensitive)
-    * include_name - a keyword only argument, indicating whether to include 
+    * include_name - a keyword only argument, indicating whether to include
       the name of the selected subcon in the return value of parsing. default
       is false.
-    
+
     Example:
     Select("foo",
         UBInt64("large"),
@@ -800,7 +800,7 @@ class Select(Construct):
                 if sc.name == name:
                     sc._build(obj, stream, context)
                     return
-        else: 
+        else:
             for sc in self.subcons:
                 stream2 = StringIO()
                 context2 = context.__copy__()
@@ -825,15 +825,15 @@ class Pointer(Subconstruct):
     Changes the stream position to a given offset, where the construction
     should take place, and restores the stream position when finished.
     See also Anchor, OnDemand and OnDemandPointer.
-    
+
     Notes:
     * requires a seekable stream.
-    
+
     Parameters:
-    * offsetfunc: a function that takes the context and returns an absolute 
+    * offsetfunc: a function that takes the context and returns an absolute
       stream position, where the construction would take place
     * subcon - the subcon to use at `offsetfunc()`
-    
+
     Example:
     Struct("foo",
         UBInt32("spam_pointer"),
@@ -867,15 +867,15 @@ class Peek(Subconstruct):
     Peeks at the stream: parses without changing the stream position.
     See also Union. If the end of the stream is reached when peeking,
     returns None.
-    
+
     Notes:
     * requires a seekable stream.
-    
+
     Parameters:
     * subcon - the subcon to peek at
-    * perform_build - whether or not to perform building. by default this 
+    * perform_build - whether or not to perform building. by default this
       parameter is set to False, meaning building is a no-op.
-    
+
     Example:
     Peek(UBInt8("foo"))
     """
@@ -899,25 +899,25 @@ class Peek(Subconstruct):
 
 class OnDemand(Subconstruct):
     """
-    Allows for on-demand (lazy) parsing. When parsing, it will return a 
+    Allows for on-demand (lazy) parsing. When parsing, it will return a
     LazyContainer that represents a pointer to the data, but does not actually
     parses it from stream until it's "demanded".
-    By accessing the 'value' property of LazyContainers, you will demand the 
+    By accessing the 'value' property of LazyContainers, you will demand the
     data from the stream. The data will be parsed and cached for later use.
-    You can use the 'has_value' property to know whether the data has already 
+    You can use the 'has_value' property to know whether the data has already
     been demanded.
     See also OnDemandPointer.
-    
+
     Notes:
     * requires a seekable stream.
-    
+
     Parameters:
-    * subcon - 
-    * advance_stream - whether or not to advance the stream position. by 
+    * subcon -
+    * advance_stream - whether or not to advance the stream position. by
       default this is True, but if subcon is a pointer, this should be False.
     * force_build - whether or not to force build. If set to False, and the
       LazyContainer has not been demaned, building is a no-op.
-    
+
     Example:
     OnDemand(Array(10000, UBInt8("foo"))
     """
@@ -941,13 +941,13 @@ class OnDemand(Subconstruct):
 
 class Buffered(Subconstruct):
     """
-    Creates an in-memory buffered stream, which can undergo encoding and 
+    Creates an in-memory buffered stream, which can undergo encoding and
     decoding prior to being passed on to the subconstruct.
     See also Bitwise.
-    
+
     Note:
     * Do not use pointers inside Buffered
-    
+
     Parameters:
     * subcon - the subcon which will operate on the buffer
     * encoder - a function that takes a string and returns an encoded
@@ -956,7 +956,7 @@ class Buffered(Subconstruct):
       string (used before parsing)
     * resizer - a function that takes the size of the subcon and "adjusts"
       or "resizes" it according to the encoding/decoding process.
-    
+
     Example:
     Buffered(BitField("foo", 16),
         encoder = decode_bin,
@@ -986,27 +986,27 @@ class Buffered(Subconstruct):
 
 class Restream(Subconstruct):
     """
-    Wraps the stream with a read-wrapper (for parsing) or a 
+    Wraps the stream with a read-wrapper (for parsing) or a
     write-wrapper (for building). The stream wrapper can buffer the data
-    internally, reading it from- or writing it to the underlying stream 
-    as needed. For example, BitStreamReader reads whole bytes from the 
-    underlying stream, but returns them as individual bits. 
+    internally, reading it from- or writing it to the underlying stream
+    as needed. For example, BitStreamReader reads whole bytes from the
+    underlying stream, but returns them as individual bits.
     See also Bitwise.
-    
-    When the parsing or building is done, the stream's close method 
+
+    When the parsing or building is done, the stream's close method
     will be invoked. It can perform any finalization needed for the stream
     wrapper, but it must not close the underlying stream.
-    
+
     Note:
     * Do not use pointers inside Restream
-    
+
     Parameters:
     * subcon - the subcon
     * stream_reader - the read-wrapper
     * stream_writer - the write wrapper
     * resizer - a function that takes the size of the subcon and "adjusts"
       or "resizes" it according to the encoding/decoding process.
-    
+
     Example:
     Restream(BitField("foo", 16),
         stream_reader = BitStreamReader,
@@ -1040,13 +1040,13 @@ class Reconfig(Subconstruct):
     """
     Reconfigures a subconstruct. Reconfig can be used to change the name and
     set and clear flags of the inner subcon.
-    
+
     Parameters:
     * name - the new name
     * subcon - the subcon to reconfigure
     * setflags - the flags to set (default is 0)
     * clearflags - the flags to clear (default is 0)
-    
+
     Example:
     Reconfig("foo", UBInt8("bar"))
     """
@@ -1065,13 +1065,13 @@ class Anchor(Construct):
     absolute pointer = anchor + relative offset
     size = anchor_after - anchor_before
     See also Pointer.
-    
+
     Notes:
     * requires a seekable stream.
-    
+
     Parameters:
     * name - the name of the anchor
-    
+
     Example:
     Struct("foo",
         Anchor("base"),
@@ -1092,11 +1092,11 @@ class Anchor(Construct):
 class Value(Construct):
     """
     A computed value.
-    
+
     Parameters:
     * name - the name of the value
     * func - a function that takes the context and return the computed value
-    
+
     Example:
     Struct("foo",
         UBInt8("width"),
@@ -1121,19 +1121,19 @@ class Value(Construct):
 #    Dynamically creates a construct and uses it for parsing and building.
 #    This allows you to create change the construction tree on the fly.
 #    Deprecated.
-#    
+#
 #    Parameters:
 #    * name - the name of the construct
-#    * factoryfunc - a function that takes the context and returns a new 
+#    * factoryfunc - a function that takes the context and returns a new
 #      construct object which will be used for parsing and building.
-#    
+#
 #    Example:
 #    def factory(ctx):
 #        if ctx.bar == 8:
 #            return UBInt8("spam")
 #        if ctx.bar == 9:
 #            return String("spam", 9)
-#    
+#
 #    Struct("foo",
 #        UBInt8("bar"),
 #        Dynamic("spam", factory),
@@ -1153,12 +1153,12 @@ class Value(Construct):
 
 class LazyBound(Construct):
     """
-    Lazily bound construct, useful for constructs that need to make cyclic 
+    Lazily bound construct, useful for constructs that need to make cyclic
     references (linked-lists, expression trees, etc.).
-    
+
     Parameters:
-    
-    
+
+
     Example:
     foo = Struct("foo",
         UBInt8("bar"),
@@ -1188,11 +1188,11 @@ class Pass(Construct):
     A do-nothing construct, useful as the default case for Switch, or
     to indicate Enums.
     See also Switch and Enum.
-    
+
     Notes:
-    * this construct is a singleton. do not try to instatiate it, as it 
+    * this construct is a singleton. do not try to instatiate it, as it
       will not work...
-    
+
     Example:
     Pass
     """
@@ -1208,14 +1208,14 @@ Pass = Pass(None)
 class Terminator(Construct):
     """
     Asserts the end of the stream has been reached at the point it's placed.
-    You can use this to ensure no more unparsed data follows. 
-    
+    You can use this to ensure no more unparsed data follows.
+
     Notes:
-    * this construct is only meaningful for parsing. for building, it's 
+    * this construct is only meaningful for parsing. for building, it's
       a no-op.
-    * this construct is a singleton. do not try to instatiate it, as it 
+    * this construct is a singleton. do not try to instatiate it, as it
       will not work...
-    
+
     Example:
     Terminator
     """
@@ -1228,22 +1228,3 @@ class Terminator(Construct):
     def _sizeof(self, context):
         return 0
 Terminator = Terminator(None)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
