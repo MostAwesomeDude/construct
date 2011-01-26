@@ -55,7 +55,3 @@ def decode_bin(data):
         i += 8
         j += 1
     return "".join(chars)
-
-
-
-

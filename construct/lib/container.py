@@ -22,7 +22,7 @@ class Container(object):
         attrs = []
         attrs.extend(kw.keys())
         object.__setattr__(self, "__attrs__", attrs)
-    
+
     def __eq__(self, other):
         try:
             return self.__dict__ == other.__dict__
@@ -30,7 +30,7 @@ class Container(object):
             return False
     def __ne__(self, other):
         return not (self == other)
-    
+
     def __delattr__(self, name):
         object.__delattr__(self, name)
         self.__attrs__.remove(name)
@@ -56,11 +56,11 @@ class Container(object):
     def __iter__(self):
         for name in self.__attrs__:
             yield name, self.__dict__[name]
-    
+
     @recursion_lock("<...>")
     def __repr__(self):
         attrs = sorted("%s = %s" % (k, repr(v))
-            for k, v in self.__dict__.iteritems() 
+            for k, v in self.__dict__.iteritems()
             if not k.startswith("_"))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(attrs))
     def __str__(self):
@@ -81,7 +81,7 @@ class Container(object):
             return "%s()" % (self.__class__.__name__,)
         attrs.insert(0, self.__class__.__name__ + ":")
         return "\n".join(attrs)
-    
+
     def __introspect__(self):
         for k in self.__attrs__:
             v = self.__dict__[k]
@@ -91,15 +91,15 @@ class Container(object):
 
 class FlagsContainer(Container):
     """
-    A container providing pretty-printing for flags. Only set flags are 
-    displayed. 
+    A container providing pretty-printing for flags. Only set flags are
+    displayed.
     """
     def __inspect__(self):
         for k in self.__attrs__:
             v = self.__dict__[k]
             if not k.startswith("_") and v:
                 yield "kv", (k, v)
-    
+
     def __pretty_str__(self, nesting = 1, indentation = "    "):
         attrs = []
         ind = indentation * nesting
@@ -140,7 +140,7 @@ class ListContainer(list):
 class AttrDict(object):
     """
     A dictionary that can be accessed both using indexing and attributes,
-    i.e., 
+    i.e.,
         x = AttrDict()
         x.foo = 5
         print x["foo"]
@@ -232,44 +232,3 @@ class LazyContainer(object):
         return self._value
     value = property(_get_value)
     has_value = property(lambda self: self._value is not NotImplemented)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

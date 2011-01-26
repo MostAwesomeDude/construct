@@ -28,7 +28,7 @@ def drill(obj, root = "", levels = -1):
 
 if __name__ == "__main__":
     from construct import *
-    
+
     c = Struct("foo",
         Byte("a"),
         Struct("b",
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         ),
         Byte("e"),
         Array(4,
-            Struct("f", 
+            Struct("f",
                 Byte("x"),
                 Byte("y"),
             ),
@@ -45,13 +45,13 @@ if __name__ == "__main__":
         Byte("g"),
     )
     o = c.parse("acddexyxyxyxyg")
-    
+
     for lvl in range(4):
         for path, value in drill(o, levels = lvl):
             print path, value
         print "---"
-    
-    output = """ 
+
+    output = """
      Container:
         a = 97
         b = Container:
@@ -128,24 +128,3 @@ if __name__ == "__main__":
     .g 103
     ---
     """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -29,7 +29,7 @@ class BitStreamReader(object):
             data = self.buffer
             count -= l
             bytes = count // 8
-            if count & 7: 
+            if count & 7:
                 bytes += 1
             buf = encode_bin(self.substream.read(bytes))
             data += buf[:count]
@@ -62,19 +62,3 @@ class BitStreamWriter(object):
         if type(data) is not str:
             raise TypeError("data must be a string, not %r" % (type(data),))
         self.buffer.append(data)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
