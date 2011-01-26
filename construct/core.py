@@ -1,4 +1,6 @@
-from lib import StringIO, Packer
+from struct import Struct as Packer
+
+from lib import StringIO
 from lib import Container, ListContainer, AttrDict, LazyContainer
 
 
