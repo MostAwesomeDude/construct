@@ -271,17 +271,24 @@ class FormatField(StaticField):
 
 class MetaField(Construct):
     """
-    A field of a meta-length. The length is computed at runtime based on
-    the context.
+    A variable-length field. The length is obtained at runtime from a
+    function.
 
-    Parameters:
-    * name - the name of the field
-    * lengthfunc - a function that takes the context as a parameter and return
-      the length of the field
+    :param str name: name of the field
+    :param callable lengthfunc: callable that takes a context and returns
+                                length as an int
 
-    Example:
-    MetaField("foo", lambda ctx: 5)
+
+    >>> foo = Struct("foo",
+    ...     Byte("length"),
+    ...     MetaField("data", lambda ctx: ctx["length"])
+    ... )
+    >>> foo.parse("\\x03ABC")
+    Container(data = 'ABC', length = 3)
+    >>> foo.parse("\\x04ABCD")
+    Container(data = 'ABCD', length = 4)
     """
+
     __slots__ = ["lengthfunc"]
     def __init__(self, name, lengthfunc):
         Construct.__init__(self, name)

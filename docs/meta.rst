@@ -88,22 +88,7 @@ ctx["length2"]),
 >>> foo.parse("\x02\x03abcde")
 Container(bar = Container(data = 'abcde', length2 = 3), length1 = 2)
 
-
-MetaField
----------
-
-A field (construct that reads or writes raw data) of a variable length.
-
->>> foo = Struct("foo",
-...     Byte("length"),
-...     MetaField("data", lambda ctx: ctx["length"])
-... )
->>>
->>> foo.parse("\x03ABC")
-Container(data = 'ABC', length = 3)
->>> foo.parse("\x04ABCD")
-Container(data = 'ABCD', length = 4)
-
+.. autofunction:: construct.MetaField
 
 MetaRepeater
 ------------
