@@ -23,3 +23,9 @@ constructs to make your work easier:
  * On-demand parsing
  * Pointers
  * And more!
+
+Requirements
+============
+
+Construct should run on any Python 2.5+ implementation. It has no external
+dependencies.
