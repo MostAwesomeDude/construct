@@ -1,9 +1,12 @@
 """
 common constructs for typical programming languages (numbers, strings, ...)
 """
-from construct.core import *
-from construct.adapters import *
-from construct.macros import *
+from construct.core import (Construct, ConstructError, FieldError,
+    SizeofError)
+from construct.adapters import (Adapter, StringAdapter, IndexingAdapter,
+    ConstAdapter, OneOf, NoneOf)
+from construct.macros import (Field, OptionalGreedyRange, GreedyRange,
+    Sequence, Optional)
 
 
 #===============================================================================
@@ -18,9 +21,9 @@ class QuotedStringError(ConstructError):
 #===============================================================================
 class QuotedString(Construct):
     r"""
-    A quoted string (begins with an opening-quote, terminated by a 
+    A quoted string (begins with an opening-quote, terminated by a
     closing-quote, which may be escaped by an escape character)
-    
+
     Parameters:
     * name - the name of the field
     * start_quote - the opening quote character. default is '"'
@@ -32,15 +35,15 @@ class QuotedString(Construct):
     * allow_eof - whether to allow EOF before the closing quote is matched.
       if False, an exception will be raised when EOF is reached by the closing
       quote is missing. default is False.
-    
+
     Example:
     QuotedString("foo", start_quote = "{", end_quote = "}", esc_char = None)
     """
     __slots__ = [
-        "start_quote", "end_quote", "char", "esc_char", "encoding", 
+        "start_quote", "end_quote", "char", "esc_char", "encoding",
         "allow_eof"
     ]
-    def __init__(self, name, start_quote = '"', end_quote = None, 
+    def __init__(self, name, start_quote = '"', end_quote = None,
                  esc_char = '\\', encoding = None, allow_eof = False):
         Construct.__init__(self, name)
         if end_quote is None:
@@ -51,7 +54,7 @@ class QuotedString(Construct):
         self.esc_char = esc_char
         self.encoding = encoding
         self.allow_eof = allow_eof
-    
+
     def _parse(self, stream, context):
         self.start_quote._parse(stream, context)
         text = []
@@ -77,7 +80,7 @@ class QuotedString(Construct):
         if self.encoding is not None:
             text = text.decode(self.encoding)
         return text
-    
+
     def _build(self, obj, stream, context):
         self.start_quote._build(None, stream, context)
         if self.encoding:
@@ -93,7 +96,7 @@ class QuotedString(Construct):
                     self.char._build(self.esc_char, stream, context)
             self.char._build(ch, stream, context)
         self.char._build(self.end_quote, stream, context)
-    
+
     def _sizeof(self, context):
         raise SizeofError("can't calculate size")
 
@@ -105,7 +108,7 @@ class WhitespaceAdapter(Adapter):
     """
     Adapter for whitespace sequences; do not use directly.
     See Whitespace.
-    
+
     Parameters:
     * subcon - the subcon to adapt
     * build_char - the character used for encoding (building)
@@ -184,7 +187,7 @@ def Word(name):
 class TextualIntAdapter(Adapter):
     """
     Adapter for textual integers
-    
+
     Parameters:
     * subcon - the subcon to adapt
     * radix - the base of the integer (decimal, hexadecimal, binary, ...)
@@ -252,7 +255,7 @@ class TextualFloatAdapter(Adapter):
 
 def FloatNumber(name):
     return TextualFloatAdapter(
-        Sequence(name, 
+        Sequence(name,
             GreedyRange(Digit("whole")),
             Literal("."),
             GreedyRange(Digit("frac")),
@@ -271,10 +274,10 @@ def StringUpto(name, terminators, consume_terminator = False, allow_eof = True):
     flexible version of CString.
     * name - the name of the field
     * terminator - the set of terminator characters
-    * consume_terminator - whether to consume the terminator character. the 
+    * consume_terminator - whether to consume the terminator character. the
       default is False.
     * allow_eof - whether to allow EOF to terminate the string. the default
-      is True. this option is applicable only if consume_terminator is set. 
+      is True. this option is applicable only if consume_terminator is set.
     """
     con = StringAdapter(OptionalGreedyRange(CharNoneOf(name, terminators)))
     if not consume_terminator:
@@ -288,20 +291,20 @@ def StringUpto(name, terminators, consume_terminator = False, allow_eof = True):
 def Line(name, consume_terminator = True, allow_eof = True):
     r"""a textual line (up to "\n")
     * name - the name of the field
-    * consume_terminator - whether to consume the newline character. the 
+    * consume_terminator - whether to consume the newline character. the
       default is True.
-    * allow_eof - whether to allow EOF to terminate the string. the default 
+    * allow_eof - whether to allow EOF to terminate the string. the default
       is True. this option is applicable only if consume_terminator is set.
     """
-    return StringUpto(name, "\n", 
-        consume_terminator = consume_terminator, 
+    return StringUpto(name, "\n",
+        consume_terminator = consume_terminator,
         allow_eof = allow_eof
     )
 
 class IdentifierAdapter(Adapter):
     """
     Adapter for programmatic identifiers
-    
+
     Parameters:
     * subcon - the subcon to adapt
     """
@@ -310,8 +313,8 @@ class IdentifierAdapter(Adapter):
     def _decode(self, obj, context):
         return obj[0] + "".join(obj[1])
 
-def Identifier(name, 
-               headset = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"), 
+def Identifier(name,
+               headset = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"),
                tailset = set("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
     ):
     """a programmatic identifier (symbol). must start with a char of headset,
@@ -326,22 +329,3 @@ def Identifier(name,
             OptionalGreedyRange(CharOf("tail", tailset)),
         )
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
