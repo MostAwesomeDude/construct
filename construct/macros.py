@@ -1,6 +1,10 @@
-from lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from core import *
-from adapters import *
+from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
+from construct.core import (Struct, MetaField, StaticField, FormatField,
+    OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range,
+    Select, Pass, SizeofError, Buffered, Restream, Reconfig)
+from construct.adapters import (BitIntegerAdapter, PaddingAdapter,
+    ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter,
+    PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
 
 
 #===============================================================================
@@ -340,13 +344,8 @@ def Aligned(subcon, modulus = 4, pattern = "\x00"):
     """
     if modulus < 2:
         raise ValueError("modulus must be >= 2", modulus)
-    if modulus in (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024):
-        def padlength(ctx):
-            m1 = modulus - 1
-            return (modulus - (subcon._sizeof(ctx) & m1)) & m1
-    else:
-        def padlength(ctx):
-            return (modulus - (subcon._sizeof(ctx) % modulus)) % modulus
+    def padlength(ctx):
+        return (modulus - (subcon._sizeof(ctx) % modulus)) % modulus
     return SeqOfOne(subcon.name,
         subcon,
         # ??????
