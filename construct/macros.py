@@ -543,14 +543,11 @@ def CString(name, terminators="\x00", encoding=None,
     :param ``Construct`` char_field: construct representing a single character
 
     >>> foo = CString("foo")
-    >>>
     >>> foo.parse("hello\\x00")
     'hello'
     >>> foo.build("hello")
     'hello\\x00'
-    >>>
     >>> foo = CString("foo", terminators = "XYZ")
-    >>>
     >>> foo.parse("helloX")
     'hello'
     >>> foo.parse("helloY")
@@ -560,6 +557,7 @@ def CString(name, terminators="\x00", encoding=None,
     >>> foo.build("hello")
     'helloX'
     """
+
     return Rename(name,
         CStringAdapter(
             RepeatUntil(lambda obj, ctx: obj in terminators,
