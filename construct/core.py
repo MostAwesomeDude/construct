@@ -31,48 +31,59 @@ class TerminatorError(ConstructError):
 #===============================================================================
 class Construct(object):
     """
-    The mother of all constructs!
+    The mother of all constructs.
 
-    User API:
-    * parse(buf) - parses an in-memory buffer (usually a string)
-    * parse_stream(stream) - parses a stream (in-memory, file, pipe, ...)
-    * build(obj) - builds the object into an in-memory buffer (a string)
-    * build_stream(obj, stream) - builds the object into the given stream
-    * sizeof(context) - calculates the size of the construct, if possible,
-      based on the context
+    This object is generally not directly instantiated, and it does not
+    directly implement parsing and building, so it is largely only of interest
+    to subclass implementors.
 
-    Overriable methods for subclassing:
-    * _parse(stream, context) - low-level parse from stream
-    * _build(obj, stream, context) - low-level build to stream
-    * _sizeof(context) - low-level compute size
+    The external user API:
 
-    Flags API:
-    * _set_flag(flag) - sets the given flag/flags
-    * _clear_flag(flag) - clears the given flag/flags
-    * _inherit_flags(*subcons) - inherits the flag of subcons
-    * _is_flag(flag) - is the flag set? (predicate)
+     * parse()
+     * parse_stream()
+     * build()
+     * build_stream()
+     * sizeof()
 
-    Overridable methods for the copy-API:
-    * __getstate__() - returns a dict of the attributes of self
-    * __setstate__(attrs) - sets the attrs to self
+    Subclass authors should not override the external methods. Instead,
+    another API is available:
 
-    Attributes:
-    All constructs have a name and flags. The name is used for naming
-    struct-members and context dicts. Note that the name must be a string or
-    None (if the name is not needed). A single underscore ("_") is a reserved
-    name, and so are names starting with a less-than character ("<"). The name
-    should be descriptive, short, and valid as a python identifier (although
-    these rules are not enforced).
+     * _parse()
+     * _build()
+     * _sizeof()
+
+    There is also a flag API:
+
+     * _set_flag()
+     * _clear_flag()
+     * _inherit_flags()
+     * _is_flag()
+
+    And stateful copying:
+
+     * __getstate__()
+     * __setstate__()
+
+    Attributes and Inheritance
+    ==========================
+
+    All constructs have a name and flags. The name is used for naming struct
+    members and context dictionaries. Note that the name can either be a
+    string, or None if the name is not needed. A single underscore ("_") is a
+    reserved name, and so are names starting with a less-than character ("<").
+    The name should be descriptive, short, and valid as a Python identifier,
+    although these rules are not enforced.
 
     The flags specify additional behavioral information about this construct.
-    The flags are used by enclosing constructs to determine a proper course
-    of action. Usually, flags are "inherited", i.e., an enclosing construct
-    inherits the flags of its subconstruct. The enclosing construct may
-    set new flags or clear existing ones, as necessary.
+    Flags are used by enclosing constructs to determine a proper course of
+    action. Flags are inherited by default, from inner subconstructs to outer
+    constructs. The enclosing construct may set new flags or clear existing
+    ones, as necessary.
 
     For example, if FLAG_COPY_CONTEXT is set, repeaters will pass a copy of
     the context for each iteration, which is necessary for OnDemand parsing.
     """
+
     FLAG_COPY_CONTEXT          = 0x0001
     FLAG_DYNAMIC               = 0x0002
     FLAG_EMBED                 = 0x0004
@@ -87,20 +98,50 @@ class Construct(object):
                 raise ValueError("reserved name", name)
         self.name = name
         self.conflags = flags
+
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.name)
 
     def _set_flag(self, flag):
+        """
+        Set the given flag or flags.
+
+        :param int flag: flag to set; may be OR'd combination of flags
+        """
+
         self.conflags |= flag
+
     def _clear_flag(self, flag):
+        """
+        Clear the given flag or flags.
+
+        :param int flag: flag to clear; may be OR'd combination of flags
+        """
+
         self.conflags &= ~flag
+
     def _inherit_flags(self, *subcons):
+        """
+        Pull flags from subconstructs.
+        """
+
         for sc in subcons:
             self._set_flag(sc.conflags)
+
     def _is_flag(self, flag):
+        """
+        Check whether a given flag is set.
+
+        :param int flag: flag to check
+        """
+
         return bool(self.conflags & flag)
 
     def __getstate__(self):
+        """
+        Obtain a dictionary representing this construct's state.
+        """
+
         attrs = {}
         if hasattr(self, "__dict__"):
             attrs.update(self.__dict__)
@@ -114,9 +155,15 @@ class Construct(object):
             if hasattr(self, name):
                 attrs[name] = getattr(self, name)
         return attrs
+
     def __setstate__(self, attrs):
+        """
+        Set this construct's state to a given state.
+        """
+
         for name, value in attrs.iteritems():
             setattr(self, name, value)
+
     def __copy__(self):
         """returns a copy of this construct"""
         self2 = object.__new__(self.__class__)
@@ -124,33 +171,70 @@ class Construct(object):
         return self2
 
     def parse(self, data):
-        """parses data given as a buffer or a string (in-memory)"""
+        """
+        Parse an in-memory buffer.
+
+        Strings, buffers, memoryviews, and other complete buffers can be
+        parsed with this method.
+        """
+
         return self.parse_stream(StringIO(data))
+
     def parse_stream(self, stream):
-        """parses data read directly from a stream"""
+        """
+        Parse a stream.
+
+        Files, pipes, sockets, and other streaming sources of data are handled
+        by this method.
+        """
+
         return self._parse(stream, AttrDict())
+
     def _parse(self, stream, context):
+        """
+        Override me in your subclass.
+        """
+
         raise NotImplementedError()
 
     def build(self, obj):
-        """builds an object in a string (in memory)"""
+        """
+        Build an object in memory.
+        """
+
         stream = StringIO()
         self.build_stream(obj, stream)
         return stream.getvalue()
+
     def build_stream(self, obj, stream):
-        """builds an object into a stream"""
+        """
+        Build an object directly into a stream.
+        """
+
         self._build(obj, stream, AttrDict())
+
     def _build(self, obj, stream, context):
+        """
+        Override me in your subclass.
+        """
+
         raise NotImplementedError()
 
-    def sizeof(self, context = None):
-        """calculates the size of the construct (if possible) using the
-        given context"""
+    def sizeof(self, context=None):
+        """
+        Calculate the size of this object, optionally using a context.
+        """
+
         if context is None:
             context = AttrDict()
         return self._sizeof(context)
+
     def _sizeof(self, context):
-        raise SizeofError("can't calculate size")
+        """
+        Override me in your subclass.
+        """
+
+        raise SizeofError("Raw Constructs have no size!")
 
 class Subconstruct(Construct):
     """
