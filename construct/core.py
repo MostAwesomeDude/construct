@@ -274,7 +274,7 @@ class Adapter(Subconstruct):
 
 
 #===============================================================================
-# primitives
+# Fields
 #===============================================================================
 def _read_stream(stream, length):
     if length < 0:
@@ -293,15 +293,12 @@ def _write_stream(stream, length, data):
 
 class StaticField(Construct):
     """
-    A field of a fixed size
+    A fixed-size byte field.
 
-    Parameters:
-    * name - the name of the field
-    * length - the length (an integer)
-
-    Example:
-    StaticField("foo", 5)
+    :param str name: field name
+    :param int length: number of bytes in the field
     """
+
     __slots__ = ["length"]
     def __init__(self, name, length):
         Construct.__init__(self, name)
@@ -315,19 +312,15 @@ class StaticField(Construct):
 
 class FormatField(StaticField):
     """
-    A field that uses python's built-in struct module to pack/unpack data
-    according to a format string.
-    Note: this field has been originally implemented as an Adapter, but it
-    was made a construct for performance reasons.
+    A field that uses ``struct`` to pack and unpack data.
 
-    Parameters:
-    * name - the name
-    * endianity - "<" for little endian, ">" for big endian, or "=" for native
-    * format - a single format character
+    See ``struct`` documentation for instructions on crafting format strings.
 
-    Example:
-    FormatField("foo", ">", "L")
+    :param str name: name of the field
+    :param str endianness: format endianness string; one of "<", ">", or "="
+    :param str format: a single format character
     """
+
     __slots__ = ["packer"]
     def __init__(self, name, endianity, format):
         if endianity not in (">", "<", "="):
@@ -363,7 +356,6 @@ class MetaField(Construct):
     :param str name: name of the field
     :param callable lengthfunc: callable that takes a context and returns
                                 length as an int
-
 
     >>> foo = Struct("foo",
     ...     Byte("length"),
