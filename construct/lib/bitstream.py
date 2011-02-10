@@ -23,7 +23,9 @@ class BitStreamReader(object):
         self.substream.seek(pos, whence)
 
     def read(self, count):
-        assert count >= 0
+        if count < 0:
+            raise ValueError("count cannot be negative")
+
         l = len(self.buffer)
         if count == 0:
             data = ""
