@@ -11,17 +11,6 @@ warnings.filterwarnings("ignore", category = DeprecationWarning)
 # declarative to the bitter end!
 tests = [
     #
-    # lib
-    #
-    [int_to_bin, (19, 5), "\x01\x00\x00\x01\x01", None],
-    [int_to_bin, (-13, 5), "\x01\x00\x00\x01\x01", None],
-    [bin_to_int, ("\x01\x00\x00\x01\x01", False), 19, None],
-    [bin_to_int, ("\x01\x00\x00\x01\x01", True), -13, None],
-    [swap_bytes, ("aaaabbbbcccc", 4), "ccccbbbbaaaa", None],
-    [encode_bin, "ab", "\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00", None],
-    [decode_bin, "\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00", "ab", None],
-    
-    #
     # constructs
     #
     [StaticField("staticfield", 2).parse, "ab", "ab", None],
@@ -407,5 +396,3 @@ def run_all():
 
 if __name__ == "__main__":
     run_all()
-
-
