@@ -68,8 +68,7 @@ def deprecated(f):
         return f(*args, **kwargs)
     return wrapper
 
-MetaField = deprecated(Field)
-MetaBytes = deprecated(Field)
+MetaBytes = deprecated(MetaField)
 GreedyRepeater = deprecated(GreedyRange)
 OptionalGreedyRepeater = deprecated(OptionalGreedyRange)
 Repeater = deprecated(Range)
