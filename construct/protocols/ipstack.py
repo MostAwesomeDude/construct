@@ -1,6 +1,6 @@
 """
 TCP/IP Protocol Stack
-Note: before parsing the application layer over a TCP stream, you must 
+Note: before parsing the application layer over a TCP stream, you must
 first combine all the TCP frames into a stream. See utils.tcpip for
 some solutions
 """
@@ -15,7 +15,7 @@ from construct.protocols.layer4.udp import udp_header
 layer4_tcp = Struct("layer4_tcp",
     Rename("header", tcp_header),
     HexDumpAdapter(
-        Field("next", lambda ctx: 
+        Field("next", lambda ctx:
             ctx["_"]["header"].payload_length - ctx["header"].header_length
         )
     ),
@@ -25,7 +25,7 @@ layer4_udp = Struct("layer4_udp",
     Rename("header", udp_header),
     HexDumpAdapter(
         Field("next", lambda ctx: ctx["header"].payload_length)
-    ),    
+    ),
 )
 
 layer3_payload = Switch("next", lambda ctx: ctx["header"].protocol,
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     "650d0a507261676d613a206e6f2d63616368650d0a43616368652d436f6e74726f6c3a"
     "206e6f2d63616368650d0a0d0a"
     ).decode("hex")
-    
+
     cap2 = (
     "0002e3426009001150f2c280080045900598fd22000036063291d149baeec0a8023c00"
     "500cc33b8aa7dcc4e588065010ffffcecd0000485454502f312e3120323030204f4b0d"
@@ -123,24 +123,13 @@ if __name__ == "__main__":
     "fcf571d409ded9b1eb06ef3d275d00c36f25f4916c6ed2a911cef88b0e4c0ecfa7a5b6"
     "27936600b3d28d9bdbe411"
     ).decode("hex")
-    
+
     obj = ip_stack.parse(cap1)
     print obj
     print repr(ip_stack.build(obj))
-    
+
     print "-" * 80
-    
+
     obj = ip_stack.parse(cap2)
     print obj
     print repr(ip_stack.build(obj))
-
-
-
-
-
-
-
-
-
-
-
