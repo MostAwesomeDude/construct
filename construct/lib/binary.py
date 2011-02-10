@@ -45,7 +45,9 @@ def encode_bin(data):
     return "".join(_char_to_bin[ch] for ch in data)
 
 def decode_bin(data):
-    assert len(data) & 7 == 0, "data length must be a multiple of 8"
+    if len(data) & 7:
+        raise ValueError("Data length must be a multiple of 8")
+
     i = 0
     j = 0
     l = len(data) // 8

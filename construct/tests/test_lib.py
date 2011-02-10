@@ -1,9 +1,9 @@
 import unittest
 
-from construct.lib import (int_to_bin, bin_to_int, swap_bytes, encode_bin,
-    decode_bin)
+from construct.lib.binary import (int_to_bin, bin_to_int, swap_bytes,
+    encode_bin, decode_bin)
 
-class TestLib(unittest.TestCase):
+class TestBinary(unittest.TestCase):
     pass
 
     def test_int_to_bin(self):
@@ -29,3 +29,6 @@ class TestLib(unittest.TestCase):
         self.assertEqual(decode_bin(
             "\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"),
             "ab")
+
+    def test_decode_bin_length(self):
+        self.assertRaises(ValueError, decode_bin, "\x00")
