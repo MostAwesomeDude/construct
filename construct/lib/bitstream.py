@@ -1,22 +1,27 @@
-from binary import encode_bin, decode_bin
-
+from construct.lib.binary import encode_bin, decode_bin
 
 class BitStreamReader(object):
+
     __slots__ = ["substream", "buffer", "total_size"]
+
     def __init__(self, substream):
         self.substream = substream
         self.total_size = 0
         self.buffer = ""
+
     def close(self):
         if self.total_size % 8 != 0:
             raise ValueError("total size of read data must be a multiple of 8",
                 self.total_size)
+
     def tell(self):
         return self.substream.tell()
+
     def seek(self, pos, whence = 0):
         self.buffer = ""
         self.total_size = 0
         self.substream.seek(pos, whence)
+
     def read(self, count):
         assert count >= 0
         l = len(self.buffer)
@@ -37,25 +42,31 @@ class BitStreamReader(object):
         self.total_size += len(data)
         return data
 
-
 class BitStreamWriter(object):
+
     __slots__ = ["substream", "buffer", "pos"]
+
     def __init__(self, substream):
         self.substream = substream
         self.buffer = []
         self.pos = 0
+
     def close(self):
         self.flush()
+
     def flush(self):
         bytes = decode_bin("".join(self.buffer))
         self.substream.write(bytes)
         self.buffer = []
         self.pos = 0
+
     def tell(self):
         return self.substream.tell() + self.pos // 8
+
     def seek(self, pos, whence = 0):
         self.flush()
         self.substream.seek(pos, whence)
+
     def write(self, data):
         if not data:
             return
