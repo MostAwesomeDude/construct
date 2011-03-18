@@ -13,11 +13,6 @@ tests = [
     #
     # constructs
     #
-    [MetaField("metafield", lambda ctx: 3).parse, "abc", "abc", None],
-    [MetaField("metafield", lambda ctx: 3).parse, "ab", None, FieldError],
-    [MetaField("metafield", lambda ctx: 3).build, "abc", "abc", None],
-    [MetaField("metafield", lambda ctx: 3).build, "ab", None, FieldError],
-    
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, "\x01\x02\x03", [1,2,3], None],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, "\x01\x02", None, ArrayError],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2,3], "\x01\x02\x03", None],

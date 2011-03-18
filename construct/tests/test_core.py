@@ -47,6 +47,26 @@ class TestFormatField(unittest.TestCase):
 class TestMetaField(unittest.TestCase):
 
     def setUp(self):
+        self.mf = MetaField("metafield", lambda context: 3)
+
+    def test_trivial(self):
+        pass
+
+    def test_parse(self):
+        self.assertEqual(self.mf.parse("abc"), "abc")
+
+    def test_build(self):
+        self.assertEqual(self.mf.build("abc"), "abc")
+
+    def test_parse_too_short(self):
+        self.assertRaises(FieldError, self.mf.parse, "ab")
+
+    def test_build_too_short(self):
+        self.assertRaises(FieldError, self.mf.build, "ab")
+
+class TestMetaFieldStruct(unittest.TestCase):
+
+    def setUp(self):
         self.s = Struct("foo", Byte("length"),
             MetaField("data", lambda context: context["length"]))
 
