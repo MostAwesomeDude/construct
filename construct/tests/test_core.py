@@ -1,6 +1,7 @@
 import unittest
 
-from construct import Struct, Byte, MetaField, StaticField
+from construct import Struct, MetaField, StaticField, FormatField
+from construct import Byte
 from construct import FieldError
 
 class TestStaticField(unittest.TestCase):
@@ -22,6 +23,26 @@ class TestStaticField(unittest.TestCase):
 
     def test_build_too_short(self):
         self.assertRaises(FieldError, self.sf.build, "a")
+
+class TestFormatField(unittest.TestCase):
+
+    def setUp(self):
+        self.ff = FormatField("formatfield", "<", "L")
+
+    def test_trivial(self):
+        pass
+
+    def test_parse(self):
+        self.assertEqual(self.ff.parse("\x12\x34\x56\x78"), 0x78563412)
+
+    def test_build(self):
+        self.assertEqual(self.ff.build(0x78563412), "\x12\x34\x56\x78")
+
+    def test_parse_too_short(self):
+        self.assertRaises(FieldError, self.ff.parse, "\x12\x34\x56")
+
+    def test_build_too_long(self):
+        self.assertRaises(FieldError, self.ff.build, 9e9999)
 
 class TestMetaField(unittest.TestCase):
 

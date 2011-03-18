@@ -13,11 +13,6 @@ tests = [
     #
     # constructs
     #
-    [FormatField("formatfield", "<", "L").parse, "\x12\x34\x56\x78", 0x78563412, None],
-    [FormatField("formatfield", "<", "L").parse, "\x12\x34\x56", None, FieldError],
-    [FormatField("formatfield", "<", "L").build, 0x78563412, "\x12\x34\x56\x78", None],
-    [FormatField("formatfield", "<", "L").build, 9e9999, None, FieldError],
-    
     [MetaField("metafield", lambda ctx: 3).parse, "abc", "abc", None],
     [MetaField("metafield", lambda ctx: 3).parse, "ab", None, FieldError],
     [MetaField("metafield", lambda ctx: 3).build, "abc", "abc", None],
