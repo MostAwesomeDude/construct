@@ -201,17 +201,6 @@ tests = [
         (),  "\n    0000   61 62 63 64 65 66                                 abcdef", 
         None],
     [HexDumpAdapter(Field("hexdumpadapter", 6)).build, "abcdef", "abcdef", None],
-    
-    [OneOf(UBInt8("oneof"), [7,8,9]).parse, "\x08", 8, None],
-    [OneOf(UBInt8("oneof"), [7,8,9]).parse, "\x06", None, ValidationError],
-    [OneOf(UBInt8("oneof"), [7,8,9]).build, 8, "\x08", None],
-    [OneOf(UBInt8("oneof"), [7,8,9]).build, 6, None, ValidationError],
-    
-    [NoneOf(UBInt8("noneof"), [7,8,9]).parse, "\x06", 6, None],
-    [NoneOf(UBInt8("noneof"), [7,8,9]).parse, "\x08", None, ValidationError],
-    [NoneOf(UBInt8("noneof"), [7,8,9]).build, 6, "\x06", None],
-    [NoneOf(UBInt8("noneof"), [7,8,9]).build, 8, None, ValidationError],
-    
     #
     # text
     #
