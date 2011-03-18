@@ -13,11 +13,6 @@ tests = [
     #
     # constructs
     #
-    [StaticField("staticfield", 2).parse, "ab", "ab", None],
-    [StaticField("staticfield", 2).build, "ab", "ab", None],
-    [StaticField("staticfield", 2).parse, "a", None, FieldError],
-    [StaticField("staticfield", 2).build, "a", None, FieldError],
-    
     [FormatField("formatfield", "<", "L").parse, "\x12\x34\x56\x78", 0x78563412, None],
     [FormatField("formatfield", "<", "L").parse, "\x12\x34\x56", None, FieldError],
     [FormatField("formatfield", "<", "L").build, 0x78563412, "\x12\x34\x56\x78", None],
