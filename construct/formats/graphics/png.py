@@ -352,31 +352,3 @@ png_file = Struct("png",
     image_header_chunk,
     Rename("chunks", GreedyRange(chunk)),
 )
-
-
-#===============================================================================
-# self test
-#===============================================================================
-if __name__ == "__main__":
-    obj = png_file.parse_stream(open("../../test/png2.png", "rb"))
-    print obj
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
