@@ -216,11 +216,7 @@ tests = [
         "hello} world", "{hello-} world}", None],
     [QuotedString("foo", start_quote = "{", end_quote = "}", esc_char = None).build,
         "hello}", None, QuotedStringError],
-    
-    [Whitespace().parse, "  \t\t ", None, None],
-    [Whitespace(optional = False).parse, "X", None, RangeError],
-    [Whitespace().build, None, " ", None],
-    
+
     [Identifier("identifier").parse, "ab_c8 XXX", "ab_c8", None],
     [Identifier("identifier").parse, "_c8 XXX", "_c8", None],
     [Identifier("identifier").parse, "2c8 XXX", None, ValidationError],
