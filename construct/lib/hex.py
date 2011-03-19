@@ -22,7 +22,6 @@ class HexString(str):
     other contexts.
     """
     def __init__(self, data, linesize = 16):
-        str.__init__(self, data)
         self.linesize = linesize
     def __new__(cls, data, *args, **kwargs):
         return str.__new__(cls, data)
