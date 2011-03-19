@@ -287,24 +287,7 @@ tests = [
     [Enum(UBInt8("enum"),q=3,r=4,t=5).build, "spam", None, MappingError],
     [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_ = 9).build, "spam", "\x09", None],
     [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_ =Pass).build, 9, "\x09", None],
-    
-    [String("string", 6).parse, "hellow", "hellow", None],
-    [String("string", 8, encoding = "utf8").parse, "hello\xe1\x88\xb4", u"hello\u1234", None],
-    [String("string", 7, padchar = "\x00", paddir = "right").parse, "hello\x00\x00", "hello", None],
-    [String("string", 7, padchar = "\x00", paddir = "left").parse, "\x00\x00hello", "hello", None],
-    [String("string", 7, padchar = "\x00", paddir = "center").parse, "\x00hello\x00", "hello", None],
-    [String("string", 6).build, "hellow", "hellow", None],
-    [String("string", 8, encoding = "utf8").build, u"hello\u1234", "hello\xe1\x88\xb4", None],
-    [String("string", 7, padchar = "\x00", paddir = "right").build, "hello", "hello\x00\x00", None],
-    [String("string", 7, padchar = "\x00", paddir = "left").build, "hello", "\x00\x00hello", None],
-    [String("string", 7, padchar = "\x00", paddir = "center").build, "hello", "\x00hello\x00", None],
-    
-    [PascalString("pascalstring").parse, "\x05helloXXX", "hello", None],
-    [PascalString("pascalstring").build, "hello", "\x05hello", None],
-    
-    [CString("cstring").parse, "hello\x00", "hello", None],
-    [CString("cstring").build, "hello", "hello\x00", None],
-    
+
     [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, "\x03\x01\x01\x01", [1,1,1], None],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, "\x03\x01\x01", None, ArrayError],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).build, [1,1,1], "\x03\x01\x01\x01", None],
