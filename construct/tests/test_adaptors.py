@@ -1,8 +1,29 @@
 import unittest
 
-from construct import UBInt8
-from construct import OneOf, NoneOf
+from construct import Field, UBInt8
+from construct import OneOf, NoneOf, HexDumpAdapter
 from construct import ValidationError
+
+class TestHexDumpAdapter(unittest.TestCase):
+
+    def setUp(self):
+        self.hda = HexDumpAdapter(Field("hexdumpadapter", 6))
+
+    def test_trivial(self):
+        pass
+
+    def test_parse(self):
+        self.assertEqual(self.hda.parse("abcdef"), "abcdef")
+
+    def test_build(self):
+        self.assertEqual(self.hda.build("abcdef"), "abcdef")
+
+    def test_pretty_str(self):
+        pretty = self.hda.parse("abcdef").__pretty_str__().strip()
+        offset, digits, ascii = [i.strip() for i in pretty.split("  ") if i]
+        self.assertEqual(offset, "0000")
+        self.assertEqual(digits, "61 62 63 64 65 66")
+        self.assertEqual(ascii, "abcdef")
 
 class TestNoneOf(unittest.TestCase):
 

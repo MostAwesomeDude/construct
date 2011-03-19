@@ -195,12 +195,6 @@ tests = [
         encoder = lambda obj, ctx: obj / 7, 
         decoder = lambda obj, ctx: obj * 7).build, 
         42, "\x06", None],
-    
-    [HexDumpAdapter(Field("hexdumpadapter", 6)).parse, "abcdef", "abcdef", None],
-    [HexDumpAdapter(Field("hexdumpadapter", 6)).parse("abcdef").__pretty_str__, 
-        (),  "\n    0000   61 62 63 64 65 66                                 abcdef", 
-        None],
-    [HexDumpAdapter(Field("hexdumpadapter", 6)).build, "abcdef", "abcdef", None],
     #
     # text
     #
