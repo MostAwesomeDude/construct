@@ -273,12 +273,7 @@ tests = [
         ),
         "\x11\x22\x33\x44",
         None],
-    
-    [Flag("flag").parse, "\x01", True, None],
-    [Flag("flag", truth = 0, falsehood = 1).parse, "\x00", True, None],
-    [Flag("flag").build, True, "\x01", None],
-    [Flag("flag", truth = 0, falsehood = 1).build, True, "\x00", None],
-    
+
     [Enum(UBInt8("enum"),q=3,r=4,t=5).parse, "\x04", "r", None],
     [Enum(UBInt8("enum"),q=3,r=4,t=5).parse, "\x07", None, MappingError],
     [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_ = "spam").parse, "\x07", "spam", None],
