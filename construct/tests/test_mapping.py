@@ -12,6 +12,14 @@ class TestFlag(unittest.TestCase):
         flag = Flag("flag", truth=0, falsehood=1)
         self.assertFalse(flag.parse("\x01"))
 
+    def test_parse_default(self):
+        flag = Flag("flag")
+        self.assertFalse(flag.parse("\x02"))
+
+    def test_parse_default_true(self):
+        flag = Flag("flag", default=True)
+        self.assertTrue(flag.parse("\x02"))
+
     def test_build(self):
         flag = Flag("flag")
         self.assertEqual(flag.build(True), "\x01")
