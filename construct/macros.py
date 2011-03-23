@@ -80,13 +80,24 @@ def Padding(length, pattern = "\x00", strict = False):
     )
 
 def Flag(name, truth = 1, falsehood = 0, default = False):
-    """a flag field (True or False)
-    * name - the name of the field
-    * truth - the numeric value of truth. the default is 1.
-    * falsehood - the numeric value of falsehood. the default is 0.
-    * default - the default value to assume, when the value is neither
-      `truth` nor `falsehood`. the default is False.
     """
+    A flag.
+
+    Flags are usually used to signify a Boolean value, and this construct
+    maps values onto the ``bool`` type.
+
+    .. note:: This construct works with both bit and byte contexts.
+
+    .. warning:: Flags default to False, not True. This is different from the
+        C and Python way of thinking about truth, and may be subject to change
+        in the future.
+
+    :param str name: field name
+    :param int truth: value of truth (default 1)
+    :param int falsehood: value of falsehood (default 0)
+    :param bool default: default value (default False)
+    """
+
     return SymmetricMapping(Field(name, 1),
         {True : chr(truth), False : chr(falsehood)},
         default = default,
