@@ -24,6 +24,9 @@ class TestStaticField(unittest.TestCase):
     def test_build_too_short(self):
         self.assertRaises(FieldError, self.sf.build, "a")
 
+    def test_sizeof(self):
+        self.assertEqual(self.sf.sizeof(), 2)
+
 class TestFormatField(unittest.TestCase):
 
     def setUp(self):
@@ -44,6 +47,9 @@ class TestFormatField(unittest.TestCase):
     def test_build_too_long(self):
         self.assertRaises(FieldError, self.ff.build, 9e9999)
 
+    def test_sizeof(self):
+        self.assertEqual(self.ff.sizeof(), 4)
+
 class TestMetaField(unittest.TestCase):
 
     def setUp(self):
@@ -63,6 +69,9 @@ class TestMetaField(unittest.TestCase):
 
     def test_build_too_short(self):
         self.assertRaises(FieldError, self.mf.build, "ab")
+
+    def test_sizeof(self):
+        self.assertEqual(self.mf.sizeof(), 3)
 
 class TestMetaFieldStruct(unittest.TestCase):
 
