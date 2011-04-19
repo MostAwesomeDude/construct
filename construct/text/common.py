@@ -225,11 +225,11 @@ def DecNumber(name):
 
 def BinNumber(name):
     """binary number"""
-    return TextualIntAdapter(GreedyRange(Digit(name)), 2)
+    return TextualIntAdapter(GreedyRange(BinDigit(name)), 2)
 
 def HexNumber(name):
     """hexadecimal number"""
-    return TextualIntAdapter(GreedyRange(Digit(name)), 16)
+    return TextualIntAdapter(GreedyRange(HexDigit(name)), 16)
 
 class TextualFloatAdapter(Adapter):
     def _decode(self, obj, context):
