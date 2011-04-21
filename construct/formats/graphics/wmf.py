@@ -111,7 +111,7 @@ wmf_placeable_header = Struct("placeable_header",
 wmf_file = Struct("wmf_file",
     # --- optional placeable header ---
     Optional(wmf_placeable_header),
-    
+
     # --- header ---
     Enum(ULInt16("type"),
         InMemory = 0,
@@ -123,35 +123,7 @@ wmf_file = Struct("wmf_file",
     ULInt16("number_of_objects"),
     ULInt32("size_of_largest_record"),
     ULInt16("number_of_params"),
-    
+
     # --- records ---
     GreedyRange(wmf_record)
 )
-
-if __name__ == "__main__":
-    obj = wmf_file.parse_stream(open("../../test/wmf1.wmf", "rb"))
-    print obj
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
