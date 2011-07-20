@@ -3,6 +3,7 @@ Text parsing
 ============
 
 What has text to do with Construct?
+
 As you already know at this stage of the tutorial, Construct works with binary
 data. That is, all sorts of data structures, file formats, and protocols, that
 have a well defined binary structure. Construct can be used to parse such data
@@ -36,11 +37,17 @@ In order to use the text module, you'll have to explicitly import it.
 
 
 Matching characters
+===================
+
 Char
+----
+
 A single character (1-byte). Note that all characters are assumed to be 8-bit
 ASCII. More complex encoding are left for a higher level.
 
 CharOf
+------
+
 Matches a character that is one of a set of valid characters.
 
 >>> digit = CharOf("digit", "0123456789")
@@ -54,6 +61,8 @@ construct.core.ValidatorError: ('invalid object', 'v')
 
 
 CharNoneOf
+----------
+
 Matches a character that is not part of the set of invalid characters.
 
 >>> nonquote = CharNoneOf("quote", '"')
@@ -67,11 +76,13 @@ construct.core.ValidatorError: ('invalid object', '"')
 
 
 Literal
+-------
+
 Matches a given literal pattern (i.e., a keyword).
 
 >>> while_statement = Struct("while_statement",
 ...     Literal("while"),
-...     GreedyRepeater(CharOf(None, " \t")),
+...     GreedyRange(CharOf(None, " \t")),
 ...     Word("name"),
 ...     Literal(":")
 ... )
@@ -86,6 +97,8 @@ construct.extensions.ConstError: expected 'while', found 'if   '
 
 
 Select
+------
+
 Selects the first matching subconstruct, and uses it for parsing or building.
 The order of the subconstructs is meaningful. Also note that Select can
 operate with seekable streams only (files or in-memory). Raises SelectError if
@@ -112,10 +125,14 @@ no matching subconstruct is found.
 
 
 Constructs for Languages
+========================
+
 These constructs are provided because they are likely to be very useful with
 most common computer languages (C, java, python, ruby, ...)
 
 QuotedString
+------------
+
 A quoted string. You can define the starting and ending quote chars, and
 escape char.
 
@@ -133,9 +150,11 @@ construct.core.EndOfStreamError
 
 
 Whitespace
+----------
+
 Whitespace is a sequence of whitespace chars (by default space and tab) that
 has no programmatic meaning. It is only used to separate tokens or to make the
-code readable. You can specify allow_empty = False, which means that the
+code readable. You can specify ``allow_empty = False``, which means that the
 whitespace is mandatory. Otherwise, whitespace is optional.
 
 >>> Whitespace().parse("  \t")
@@ -143,6 +162,8 @@ whitespace is mandatory. Otherwise, whitespace is optional.
 
 
 DecNumber
+---------
+
 Decimal integral number ((0-9)+). Returns a python integer.
 
 >>> DecNumber("foo").parse("123+456")
@@ -150,6 +171,8 @@ Decimal integral number ((0-9)+). Returns a python integer.
 
 
 HexNumber
+---------
+
 Hexadecimal number ((0-9, A-F, a-f)+). Returns a python integer.
 
 >>> HexNumber("foo").parse("c0ffee")
@@ -157,6 +180,8 @@ Hexadecimal number ((0-9, A-F, a-f)+). Returns a python integer.
 
 
 FloatNumber
+-----------
+
 Floating-pointer number ((0-9)+\.(0-9)+). Returns a python float.
 
 >>> FloatNumber("foo").parse("123.456")
@@ -164,6 +189,8 @@ Floating-pointer number ((0-9)+\.(0-9)+). Returns a python float.
 
 
 Word
+----
+
 A sequence of alpha characters ((A-Z, a-z)+).
 
 >>> Word("foo").parse("hello world")
@@ -171,6 +198,8 @@ A sequence of alpha characters ((A-Z, a-z)+).
 
 
 StringUpto
+----------
+
 A string terminated by some character (similar to CString, but the terminator
 char is not consumed).
 
@@ -179,13 +208,17 @@ char is not consumed).
 
 
 Line
-A text line (terminated by \r or \n)
+----
+
+A text line (terminated by ``\r`` or ``\n``)
 
 >>> Line("foo").parse("hello world\n")
 'hello world'
 
 
 Identifier
+----------
+
 A sequence of alpha-numeric or underscore characters commonly used as
 identifiers in programming languages. The first char must be a alpha or
 underscore (not number).

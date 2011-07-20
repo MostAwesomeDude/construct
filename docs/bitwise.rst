@@ -1,3 +1,4 @@
+=======
 History
 =======
 
@@ -10,8 +11,8 @@ or fields that were not aligned to the byte boundary (nibbles et al).
 
 This approach was easy and flexible, but had two main drawbacks:
 
- * Most data is byte-aligned (with very few exceptions)
- * The overhead was too big.
+* Most data is byte-aligned (with very few exceptions)
+* The overhead was too big.
 
 Since constructs worked on bits, the data had to be first converted to a
 bit-string, which meant you had to hold the entire data set in memory. Not
@@ -21,12 +22,12 @@ about 50MB (and that was slow due to page-thrashing).
 
 So as of Construct 2.XX, all constructs work with bytes:
 
- * Less memory consumption
- * No unnecessary bytes-to-bits/bits-to-bytes coversions
- * Can rely on python's built in struct module for numeric packing/unpacking
-   (faster, tested)
- * Can directly parse-from/build-to file-like objects (without in-memory
-   buffering)
+* Less memory consumption
+* No unnecessary bytes-to-bits/bits-to-bytes coversions
+* Can rely on python's built in struct module for numeric packing/unpacking
+  (faster, tested)
+* Can directly parse-from/build-to file-like objects (without in-memory
+  buffering)
 
 But how are we supposed to work with raw bits? The only difference is that we
 must explicitly declare that: BitFields handle parsing/building bit fields,
@@ -46,14 +47,14 @@ Note: BitStruct is actually just a wrapper for the Bitwise construct.
 Important notes
 ---------------
 
- * Non-nestable - BitStructs are not nestable/stackable; writing something
-   like BitStruct("foo", BitStruct("bar", Octet("spam")))} will not work. You
-   can use regular Structs inside BitStructs.
- * Byte-Aligned - The total size of the elements of a BitStruct must be a
-   multiple of 8 (due to alignment issues)
- * Pointers and OnDemand - Do not place Pointers or OnDemands inside
-   BitStructs, since it uses an internal stream, so external stream offsets
-   will turn out wrong.
+* Non-nestable - BitStructs are not nestable/stackable; writing something
+  like ``BitStruct("foo", BitStruct("bar", Octet("spam")))`` will not work. You
+  can use regular Structs inside BitStructs.
+* Byte-Aligned - The total size of the elements of a BitStruct must be a
+  multiple of 8 (due to alignment issues)
+* Pointers and OnDemand - Do not place Pointers or OnDemands inside
+  BitStructs, since it uses an internal stream, so external stream offsets
+  will turn out wrong.
 
 
 BitField

@@ -1,9 +1,9 @@
-.. Reconstruct documentation master file, created by
+.. Construct documentation master file, created by
    sphinx-quickstart on Fri Dec 24 05:23:18 2010.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Reconstruct's documentation!
+Welcome to Construct's documentation!
 =======================================
 
 Contents:
@@ -13,7 +13,7 @@ Contents:
 
    basics
    bitwise
-   adaptors
+   adapters
    meta
    string
    misc

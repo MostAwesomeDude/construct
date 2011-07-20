@@ -453,25 +453,20 @@ class Range(Subconstruct):
     The general-case repeater. Repeats the given unit for at least mincount
     times, and up to maxcount times. If an exception occurs (EOF, validation
     error), the repeater exits. If less than mincount units have been
-    successfully parsed, a RepeaterError is raised.
+    successfully parsed, a RangeError is raised.
 
     .. note::
        This object requires a seekable stream for parsing.
 
-    Parameters:
+    :param int mincount: the minimal count
+    :param int maxcount: the maximal count
+    :param Construct subcon: the subcon to repeat
 
-     * mincount - the minimal count (an integer)
-     * maxcount - the maximal count (an integer)
-     * subcon - the subcon to repeat
-
-    Example:
-    Range(5, 8, UBInt8("foo"))
-
-    >>> c = Repeater(3, 7, UBInt8("foo"))
+    >>> c = Range(3, 7, UBInt8("foo"))
     >>> c.parse("\\x01\\x02")
     Traceback (most recent call last):
       ...
-    construct.core.RepeaterError: expected 3..7, found 2
+    construct.core.RangeError: expected 3..7, found 2
     >>> c.parse("\\x01\\x02\\x03")
     [1, 2, 3]
     >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
@@ -483,13 +478,13 @@ class Range(Subconstruct):
     >>> c.build([1,2])
     Traceback (most recent call last):
       ...
-    construct.core.RepeaterError: expected 3..7, found 2
+    construct.core.RangeError: expected 3..7, found 2
     >>> c.build([1,2,3,4])
     '\\x01\\x02\\x03\\x04'
     >>> c.build([1,2,3,4,5,6,7,8])
     Traceback (most recent call last):
       ...
-    construct.core.RepeaterError: expected 3..7, found 8
+    construct.core.RangeError: expected 3..7, found 8
     """
 
     __slots__ = ["mincount", "maxcout"]
