@@ -7,11 +7,11 @@ the other "higher" (closer to the python object model). The process of
 converting the lower representation to the higher one is called decoding, and
 the process of converting the higher level representation to the lower one is
 called encoding. Encoding and decoding are expected to be symmetrical, so that
-they counter-act each other (encode(decode(x)) == x and decode(encode(x)) ==
-x).
+they counter-act each other (``encode(decode(x)) == x`` and ``decode(encode(x))
+== x``).
 
 Custom adapter classes derive of the abstract Adapter class, and implement
-their own versions of _encode and _decode, as shown below:
+their own versions of ``_encode`` and ``_decode``, as shown below:
 
 >>> class IpAddressAdapter(Adapter):
 ...     def _encode(self, obj, context):
@@ -53,10 +53,10 @@ having to do so manually every time:
 
 Having the representation separated from the actual parsing or building means
 an adapter is loosely coupled with its underlying construct. As we'll see with
-enums in a moment, we can use the same enum for UBInt8, SLInt32, or LFloat64,
-etc., as long as the underlying construct returns an object we can map.
-Moreover, we can stack several adapters on top of one another, to created a
-nested adapter.
+enums in a moment, we can use the same enum for ``UBInt8``, ``SLInt32``, or
+``LFloat64``, etc., as long as the underlying construct returns an object we
+can map. Moreover, we can stack several adapters on top of one another, to
+created a nested adapter.
 
 Enums
 -----
@@ -64,8 +64,8 @@ Enums
 Enums provide symmetrical name-to-value mapping. The name may be misleading,
 as it's not an enumeration as you would expect in C. But since enums in C are
 often just used as a collection of named values, we'll stick with the name.
-Hint: enums are implemented by the MappingAdapter, which provides mapping of
-values to other values (not necessarily names to numbers).
+Hint: enums are implemented by the ``MappingAdapter``, which provides mapping
+of values to other values (not necessarily names to numbers).
 
 >>> c = Enum(Byte("protocol"),
 ...     TCP = 6,
@@ -73,8 +73,8 @@ values to other values (not necessarily names to numbers).
 ... )
 >>> c
 <MappingAdapter('protocol')>
- 
-# parsing
+
+>>> # parsing
 >>> c.parse("\x06")
 'TCP'
 >>> c.parse("\x11")
@@ -84,8 +84,8 @@ Traceback (most recent call last):
   .
   .
 construct.adapters.MappingAdapterError: undefined mapping for 18
- 
-# building
+
+>>> # building
 >>> c.build("TCP")
 '\x06'
 >>> c.build("UDP")
@@ -94,9 +94,9 @@ construct.adapters.MappingAdapterError: undefined mapping for 18
 
 
 We can also supply a default mapped value when no mapping exists for them. We
-do this by supplying a keyword argument named _default_ (a single uderscore on
-each side). If we don't supply a default value, an exception is raised (as we
-saw in the previous snippet).
+do this by supplying a keyword argument named ``_default_`` (a single uderscore
+on each side). If we don't supply a default value, an exception is raised (as
+we saw in the previous snippet).
 
 >>> c = Enum(Byte("protocol"),
 ...     TCP = 6,
@@ -111,9 +111,9 @@ saw in the previous snippet).
 
 
 We can also just "pass through" unmapped values. We do this by supplying
-_default_ = Pass. If you are curious, Pass is a special construct that "does
-nothing"; in this context, we use it to indicate the Enum to "pass through"
-the unmapped value as-is.
+``_default_ = Pass``. If you are curious, ``Pass`` is a special construct that
+"does nothing"; in this context, we use it to indicate the Enum to "pass
+through" the unmapped value as-is.
 
 >>> c = Enum(Byte("protocol"),
 ...     TCP = 6,
@@ -149,13 +149,13 @@ Validating
 ==========
 
 Validating means making sure the parsed/built object meets a given condition.
-Validators simply raise an exception (ValidatorError) if the object is
-invalid. . The two most common cases already exist as builtins.
+Validators simply raise an exception (``ValidatorError``) if the object is
+invalid. The two most common cases already exist as builtins.
 
 Validators are usually used to make sure a "magic number" is found, the
 correct version of the protocol, a file signature is matched, etc. You can
 write custom validators by deriving from the Validator class and implementing
-the _validate method; this allows you to write validators for more complex
+the ``_validate`` method; this allows you to write validators for more complex
 things, such as making sure a CRC field (or even a cryptographic hash) is
 correct, etc.
 

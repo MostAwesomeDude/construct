@@ -53,7 +53,7 @@ context.
 
 >>> foo = Struct("foo",
 ...     Byte("length"),
-...     MetaField("data", lambda ctx: ctx["length"] * 2 + 1),  # <-- calculate
+...     Field("data", lambda ctx: ctx.length * 2 + 1),  # <-- calculate
 the length of the string
 ... )
 >>>
@@ -66,7 +66,7 @@ all):
 
 >>> foo = Struct("foo",
 ...     Byte("length"),
-...     MetaField("data", lambda ctx: 7),
+...     Field("data", lambda ctx: 7),
 ... )
 >>>
 >>> foo.parse("\x99abcdefg")
@@ -74,31 +74,30 @@ Container(data = 'abcdefg', length = 153)
 
 
 And here's how we use the special '_' name to get to the upper layer. Here the
-length of the string is calculated as length1 + length2.
+length of the string is calculated as ``length1 + length2``.
 
 >>> foo = Struct("foo",
 ...     Byte("length1"),
 ...     Struct("bar",
 ...         Byte("length2"),
-...         MetaField("data", lambda ctx: ctx["_"]["length1"] +
-ctx["length2"]),
+...         Field("data", lambda ctx: ctx._.length1 + ctx.length2),
 ...     )
 ... )
 >>>
 >>> foo.parse("\x02\x03abcde")
 Container(bar = Container(data = 'abcde', length2 = 3), length1 = 2)
 
-.. autofunction:: construct.MetaField
+.. autofunction:: construct.Field
 
-MetaRepeater
-------------
+Array
+-----
 
-A repeater (construct that repeats a subconstruct) for a variable number of
-times.
+When creating an :ref:`Array <repeaters>`, rather than specifying a constant
+length, you can instead specify that it repeats a variable number of times.
 
 >>> foo = Struct("foo",
 ...     Byte("length"),
-...     MetaRepeater(lambda ctx: ctx["length"], UBInt16("data")),
+...     Array(lambda ctx: ctx.length, UBInt16("data")),
 ... )
 >>>
 >>> foo.parse("\x03\x00\x01\x00\x02\x00\x03")
@@ -134,7 +133,7 @@ statement.
 ...         INT4 = 3,
 ...         STRING = 4,
 ...     ),
-...     Switch("data", lambda ctx: ctx["type"],
+...     Switch("data", lambda ctx: ctx.type,
 ...         {
     ...             "INT1" : UBInt8("spam"),
     ...             "INT2" : UBInt16("spam"),
@@ -165,7 +164,7 @@ the Switch.
 
 >>> foo = Struct("foo",
 ...     Byte("type"),
-...     Switch("data", lambda ctx: ctx["type"],
+...     Switch("data", lambda ctx: ctx.type,
 ...         {
     ...             1 : UBInt8("spam"),
     ...             2 : UBInt16("spam"),
@@ -193,7 +192,7 @@ the stream.
 
 >>> foo = Struct("foo",
 ...     Byte("type"),
-...     Switch("data", lambda ctx: ctx["type"],
+...     Switch("data", lambda ctx: ctx.type,
 ...         {
     ...             1 : UBInt8("spam"),
     ...             2 : UBInt16("spam"),
@@ -244,10 +243,10 @@ stream positions using it. See the following example:
 
 >>> foo = Struct("foo",
 ...     Byte("padding_length"),
-...     MetaPadding(lambda ctx: ctx["padding_length"]),
+...     Padding(lambda ctx: ctx.padding_length),
 ...     Byte("relative_offset"),
 ...     Anchor("absolute_position"),
-...     Pointer(lambda ctx: ctx["absolute_position"] + ctx["relative_offset"],
+...     Pointer(lambda ctx: ctx.absolute_position + ctx.relative_offset,
 ...         Byte("data")
 ...     ),
 ... )

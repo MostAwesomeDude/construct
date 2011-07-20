@@ -11,9 +11,11 @@ from construct.adapters import (BitIntegerAdapter, PaddingAdapter,
 # fields
 #===============================================================================
 def Field(name, length):
-    """a field
-    * name - the name of the field
-    * length - the length of the field. the length can be either an integer
+    """
+    A field consisting of a specified number of bytes.
+
+    :param str name: the name of the field
+    :param length: the length of the field. the length can be either an integer
       (StaticField), or a function that takes the context as an argument and
       returns the length (MetaField)
     """
@@ -225,9 +227,7 @@ def Array(count, subcon):
     :param int count: number of times to repeat
     :param ``Construct`` subcon: construct to repeat
 
-    >>> c = StrictRepeater(4, UBInt8("foo"))
-    >>> c
-    <Repeater('foo')>
+    >>> c = Array(4, UBInt8("foo"))
     >>> c.parse("\\x01\\x02\\x03\\x04")
     [1, 2, 3, 4]
     >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
@@ -237,7 +237,7 @@ def Array(count, subcon):
     >>> c.build([5,6,7,8,9])
     Traceback (most recent call last):
       ...
-    construct.core.RepeaterError: expected 4..4, found 5
+    construct.core.RangeError: expected 4..4, found 5
     """
 
     if callable(count):
@@ -270,8 +270,8 @@ def GreedyRange(subcon):
 
     :param ``Construct`` subcon: construct to repeat
 
-    >>> from construct import GreedyRepeater, UBInt8
-    >>> c = GreedyRepeater(UBInt8("foo"))
+    >>> from construct import GreedyRange, UBInt8
+    >>> c = GreedyRange(UBInt8("foo"))
     >>> c.parse("\\x01")
     [1]
     >>> c.parse("\\x01\\x02\\x03")
@@ -281,13 +281,13 @@ def GreedyRange(subcon):
     >>> c.parse("")
     Traceback (most recent call last):
       ...
-    construct.core.RepeaterError: expected 1..2147483647, found 0
+    construct.core.RangeError: expected 1..2147483647, found 0
     >>> c.build([1,2])
     '\\x01\\x02'
     >>> c.build([])
     Traceback (most recent call last):
       ...
-    construct.core.RepeaterError: expected 1..2147483647, found 0
+    construct.core.RangeError: expected 1..2147483647, found 0
     """
 
     return OpenRange(1, subcon)
@@ -299,8 +299,8 @@ def OptionalGreedyRange(subcon):
 
     :param ``Construct`` subcon: construct to repeat
 
-    >>> from construct import OptionalGreedyRepeater, UBInt8
-    >>> c = OptionalGreedyRepeater(UBInt8("foo"))
+    >>> from construct import OptionalGreedyRange, UBInt8
+    >>> c = OptionalGreedyRange(UBInt8("foo"))
     >>> c.parse("")
     []
     >>> c.parse("\\x01\\x02")
@@ -544,7 +544,7 @@ def CString(name, terminators="\x00", encoding=None,
     ``CString`` is similar to the strings of C, C++, and other related
     programming languages.
 
-    By default, the terminator is the NULL byte (0x00).
+    By default, the terminator is the NULL byte (``0x00``).
 
     :param str name: name
     :param iterable terminators: sequence of valid terminators, in order of
