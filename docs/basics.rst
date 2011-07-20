@@ -70,21 +70,21 @@ Building
 
 And here is how we build Structs:
 
-# rebuild the parsed object
+>>> # rebuild the parsed object
 >>> c.build(x)
 '\x07\x00\x01\x00\x00\x00\x01'
  
-# mutate the parsed object and build
+>>> # mutate the parsed object and build
 >>> x.b = 5000
 >>> c.build(x)
 '\x07\x88\x13\x00\x00\x00\x01'
   
-# or we can create a new container
+>>> # or we can create a new container
 >>> c.build(Container(a = 9, b = 1234, c = 56.78))
 '\t\xd2\x04\xb8\x1ecB'
    
-# note: not only containers can be built -- 
-# any object with the required attributes (fully duck typed)
+>>> # note: not only containers can be built --
+>>> # any object with the required attributes (fully duck typed)
 >>> class Foo(object):pass
 ...
 >>> f = Foo()
@@ -238,6 +238,7 @@ wrapper. This will merge the lists of the two sequences.
 [97, 98, 99, 100]
 >>>
 
+.. _repeaters:
 
 Repeaters
 =========
@@ -247,21 +248,21 @@ of times. At this point, we'll only cover static repeaters. Meta repeaters
 will be covered in the Meta constructs tutorial.
 
 We have four kinds of static repeaters. In fact, for those of you who wish to
-go under the hood, three of these repeaters are but wrappers around Repeater.
+go under the hood, two of these repeaters are but wrappers around Range.
 
-.. autofunction:: construct.Repeater
+.. autofunction:: construct.Range
 
-.. autofunction:: construct.StrictRepeater
+.. autofunction:: construct.Array
 
-.. autofunction:: construct.GreedyRepeater
+.. autofunction:: construct.GreedyRange
 
-.. autofunction:: construct.OptionalGreedyRepeater
+.. autofunction:: construct.OptionalGreedyRange
 
 Nesting
 -------
 
 As all constructs, repeaters can be nested too. Here's an example:
 
->>> c = StrictRepeater(5, StrictRepeater(2, UBInt8("foo")))
+>>> c = Array(5, Array(2, UBInt8("foo")))
 >>> c.parse("aabbccddee")
 [[97, 97], [98, 98], [99, 99], [100, 100], [101, 101]]

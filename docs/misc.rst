@@ -3,9 +3,13 @@ Miscellaneous
 =============
 
 Conditional
+===========
+
 Optional
+--------
+
 Attempts to parse or build the subconstruct; if it fails, returns a default
-value. By default, the default value is None.
+value. By default, the default value is ``None``.
 
 >>> foo = Optional(UBInt32("foo"))
 >>> foo.parse("\x12\x34\x56\x78")
@@ -21,8 +25,10 @@ None
 
 
 If
+--
+
 Parses or builds the subconstruct only if a certain condition is met.
-Otherwise, returns a default value. By default, the default value is None.
+Otherwise, returns a default value. By default, the default value is ``None``.
 
 >>> foo = Struct("foo",
 ...     Flag("has_options"),
@@ -40,8 +46,10 @@ Container(has_options = False, options = None)
 
 
 IfThenElse
+----------
+
 Branches the construction path based on a given condition. If the condition is
-met, the then_construct is used; otherwise the else_construct is used.
+met, the ``then_construct`` is used; otherwise the ``else_construct`` is used.
 
 >>> foo = Struct("foo",
 ...     Byte("a"),
@@ -58,7 +66,11 @@ Container(a = 2, b = 43707)
 
 
 Alignment and Padding
+=====================
+
 Aligned
+-------
+
 Aligns the subconstruct to a given modulus boundary (default is 4).
 
 >>> foo = Aligned(UBInt8("foo"))
@@ -68,7 +80,10 @@ Aligns the subconstruct to a given modulus boundary (default is 4).
 '\xff\x00\x00\x00'
 
 
-AlignedStruct automatically aligns all the fields of the Struct to the modulus
+AlignedStruct
+-------------
+
+Automatically aligns all the fields of the Struct to the modulus
 boundary.
 
 >>> foo = AlignedStruct("foo",
@@ -83,6 +98,8 @@ Container(a = 1, b = 2)
 
 
 Padding
+-------
+
 Padding is a sequence of bytes of bits that contains no data (its value is
 discarded), and is necessary only for padding, etc.
 
@@ -97,7 +114,11 @@ Container(a = 1, b = 2)
 
 
 Special Constructs
+==================
+
 Rename
+------
+
 Renames a construct.
 
 >>> foo = Struct("foo",
@@ -109,6 +130,8 @@ Container(xxx = 2)
 
 
 Alias
+-----
+
 Creates an alias for an existing field of a Struct.
 
 >>> foo = Struct("foo",
@@ -121,6 +144,8 @@ Container(a = 3, b = 3)
 
 
 Value
+-----
+
 Represents a computed value. Value does not read or write anything to the
 stream; it only returns its computed value as the result.
 
@@ -134,9 +159,11 @@ Container(a = 2, b = 9)
 
 
 Terminator
+----------
+
 Asserts the end of the stream has been reached (so that no more trailing data
 is left unparsed). Note: Terminator is a singleton object. Do not try to
-"instantiate" it (i.e., Terminator()).
+"instantiate" it (i.e., ``Terminator()``).
 
 >>> Terminator.parse("")
 >>> Terminator.parse("x")
@@ -147,14 +174,18 @@ construct.extensions.TerminatorError: end of stream not reached
 
 
 Pass
+----
+
 A do-nothing construct; useful in Switches and Enums. Note: Pass is a
-singleton object. Do not try to "instantiate" it (i.e., Pass()).
+singleton object. Do not try to "instantiate" it (i.e., ``Pass()``).
 
 >>> print Pass.parse("xyz")
 None
 
 
 Const
+-----
+
 A constant value that is required to exist in the data. If the value is not
 matched, ConstError is raised. Useful for magic numbers, signatures, asserting
 correct protocol version, etc.
@@ -171,6 +202,8 @@ construct.extensions.ConstError: expected 'FOOBAR', found 'FOOBAX'
 
 
 Peek
+----
+
 Parses the subconstruct but restores the stream position afterwards
 ("peeking"). Note: works only with seekable streams (in-memory and files).
 
@@ -184,6 +217,8 @@ Container(a = 1, b = 2, c = 2)
 
 
 Union
+-----
+
 Treats the same data as multiple constructs (similar to C's union statement).
 When building, each subconstruct parses the same data (so you can "look" at
 the data in multiple views); when writing, the first subconstruct is used to
@@ -213,6 +248,8 @@ Container:
 
 
 LazyBound
+---------
+
 A lazy-bound construct; it binds to the construct only at runtime. Useful for
 recursive data structures (like linked lists or trees), where a construct
 needs to refer to itself (while it doesn't exist yet).
