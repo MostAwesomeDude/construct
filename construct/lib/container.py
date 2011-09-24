@@ -149,8 +149,6 @@ class ListContainer(list):
         lines.append("]")
         return "".join(lines)
 
-AttrDict = Container
-
 class LazyContainer(object):
 
     __slots__ = ["subcon", "stream", "pos", "context", "_value"]

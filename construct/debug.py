@@ -6,7 +6,7 @@ import traceback
 import pdb
 import inspect
 from core import Construct, Subconstruct
-from lib import HexString, Container, ListContainer, AttrDict
+from lib import HexString, Container, ListContainer
 
 
 class Probe(Construct):
@@ -79,7 +79,7 @@ class Probe(Construct):
             frames = [s[0] for s in inspect.stack()][1:-1]
             frames.reverse()
             for f in frames:
-                a = AttrDict()
+                a = Container()
                 a.__update__(f.f_locals)
                 obj.stack.append(a)
         

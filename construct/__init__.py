@@ -76,7 +76,6 @@ StrictRepeater = deprecated(Array)
 MetaRepeater = deprecated(Array)
 OneOfValidator = deprecated(OneOf)
 NoneOfValidator = deprecated(NoneOf)
-AttrDict = deprecated(Container)
 
 #===============================================================================
 # exposed names

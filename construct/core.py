@@ -1,7 +1,7 @@
 from struct import Struct as Packer
 
 from lib import StringIO
-from lib import Container, ListContainer, AttrDict, LazyContainer
+from lib import Container, ListContainer, LazyContainer
 
 
 #===============================================================================
@@ -188,7 +188,7 @@ class Construct(object):
         by this method.
         """
 
-        return self._parse(stream, AttrDict())
+        return self._parse(stream, Container())
 
     def _parse(self, stream, context):
         """
@@ -211,7 +211,7 @@ class Construct(object):
         Build an object directly into a stream.
         """
 
-        self._build(obj, stream, AttrDict())
+        self._build(obj, stream, Container())
 
     def _build(self, obj, stream, context):
         """
@@ -235,7 +235,7 @@ class Construct(object):
         """
 
         if context is None:
-            context = AttrDict()
+            context = Container()
         try:
             return self._sizeof(context)
         except Exception, e:
@@ -636,7 +636,7 @@ class Struct(Construct):
         else:
             obj = Container()
             if self.nested:
-                context = AttrDict(_ = context)
+                context = Container(_ = context)
         for sc in self.subcons:
             if sc.conflags & self.FLAG_EMBED:
                 context["<obj>"] = obj
@@ -651,7 +651,7 @@ class Struct(Construct):
         if "<unnested>" in context:
             del context["<unnested>"]
         elif self.nested:
-            context = AttrDict(_ = context)
+            context = Container(_ = context)
         for sc in self.subcons:
             if sc.conflags & self.FLAG_EMBED:
                 context["<unnested>"] = True
@@ -664,7 +664,7 @@ class Struct(Construct):
             sc._build(subobj, stream, context)
     def _sizeof(self, context):
         if self.nested:
-            context = AttrDict(_ = context)
+            context = Container(_ = context)
         return sum(sc._sizeof(context) for sc in self.subcons)
 
 class Sequence(Struct):
@@ -696,7 +696,7 @@ class Sequence(Struct):
         else:
             obj = ListContainer()
             if self.nested:
-                context = AttrDict(_ = context)
+                context = Container(_ = context)
         for sc in self.subcons:
             if sc.conflags & self.FLAG_EMBED:
                 context["<obj>"] = obj
@@ -711,7 +711,7 @@ class Sequence(Struct):
         if "<unnested>" in context:
             del context["<unnested>"]
         elif self.nested:
-            context = AttrDict(_ = context)
+            context = Container(_ = context)
         objiter = iter(obj)
         for sc in self.subcons:
             if sc.conflags & self.FLAG_EMBED:
