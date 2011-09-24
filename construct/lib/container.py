@@ -96,12 +96,6 @@ class Container(object, DictMixin):
         attrs.insert(0, self.__class__.__name__ + ":")
         return "\n".join(attrs)
 
-    def __introspect__(self):
-        for k in self.__attrs__:
-            v = self.__dict__[k]
-            if not k.startswith("_"):
-                yield "kv", (k, v)
-
 class FlagsContainer(Container):
     """
     A container providing pretty-printing for flags.
