@@ -2,6 +2,8 @@
 Various containers.
 """
 
+from UserDict import DictMixin
+
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
     def decorator(func):
         def wrapper(self, *args, **kw):
@@ -16,7 +18,7 @@ def recursion_lock(retval, lock_name = "__recursion_lock__"):
         return wrapper
     return decorator
 
-class Container(object):
+class Container(object, DictMixin):
     """
     A generic container of attributes.
 
@@ -30,6 +32,20 @@ class Container(object):
         attrs = []
         attrs.extend(kw.keys())
         object.__setattr__(self, "__attrs__", attrs)
+
+    # The core dictionary interface.
+
+    def __getitem__(self, name):
+        return self.__dict__[name]
+
+    def __delitem__(self, name):
+        self.__delattr__(name)
+
+    def __setitem__(self, name, value):
+        self.__setattr__(name, value)
+
+    def keys(self):
+        return self.__dict__.keys()
 
     def __eq__(self, other):
         try:
@@ -49,15 +65,6 @@ class Container(object):
         if name not in d and not name.startswith("__"):
             self.__attrs__.append(name)
         d[name] = value
-
-    def __getitem__(self, name):
-        return self.__dict__[name]
-
-    def __delitem__(self, name):
-        self.__delattr__(name)
-
-    def __setitem__(self, name, value):
-        self.__setattr__(name, value)
 
     def __update__(self, obj):
         for name in obj.__attrs__:
