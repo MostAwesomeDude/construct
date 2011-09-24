@@ -42,6 +42,13 @@ class Container(object, DictMixin):
     def keys(self):
         return self.__dict__.keys()
 
+    # Extended dictionary interface.
+
+    def update(self, other):
+        self.__dict__.update(other)
+
+    __update__ = update
+
     # Rich comparisons.
 
     def __eq__(self, other):
@@ -52,21 +59,15 @@ class Container(object, DictMixin):
 
     # Copy interface.
 
-    def __update__(self, obj):
-        for name in obj.__attrs__:
-            self[name] = obj[name]
+    def copy(self):
+        return self.__class__(**self.__dict__)
 
-    def __copy__(self):
-        new = self.__class__()
-        new.__attrs__ = self.__attrs__[:]
-        new.__dict__ = self.__dict__.copy()
-        return new
+    __copy__ = copy
 
     # Iterator interface.
 
     def __iter__(self):
-        for name in self.__attrs__:
-            yield name, self.__dict__[name]
+        return iter(self.__dict__)
 
     @recursion_lock("<...>")
     def __repr__(self):

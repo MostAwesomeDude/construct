@@ -18,6 +18,12 @@ class TestContainer(unittest.TestCase):
         del c.a
         self.assertFalse("a" in c)
 
+    def test_update(self):
+        c = Container(a=1)
+        d = Container()
+        d.update(c)
+        self.assertEqual(d.a, 1)
+
     def test_eq_eq(self):
         c = Container(a=1)
         d = Container(a=1)
@@ -27,6 +33,20 @@ class TestContainer(unittest.TestCase):
         c = Container(a=1)
         d = {"a": 1}
         self.assertNotEqual(c, d)
+
+    def test_copy(self):
+        c = Container(a=1)
+        d = c.copy()
+        self.assertEqual(c, d)
+        self.assertTrue(c is not d)
+
+    def test_copy_module(self):
+        from copy import copy
+
+        c = Container(a=1)
+        d = copy(c)
+        self.assertEqual(c, d)
+        self.assertTrue(c is not d)
 
     def test_bool_false(self):
         c = Container()
