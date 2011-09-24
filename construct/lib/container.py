@@ -1,3 +1,7 @@
+"""
+Various containers.
+"""
+
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
     def decorator(func):
         def wrapper(self, *args, **kw):
@@ -14,9 +18,13 @@ def recursion_lock(retval, lock_name = "__recursion_lock__"):
 
 class Container(object):
     """
-    A generic container of attributes
+    A generic container of attributes.
+
+    Containers are the common way to express parsed data.
     """
+
     __slots__ = ["__dict__", "__attrs__"]
+
     def __init__(self, **kw):
         self.__dict__.update(kw)
         attrs = []
@@ -28,31 +36,39 @@ class Container(object):
             return self.__dict__ == other.__dict__
         except AttributeError:
             return False
+
     def __ne__(self, other):
         return not (self == other)
 
     def __delattr__(self, name):
         object.__delattr__(self, name)
         self.__attrs__.remove(name)
+
     def __setattr__(self, name, value):
         d = self.__dict__
         if name not in d and not name.startswith("__"):
             self.__attrs__.append(name)
         d[name] = value
+
     def __getitem__(self, name):
         return self.__dict__[name]
+
     def __delitem__(self, name):
         self.__delattr__(name)
+
     def __setitem__(self, name, value):
         self.__setattr__(name, value)
+
     def __update__(self, obj):
         for name in obj.__attrs__:
             self[name] = obj[name]
+
     def __copy__(self):
         new = self.__class__()
         new.__attrs__ = self.__attrs__[:]
         new.__dict__ = self.__dict__.copy()
         return new
+
     def __iter__(self):
         for name in self.__attrs__:
             yield name, self.__dict__[name]
@@ -63,8 +79,10 @@ class Container(object):
             for k, v in self.__dict__.iteritems()
             if not k.startswith("_"))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(attrs))
+
     def __str__(self):
         return self.__pretty_str__()
+
     @recursion_lock("<...>")
     def __pretty_str__(self, nesting = 1, indentation = "    "):
         attrs = []
@@ -88,12 +106,13 @@ class Container(object):
             if not k.startswith("_"):
                 yield "kv", (k, v)
 
-
 class FlagsContainer(Container):
     """
-    A container providing pretty-printing for flags. Only set flags are
-    displayed.
+    A container providing pretty-printing for flags.
+
+    Only set flags are displayed.
     """
+
     def __inspect__(self):
         for k in self.__attrs__:
             v = self.__dict__[k]
@@ -114,11 +133,14 @@ class FlagsContainer(Container):
 
 class ListContainer(list):
     """
-    A container for lists
+    A container for lists.
     """
+
     __slots__ = ["__recursion_lock__"]
+
     def __str__(self):
         return self.__pretty_str__()
+
     @recursion_lock("[...]")
     def __pretty_str__(self, nesting = 1, indentation = "    "):
         if not self:
@@ -145,17 +167,24 @@ class AttrDict(object):
         x.foo = 5
         print x["foo"]
     """
+
     __slots__ = ["__dict__"]
+
     def __init__(self, **kw):
         self.__dict__ = kw
+
     def __contains__(self, key):
         return key in self.__dict__
+
     def __nonzero__(self):
         return bool(self.__dict__)
+
     def __repr__(self):
         return repr(self.__dict__)
+
     def __str__(self):
         return self.__pretty_str__()
+
     def __pretty_str__(self, nesting = 1, indentation = "    "):
         if not self:
             return "{}"
@@ -177,16 +206,21 @@ class AttrDict(object):
         text.append((nesting-1) * indentation)
         text.append("}")
         return "".join(text)
+
     def __delitem__(self, key):
         del self.__dict__[key]
+
     def __getitem__(self, key):
         return self.__dict__[key]
+
     def __setitem__(self, key, value):
         self.__dict__[key] = value
+
     def __copy__(self):
         new = self.__class__()
         new.__dict__ = self.__dict__.copy()
         return new
+
     def __update__(self, other):
         if isinstance(other, dict):
             self.__dict__.update(other)
@@ -194,22 +228,28 @@ class AttrDict(object):
             self.__dict__.update(other.__dict__)
 
 class LazyContainer(object):
+
     __slots__ = ["subcon", "stream", "pos", "context", "_value"]
+
     def __init__(self, subcon, stream, pos, context):
         self.subcon = subcon
         self.stream = stream
         self.pos = pos
         self.context = context
         self._value = NotImplemented
+
     def __eq__(self, other):
         try:
             return self._value == other._value
         except AttributeError:
             return False
+
     def __ne__(self, other):
         return not (self == other)
+
     def __str__(self):
         return self.__pretty_str__()
+
     def __pretty_str__(self, nesting = 1, indentation = "    "):
         if self._value is NotImplemented:
             text = "<unread>"
@@ -218,17 +258,22 @@ class LazyContainer(object):
         else:
             text = repr(self._value)
         return "%s: %s" % (self.__class__.__name__, text)
+
     def read(self):
         self.stream.seek(self.pos)
         return self.subcon._parse(self.stream, self.context)
+
     def dispose(self):
         self.subcon = None
         self.stream = None
         self.context = None
         self.pos = None
+
     def _get_value(self):
         if self._value is NotImplemented:
             self._value = self.read()
         return self._value
+
     value = property(_get_value)
+
     has_value = property(lambda self: self._value is not NotImplemented)
