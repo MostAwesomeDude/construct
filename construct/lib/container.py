@@ -49,6 +49,12 @@ class Container(object, DictMixin):
 
     __update__ = update
 
+    def __contains__(self, value):
+        return value in self.__dict__
+
+    def iteritems(self):
+        return self.__dict__.iteritems()
+
     # Rich comparisons.
 
     def __eq__(self, other):
