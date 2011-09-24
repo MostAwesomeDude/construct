@@ -25,13 +25,8 @@ class Container(object, DictMixin):
     Containers are the common way to express parsed data.
     """
 
-    __slots__ = ["__dict__", "__attrs__"]
-
     def __init__(self, **kw):
-        self.__dict__.update(kw)
-        attrs = []
-        attrs.extend(kw.keys())
-        object.__setattr__(self, "__attrs__", attrs)
+        self.__dict__ = kw
 
     # The core dictionary interface.
 
@@ -39,13 +34,15 @@ class Container(object, DictMixin):
         return self.__dict__[name]
 
     def __delitem__(self, name):
-        self.__delattr__(name)
+        del self.__dict__[name]
 
     def __setitem__(self, name, value):
-        self.__setattr__(name, value)
+        self.__dict__[name] = value
 
     def keys(self):
         return self.__dict__.keys()
+
+    # Rich comparisons.
 
     def __eq__(self, other):
         try:
@@ -53,18 +50,7 @@ class Container(object, DictMixin):
         except AttributeError:
             return False
 
-    def __ne__(self, other):
-        return not (self == other)
-
-    def __delattr__(self, name):
-        object.__delattr__(self, name)
-        self.__attrs__.remove(name)
-
-    def __setattr__(self, name, value):
-        d = self.__dict__
-        if name not in d and not name.startswith("__"):
-            self.__attrs__.append(name)
-        d[name] = value
+    # Copy interface.
 
     def __update__(self, obj):
         for name in obj.__attrs__:
@@ -75,6 +61,8 @@ class Container(object, DictMixin):
         new.__attrs__ = self.__attrs__[:]
         new.__dict__ = self.__dict__.copy()
         return new
+
+    # Iterator interface.
 
     def __iter__(self):
         for name in self.__attrs__:

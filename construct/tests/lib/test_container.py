@@ -4,6 +4,20 @@ from construct.lib.container import Container
 
 class TestContainer(unittest.TestCase):
 
+    def test_getattr(self):
+        c = Container(a=1)
+        self.assertEqual(c["a"], c.a)
+
+    def test_setattr(self):
+        c = Container()
+        c.a = 1
+        self.assertEqual(c["a"], 1)
+
+    def test_delattr(self):
+        c = Container(a=1)
+        del c.a
+        self.assertFalse("a" in c)
+
     def test_eq_eq(self):
         c = Container(a=1)
         d = Container(a=1)
