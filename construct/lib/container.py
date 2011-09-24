@@ -103,16 +103,10 @@ class FlagsContainer(Container):
     Only set flags are displayed.
     """
 
-    def __inspect__(self):
-        for k in self.__attrs__:
-            v = self.__dict__[k]
-            if not k.startswith("_") and v:
-                yield "kv", (k, v)
-
     def __pretty_str__(self, nesting = 1, indentation = "    "):
         attrs = []
         ind = indentation * nesting
-        for k in self.__attrs__:
+        for k in self.keys():
             v = self.__dict__[k]
             if not k.startswith("_") and v:
                 attrs.append(ind + k)
