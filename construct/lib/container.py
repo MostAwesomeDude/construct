@@ -149,73 +149,7 @@ class ListContainer(list):
         lines.append("]")
         return "".join(lines)
 
-class AttrDict(object):
-    """
-    A dictionary that can be accessed both using indexing and attributes,
-    i.e.,
-        x = AttrDict()
-        x.foo = 5
-        print x["foo"]
-    """
-
-    __slots__ = ["__dict__"]
-
-    def __init__(self, **kw):
-        self.__dict__ = kw
-
-    def __contains__(self, key):
-        return key in self.__dict__
-
-    def __nonzero__(self):
-        return bool(self.__dict__)
-
-    def __repr__(self):
-        return repr(self.__dict__)
-
-    def __str__(self):
-        return self.__pretty_str__()
-
-    def __pretty_str__(self, nesting = 1, indentation = "    "):
-        if not self:
-            return "{}"
-        text = ["{\n"]
-        ind = nesting * indentation
-        for k in sorted(self.__dict__.keys()):
-            v = self.__dict__[k]
-            text.append(ind)
-            text.append(repr(k))
-            text.append(" : ")
-            if hasattr(v, "__pretty_str__"):
-                try:
-                    text.append(v.__pretty_str__(nesting+1, indentation))
-                except Exception:
-                    text.append(repr(v))
-            else:
-                text.append(repr(v))
-            text.append("\n")
-        text.append((nesting-1) * indentation)
-        text.append("}")
-        return "".join(text)
-
-    def __delitem__(self, key):
-        del self.__dict__[key]
-
-    def __getitem__(self, key):
-        return self.__dict__[key]
-
-    def __setitem__(self, key, value):
-        self.__dict__[key] = value
-
-    def __copy__(self):
-        new = self.__class__()
-        new.__dict__ = self.__dict__.copy()
-        return new
-
-    def __update__(self, other):
-        if isinstance(other, dict):
-            self.__dict__.update(other)
-        else:
-            self.__dict__.update(other.__dict__)
+AttrDict = Container
 
 class LazyContainer(object):
 
