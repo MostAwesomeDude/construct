@@ -11,14 +11,14 @@ command_code = Enum(Byte("code"),
     SE = 240,                       # suboption end
     NOP = 241,                      # no-op
     Data_Mark = 242,                #
-    Break = 243,                    # 
+    Break = 243,                    #
     Suspend = 244,                  #
     Abort_output = 245,             #
     Are_You_There = 246,            #
-    Erase_Char = 247,               # 
-    Erase_Line = 248,               # 
+    Erase_Char = 247,               #
+    Erase_Line = 248,               #
     Go_Ahead = 249,                 # other side can transmit now
-    SB = 250,                       # suboption begin  
+    SB = 250,                       # suboption begin
     WILL = 251,                     # send says it will do option
     WONT = 252,                     # send says it will NOT do option
     DO = 253,                       # sender asks other side to do option
@@ -82,21 +82,22 @@ class LookaheadAdapter(Adapter):
         if obj == "\xff":
             obj = "\xff\xff"
         return obj
-    def _decode(self, (this, next), context):
-        if this == "\xff":
-            if next == "\xff":
+    def _decode(self, obj, context):
+        first, second = obj
+        if first == "\xff":
+            if second == "\xff":
                 return "\xff"
             else:
                 raise ValidationError("IAC")
         else:
-            return this
+            return second
 
 def TelnetData(name):
     return StringAdapter(
         GreedyRange(
             LookaheadAdapter(
-                Sequence(name, 
-                    Char("data"), 
+                Sequence(name,
+                    Char("data"),
                     Peek(Char("next")),
                 )
             )
@@ -123,7 +124,7 @@ telnet_command = Struct("command",
     ),
 )
 
-telnet_unit = Select("telnet_unit", 
+telnet_unit = Select("telnet_unit",
     HexDumpAdapter(TelnetData("data")),
     telnet_command,
 )
@@ -302,47 +303,3 @@ if __name__ == "__main__":
     "08082008082008082008082008082008082008082008082008082008"
     ).decode("hex")
     print telnet_session.parse(cap1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
