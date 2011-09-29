@@ -1,7 +1,7 @@
 """
 Windows/OS2 Bitmap (BMP)
 this could have been a perfect show-case file format, but they had to make
-it ugly (all sorts of alignment or 
+it ugly (all sorts of alignment or
 """
 from construct import *
 
@@ -18,7 +18,7 @@ def UncompressedRows(subcon, align_to_byte = False):
         )
     else:
         line_pixels = Array(lambda ctx: ctx.width, subcon)
-    return Array(lambda ctx: ctx.height, 
+    return Array(lambda ctx: ctx.height,
         Aligned(line_pixels, modulus = 4)
     )
 
@@ -39,12 +39,13 @@ uncompressed_pixels = Switch("uncompressed", lambda ctx: ctx.bpp,
 class RunLengthAdapter(Adapter):
     def _encode(self, obj):
         return len(obj), obj[0]
-    def _decode(self, (length, value)):
+    def _decode(self, obj):
+        length, value = obj
         return [value] * length
 
 rle8pixel = RunLengthAdapter(
-    Sequence("rle8pixel", 
-        Byte("length"), 
+    Sequence("rle8pixel",
+        Byte("length"),
         Byte("value")
     )
 )
@@ -82,10 +83,10 @@ bitmap_file = Struct("bitmap_file",
     ULInt32("vertical_dpi"),
     ULInt32("colors_used"),
     ULInt32("important_colors"),
-    
+
     # palette (24 bit has no palette)
     OnDemand(
-        Array(lambda ctx: 2 ** ctx.bpp if ctx.bpp <= 8 else 0, 
+        Array(lambda ctx: 2 ** ctx.bpp if ctx.bpp <= 8 else 0,
             Struct("palette",
                 Byte("blue"),
                 Byte("green"),
@@ -94,9 +95,9 @@ bitmap_file = Struct("bitmap_file",
             )
         )
     ),
-    
+
     # pixels
-    OnDemandPointer(lambda ctx: ctx.data_offset, 
+    OnDemandPointer(lambda ctx: ctx.data_offset,
         Switch("pixels", lambda ctx: ctx.compression,
             {
                 "Uncompressed" : uncompressed_pixels,
@@ -108,5 +109,5 @@ bitmap_file = Struct("bitmap_file",
 
 if __name__ == "__main__":
     obj = bitmap_file.parse_stream(open("../../test/bitmap8.bmp", "rb"))
-    print obj 
+    print obj
     print repr(obj.pixels.value)
