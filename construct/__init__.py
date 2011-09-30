@@ -41,7 +41,7 @@ from debug import Probe, Debugger
 #===============================================================================
 __author__ = "tomer filiba (tomerfiliba [at] gmail.com)"
 __maintainer__ = "Corbin Simpson <MostAwesomeDude@gmail.com>"
-__version__ = "2.04"
+__version__ = "2.05"
 
 #===============================================================================
 # Shorthand expressions

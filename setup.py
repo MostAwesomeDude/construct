@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="construct",
-    version="2.04",
+    version="2.05",
     packages=find_packages(),
     license="Public Domain",
     description="a powerful declarative parser for binary data",

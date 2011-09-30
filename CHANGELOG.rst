@@ -2,7 +2,7 @@
 Changelog
 =========
 
-next
+2.05
 ====
 
 Bugfixes
