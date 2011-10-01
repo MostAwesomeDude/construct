@@ -3,4 +3,8 @@ from bitstream import BitStreamReader, BitStreamWriter
 from container import (Container, FlagsContainer, ListContainer,
                        LazyContainer)
 from hex import HexString, hexdump
-from utils import StringIO
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
