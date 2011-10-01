@@ -34,6 +34,16 @@ class TestContainer(unittest.TestCase):
         d = {"a": 1}
         self.assertNotEqual(c, d)
 
+    def test_ne_wrong_key(self):
+        c = Container(a=1)
+        d = Container(b=1)
+        self.assertNotEqual(c, d)
+
+    def test_ne_wrong_value(self):
+        c = Container(a=1)
+        d = Container(a=2)
+        self.assertNotEqual(c, d)
+
     def test_copy(self):
         c = Container(a=1)
         d = c.copy()

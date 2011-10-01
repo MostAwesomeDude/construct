@@ -63,6 +63,9 @@ class Container(object, DictMixin):
         except AttributeError:
             return False
 
+    def __ne__(self, other):
+        return not self == other
+
     # Copy interface.
 
     def copy(self):
