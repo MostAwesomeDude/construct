@@ -3,6 +3,7 @@ Various containers.
 """
 
 from UserDict import DictMixin
+from pprint import pformat
 
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
     def decorator(func):
@@ -80,30 +81,13 @@ class Container(object, DictMixin):
 
     @recursion_lock("<...>")
     def __repr__(self):
-        attrs = sorted("%s = %s" % (k, repr(v))
-            for k, v in self.__dict__.iteritems()
-            if not k.startswith("_"))
-        return "%s(%s)" % (self.__class__.__name__, ", ".join(attrs))
-
-    def __str__(self):
-        return self.__pretty_str__()
+        d = dict((k, self[k]) for k in self if not k.startswith("_"))
+        return "%s(%s)" % (self.__class__.__name__, repr(d))
 
     @recursion_lock("<...>")
-    def __pretty_str__(self, nesting = 1, indentation = "    "):
-        attrs = []
-        ind = indentation * nesting
-        for k, v in self:
-            if not k.startswith("_"):
-                text = [ind, k, " = "]
-                if hasattr(v, "__pretty_str__"):
-                    text.append(v.__pretty_str__(nesting + 1, indentation))
-                else:
-                    text.append(repr(v))
-                attrs.append("".join(text))
-        if not attrs:
-            return "%s()" % (self.__class__.__name__,)
-        attrs.insert(0, self.__class__.__name__ + ":")
-        return "\n".join(attrs)
+    def __str__(self):
+        d = dict((k, self[k]) for k in self if not k.startswith("_"))
+        return "%s(%s)" % (self.__class__.__name__, pformat(d))
 
 class FlagsContainer(Container):
     """
@@ -112,17 +96,11 @@ class FlagsContainer(Container):
     Only set flags are displayed.
     """
 
-    def __pretty_str__(self, nesting = 1, indentation = "    "):
-        attrs = []
-        ind = indentation * nesting
-        for k in self.keys():
-            v = self.__dict__[k]
-            if not k.startswith("_") and v:
-                attrs.append(ind + k)
-        if not attrs:
-            return "%s()" % (self.__class__.__name__,)
-        attrs.insert(0, self.__class__.__name__+ ":")
-        return "\n".join(attrs)
+    @recursion_lock("<...>")
+    def __str__(self):
+        d = dict((k, self[k]) for k in self
+                 if self[k] and not k.startswith("_"))
+        return "%s(%s)" % (self.__class__.__name__, pformat(d))
 
 class ListContainer(list):
     """
@@ -131,26 +109,9 @@ class ListContainer(list):
 
     __slots__ = ["__recursion_lock__"]
 
-    def __str__(self):
-        return self.__pretty_str__()
-
     @recursion_lock("[...]")
-    def __pretty_str__(self, nesting = 1, indentation = "    "):
-        if not self:
-            return "[]"
-        ind = indentation * nesting
-        lines = ["["]
-        for elem in self:
-            lines.append("\n")
-            lines.append(ind)
-            if hasattr(elem, "__pretty_str__"):
-                lines.append(elem.__pretty_str__(nesting + 1, indentation))
-            else:
-                lines.append(repr(elem))
-        lines.append("\n")
-        lines.append(indentation * (nesting - 1))
-        lines.append("]")
-        return "".join(lines)
+    def __str__(self):
+        return pformat(self)
 
 class LazyContainer(object):
 

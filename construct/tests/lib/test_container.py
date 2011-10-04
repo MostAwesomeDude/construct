@@ -1,6 +1,6 @@
 import unittest
 
-from construct.lib.container import Container
+from construct.lib.container import Container, ListContainer
 
 class TestContainer(unittest.TestCase):
 
@@ -73,3 +73,17 @@ class TestContainer(unittest.TestCase):
     def test_not_in(self):
         c = Container()
         self.assertTrue("a" not in c)
+
+    def test_repr(self):
+        c = Container(a=1, b=2)
+        repr(c)
+
+    def test_str(self):
+        c = Container(a=1, b=2)
+        str(c)
+
+class TestListContainer(unittest.TestCase):
+
+    def test_str(self):
+        l = ListContainer(range(5))
+        str(l)
