@@ -1,7 +1,7 @@
 _printable = dict((chr(i), ".") for i in range(256))
 _printable.update((chr(i), chr(i)) for i in range(32, 128))
 
-def hexdump(data, linesize = 16):
+def hexdump(data, linesize):
     prettylines = []
     if len(data) < 65536:
         fmt = "%%04X   %%-%ds   %%s"
@@ -21,15 +21,15 @@ class HexString(str):
     this class derives of str, and behaves just like a normal string in all
     other contexts.
     """
+
     def __init__(self, data, linesize = 16):
         self.linesize = linesize
+
     def __new__(cls, data, *args, **kwargs):
         return str.__new__(cls, data)
-    def __pretty_str__(self, nesting = 1, indentation = "    "):
+
+    def __str__(self):
         if not self:
             return "''"
-        sep = "\n" + indentation * nesting
-        return sep + sep.join(hexdump(self))
-
-
-
+        sep = "\n"
+        return sep + sep.join(hexdump(self, self.linesize))

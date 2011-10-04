@@ -18,8 +18,8 @@ class TestHexDumpAdapter(unittest.TestCase):
     def test_build(self):
         self.assertEqual(self.hda.build("abcdef"), "abcdef")
 
-    def test_pretty_str(self):
-        pretty = self.hda.parse("abcdef").__pretty_str__().strip()
+    def test_str(self):
+        pretty = str(self.hda.parse("abcdef")).strip()
         offset, digits, ascii = [i.strip() for i in pretty.split("  ") if i]
         self.assertEqual(offset, "0000")
         self.assertEqual(digits, "61 62 63 64 65 66")
