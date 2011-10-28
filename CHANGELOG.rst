@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.06
+====
+
+Bugfixes
+--------
+
+ * Fix regression with Containers not being printable (#10)
+
 2.05
 ====
 
