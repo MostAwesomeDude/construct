@@ -78,8 +78,18 @@ class TestContainer(unittest.TestCase):
         c = Container(a=1, b=2)
         repr(c)
 
+    def test_repr_recursive(self):
+        c = Container(a=1, b=2)
+        c.c = c
+        repr(c)
+
     def test_str(self):
         c = Container(a=1, b=2)
+        str(c)
+
+    def test_str_recursive(self):
+        c = Container(a=1, b=2)
+        c.c = c
         str(c)
 
 class TestListContainer(unittest.TestCase):
