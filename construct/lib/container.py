@@ -79,15 +79,11 @@ class Container(object, DictMixin):
     def __iter__(self):
         return iter(self.__dict__)
 
-    @recursion_lock("<...>")
     def __repr__(self):
-        d = dict((k, self[k]) for k in self if not k.startswith("_"))
-        return "%s(%s)" % (self.__class__.__name__, repr(d))
+        return "%s(%s)" % (self.__class__.__name__, repr(self.__dict__))
 
-    @recursion_lock("<...>")
     def __str__(self):
-        d = dict((k, self[k]) for k in self if not k.startswith("_"))
-        return "%s(%s)" % (self.__class__.__name__, pformat(d))
+        return "%s(%s)" % (self.__class__.__name__, str(self.__dict__))
 
 class FlagsContainer(Container):
     """
