@@ -58,7 +58,3 @@ snoop_file = Struct("snoop",
         datalink_type,
         OptionalGreedyRange(packet_record),
     )
-
-if __name__ == "__main__":
-    obj = snoop_file.parse_stream(open("../../tests/sample.snoop", "rb"))
-    print obj
