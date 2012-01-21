@@ -138,7 +138,7 @@ class LazyContainer(object):
         elif hasattr(self._value, "__pretty_str__"):
             text = self._value.__pretty_str__(nesting, indentation)
         else:
-            text = repr(self._value)
+            text = str(self._value)
         return "%s: %s" % (self.__class__.__name__, text)
 
     def read(self):
