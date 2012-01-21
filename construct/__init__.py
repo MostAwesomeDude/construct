@@ -33,7 +33,7 @@ Hands-on example:
 from construct.core import *
 from construct.adapters import *
 from construct.macros import *
-from debug import Probe, Debugger
+from construct.debug import Probe, Debugger
 
 
 #===============================================================================

@@ -1,4 +1,5 @@
-from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
+from construct.lib import (BitStreamReader, BitStreamWriter, encode_bin,
+    decode_bin)
 from construct.core import (Struct, MetaField, StaticField, FormatField,
     OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range,
     Select, Pass, SizeofError, Buffered, Restream, Reconfig)
@@ -409,7 +410,7 @@ def SymmetricMapping(subcon, mapping, default = NotImplemented):
       default value is given, and exception is raised. setting to Pass would
       return the value "as is" (unmapped)
     """
-    reversed_mapping = dict((v, k) for k, v in mapping.iteritems())
+    reversed_mapping = dict((v, k) for k, v in mapping.items())
     return MappingAdapter(subcon,
         encoding = mapping,
         decoding = reversed_mapping,

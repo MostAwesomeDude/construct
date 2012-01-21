@@ -1,6 +1,7 @@
-from core import Adapter, AdaptationError, Pass
-from lib import int_to_bin, bin_to_int, swap_bytes, StringIO
-from lib import FlagsContainer, HexString
+from construct.core import Adapter, AdaptationError, Pass
+from construct.lib import int_to_bin, bin_to_int, swap_bytes
+from construct.lib import FlagsContainer, HexString
+from construct.lib.py3compat import BytesIO
 
 
 #===============================================================================
@@ -117,13 +118,13 @@ class FlagsAdapter(Adapter):
         self.flags = flags
     def _encode(self, obj, context):
         flags = 0
-        for name, value in self.flags.iteritems():
+        for name, value in self.flags.items():
             if getattr(obj, name, False):
                 flags |= value
         return flags
     def _decode(self, obj, context):
         obj2 = FlagsContainer()
-        for name, value in self.flags.iteritems():
+        for name, value in self.flags.items():
             setattr(obj2, name, bool(obj & value))
         return obj2
 
@@ -263,9 +264,9 @@ class TunnelAdapter(Adapter):
         Adapter.__init__(self, subcon)
         self.inner_subcon = inner_subcon
     def _decode(self, obj, context):
-        return self.inner_subcon._parse(StringIO(obj), context)
+        return self.inner_subcon._parse(BytesIO(obj), context)
     def _encode(self, obj, context):
-        stream = StringIO()
+        stream = BytesIO()
         self.inner_subcon._build(obj, stream, context)
         return stream.getvalue()
 

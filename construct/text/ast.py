@@ -5,7 +5,7 @@ class AstNode(Container):
     def __init__(self, nodetype, **kw):
         Container.__init__(self)
         self.nodetype = nodetype
-        for k, v in sorted(kw.iteritems()):
+        for k, v in sorted(kw.items()):
             setattr(self, k, v)
 
     def accept(self, visitor):

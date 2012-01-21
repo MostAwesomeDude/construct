@@ -1,7 +1,7 @@
 from struct import Struct as Packer
 
-from lib import StringIO
-from lib import Container, ListContainer, LazyContainer
+from construct.lib.py3compat import BytesIO
+from construct.lib import Container, ListContainer, LazyContainer
 
 
 #===============================================================================
@@ -160,8 +160,7 @@ class Construct(object):
         """
         Set this construct's state to a given state.
         """
-
-        for name, value in attrs.iteritems():
+        for name, value in attrs.items():
             setattr(self, name, value)
 
     def __copy__(self):
@@ -178,7 +177,7 @@ class Construct(object):
         parsed with this method.
         """
 
-        return self.parse_stream(StringIO(data))
+        return self.parse_stream(BytesIO(data))
 
     def parse_stream(self, stream):
         """
@@ -201,8 +200,7 @@ class Construct(object):
         """
         Build an object in memory.
         """
-
-        stream = StringIO()
+        stream = BytesIO()
         self.build_stream(obj, stream)
         return stream.getvalue()
 
@@ -238,7 +236,7 @@ class Construct(object):
             context = Container()
         try:
             return self._sizeof(context)
-        except Exception, e:
+        except Exception as e:
             raise SizeofError(e)
 
     def _sizeof(self, context):
@@ -352,12 +350,12 @@ class FormatField(StaticField):
     def _parse(self, stream, context):
         try:
             return self.packer.unpack(_read_stream(stream, self.length))[0]
-        except Exception, ex:
+        except Exception as ex:
             raise FieldError(ex)
     def _build(self, obj, stream, context):
         try:
             _write_stream(stream, self.length, self.packer.pack(obj))
-        except Exception, ex:
+        except Exception as ex:
             raise FieldError(ex)
 
 class MetaField(Construct):
@@ -428,7 +426,7 @@ class MetaArray(Subconstruct):
                 while c < count:
                     obj.append(self.subcon._parse(stream, context))
                     c += 1
-        except ConstructError, ex:
+        except ConstructError as ex:
             raise ArrayError("expected %d, found %d" % (count, c), ex)
         return obj
     def _build(self, obj, stream, context):
@@ -508,7 +506,7 @@ class Range(Subconstruct):
                     pos = stream.tell()
                     obj.append(self.subcon._parse(stream, context))
                     c += 1
-        except ConstructError, ex:
+        except ConstructError as ex:
             if c < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
                     (self.mincount, self.maxcout, c), ex)
@@ -528,7 +526,7 @@ class Range(Subconstruct):
                 for subobj in obj:
                     self.subcon._build(subobj, stream, context)
                     cnt += 1
-        except ConstructError, ex:
+        except ConstructError as ex:
             if cnt < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
                     (self.mincount, self.maxcout, len(obj)), ex)
@@ -573,7 +571,7 @@ class RepeatUntil(Subconstruct):
                     obj.append(subobj)
                     if self.predicate(subobj, context):
                         break
-        except ConstructError, ex:
+        except ConstructError as ex:
             raise ArrayError("missing terminator", ex)
         return obj
     def _build(self, obj, stream, context):
@@ -894,7 +892,7 @@ class Select(Construct):
                     return
         else:
             for sc in self.subcons:
-                stream2 = StringIO()
+                stream2 = BytesIO()
                 context2 = context.__copy__()
                 try:
                     sc._build(obj, stream2, context2)
@@ -1064,11 +1062,11 @@ class Buffered(Subconstruct):
         self.resizer = resizer
     def _parse(self, stream, context):
         data = _read_stream(stream, self._sizeof(context))
-        stream2 = StringIO(self.decoder(data))
+        stream2 = BytesIO(self.decoder(data))
         return self.subcon._parse(stream2, context)
     def _build(self, obj, stream, context):
         size = self._sizeof(context)
-        stream2 = StringIO()
+        stream2 = BytesIO()
         self.subcon._build(obj, stream2, context)
         data = self.encoder(stream2.getvalue())
         assert len(data) == size
