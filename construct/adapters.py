@@ -148,7 +148,7 @@ class StringAdapter(Adapter):
             obj = obj.encode(self.encoding)
         return obj
     def _decode(self, obj, context):
-        obj = "".join(obj)
+        obj = b"".join(obj)
         if self.encoding:
             obj = obj.decode(self.encoding)
         return obj

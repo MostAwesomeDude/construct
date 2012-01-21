@@ -537,7 +537,7 @@ def PascalString(name, length_field=UBInt8("length"), encoding=None):
         encoding=encoding,
     )
 
-def CString(name, terminators="\x00", encoding=None,
+def CString(name, terminators=b"\x00", encoding=None,
     char_field=Field(None, 1)):
     """
     A string ending in a terminator.
