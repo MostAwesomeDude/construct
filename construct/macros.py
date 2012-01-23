@@ -263,8 +263,8 @@ def PrefixedArray(subcon, length_field = UBInt8("length")):
     )
 
 def OpenRange(mincount, subcon):
-    from sys import maxint
-    return Range(mincount, maxint, subcon)
+    from sys import maxsize
+    return Range(mincount, maxsize, subcon)
 
 def GreedyRange(subcon):
     """
