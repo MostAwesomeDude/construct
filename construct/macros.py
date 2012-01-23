@@ -1,3 +1,4 @@
+from construct.lib.py3compat import int2byte
 from construct.lib import (BitStreamReader, BitStreamWriter, encode_bin,
     decode_bin)
 from construct.core import (Struct, MetaField, StaticField, FormatField,
@@ -102,7 +103,7 @@ def Flag(name, truth = 1, falsehood = 0, default = False):
     """
 
     return SymmetricMapping(Field(name, 1),
-        {True : chr(truth), False : chr(falsehood)},
+        {True : int2byte(truth), False : int2byte(falsehood)},
         default = default,
     )
 

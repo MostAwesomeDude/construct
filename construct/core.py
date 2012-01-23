@@ -208,7 +208,6 @@ class Construct(object):
         """
         Build an object directly into a stream.
         """
-
         self._build(obj, stream, Container())
 
     def _build(self, obj, stream, context):
