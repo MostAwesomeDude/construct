@@ -1,7 +1,7 @@
 from construct.core import Adapter, AdaptationError, Pass
 from construct.lib import int_to_bin, bin_to_int, swap_bytes
 from construct.lib import FlagsContainer, HexString
-from construct.lib.py3compat import BytesIO
+from construct.lib.py3compat import BytesIO, decodebytes
 
 
 #===============================================================================
@@ -148,7 +148,6 @@ class StringAdapter(Adapter):
             obj = obj.encode(self.encoding)
         return obj
     def _decode(self, obj, context):
-        obj = b"".join(obj)
         if self.encoding:
             obj = obj.decode(self.encoding)
         return obj

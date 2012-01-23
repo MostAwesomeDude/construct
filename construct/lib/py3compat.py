@@ -12,6 +12,9 @@ if PY3:
     StringIO = io.StringIO
     BytesIO = io.BytesIO
 
+    def u(s):
+        return s
+
     def int2byte(i):
         return bytes((i,))
 
@@ -27,12 +30,18 @@ if PY3:
     def bytes2str(b):
         return b.decode('latin-1')
 
+    def decodebytes(b, encoding):
+        return bytes(b, encoding)
+
 else:
     import cStringIO
     StringIO = BytesIO = cStringIO.StringIO
 
     int2byte = chr
     byte2int = ord
+
+    def u(s):
+        return unicode(s, "unicode_escape")
 
     def str2bytes(s):
         return s
@@ -42,4 +51,7 @@ else:
 
     def bytes2str(b):
         return b
+
+    def decodebytes(b, encoding):
+        return b.decode(encoding)
 
