@@ -76,6 +76,7 @@ class TestGreedyRange(unittest.TestCase):
     def test_build(self):
         self.assertEqual(self.c.build([1, 2]), b"\x01\x02")
 
+
 class TestOptionalGreedyRange(unittest.TestCase):
 
     def setUp(self):

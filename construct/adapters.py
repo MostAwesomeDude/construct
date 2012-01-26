@@ -228,13 +228,13 @@ class CStringAdapter(StringAdapter):
       encoding.
     """
     __slots__ = ["terminators"]
-    def __init__(self, subcon, terminators = "\x00", encoding = None):
+    def __init__(self, subcon, terminators = b"\x00", encoding = None):
         StringAdapter.__init__(self, subcon, encoding = encoding)
         self.terminators = terminators
     def _encode(self, obj, context):
-        return StringAdapter._encode(self, obj, context) + self.terminators[0]
+        return StringAdapter._encode(self, obj, context) + self.terminators[0:1]
     def _decode(self, obj, context):
-        return StringAdapter._decode(self, obj[:-1], context)
+        return StringAdapter._decode(self, b''.join(obj[:-1]), context)
 
 class TunnelAdapter(Adapter):
     """

@@ -1,12 +1,13 @@
 """
 common constructs for typical programming languages (numbers, strings, ...)
 """
-from construct.core import (Construct, ConstructError, FieldError,
-    SizeofError)
+from construct.core import (Construct, ConstructError, FieldError, SizeofError)
 from construct.adapters import (Adapter, StringAdapter, IndexingAdapter,
     ConstAdapter, OneOf, NoneOf)
 from construct.macros import (Field, OptionalGreedyRange, GreedyRange,
     Sequence, Optional)
+
+from construct.lib.py3compat import bchr
 
 
 #===============================================================================
@@ -43,8 +44,8 @@ class QuotedString(Construct):
         "start_quote", "end_quote", "char", "esc_char", "encoding",
         "allow_eof"
     ]
-    def __init__(self, name, start_quote = '"', end_quote = None,
-                 esc_char = '\\', encoding = None, allow_eof = False):
+    def __init__(self, name, start_quote = b'"', end_quote = None,
+                 esc_char = b'\\', encoding = None, allow_eof = False):
         Construct.__init__(self, name)
         if end_quote is None:
             end_quote = start_quote
@@ -76,7 +77,7 @@ class QuotedString(Construct):
         except FieldError:
             if not self.allow_eof:
                 raise
-        text = "".join(text)
+        text = b"".join(text)
         if self.encoding is not None:
             text = text.decode(self.encoding)
         return text
@@ -86,6 +87,7 @@ class QuotedString(Construct):
         if self.encoding:
             obj = obj.encode(self.encoding)
         for ch in obj:
+            ch = bchr(ch)
             if ch == self.esc_char:
                 self.char._build(self.esc_char, stream, context)
             elif ch == self.end_quote:
@@ -122,7 +124,7 @@ class WhitespaceAdapter(Adapter):
     def _decode(self, obj, context):
         return None
 
-def Whitespace(charset = " \t", optional = True):
+def Whitespace(charset = b" \t", optional = True):
     """whitespace (space that is ignored between tokens). when building, the
     first character of the charset is used.
     * charset - the set of characters that are considered whitespace. default
@@ -134,7 +136,7 @@ def Whitespace(charset = " \t", optional = True):
         con = OptionalGreedyRange(con)
     else:
         con = GreedyRange(con)
-    return WhitespaceAdapter(con, build_char = charset[0])
+    return WhitespaceAdapter(con, build_char = charset[0:1])
 
 def Literal(text):
     """matches a literal string in the text
@@ -162,23 +164,23 @@ def CharNoneOf(name, charset):
 
 def Alpha(name):
     """a letter character (A-Z, a-z)"""
-    return CharOf(name, set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'))
+    return CharOf(name, set(b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'))
 
 def Digit(name):
     """a digit character (0-9)"""
-    return CharOf(name, set('0123456789'))
+    return CharOf(name, set(b'0123456789'))
 
 def AlphaDigit(name):
     """an alphanumeric character (A-Z, a-z, 0-9)"""
-    return CharOf(name, set("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+    return CharOf(name, set(b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
 
 def BinDigit(name):
     """a binary digit (0-1)"""
-    return CharOf(name, set('01'))
+    return CharOf(name, set(b'01'))
 
 def HexDigit(name):
     """a hexadecimal digit (0-9, A-F, a-f)"""
-    return CharOf(name, set('0123456789abcdefABCDEF'))
+    return CharOf(name, set(b'0123456789abcdefABCDEF'))
 
 def Word(name):
     """a sequence of letters"""
@@ -194,7 +196,7 @@ class TextualIntAdapter(Adapter):
     * digits - the sequence of digits of that radix
     """
     __slots__ = ["radix", "digits"]
-    def __init__(self, subcon, radix = 10, digits = "0123456789abcdef"):
+    def __init__(self, subcon, radix = 10, digits = b"0123456789abcdef"):
         Adapter.__init__(self, subcon)
         if radix > len(digits):
             raise ValueError("not enough digits for radix %d" % (radix,))
@@ -203,7 +205,7 @@ class TextualIntAdapter(Adapter):
     def _encode(self, obj, context):
         chars = []
         if obj < 0:
-            chars.append("-")
+            chars.append(b"-")
             n = -obj
         else:
             n = obj
@@ -215,9 +217,9 @@ class TextualIntAdapter(Adapter):
         # obj2 = "".join(reversed(chars))
         # filler = digs[0] * (self._sizeof(context) - len(obj2))
         # return filler + obj2
-        return "".join(reversed(chars))
+        return b"".join(reversed(chars))
     def _decode(self, obj, context):
-        return int("".join(obj), self.radix)
+        return int(b"".join(obj), self.radix)
 
 def DecNumber(name):
     """decimal number"""
@@ -234,35 +236,35 @@ def HexNumber(name):
 class TextualFloatAdapter(Adapter):
     def _decode(self, obj, context):
         whole, frac, exp = obj
-        mantissa = "".join(whole) + "." + "".join(frac)
+        mantissa = b"".join(whole) + b"." + b"".join(frac)
         if exp:
             sign, value = exp
             if not sign:
-                sign = ""
-            return float(mantissa + "e" + sign + "".join(value))
+                sign = b""
+            return float(mantissa + b"e" + sign + b"".join(value))
         else:
             return float(mantissa)
     def _encode(self, obj, context):
         obj = str(obj)
         exp = None
-        if "e" in obj:
-            obj, exp = obj.split("e")
-            sign = exp[0]
+        if b"e" in obj:
+            obj, exp = obj.split(b"e")
+            sign = exp[0:1]
             value = exp[1:]
             exp = [sign, value]
-        whole, frac = obj.split(".")
+        whole, frac = obj.split(b".")
         return [whole, frac, exp]
 
 def FloatNumber(name):
     return TextualFloatAdapter(
         Sequence(name,
             GreedyRange(Digit("whole")),
-            Literal("."),
+            Literal(b"."),
             GreedyRange(Digit("frac")),
             Optional(
                 Sequence("exp",
-                    Literal("e"),
-                    Optional(CharOf("sign", "+-")),
+                    Literal(b"e"),
+                    Optional(CharOf("sign", b"+-")),
                     GreedyRange(Digit("value")),
                 )
             )
@@ -296,7 +298,7 @@ def Line(name, consume_terminator = True, allow_eof = True):
     * allow_eof - whether to allow EOF to terminate the string. the default
       is True. this option is applicable only if consume_terminator is set.
     """
-    return StringUpto(name, "\n",
+    return StringUpto(name, b"\n",
         consume_terminator = consume_terminator,
         allow_eof = allow_eof
     )
@@ -311,11 +313,21 @@ class IdentifierAdapter(Adapter):
     def _encode(self, obj, context):
         return obj[0], obj[1:]
     def _decode(self, obj, context):
-        return obj[0] + "".join(obj[1])
+        return obj[0] + b"".join(obj[1])
+
+
+_default_identifier_headset = set()
+for c in b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_":
+    _default_identifier_headset.add(bchr(c))
+
+_default_identifier_tailset = set()
+for c in b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_":
+    _default_identifier_tailset.add(bchr(c))
+
 
 def Identifier(name,
-               headset = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"),
-               tailset = set("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
+               headset=_default_identifier_headset,
+               tailset=_default_identifier_tailset
     ):
     """a programmatic identifier (symbol). must start with a char of headset,
     followed by a sequence of tailset characters

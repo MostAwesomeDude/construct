@@ -1,6 +1,6 @@
 from struct import Struct as Packer
 
-from construct.lib.py3compat import BytesIO, advance_iterator
+from construct.lib.py3compat import BytesIO, advance_iterator, bchr
 from construct.lib import Container, ListContainer, LazyContainer
 
 
@@ -247,7 +247,7 @@ class Construct(object):
 
 class Subconstruct(Construct):
     """
-    Abstract subconstruct (wraps an inner construct, inheriting it's
+    Abstract subconstruct (wraps an inner construct, inheriting its
     name and flags).
 
     Parameters:
@@ -519,10 +519,14 @@ class Range(Subconstruct):
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
                 for subobj in obj:
+                    if isinstance(obj, bytes):
+                        subobj = bchr(subobj)
                     self.subcon._build(subobj, stream, context.__copy__())
                     cnt += 1
             else:
                 for subobj in obj:
+                    if isinstance(obj, bytes):
+                        subobj = bchr(subobj)
                     self.subcon._build(subobj, stream, context)
                     cnt += 1
         except ConstructError as ex:
@@ -534,7 +538,7 @@ class Range(Subconstruct):
 
 class RepeatUntil(Subconstruct):
     """
-    An array that repeat until the predicate indicates it to stop. Note that
+    An array that repeats until the predicate indicates it to stop. Note that
     the last element (which caused the repeat to exit) is included in the
     return value.
 
@@ -544,8 +548,8 @@ class RepeatUntil(Subconstruct):
     * subcon - the subcon to repeat.
 
     Example:
-    # will read chars until \x00 (inclusive)
-    RepeatUntil(lambda obj, ctx: obj == "\x00",
+    # will read chars until b\x00 (inclusive)
+    RepeatUntil(lambda obj, ctx: obj == b"\x00",
         Field("chars", 1)
     )
     """
@@ -583,6 +587,7 @@ class RepeatUntil(Subconstruct):
                     break
         else:
             for subobj in obj:
+                subobj = bchr(subobj)
                 self.subcon._build(subobj, stream, context.__copy__())
                 if self.predicate(subobj, context):
                     terminated = True

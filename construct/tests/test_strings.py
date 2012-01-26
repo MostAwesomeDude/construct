@@ -64,22 +64,22 @@ class TestPascalString(unittest.TestCase):
         self.assertEqual(s.build(b"hello"), b"\x00\x05hello")
 
 
-#class TestCString(unittest.TestCase):
+class TestCString(unittest.TestCase):
+    def test_parse(self):
+        s = CString("foo")
+        self.assertEqual(s.parse(b"hello\x00"), b"hello")
 
-    #def test_parse(self):
-        #s = CString("foo")
-        #self.assertEqual(s.parse("hello\x00"), "hello")
+    def test_build(self):
+        s = CString("foo")
+        self.assertEqual(s.build(b"hello"), b"hello\x00")
 
-    #def test_build(self):
-        #s = CString("foo")
-        #self.assertEqual(s.build("hello"), "hello\x00")
+    def test_parse_terminator(self):
+        s = CString("foo", terminators=b"XYZ")
+        self.assertEqual(s.parse(b"helloX"), b"hello")
+        self.assertEqual(s.parse(b"helloY"), b"hello")
+        self.assertEqual(s.parse(b"helloZ"), b"hello")
 
-    #def test_parse_terminator(self):
-        #s = CString("foo", terminators="XYZ")
-        #self.assertEqual(s.parse("helloX"), "hello")
-        #self.assertEqual(s.parse("helloY"), "hello")
-        #self.assertEqual(s.parse("helloZ"), "hello")
+    def test_build_terminator(self):
+        s = CString("foo", terminators=b"XYZ")
+        self.assertEqual(s.build(b"hello"), b"helloX")
 
-    #def test_build_terminator(self):
-        #s = CString("foo", terminators="XYZ")
-        #self.assertEqual(s.build("hello"), "helloX")

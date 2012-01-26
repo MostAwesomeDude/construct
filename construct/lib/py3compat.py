@@ -12,6 +12,13 @@ if PY3:
     StringIO = io.StringIO
     BytesIO = io.BytesIO
 
+    def bchr(i):
+        """ When iterating over b'...' in Python 2 you get single b'_' chars
+            and in Python 3 you get integers. Call bchr to always turn this
+            to single b'_' chars.
+        """
+        return bytes((i,))
+
     def u(s):
         return s
 
@@ -41,6 +48,7 @@ else:
 
     int2byte = chr
     byte2int = ord
+    bchr = lambda i: i
 
     def u(s):
         return unicode(s, "unicode_escape")
