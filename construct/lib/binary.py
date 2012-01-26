@@ -1,4 +1,4 @@
-from construct.lib.py3compat import int2byte
+from .py3compat import int2byte
 
 
 def int_to_bin(number, width=32):

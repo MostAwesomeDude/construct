@@ -1,7 +1,7 @@
 from struct import Struct as Packer
 
-from construct.lib.py3compat import BytesIO, advance_iterator, bchr
-from construct.lib import Container, ListContainer, LazyContainer
+from .lib.py3compat import BytesIO, advance_iterator, bchr
+from .lib import Container, ListContainer, LazyContainer
 
 
 #===============================================================================
