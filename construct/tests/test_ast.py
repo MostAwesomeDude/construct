@@ -2,6 +2,7 @@ import unittest
 
 from construct import *
 from construct.text import *
+from construct.lib.py3compat import PY3
 
 class NodeAdapter(Adapter):
     def __init__(self, factory, subcon):
@@ -47,9 +48,9 @@ term = IndexingAdapter(
             NodeAdapter(literal_node, DecNumber("number")), 
             IndexingAdapter(
                 Sequence("subexpr", 
-                    Literal("("), 
+                    Literal(b"("), 
                     LazyBound("expr", lambda: expr), 
-                    Literal(")")
+                    Literal(b")")
                 ),
                 index = 0
             ),
@@ -66,7 +67,7 @@ expr1 = NodeAdapter(binop_node,
     Sequence("expr1", 
         term,
         OptSeq("rhs",
-            CharOf("op", "*/"), 
+            CharOf("op", b"*/"), 
             LazyBound("rhs", lambda: expr1)
         ),
     )
@@ -76,7 +77,7 @@ expr2 = NodeAdapter(binop_node,
     Sequence("expr2", 
         expr1, 
         OptSeq("rhs",
-            CharOf("op", "+-"), 
+            CharOf("op", b"+-"), 
             LazyBound("rhs", lambda: expr2)
         ),
     )
@@ -95,43 +96,44 @@ class EvalVisitor(object):
         lhs = obj.lhs.accept(self)
         op = obj.op
         rhs = obj.rhs.accept(self)
-        if op == "+":
+        if op == b"+":
             return lhs + rhs
-        elif op == "-":
+        elif op == b"-":
             return lhs - rhs
-        elif op == "*":
+        elif op == b"*":
             return lhs * rhs
-        elif op == "/":
+        elif op == b"/":
             return lhs / rhs
         else:
             raise ValueError("invalid op", op)
 
 ev = EvalVisitor()
 
-class TestSomethingSomething(unittest.TestCase):
+if not PY3:
+    class TestSomethingSomething(unittest.TestCase):
 
-    def test_that_one_thing(self):
-        node = expr.parse("2*3+4")
-        self.assertEqual(node.name, "binop")
-        self.assertEqual(node.op, "+")
-        self.assertEqual(node.rhs.name, "literal")
-        self.assertEqual(node.rhs.value, 4)
-        self.assertEqual(node.lhs.name, "binop")
-        self.assertEqual(node.lhs.op, "*")
-        self.assertEqual(node.lhs.rhs.name, "literal")
-        self.assertEqual(node.lhs.rhs.value, 3)
-        self.assertEqual(node.lhs.lhs.name, "literal")
-        self.assertEqual(node.lhs.lhs.value, 2)
+        def test_that_one_thing(self):
+            node = expr.parse(b"2*3+4")
+            self.assertEqual(node.name, "binop")
+            self.assertEqual(node.op, b"+")
+            self.assertEqual(node.rhs.name, "literal")
+            self.assertEqual(node.rhs.value, 4)
+            self.assertEqual(node.lhs.name, "binop")
+            self.assertEqual(node.lhs.op, b"*")
+            self.assertEqual(node.lhs.rhs.name, "literal")
+            self.assertEqual(node.lhs.rhs.value, 3)
+            self.assertEqual(node.lhs.lhs.name, "literal")
+            self.assertEqual(node.lhs.lhs.value, 2)
 
-    def test_that_other_thing(self):
-        node = expr.parse("2*(3+4)")
-        self.assertEqual(node.name, "binop")
-        self.assertEqual(node.op, "*")
-        self.assertEqual(node.rhs.name, "binop")
-        self.assertEqual(node.rhs.op, "+")
-        self.assertEqual(node.rhs.rhs.name, "literal")
-        self.assertEqual(node.rhs.rhs.value, 4)
-        self.assertEqual(node.rhs.lhs.name, "literal")
-        self.assertEqual(node.rhs.lhs.value, 3)
-        self.assertEqual(node.lhs.name, "literal")
-        self.assertEqual(node.lhs.value, 2)
+        def test_that_other_thing(self):
+            node = expr.parse(b"2*(3+4)")
+            self.assertEqual(node.name, "binop")
+            self.assertEqual(node.op, b"*")
+            self.assertEqual(node.rhs.name, "binop")
+            self.assertEqual(node.rhs.op, b"+")
+            self.assertEqual(node.rhs.rhs.name, "literal")
+            self.assertEqual(node.rhs.rhs.value, 4)
+            self.assertEqual(node.rhs.lhs.name, "literal")
+            self.assertEqual(node.rhs.lhs.value, 3)
+            self.assertEqual(node.lhs.name, "literal")
+            self.assertEqual(node.lhs.value, 2)

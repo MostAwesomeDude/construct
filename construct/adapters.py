@@ -1,6 +1,7 @@
-from core import Adapter, AdaptationError, Pass
-from lib import int_to_bin, bin_to_int, swap_bytes, StringIO
-from lib import FlagsContainer, HexString
+from .core import Adapter, AdaptationError, Pass
+from .lib import int_to_bin, bin_to_int, swap_bytes
+from .lib import FlagsContainer, HexString
+from .lib.py3compat import BytesIO, decodebytes
 
 
 #===============================================================================
@@ -85,7 +86,8 @@ class MappingAdapter(Adapter):
             return self.encoding[obj]
         except (KeyError, TypeError):
             if self.encdefault is NotImplemented:
-                raise MappingError("no encoding mapping for %r" % (obj,))
+                raise MappingError("no encoding mapping for %r [%s]" % (
+                    obj, self.subcon.name))
             if self.encdefault is Pass:
                 return obj
             return self.encdefault
@@ -94,7 +96,8 @@ class MappingAdapter(Adapter):
             return self.decoding[obj]
         except (KeyError, TypeError):
             if self.decdefault is NotImplemented:
-                raise MappingError("no decoding mapping for %r"  % (obj,))
+                raise MappingError("no decoding mapping for %r [%s]" % (
+                    obj, self.subcon.name))
             if self.decdefault is Pass:
                 return obj
             return self.decdefault
@@ -115,13 +118,13 @@ class FlagsAdapter(Adapter):
         self.flags = flags
     def _encode(self, obj, context):
         flags = 0
-        for name, value in self.flags.iteritems():
+        for name, value in self.flags.items():
             if getattr(obj, name, False):
                 flags |= value
         return flags
     def _decode(self, obj, context):
         obj2 = FlagsContainer()
-        for name, value in self.flags.iteritems():
+        for name, value in self.flags.items():
             setattr(obj2, name, bool(obj & value))
         return obj2
 
@@ -145,7 +148,6 @@ class StringAdapter(Adapter):
             obj = obj.encode(self.encoding)
         return obj
     def _decode(self, obj, context):
-        obj = "".join(obj)
         if self.encoding:
             obj = obj.decode(self.encoding)
         return obj
@@ -226,13 +228,13 @@ class CStringAdapter(StringAdapter):
       encoding.
     """
     __slots__ = ["terminators"]
-    def __init__(self, subcon, terminators = "\x00", encoding = None):
+    def __init__(self, subcon, terminators = b"\x00", encoding = None):
         StringAdapter.__init__(self, subcon, encoding = encoding)
         self.terminators = terminators
     def _encode(self, obj, context):
-        return StringAdapter._encode(self, obj, context) + self.terminators[0]
+        return StringAdapter._encode(self, obj, context) + self.terminators[0:1]
     def _decode(self, obj, context):
-        return StringAdapter._decode(self, obj[:-1], context)
+        return StringAdapter._decode(self, b''.join(obj[:-1]), context)
 
 class TunnelAdapter(Adapter):
     """
@@ -261,9 +263,9 @@ class TunnelAdapter(Adapter):
         Adapter.__init__(self, subcon)
         self.inner_subcon = inner_subcon
     def _decode(self, obj, context):
-        return self.inner_subcon._parse(StringIO(obj), context)
+        return self.inner_subcon._parse(BytesIO(obj), context)
     def _encode(self, obj, context):
-        stream = StringIO()
+        stream = BytesIO()
         self.inner_subcon._build(obj, stream, context)
         return stream.getvalue()
 

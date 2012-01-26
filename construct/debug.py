@@ -1,12 +1,13 @@
 """
 Debugging utilities for constructs
 """
+from __future__ import print_function
 import sys
 import traceback
 import pdb
 import inspect
-from core import Construct, Subconstruct
-from lib import HexString, Container, ListContainer
+from .core import Construct, Subconstruct
+from .lib import HexString, Container, ListContainer
 
 
 class Probe(Construct):
@@ -83,10 +84,10 @@ class Probe(Construct):
                 a.__update__(f.f_locals)
                 obj.stack.append(a)
         
-        print "=" * 80
-        print "Probe", self.printname
-        print obj
-        print "=" * 80
+        print("=" * 80)
+        print("Probe", self.printname)
+        print(obj)
+        print("=" * 80)
 
 class Debugger(Subconstruct):
     """
@@ -123,38 +124,11 @@ class Debugger(Subconstruct):
         except Exception:
             self.handle_exc()
     def handle_exc(self, msg = None):
-        print "=" * 80
-        print "Debugging exception of %s:" % (self.subcon,)
-        print "".join(traceback.format_exception(*sys.exc_info())[1:])
+        print("=" * 80)
+        print("Debugging exception of %s:" % (self.subcon,))
+        print("".join(traceback.format_exception(*sys.exc_info())[1:]))
         if msg:
-            print msg
+            print(msg)
         pdb.post_mortem(sys.exc_info()[2])
-        print "=" * 80
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        print("=" * 80)
 

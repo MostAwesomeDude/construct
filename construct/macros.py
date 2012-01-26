@@ -1,8 +1,10 @@
-from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.core import (Struct, MetaField, StaticField, FormatField,
+from .lib.py3compat import int2byte
+from .lib import (BitStreamReader, BitStreamWriter, encode_bin,
+    decode_bin)
+from .core import (Struct, MetaField, StaticField, FormatField,
     OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range,
     Select, Pass, SizeofError, Buffered, Restream, Reconfig)
-from construct.adapters import (BitIntegerAdapter, PaddingAdapter,
+from .adapters import (BitIntegerAdapter, PaddingAdapter,
     ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter,
     PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
 
@@ -101,7 +103,7 @@ def Flag(name, truth = 1, falsehood = 0, default = False):
     """
 
     return SymmetricMapping(Field(name, 1),
-        {True : chr(truth), False : chr(falsehood)},
+        {True : int2byte(truth), False : int2byte(falsehood)},
         default = default,
     )
 
@@ -261,8 +263,8 @@ def PrefixedArray(subcon, length_field = UBInt8("length")):
     )
 
 def OpenRange(mincount, subcon):
-    from sys import maxint
-    return Range(mincount, maxint, subcon)
+    from sys import maxsize
+    return Range(mincount, maxsize, subcon)
 
 def GreedyRange(subcon):
     """
@@ -409,7 +411,7 @@ def SymmetricMapping(subcon, mapping, default = NotImplemented):
       default value is given, and exception is raised. setting to Pass would
       return the value "as is" (unmapped)
     """
-    reversed_mapping = dict((v, k) for k, v in mapping.iteritems())
+    reversed_mapping = dict((v, k) for k, v in mapping.items())
     return MappingAdapter(subcon,
         encoding = mapping,
         decoding = reversed_mapping,
@@ -536,15 +538,15 @@ def PascalString(name, length_field=UBInt8("length"), encoding=None):
         encoding=encoding,
     )
 
-def CString(name, terminators="\x00", encoding=None,
-    char_field=Field(None, 1)):
+def CString(name, terminators=b"\x00", encoding=None,
+            char_field=Field(None, 1)):
     """
     A string ending in a terminator.
 
     ``CString`` is similar to the strings of C, C++, and other related
     programming languages.
 
-    By default, the terminator is the NULL byte (``0x00``).
+    By default, the terminator is the NULL byte (b``0x00``).
 
     :param str name: name
     :param iterable terminators: sequence of valid terminators, in order of
@@ -553,26 +555,24 @@ def CString(name, terminators="\x00", encoding=None,
     :param ``Construct`` char_field: construct representing a single character
 
     >>> foo = CString("foo")
-    >>> foo.parse("hello\\x00")
-    'hello'
-    >>> foo.build("hello")
-    'hello\\x00'
-    >>> foo = CString("foo", terminators = "XYZ")
-    >>> foo.parse("helloX")
-    'hello'
-    >>> foo.parse("helloY")
-    'hello'
-    >>> foo.parse("helloZ")
-    'hello'
-    >>> foo.build("hello")
-    'helloX'
+    >>> foo.parse(b"hello\\x00")
+    b'hello'
+    >>> foo.build(b"hello")
+    b'hello\\x00'
+    >>> foo = CString("foo", terminators = b"XYZ")
+    >>> foo.parse(b"helloX")
+    b'hello'
+    >>> foo.parse(b"helloY")
+    b'hello'
+    >>> foo.parse(b"helloZ")
+    b'hello'
+    >>> foo.build(b"hello")
+    b'helloX'
     """
 
     return Rename(name,
         CStringAdapter(
-            RepeatUntil(lambda obj, ctx: obj in terminators,
-                char_field,
-            ),
+            RepeatUntil(lambda obj, ctx: obj in terminators, char_field),
             terminators=terminators,
             encoding=encoding,
         )

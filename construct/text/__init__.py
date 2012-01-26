@@ -1,4 +1,4 @@
-from common import *
-from ast import *
+from construct.text.common import *
+from construct.text.ast import *
 
 
