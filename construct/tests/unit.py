@@ -1,6 +1,7 @@
 import sys
 from construct import *
 from construct.text import *
+from construct.lib import LazyContainer
 
 
 # some tests require doing bad things...

@@ -1,4 +1,6 @@
+
 import os
+from subprocess import call
 
 
 basepath = os.path.abspath("..")
@@ -10,7 +12,7 @@ def scan(path, failures):
     elif os.path.isfile(path) and path.endswith(".py"):
         dirname, name = os.path.split(path)
         os.chdir(dirname)
-        errorcode = os.system("python %s > %s 2> %s" % (name, os.devnull, os.devnull))
+        errorcode = call("python %s > %s 2> %s" % (name, os.devnull, os.devnull), shell=True)
         if errorcode != 0:
             failures.append((path, errorcode))
 

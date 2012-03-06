@@ -148,7 +148,7 @@ elf32_file = Struct("elf32_file",
 
 
 if __name__ == "__main__":
-    obj = elf32_file.parse_stream(open("../../test/_ctypes_test.so", "rb"))
+    obj = elf32_file.parse_stream(open("../../tests/_ctypes_test.so", "rb"))
     #[s.data.value for s in obj.sections]
     print obj
 
