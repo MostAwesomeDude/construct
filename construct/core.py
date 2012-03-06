@@ -250,12 +250,13 @@ class Construct(object):
 
 class Subconstruct(Construct):
     """
-    Abstract subconstruct (wraps an inner construct, inheriting it's
-    name and flags).
+    Abstract parent class of all subconstructs.
 
-    Parameters:
-    * subcon - the construct to wrap
+    Subconstructs wrap an inner Construct, inheriting its name and flags.
+
+    :param ``Construct`` subcon: the construct to wrap
     """
+
     __slots__ = ["subcon"]
     def __init__(self, subcon):
         Construct.__init__(self, subcon.name, subcon.conflags)
@@ -269,11 +270,13 @@ class Subconstruct(Construct):
 
 class Adapter(Subconstruct):
     """
-    Abstract adapter: calls _decode for parsing and _encode for building.
+    Abstract adapter parent class.
 
-    Parameters:
-    * subcon - the construct to wrap
+    Adapters should implement ``_decode()`` and ``_encode()``.
+
+    :param ``Construct`` subcon: the construct to wrap
     """
+
     __slots__ = []
     def _parse(self, stream, context):
         return self._decode(self.subcon._parse(stream, context), context)
@@ -1151,28 +1154,24 @@ class Reconfig(Subconstruct):
 
 class Anchor(Construct):
     """
-    Returns the "anchor" (stream position) at the point where it's inserted.
-    Useful for adjusting relative offsets to absolute positions, or to measure
-    sizes of constructs.
-    absolute pointer = anchor + relative offset
-    size = anchor_after - anchor_before
-    See also Pointer.
+    The **anchor**, or stream position at a point in a Construct.
 
-    Notes:
-    * requires a seekable stream.
+    Anchors are useful for adjusting relative offsets to absolute positions,
+    or to measure sizes of Constructs.
 
-    Parameters:
-    * name - the name of the anchor
+    To get an absolute pointer, use an Anchor plus a relative offset. To get a
+    size, place two Anchors and measure their difference.
 
-    Example:
-    Struct("foo",
-        Anchor("base"),
-        UBInt8("relative_offset"),
-        Pointer(lambda ctx: ctx.relative_offset + ctx.base,
-            UBInt8("data")
-        )
-    )
+    :param str name: the name of the anchor
+
+    .. note::
+
+       Anchor requires a seekable stream, or at least a tellable stream; it is
+       implemented using the ``tell()`` method of file-like objects.
+
+    .. seealso:: Pointer
     """
+
     __slots__ = []
     def _parse(self, stream, context):
         return stream.tell()
