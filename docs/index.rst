@@ -21,6 +21,7 @@ Contents:
    text
    extending
    debugging
+   api
 
 Indices and tables
 ==================
