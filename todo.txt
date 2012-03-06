@@ -6,3 +6,4 @@ figure out a reasonable way to check and generate crc
    ArrayError, GreedyRepeater and OptionalGreedyRepeater raise RangeError, and
    nobody raises RepeaterError; in fact, it's no longer defined. Should these
    be reunified?
+ * Tests and docs reference names which will go away. We should fix that.
