@@ -160,7 +160,7 @@ emf_file = Struct("emf_file",
 
 
 if __name__ == "__main__":
-    obj = emf_file.parse_stream(open("../../test/emf1.emf", "rb"))
+    obj = emf_file.parse_stream(open("../../tests/emf1.emf", "rb"))
     print obj
 
 

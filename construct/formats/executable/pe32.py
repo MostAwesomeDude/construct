@@ -404,8 +404,8 @@ pe32_file = Struct("pe32_file",
 
 
 if __name__ == "__main__":
-    print pe32_file.parse_stream(open("../../test/notepad.exe", "rb"))
-    print pe32_file.parse_stream(open("../../test/sqlite3.dll", "rb"))
+    print pe32_file.parse_stream(open("../../tests/NOTEPAD.EXE", "rb"))
+    print pe32_file.parse_stream(open("../../tests/sqlite3.dll", "rb"))
 
 
 
