@@ -15,6 +15,7 @@ tests = [
     # constructs
     #
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, "\x01\x02\x03", [1,2,3], None],
+    [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, "\x01\x02\x03", [1,2,3], None],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, "\x01\x02", None, ArrayError],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2,3], "\x01\x02\x03", None],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2], None, ArrayError],
@@ -31,9 +32,7 @@ tests = [
     
     [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).parse, "\x02\x03\x09", [2,3,9], None],
     [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).parse, "\x02\x03\x08", None, ArrayError],
-    [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).build, [2,3,9], "\x02\x03\x09", None],
-    [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).build, [2,3,8], None, ArrayError],
-    
+    [RepeatUntil(Equals(9), UBInt8("repeatuntil")).build, [2,3,9], "\x02\x03\x09", None],
     [Struct("struct", UBInt8("a"), UBInt16("b")).parse, "\x01\x00\x02", Container(a=1,b=2), None],
     [Struct("struct", UBInt8("a"), UBInt16("b"), Struct("foo", UBInt8("c"), UBInt8("d"))).parse, "\x01\x00\x02\x03\x04", Container(a=1,b=2,foo=Container(c=3,d=4)), None],
     [Struct("struct", UBInt8("a"), UBInt16("b"), Embedded(Struct("foo", UBInt8("c"), UBInt8("d")))).parse, "\x01\x00\x02\x03\x04", Container(a=1,b=2,c=3,d=4), None],
@@ -49,6 +48,7 @@ tests = [
     [Sequence("sequence", UBInt8("a"), UBInt16("b"), Embedded(Sequence("foo", UBInt8("c"), UBInt8("d")))).build, [1,2,3,4], "\x01\x00\x02\x03\x04", None],
     
     [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}).parse, "\x00\x02", 2, None],
+    [Switch("switch", Constant(5), {1:UBInt8("x"), 5:UBInt16("y")}).parse, "\x00\x02", 2, None],
     [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}).parse, "\x00\x02", None, SwitchError],
     [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}, default = UBInt8("x")).parse, "\x00\x02", 0, None],
     [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}, include_key = True).parse, "\x00\x02", (5, 2), None],
@@ -174,6 +174,8 @@ tests = [
     
     [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).parse,
         "\x05abcde", "abcde", None],
+    [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", ValueOf('length')))).parse,
+        "\x05abcde", "abcde", None],
     [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build,
         "abcde", "\x05abcde", None],
         
@@ -241,6 +243,7 @@ tests = [
     
     [Bitwise(Field("bitwise", 8)).parse, "\xff", "\x01" * 8, None],
     [Bitwise(Field("bitwise", lambda ctx: 8)).parse, "\xff", "\x01" * 8, None],
+    [Bitwise(Field("bitwise", Constant(8))).parse, "\xff", "\x01" * 8, None],
     [Bitwise(Field("bitwise", 8)).build, "\x01" * 8, "\xff", None],
     [Bitwise(Field("bitwise", lambda ctx: 8)).build, "\x01" * 8, "\xff", None],
     
@@ -296,7 +299,9 @@ tests = [
         1, "\x01", None],
     [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).build, 
         1, "\x00\x01", None],
-    
+    [IfThenElse("ifthenelse", Constant(False), UBInt8("then"), UBInt16("else")).build, 
+        1, "\x00\x01", None],
+    [IfThenElse("ifthenelse", Constant(True), UBInt8("then"), UBInt16("else")).build, 1, "\x01", None],
     [Magic("MZ").parse, "MZ", "MZ", None],
     [Magic("MZ").parse, "ELF", None, ConstError],
     [Magic("MZ").build, None, "MZ", None],

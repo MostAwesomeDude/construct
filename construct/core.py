@@ -387,12 +387,19 @@ class MetaField(Construct):
         Construct.__init__(self, name)
         self.lengthfunc = lengthfunc
         self._set_flag(self.FLAG_DYNAMIC)
+
+    def length(self, context):
+        try:
+            return self.lengthfunc.value(context)
+        except AttributeError:
+            return self.lengthfunc(context)
+
     def _parse(self, stream, context):
-        return _read_stream(stream, self.lengthfunc(context))
+        return _read_stream(stream, self.length(context))
     def _build(self, obj, stream, context):
-        _write_stream(stream, self.lengthfunc(context), obj)
+        _write_stream(stream, self.length(context), obj)
     def _sizeof(self, context):
-        return self.lengthfunc(context)
+        return self.length(context)
 
 
 #===============================================================================
@@ -418,10 +425,17 @@ class MetaArray(Subconstruct):
         self.countfunc = countfunc
         self._clear_flag(self.FLAG_COPY_CONTEXT)
         self._set_flag(self.FLAG_DYNAMIC)
+
+    def count(self, context):
+        try:
+            return self.countfunc.value(context)
+        except AttributeError:
+            return self.countfunc(context)
+
     def _parse(self, stream, context):
         obj = ListContainer()
         c = 0
-        count = self.countfunc(context)
+        count = self.count(context)
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
                 while c < count:
@@ -435,7 +449,7 @@ class MetaArray(Subconstruct):
             raise ArrayError("expected %d, found %d" % (count, c), ex)
         return obj
     def _build(self, obj, stream, context):
-        count = self.countfunc(context)
+        count = self.count(context)
         if len(obj) != count:
             raise ArrayError("expected %d, found %d" % (count, len(obj)))
         if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
@@ -445,7 +459,7 @@ class MetaArray(Subconstruct):
             for subobj in obj:
                 self.subcon._build(subobj, stream, context)
     def _sizeof(self, context):
-        return self.subcon._sizeof(context) * self.countfunc(context)
+        return self.subcon._sizeof(context) * self.count(context)
 
 class Range(Subconstruct):
     """
@@ -561,6 +575,13 @@ class RepeatUntil(Subconstruct):
         self.predicate = predicate
         self._clear_flag(self.FLAG_COPY_CONTEXT)
         self._set_flag(self.FLAG_DYNAMIC)
+
+    def check(self, subobj, context):
+        try:
+            return self.predicate.check(subobj, context)
+        except AttributeError:
+            return self.predicate(subobj, context)
+
     def _parse(self, stream, context):
         obj = []
         try:
@@ -568,13 +589,13 @@ class RepeatUntil(Subconstruct):
                 while True:
                     subobj = self.subcon._parse(stream, context.__copy__())
                     obj.append(subobj)
-                    if self.predicate(subobj, context):
+                    if self.check(subobj, context):
                         break
             else:
                 while True:
                     subobj = self.subcon._parse(stream, context)
                     obj.append(subobj)
-                    if self.predicate(subobj, context):
+                    if self.check(subobj, context):
                         break
         except ConstructError, ex:
             raise ArrayError("missing terminator", ex)
@@ -584,13 +605,13 @@ class RepeatUntil(Subconstruct):
         if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
             for subobj in obj:
                 self.subcon._build(subobj, stream, context.__copy__())
-                if self.predicate(subobj, context):
+                if self.check(subobj, context):
                     terminated = True
                     break
         else:
             for subobj in obj:
                 self.subcon._build(subobj, stream, context.__copy__())
-                if self.predicate(subobj, context):
+                if self.check(subobj, context):
                     terminated = True
                     break
         if not terminated:
@@ -821,8 +842,15 @@ class Switch(Construct):
         self.include_key = include_key
         self._inherit_flags(*cases.values())
         self._set_flag(self.FLAG_DYNAMIC)
+
+    def getkey(self, context):
+        try:
+            return self.keyfunc.value(context)
+        except AttributeError:
+            return self.keyfunc(context)
+
     def _parse(self, stream, context):
-        key = self.keyfunc(context)
+        key = self.getkey(context)
         obj = self.cases.get(key, self.default)._parse(stream, context)
         if self.include_key:
             return key, obj
@@ -832,11 +860,11 @@ class Switch(Construct):
         if self.include_key:
             key, obj = obj
         else:
-            key = self.keyfunc(context)
+            key = self.getkey(context)
         case = self.cases.get(key, self.default)
         case._build(obj, stream, context)
     def _sizeof(self, context):
-        case = self.cases.get(self.keyfunc(context), self.default)
+        case = self.cases.get(self.getkey(context), self.default)
         return case._sizeof(context)
 
 class Select(Construct):
@@ -1200,10 +1228,19 @@ class Value(Construct):
         Construct.__init__(self, name)
         self.func = func
         self._set_flag(self.FLAG_DYNAMIC)
+
+    def getval(self, context):
+        try:
+            return self.func.value(context)
+        except AttributeError:
+            return self.func(context)
+
     def _parse(self, stream, context):
-        return self.func(context)
+        return self.getval(context)
+
     def _build(self, obj, stream, context):
-        context[self.name] = self.func(context)
+        context[self.name] = self.getval(context)
+
     def _sizeof(self, context):
         return 0
 
@@ -1319,3 +1356,54 @@ class Terminator(Construct):
     def _sizeof(self, context):
         return 0
 Terminator = Terminator(None)
+
+
+class ValueOf(object):
+
+    def __init__(self, name):
+        self.name = name
+
+    def value(self, context):
+        print context, self.name
+        return context[self.name]
+
+
+class Equals(object):
+    def __init__(self, value, othervalue=None):
+        self.v = value
+        self.otherv = None
+
+    def check(self, obj, context):
+        return self.v == obj
+
+    def value(self, context):
+        try:
+            left = self.v.value(context)
+        except AttributeError:
+            left = self.value
+        try:
+            right = self.otherv.value(context)
+        except AttributeError:
+            right = self.otherv
+        return left == right
+
+
+class Constant(object):
+    def __init__(self, value):
+        self.v = value
+
+    def check(self, obj, context):
+        return self.v
+
+    def value(self, context):
+        return self.v
+
+class Boolean(object):
+    def __init__(self, pred):
+        self.pred = pred
+
+    def value(self, context):
+        try:
+            return bool(self.pred.value(context))
+        except AttributeError:
+            return bool(self.pred(context))

@@ -38,7 +38,7 @@ dns_record_type = Enum(UBInt16("type"),
 
 query_record = Struct("query_record",
     DnsStringAdapter(
-        RepeatUntil(lambda obj, ctx: obj == "",
+        RepeatUntil(Equals(""),
             PascalString("name")
         )
     ),
@@ -46,7 +46,7 @@ query_record = Struct("query_record",
     dns_record_class,
 )
 
-rdata = Field("rdata", lambda ctx: ctx.rdata_length)
+rdata = Field("rdata", ValueOf("rdata_length"))
 
 resource_record = Struct("resource_record",
     CString("name", terminators = "\xc0\x00"),
@@ -55,7 +55,7 @@ resource_record = Struct("resource_record",
     dns_record_class,
     UBInt32("ttl"),
     UBInt16("rdata_length"),
-    IfThenElse("data", lambda ctx: ctx.type == "IPv4",
+    IfThenElse("data", Equals(ValueOf("type"), "IPv4"),
         IpAddressAdapter(rdata),
         rdata
     )
@@ -100,16 +100,16 @@ dns = Struct("dns",
     UBInt16("answer_count"),
     UBInt16("authority_count"),
     UBInt16("additional_count"),
-    Array(lambda ctx: ctx.question_count,
+    Array(ValueOf("question_count"),
         Rename("questions", query_record),
     ),
     Rename("answers", 
-        Array(lambda ctx: ctx.answer_count, resource_record)
+        Array(ValueOf("answer_count"), resource_record)
     ),
     Rename("authorities",
-        Array(lambda ctx: ctx.authority_count, resource_record)
+        Array(ValueOf("authority_count"), resource_record)
     ),
-    Array(lambda ctx: ctx.additional_count,
+    Array(ValueOf("additional_count"),
         Rename("additionals", resource_record),
     ),
 )

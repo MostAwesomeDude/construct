@@ -1,7 +1,7 @@
 import unittest
 
 from construct import Struct, MetaField, StaticField, FormatField
-from construct import Container, Byte
+from construct import Container, Byte, ValueOf
 from construct import FieldError, SizeofError
 
 class TestStaticField(unittest.TestCase):
@@ -73,10 +73,10 @@ class TestMetaField(unittest.TestCase):
     def test_sizeof(self):
         self.assertEqual(self.mf.sizeof(), 3)
 
-class TestMetaFieldStruct(unittest.TestCase):
+class TestParamMetaFieldStruct(unittest.TestCase):
 
     def setUp(self):
-        self.mf = MetaField("data", lambda context: context["length"])
+        self.mf = MetaField("data", ValueOf("length"))
         self.s = Struct("foo", Byte("length"), self.mf)
 
     def test_trivial(self):
