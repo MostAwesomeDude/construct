@@ -220,8 +220,12 @@ tests = [
     [Identifier("identifier").build, "2c8", None, ValidationError],
     
     [TextualIntAdapter(Field("textintadapter", 3)).parse, "234", 234, None],
+    [TextualIntAdapter(Field("textintadapter", 3)).parse, "-34", -34, None],
+    [TextualIntAdapter(Field("textintadapter", 1)).parse, "0", 0, None],
     [TextualIntAdapter(Field("textintadapter", 3), radix = 16).parse, "234", 0x234, None],
     [TextualIntAdapter(Field("textintadapter", 3)).build, 234, "234", None],
+    [TextualIntAdapter(Field("textintadapter", 3)).build, -34, "-34", None],
+    [TextualIntAdapter(Field("textintadapter", 1)).build, 0, "0", None],
     [TextualIntAdapter(Field("textintadapter", 3), radix = 16).build, 0x234, "234", None],
     # [TextualIntAdapter(Field("textintadapter", 3)).build, 23, "023", None],
     

@@ -202,16 +202,18 @@ class TextualIntAdapter(Adapter):
         self.digits = digits
     def _encode(self, obj, context):
         chars = []
+        n = obj
         if obj < 0:
-            chars.append("-")
-            n = -obj
-        else:
-            n = obj
+            n = -n
+        elif obj == 0:
+            chars.append("0")
         r = self.radix
         digs = self.digits
         while n > 0:
             n, d = divmod(n, r)
             chars.append(digs[d])
+        if obj < 0:
+            chars.append("-")
         # obj2 = "".join(reversed(chars))
         # filler = digs[0] * (self._sizeof(context) - len(obj2))
         # return filler + obj2
