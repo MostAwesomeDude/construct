@@ -33,13 +33,14 @@ Hands-on example:
 from construct.core import *
 from construct.adapters import *
 from construct.macros import *
+from construct.lib.expr import this
 from debug import Probe, Debugger
 
 
 #===============================================================================
 # Metadata
 #===============================================================================
-__author__ = "tomer filiba (tomerfiliba [at] gmail.com)"
+__author__ = "tomer filiba <tomerfiliba@gmail.com>"
 __maintainer__ = "Corbin Simpson <MostAwesomeDude@gmail.com>"
 __version__ = "2.06"
 
@@ -106,5 +107,5 @@ __all__ = [
     'SymmetricMapping', 'Terminator', 'TerminatorError', 'Tunnel',
     'TunnelAdapter', 'UBInt16', 'UBInt32', 'UBInt64', 'UBInt8', 'ULInt16',
     'ULInt32', 'ULInt64', 'ULInt8', 'UNInt16', 'UNInt32', 'UNInt64', 'UNInt8',
-    'Union', 'ValidationError', 'Validator', 'Value', "Magic",
+    'Union', 'ValidationError', 'Validator', 'Value', "Magic", "this",
 ]
