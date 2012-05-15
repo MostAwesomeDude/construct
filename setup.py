@@ -11,7 +11,7 @@ setup(
     long_description=open("README.rst").read(),
     url="https://github.com/MostAwesomeDude/construct",
     author="Tomer Filiba",
-    author_email="tomerfiliba at gmail dot com",
+    author_email="tomerfiliba@gmail.com",
     maintainer="Corbin Simpson",
     maintainer_email="MostAwesomeDude@gmail.com",
 )
