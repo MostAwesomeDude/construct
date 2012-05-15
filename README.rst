@@ -1,7 +1,6 @@
-.. note::
-  This is the new repository where construct is developed
+This is the new repository where construct is developed
+=======================================================
 
-=========
 Construct
 =========
 
