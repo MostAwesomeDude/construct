@@ -2,6 +2,12 @@
 Changelog
 =========
 
+2.1.0
+=====
+* Adding ``this`` expressions
+* Restructuring the library
+* Kill ``construct.text`` (it's highly inefficient and it was a side-project anyway)
+
 2.06
 ====
 
