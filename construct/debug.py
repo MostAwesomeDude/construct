@@ -1,13 +1,12 @@
 """
 Debugging utilities for constructs
 """
-from __future__ import print_function
 import sys
 import traceback
 import pdb
 import inspect
-from .core import Construct, Subconstruct
-from .lib import HexString, Container, ListContainer
+from construct.core import Construct, Subconstruct
+from construct.lib import HexString, Container, ListContainer
 
 
 class Probe(Construct):
@@ -70,7 +69,7 @@ class Probe(Construct):
             else:
                 stream.seek(-len(follows), 1)
                 obj.following_stream_data = HexString(follows)
-            print
+            print("")
         
         if self.show_context:
             obj.context = context
@@ -85,7 +84,7 @@ class Probe(Construct):
                 obj.stack.append(a)
         
         print("=" * 80)
-        print("Probe", self.printname)
+        print("Probe %s" % (self.printname,))
         print(obj)
         print("=" * 80)
 

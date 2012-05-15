@@ -16,6 +16,7 @@ setup(
     url = "https://github.com/construct/construct",
     author = "Tomer Filiba, Corbin Simpson",
     author_email = "tomerfiliba@gmail.com, MostAwesomeDude@gmail.com",
+    install_requires = ["six"],
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",

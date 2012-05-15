@@ -1,30 +1,30 @@
 from struct import Struct as Packer
 
-from .lib.py3compat import BytesIO, advance_iterator, bchr
-from .lib import Container, ListContainer, LazyContainer
+from construct.lib.py3compat import BytesIO, advance_iterator, bchr
+from construct.lib import Container, ListContainer, LazyContainer
 
 
 #===============================================================================
 # exceptions
 #===============================================================================
 class ConstructError(Exception):
-    __slots__ = []
+    pass
 class FieldError(ConstructError):
-    __slots__ = []
+    pass
 class SizeofError(ConstructError):
-    __slots__ = []
+    pass
 class AdaptationError(ConstructError):
-    __slots__ = []
+    pass
 class ArrayError(ConstructError):
-    __slots__ = []
+    pass
 class RangeError(ConstructError):
-    __slots__ = []
+    pass
 class SwitchError(ConstructError):
-    __slots__ = []
+    pass
 class SelectError(ConstructError):
-    __slots__ = []
+    pass
 class TerminatorError(ConstructError):
-    __slots__ = []
+    pass
 
 #===============================================================================
 # abstract constructs

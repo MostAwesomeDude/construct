@@ -1,4 +1,4 @@
-from .binary import encode_bin, decode_bin
+from construct.lib.binary import encode_bin, decode_bin
 
 class BitStreamReader(object):
 

@@ -1,10 +1,9 @@
-from .lib.py3compat import int2byte
-from .lib import (BitStreamReader, BitStreamWriter, encode_bin,
-    decode_bin)
-from .core import (Struct, MetaField, StaticField, FormatField,
+from construct.lib.py3compat import int2byte
+from construct.lib import (BitStreamReader, BitStreamWriter, encode_bin, decode_bin)
+from construct.core import (Struct, MetaField, StaticField, FormatField,
     OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range,
     Select, Pass, SizeofError, Buffered, Restream, Reconfig)
-from .adapters import (BitIntegerAdapter, PaddingAdapter,
+from construct.adapters import (BitIntegerAdapter, PaddingAdapter,
     ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter,
     PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
 

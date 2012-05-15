@@ -1,22 +1,22 @@
-from .core import Adapter, AdaptationError, Pass
-from .lib import int_to_bin, bin_to_int, swap_bytes
-from .lib import FlagsContainer, HexString
-from .lib.py3compat import BytesIO, decodebytes
+from construct.core import Adapter, AdaptationError, Pass
+from construct.lib import int_to_bin, bin_to_int, swap_bytes
+from construct.lib import FlagsContainer, HexString
+from six import BytesIO
 
 
 #===============================================================================
 # exceptions
 #===============================================================================
 class BitIntegerError(AdaptationError):
-    __slots__ = []
+    pass
 class MappingError(AdaptationError):
-    __slots__ = []
+    pass
 class ConstError(AdaptationError):
-    __slots__ = []
+    pass
 class ValidationError(AdaptationError):
-    __slots__ = []
+    pass
 class PaddingError(AdaptationError):
-    __slots__ = []
+    pass
 
 #===============================================================================
 # adapters

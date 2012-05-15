@@ -1,6 +1,5 @@
-from construct.lib.py3compat import u
 import unittest
-
+import six
 from construct import String, PascalString, CString, UBInt16
 
 
@@ -11,7 +10,7 @@ class TestString(unittest.TestCase):
 
     def test_parse_utf8(self):
         s = String("foo", 12, encoding="utf8")
-        self.assertEqual(s.parse(b"hello joh\xd4\x83n"), u("hello joh\u0503n"))
+        self.assertEqual(s.parse(b"hello joh\xd4\x83n"), six.u("hello joh\u0503n"))
 
     def test_parse_padded(self):
         s = String("foo", 10, padchar=b"X", paddir="right")
@@ -31,7 +30,7 @@ class TestString(unittest.TestCase):
 
     def test_build_utf8(self):
         s = String("foo", 12, encoding="utf8")
-        self.assertEqual(s.build(u("hello joh\u0503n")), b"hello joh\xd4\x83n")
+        self.assertEqual(s.build(six.u("hello joh\u0503n")), b"hello joh\xd4\x83n")
 
     def test_build_padded(self):
         s = String("foo", 10, padchar=b"X", paddir="right")
