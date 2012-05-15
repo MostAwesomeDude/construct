@@ -33,11 +33,11 @@ class NamedSequence(Adapter):
     def __init__(self, subcon, mapping):
         Adapter.__init__(self, subcon)
         self.mapping = mapping
-        self.rev_mapping = dict((v, k) for k, v in mapping.iteritems())
+        self.rev_mapping = dict((v, k) for k, v in mapping.items())
     def _encode(self, obj, context):
         d = obj.__dict__
         obj2 = [None] * len(d)
-        for name, value in d.iteritems():
+        for name, value in d.items():
             if name in self.rev_mapping:
                 index = self.rev_mapping[name]
             elif name.startswith("__"):

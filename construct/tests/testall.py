@@ -17,16 +17,17 @@ def scan(path, failures):
             failures.append((path, errorcode))
 
 failures = []
-print "testing packages"
+print("testing packages")
 
 scan(os.path.join(basepath, "formats"), failures)
 scan(os.path.join(basepath, "protocols"), failures)
 
 if not failures:
-    print "success"
+    print("success")
 else:
-    print "%d errors:" % (len(failures),)
+    print("%d errors:" % (len(failures),))
     for fn, ec in failures:
-        print "     %s" % (fn,)
+        print("     %s" % (fn,))
+
 
 

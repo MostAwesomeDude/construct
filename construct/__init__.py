@@ -30,10 +30,10 @@ Hands-on example:
     "\\x01\\x02\\x03"
 """
 
-from construct.core import *
-from construct.adapters import *
-from construct.macros import *
-from debug import Probe, Debugger
+from .core import *
+from .adapters import *
+from .macros import *
+from .debug import Probe, Debugger
 
 
 #===============================================================================

@@ -2,7 +2,7 @@
 Various containers.
 """
 
-from UserDict import DictMixin
+from collections import MutableMapping
 from pprint import pformat
 
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
@@ -19,7 +19,7 @@ def recursion_lock(retval, lock_name = "__recursion_lock__"):
         return wrapper
     return decorator
 
-class Container(object, DictMixin):
+class Container(MutableMapping):
     """
     A generic container of attributes.
 
@@ -43,6 +43,9 @@ class Container(object, DictMixin):
     def keys(self):
         return self.__dict__.keys()
 
+    def __len__(self):
+        return len(self.__dict__.keys())
+
     # Extended dictionary interface.
 
     def update(self, other):
@@ -52,9 +55,6 @@ class Container(object, DictMixin):
 
     def __contains__(self, value):
         return value in self.__dict__
-
-    def iteritems(self):
-        return self.__dict__.iteritems()
 
     # Rich comparisons.
 
@@ -138,7 +138,7 @@ class LazyContainer(object):
         elif hasattr(self._value, "__pretty_str__"):
             text = self._value.__pretty_str__(nesting, indentation)
         else:
-            text = repr(self._value)
+            text = str(self._value)
         return "%s: %s" % (self.__class__.__name__, text)
 
     def read(self):
