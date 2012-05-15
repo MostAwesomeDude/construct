@@ -1,3 +1,4 @@
+# heavily optimized for performance
 def int_to_bin(number, width = 32):
     if number < 0:
         number += 1 << width
@@ -9,17 +10,15 @@ def int_to_bin(number, width = 32):
         i -= 1
     return "".join(bits)
 
-_bit_values = {"\x00" : 0, "\x01" : 1, "0" : 0, "1" : 1}
+# heavily optimized for performance
 def bin_to_int(bits, signed = False):
-    number = 0
-    bias = 0
-    if signed and _bit_values[bits[0]] == 1:
+    bits = "".join("01"[ord(b) & 1] for b in bits)
+    if signed and bits[0] == "1":
         bits = bits[1:]
         bias = 1 << len(bits)
-    for b in bits:
-        number <<= 1
-        number |= _bit_values[b]
-    return number - bias
+    else:
+        bias = 0
+    return int(bits, 2) - bias
 
 def swap_bytes(bits, bytesize = 8):
     i = 0
@@ -32,17 +31,16 @@ def swap_bytes(bits, bytesize = 8):
         j -= 1
     return "".join(output)
 
-_char_to_bin = {}
+_char_to_bin = []
 _bin_to_char = {}
 for i in range(256):
     ch = chr(i)
     bin = int_to_bin(i, 8)
-    _char_to_bin[ch] = bin
-    _bin_to_char[bin] = ch
+    _char_to_bin[i] = bin
     _bin_to_char[bin] = ch
 
 def encode_bin(data):
-    return "".join(_char_to_bin[ch] for ch in data)
+    return "".join(_char_to_bin[ord(ch)] for ch in data)
 
 def decode_bin(data):
     if len(data) & 7:
@@ -57,3 +55,5 @@ def decode_bin(data):
         i += 8
         j += 1
     return "".join(chars)
+
+

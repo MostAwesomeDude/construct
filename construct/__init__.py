@@ -9,10 +9,7 @@
                  Parsing made even more fun (and faster too)
 
 Homepage:
-    http://construct.wikispaces.com (including online tutorial)
-
-Typical usage:
-    >>> from construct import *
+    http://construct.readthedocs.org
 
 Hands-on example:
     >>> from construct import *
@@ -34,15 +31,15 @@ from construct.core import *
 from construct.adapters import *
 from construct.macros import *
 from construct.lib.expr import this
-from debug import Probe, Debugger
+from construct.debug import Probe, Debugger
+from construct.version import version, version_string as __version__
 
 
 #===============================================================================
 # Metadata
 #===============================================================================
-__author__ = "tomer filiba <tomerfiliba@gmail.com>"
+__author__ = "Tomer Filiba <tomerfiliba@gmail.com>"
 __maintainer__ = "Corbin Simpson <MostAwesomeDude@gmail.com>"
-__version__ = "2.06"
 
 #===============================================================================
 # Shorthand expressions
@@ -53,30 +50,6 @@ Bytes = Field
 Const = ConstAdapter
 Tunnel = TunnelAdapter
 Embed = Embedded
-
-#===============================================================================
-# Deprecated names
-# Next scheduled name cleanout: 2.1
-#===============================================================================
-import functools, warnings
-
-def deprecated(f):
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        warnings.warn(
-            "This name is deprecated, use %s instead" % f.__name__,
-            DeprecationWarning, stacklevel=2)
-        return f(*args, **kwargs)
-    return wrapper
-
-MetaBytes = deprecated(MetaField)
-GreedyRepeater = deprecated(GreedyRange)
-OptionalGreedyRepeater = deprecated(OptionalGreedyRange)
-Repeater = deprecated(Range)
-StrictRepeater = deprecated(Array)
-MetaRepeater = deprecated(Array)
-OneOfValidator = deprecated(OneOf)
-NoneOfValidator = deprecated(NoneOf)
 
 #===============================================================================
 # exposed names
