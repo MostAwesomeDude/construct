@@ -1,7 +1,7 @@
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
 from construct.core import (Struct, MetaField, StaticField, FormatField,
     OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range,
-    Select, Pass, SizeofError, Buffered, Restream, Reconfig)
+    Select, Pass, SizeofError, Buffered, Restream, Reconfig, Boolean)
 from construct.adapters import (BitIntegerAdapter, PaddingAdapter,
     ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter,
     PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
@@ -19,10 +19,11 @@ def Field(name, length):
       (StaticField), or a function that takes the context as an argument and
       returns the length (MetaField)
     """
-    if callable(length):
+    try:
+        return StaticField(name, int(length))
+    except TypeError:
         return MetaField(name, length)
-    else:
-        return StaticField(name, length)
+
 
 def BitField(name, length, swapped = False, signed = False, bytesize = 8):
     """
@@ -240,7 +241,7 @@ def Array(count, subcon):
     construct.core.RangeError: expected 4..4, found 5
     """
 
-    if callable(count):
+    if callable(count) or hasattr(count, 'value'): #blegh
         con = MetaArray(count, subcon)
     else:
         con = MetaArray(lambda ctx: count, subcon)
@@ -591,7 +592,7 @@ def IfThenElse(name, predicate, then_subcon, else_subcon):
     * then_subcon - the subcon that will be used if the predicate returns True
     * else_subcon - the subcon that will be used if the predicate returns False
     """
-    return Switch(name, lambda ctx: bool(predicate(ctx)),
+    return Switch(name, Boolean(predicate),
         {
             True : then_subcon,
             False : else_subcon,
