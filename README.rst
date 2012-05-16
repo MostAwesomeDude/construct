@@ -1,5 +1,6 @@
-This is the new repository where construct is developed
-=======================================================
+New Home
+========
+Construct is now developed on https://github.com/construct/construct
 
 Construct
 =========
