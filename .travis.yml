@@ -1,8 +1,22 @@
 language: python
 python:
-    - 2.5
-    - 2.6
-    - 2.7
+    - "2.5"
+    - "2.6"
+    - "2.7"
+    - "3.1"
+    - "3.2"
 
-install: pip install Twisted
-script: trial construct
+install: 
+    - pip install six
+
+before_script:
+    - "export PYTHONPATH=$PYTHONPATH:`pwd`"
+    - "uname -a"
+    - "cd tests"
+
+script: nosetests -vv
+
+notifications:
+    email:
+        on_success: change
+        on_failure: change
