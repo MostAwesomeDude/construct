@@ -1,109 +1,133 @@
-#
-# The 'this' expression (backported from construct3).
-#
 import operator
+
+if not hasattr(operator, "div"):
+    operator.div = operator.truediv
+
+
+opnames = {
+    operator.add : "+",
+    operator.sub : "-",
+    operator.mul : "*",
+    operator.div : "/",
+    operator.floordiv : "//",
+    operator.mod : "+",
+    operator.pow : "**",
+    operator.xor : "^",
+    operator.lshift : "<<",
+    operator.rshift : ">>",
+    operator.and_ : "and",
+    operator.or_ : "or",
+    operator.not_ : "not",
+    operator.neg : "-",
+    operator.pos : "+",
+    operator.contains : "in",
+    operator.gt : ">",
+    operator.ge : ">=",
+    operator.lt : "<",
+    operator.le : "<=",
+    operator.eq : "==",
+    operator.ne : "!=",
+}
 
 
 class ExprMixin(object):
     __slots__ = ()
     def __add__(self, other):
-        return BinExpr(operator.add, self, other, "+")
+        return BinExpr(operator.add, self, other)
     def __sub__(self, other):
-        return BinExpr(operator.sub, self, other, "-")
+        return BinExpr(operator.sub, self, other)
     def __mul__(self, other):
-        return BinExpr(operator.mul, self, other, "*")
+        return BinExpr(operator.mul, self, other)
     def __floordiv__(self, other):
-        return BinExpr(operator.div, self, other, "//")
+        return BinExpr(operator.floordiv, self, other)
     def __truediv__(self, other):
-        return BinExpr(operator.div, self, other, "/")
+        return BinExpr(operator.div, self, other)
     __div__ = __floordiv__
     def __mod__(self, other):
-        return BinExpr(operator.mod, self, other, "%")
+        return BinExpr(operator.mod, self, other)
     def __pow__(self, other):
-        return BinExpr(operator.pow, self, other, "**")
+        return BinExpr(operator.pow, self, other)
     def __xor__(self, other):
-        return BinExpr(operator.xor, self, other, "^")
+        return BinExpr(operator.xor, self, other)
     def __rshift__(self, other):
-        return BinExpr(operator.rshift, self, other, ">>")
+        return BinExpr(operator.rshift, self, other)
     def __lshift__(self, other):
-        return BinExpr(operator.rshift, self, other, "<<")
+        return BinExpr(operator.rshift, self, other)
     def __and__(self, other):
-        return BinExpr(operator.and_, self, other, "and")
+        return BinExpr(operator.and_, self, other)
     def __or__(self, other):
-        return BinExpr(operator.or_, self, other, "or")
+        return BinExpr(operator.or_, self, other)
     
     def __radd__(self, other):
-        return BinExpr(operator.add, other, self, "+")
+        return BinExpr(operator.add, other, self)
     def __rsub__(self, other):
-        return BinExpr(operator.sub, other, self, "-")
+        return BinExpr(operator.sub, other, self)
     def __rmul__(self, other):
-        return BinExpr(operator.mul, other, self, "*")
+        return BinExpr(operator.mul, other, self)
     def __rfloordiv__(self, other):
-        return BinExpr(operator.div, other, self, "//")
+        return BinExpr(operator.floordiv, other, self)
     def __rtruediv__(self, other):
-        return BinExpr(operator.div, other, self, "/")
+        return BinExpr(operator.div, other, self)
     __rdiv__ = __rfloordiv__
     def __rmod__(self, other):
-        return BinExpr(operator.mod, other, self, "%")
+        return BinExpr(operator.mod, other, self)
     def __rpow__(self, other):
-        return BinExpr(operator.pow, other, self, "**")
+        return BinExpr(operator.pow, other, self)
     def __rxor__(self, other):
-        return BinExpr(operator.xor, other, self, "^")
+        return BinExpr(operator.xor, other, self)
     def __rrshift__(self, other):
-        return BinExpr(operator.rshift, other, self, ">>")
+        return BinExpr(operator.rshift, other, self)
     def __rlshift__(self, other):
-        return BinExpr(operator.rshift, other, self, "<<")
+        return BinExpr(operator.rshift, other, self)
     def __rand__(self, other):
-        return BinExpr(operator.and_, other, self, "and")
+        return BinExpr(operator.and_, other, self)
     def __ror__(self, other):
-        return BinExpr(operator.or_, other, self, "or")
+        return BinExpr(operator.or_, other, self)
 
     def __neg__(self):
-        return UniExpr(operator.neg, self, "-")
+        return UniExpr(operator.neg, self)
     def __pos__(self):
-        return UniExpr(operator.pos, self, "+")
+        return UniExpr(operator.pos, self)
     def __invert__(self):
-        return UniExpr(operator.not_, self, "not")
+        return UniExpr(operator.not_, self)
     __inv__ = __invert__
     
     def __contains__(self, other):
-        return BinExpr(operator.contains, self, other, "in")
+        return BinExpr(operator.contains, self, other)
     def __gt__(self, other):
-        return BinExpr(operator.gt, self, other, ">")
+        return BinExpr(operator.gt, self, other)
     def __ge__(self, other):
-        return BinExpr(operator.ge, self, other, ">=")
+        return BinExpr(operator.ge, self, other)
     def __lt__(self, other):
-        return BinExpr(operator.lt, self, other, "<")
+        return BinExpr(operator.lt, self, other)
     def __le__(self, other):
-        return BinExpr(operator.le, self, other, "<=")
+        return BinExpr(operator.le, self, other)
     def __eq__(self, other):
-        return BinExpr(operator.eq, self, other, "==")
+        return BinExpr(operator.eq, self, other)
     def __ne__(self, other):
-        return BinExpr(operator.ne, self, other, "!=")
+        return BinExpr(operator.ne, self, other)
 
 
 class UniExpr(ExprMixin):
-    __slots__ = ["op", "operand", "opname"]
-    def __init__(self, op, operand, opname):
+    __slots__ = ["op", "operand"]
+    def __init__(self, op, operand):
         self.op = op
-        self.opname = opname
         self.operand = operand
     def __repr__(self):
-        return "%s %r" % (self.lhs, self.opname, self.rhs)
+        return "%s %r" % (opnames[self.op], self.operand)
     def __call__(self, context):
         operand = self.operand(context) if callable(self.operand) else self.operand
         return self.op(operand)
 
 
 class BinExpr(ExprMixin):
-    __slots__ = ["op", "lhs", "rhs", "opname"]
-    def __init__(self, op, lhs, rhs, opname):
+    __slots__ = ["op", "lhs", "rhs"]
+    def __init__(self, op, lhs, rhs):
         self.op = op
-        self.opname = opname
         self.lhs = lhs
         self.rhs = rhs
     def __repr__(self):
-        return "(%r %s %r)" % (self.lhs, self.opname, self.rhs)
+        return "(%r %s %r)" % (self.lhs, opnames[self.op], self.rhs)
     def __call__(self, context):
         lhs = self.lhs(context) if callable(self.lhs) else self.lhs
         rhs = self.rhs(context) if callable(self.rhs) else self.rhs
@@ -133,9 +157,9 @@ this = Path("this")
 
 
 if __name__ == "__main__":
-    x = (this.foo * 2 + 3 << 2) % 11
-    print x
-    print x({"foo" : 7})
+    x = ~((this.foo * 2 + 3 << 2) % 11)
+    print (x)
+    print (x({"foo" : 7}))
 
 
 

@@ -131,8 +131,8 @@ directory_record = Struct("directory_entry",
     Padding(lambda ctx: ctx["rec_length"] - ctx["name_length"])
 )
 
-
-print superblock.sizeof()
+if __name__ == "__main__":
+    print (superblock.sizeof())
 
 
 

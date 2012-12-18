@@ -1,3 +1,4 @@
+import six
 from construct.lib.py3compat import int2byte
 from construct.lib import (BitStreamReader, BitStreamWriter, encode_bin, decode_bin)
 from construct.core import (Struct, MetaField, StaticField, FormatField,
@@ -290,7 +291,6 @@ def GreedyRange(subcon):
       ...
     construct.core.RangeError: expected 1..2147483647, found 0
     """
-
     return OpenRange(1, subcon)
 
 def OptionalGreedyRange(subcon):
@@ -311,7 +311,6 @@ def OptionalGreedyRange(subcon):
     >>> c.build([1,2])
     '\\x01\\x02'
     """
-
     return OpenRange(0, subcon)
 
 
@@ -348,7 +347,7 @@ def Bitwise(subcon):
             resizer = resizer)
     return con
 
-def Aligned(subcon, modulus = 4, pattern = "\x00"):
+def Aligned(subcon, modulus = 4, pattern = six.b("\x00")):
     r"""aligns subcon to modulus boundary using padding pattern
     * subcon - the subcon to align
     * modulus - the modulus boundary (default is 4)
@@ -465,7 +464,7 @@ def EmbeddedBitStruct(*subcons):
 # strings
 #===============================================================================
 def String(name, length, encoding=None, padchar=None, paddir="right",
-    trimdir="right"):
+        trimdir="right"):
     """
     A configurable, fixed-length string field.
 
@@ -537,7 +536,7 @@ def PascalString(name, length_field=UBInt8("length"), encoding=None):
         encoding=encoding,
     )
 
-def CString(name, terminators=b"\x00", encoding=None,
+def CString(name, terminators=six.b("\x00"), encoding=None,
             char_field=Field(None, 1)):
     """
     A string ending in a terminator.
@@ -630,4 +629,16 @@ def OnDemandPointer(offsetfunc, subcon, force_build = True):
     )
 
 def Magic(data):
+    """a 'magic number' construct. it is used for file signatures, etc., to validate
+    that the given pattern exists.
+    
+    Example::
+        
+        elf_header = Struct("elf_header",
+            Magic("\x7fELF"),
+            # ...
+        )
+    """
     return ConstAdapter(Field(None, len(data)), data)
+
+

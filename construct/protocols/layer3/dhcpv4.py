@@ -6,6 +6,8 @@ http://www.networksorcery.com/enp/protocol/bootp/options.htm
 """
 from construct import *
 from ipv4 import IpAddress
+from binascii import unhexlify
+import six
 
 
 dhcp_option = Struct("dhcp_option",
@@ -172,7 +174,7 @@ dhcp_header = Struct("dhcp_header",
 
 
 if __name__ == "__main__":
-    test = (
+    test = unhexlify(six.b(
         "01" "01" "08" "ff" "11223344" "1234" "0000" 
         "11223344" "aabbccdd" "11223444" "aabbccdd" "11223344"
         
@@ -191,9 +193,9 @@ if __name__ == "__main__":
         "0104ffffff00"
         "00"
         "060811223344aabbccdd"
-    ).decode("hex")
+    ))
     
-    print dhcp_header.parse(test)
+    print (dhcp_header.parse(test))
 
 
 

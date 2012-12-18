@@ -1,13 +1,18 @@
+import six
 from construct.lib.binary import encode_bin, decode_bin
 
-class BitStreamReader(object):
+try:
+    bytes
+except NameError:
+    bytes = str
 
+class BitStreamReader(object):
     __slots__ = ["substream", "buffer", "total_size"]
 
     def __init__(self, substream):
         self.substream = substream
         self.total_size = 0
-        self.buffer = ""
+        self.buffer = six.b("")
 
     def close(self):
         if self.total_size % 8 != 0:
@@ -18,7 +23,7 @@ class BitStreamReader(object):
         return self.substream.tell()
 
     def seek(self, pos, whence = 0):
-        self.buffer = ""
+        self.buffer = six.b("")
         self.total_size = 0
         self.substream.seek(pos, whence)
 
@@ -28,24 +33,23 @@ class BitStreamReader(object):
 
         l = len(self.buffer)
         if count == 0:
-            data = ""
+            data = six.b("")
         elif count <= l:
             data = self.buffer[:count]
             self.buffer = self.buffer[count:]
         else:
             data = self.buffer
             count -= l
-            bytes = count // 8
+            count_bytes = count // 8
             if count & 7:
-                bytes += 1
-            buf = encode_bin(self.substream.read(bytes))
+                count_bytes += 1
+            buf = encode_bin(self.substream.read(count_bytes))
             data += buf[:count]
             self.buffer = buf[count:]
         self.total_size += len(data)
         return data
 
 class BitStreamWriter(object):
-
     __slots__ = ["substream", "buffer", "pos"]
 
     def __init__(self, substream):
@@ -57,8 +61,8 @@ class BitStreamWriter(object):
         self.flush()
 
     def flush(self):
-        bytes = decode_bin("".join(self.buffer))
-        self.substream.write(bytes)
+        raw = decode_bin(six.b("").join(self.buffer))
+        self.substream.write(raw)
         self.buffer = []
         self.pos = 0
 
@@ -72,6 +76,6 @@ class BitStreamWriter(object):
     def write(self, data):
         if not data:
             return
-        if type(data) is not str:
+        if not isinstance(data, bytes):
             raise TypeError("data must be a string, not %r" % (type(data),))
         self.buffer.append(data)

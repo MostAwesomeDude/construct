@@ -35,7 +35,7 @@ cap_file = Struct("cap_file",
 
 if __name__ == "__main__":
     obj = cap_file.parse_stream(open("../../tests/cap2.cap", "rb"))
-    print len(obj.packets)
+    print(len(obj.packets))
 
 
 

@@ -3,6 +3,8 @@ Domain Name System (TCP/IP protocol stack)
 """
 from construct import *
 from construct.protocols.layer3.ipv4 import IpAddressAdapter
+from binascii import unhexlify
+import six
 
 
 class DnsStringAdapter(Adapter):
@@ -116,11 +118,9 @@ dns = Struct("dns",
 
 
 if __name__ == "__main__":
-    cap1 = (
-    "2624010000010000000000000377777706676f6f676c6503636f6d0000010001"
-    ).decode("hex")
+    cap1 = unhexlify(six.b("2624010000010000000000000377777706676f6f676c6503636f6d0000010001"))
     
-    cap2 = (
+    cap2 = unhexlify(six.b(
     "2624818000010005000600060377777706676f6f676c6503636f6d0000010001c00c00"
     "05000100089065000803777777016cc010c02c0001000100000004000440e9b768c02c"
     "0001000100000004000440e9b793c02c0001000100000004000440e9b763c02c000100"
@@ -130,17 +130,17 @@ if __name__ == "__main__":
     "c030c0c00001000100011d0c0004d8ef3509c0d0000100010000ca7c000440e9b309c0"
     "80000100010000c4c5000440e9a109c0900001000100004391000440e9b709c0a00001"
     "00010000ca7c000442660b09c0b00001000100000266000440e9a709"
-    ).decode("hex")
+    ))
 
     obj = dns.parse(cap1)
-    print obj
-    print repr(dns.build(obj))
+    print (obj)
+    print (repr(dns.build(obj)))
     
-    print "-" * 80
+    print ("-" * 80)
     
     obj = dns.parse(cap2)
-    print obj
-    print repr(dns.build(obj))
+    print (obj)
+    print (repr(dns.build(obj)))
     
     
 

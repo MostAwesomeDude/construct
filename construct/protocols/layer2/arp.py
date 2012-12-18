@@ -4,6 +4,8 @@ Ethernet (TCP/IP protocol stack)
 from construct import *
 from ethernet import MacAddressAdapter
 from construct.protocols.layer3.ipv4 import IpAddressAdapter
+from binascii import unhexlify
+import six
 
 
 
@@ -66,17 +68,17 @@ rarp_header = Rename("rarp_header", arp_header)
 
 
 if __name__ == "__main__":
-    cap1 = "00010800060400010002e3426009c0a80204000000000000c0a80201".decode("hex")
+    cap1 = unhexlify(six.b("00010800060400010002e3426009c0a80204000000000000c0a80201"))
     obj = arp_header.parse(cap1)
-    print obj
-    print repr(arp_header.build(obj))
+    print (obj)
+    print (repr(arp_header.build(obj)))
 
-    print "-" * 80
+    print ("-" * 80)
     
-    cap2 = "00010800060400020011508c283cc0a802010002e3426009c0a80204".decode("hex")
+    cap2 = unhexlify(six.b("00010800060400020011508c283cc0a802010002e3426009c0a80204"))
     obj = arp_header.parse(cap2)
-    print obj
-    print repr(arp_header.build(obj))
+    print (obj)
+    print (repr(arp_header.build(obj)))
 
 
 

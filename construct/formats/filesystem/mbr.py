@@ -5,6 +5,8 @@ The first sector on disk, contains the partition table, bootloader, et al.
 http://www.win.tue.nl/~aeb/partitions/partition_types-1.html
 """
 from construct import *
+from binascii import unhexlify
+import six
 
 
 mbr = Struct("mbr",
@@ -50,7 +52,7 @@ mbr = Struct("mbr",
 
 
 if __name__ == "__main__":
-    cap1 = (
+    cap1 = unhexlify(six.b(
     "33C08ED0BC007CFB5007501FFCBE1B7CBF1B065057B9E501F3A4CBBDBE07B104386E00"
     "7C09751383C510E2F4CD188BF583C610497419382C74F6A0B507B4078BF0AC3C0074FC"
     "BB0700B40ECD10EBF2884E10E84600732AFE4610807E040B740B807E040C7405A0B607"
@@ -65,10 +67,9 @@ if __name__ == "__main__":
     "0000000000000000000000000000000000000000000000000000000000000000000000"
     "00000000000000000000000000000000002C4463B7BDB7BD00008001010007FEFFFF3F"
     "000000371671020000C1FF0FFEFFFF761671028A8FDF06000000000000000000000000"
-    "000000000000000000000000000000000000000055AA"        
-    ).decode("hex")
+    "000000000000000000000000000000000000000055AA"))
     
-    print mbr.parse(cap1)
+    print(mbr.parse(cap1))
 
 
 

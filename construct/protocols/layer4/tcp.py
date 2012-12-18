@@ -2,6 +2,8 @@
 Transmission Control Protocol (TCP/IP protocol stack)
 """
 from construct import *
+from binascii import unhexlify
+import six
 
 
 tcp_header = Struct("tcp_header",
@@ -34,11 +36,11 @@ tcp_header = Struct("tcp_header",
 )
 
 if __name__ == "__main__":
-    cap = "0db5005062303fb21836e9e650184470c9bc0000".decode("hex")
+    cap = unhexlify(six.b("0db5005062303fb21836e9e650184470c9bc0000"))
     
     obj = tcp_header.parse(cap)
-    print obj
-    print repr(tcp_header.build(obj))
+    print (obj)
+    print (repr(tcp_header.build(obj)))
 
 
 

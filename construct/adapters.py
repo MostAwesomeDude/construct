@@ -2,6 +2,7 @@ from construct.core import Adapter, AdaptationError, Pass
 from construct.lib import int_to_bin, bin_to_int, swap_bytes
 from construct.lib import FlagsContainer, HexString
 from six import BytesIO
+import six
 
 
 #===============================================================================
@@ -228,7 +229,7 @@ class CStringAdapter(StringAdapter):
       encoding.
     """
     __slots__ = ["terminators"]
-    def __init__(self, subcon, terminators = b"\x00", encoding = None):
+    def __init__(self, subcon, terminators = six.b("\x00"), encoding = None):
         StringAdapter.__init__(self, subcon, encoding = encoding)
         self.terminators = terminators
     def _encode(self, obj, context):

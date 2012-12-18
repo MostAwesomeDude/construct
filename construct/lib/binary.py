@@ -2,7 +2,6 @@ import six
 from construct.lib.py3compat import int2byte
 
 
-_bits = six.b("\x00\x01")
 if six.PY3:
     def int_to_bin(number, width = 32):
         r"""
@@ -49,7 +48,7 @@ else:
         i = width - 1
         bits = ["\x00"] * width
         while number and i >= 0:
-            bits[i] = _bits[number & 1]
+            bits[i] = "\x00\x01"[number & 1]
             number >>= 1
             i -= 1
         return "".join(bits)
@@ -70,24 +69,6 @@ def bin_to_int(bits, signed = False):
         bias = 0
     return int(bits, 2) - bias
 
-def swap_bytes(bits, bytesize=8):
-    r"""
-    Bits is a b'' object containing a binary representation. Assuming each
-    bytesize bits constitute a bytes, perform a endianness byte swap. Example:
-
-        >>> swap_bytes(b'00011011', 2)
-        b'11100100'
-    """
-    i = 0
-    l = len(bits)
-    output = [b""] * ((l // bytesize) + 1)
-    j = len(output) - 1
-    while i < l:
-        output[j] = bits[i : i + bytesize]
-        i += bytesize
-        j -= 1
-    return b"".join(output)
-
 
 _char_to_bin = [0] * 256
 _bin_to_char = {}
@@ -98,27 +79,85 @@ for i in range(256):
     _char_to_bin[i] = bin
     _bin_to_char[bin] = ch
 
+if six.PY3:
+    def encode_bin(data):
+        """ 
+        Create a binary representation of the given b'' object. Assume 8-bit
+        ASCII. Example:
+    
+            >>> encode_bin('ab')
+            b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
+        """
+        return bytes(data)
 
-def encode_bin(data):
-    """ 
-    Create a binary representation of the given b'' object. Assume 8-bit
-    ASCII. Example:
+    def decode_bin(data):
+        if len(data) & 7:
+            raise ValueError("Data length must be a multiple of 8")
+        i = 0
+        j = 0
+        l = len(data) // 8
+        arr = bytearray(l)
+        while j < l:
+            arr[j] = _bin_to_char[data[i:i+8]]
+            i += 8
+            j += 1
+        return arr
+    
+    def swap_bytes(bits, bytesize=8):
+        r"""
+        Bits is a b'' object containing a binary representation. Assuming each
+        bytesize bits constitute a bytes, perform a endianness byte swap. Example:
+    
+            >>> swap_bytes(b'00011011', 2)
+            b'11100100'
+        """
+        i = 0
+        l = len(bits)
+        output = bytearray((l // bytesize) + 1)
+        j = len(output) - 1
+        while i < l:
+            output[j] = bits[i : i + bytesize]
+            i += bytesize
+            j -= 1
+        return output
+else:
+    def encode_bin(data):
+        """ 
+        Create a binary representation of the given b'' object. Assume 8-bit
+        ASCII. Example:
+    
+            >>> encode_bin('ab')
+            b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
+        """
+        return "".join(_char_to_bin[ord(ch)] for ch in data)
 
-        >>> encode_bin('ab')
-        b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
-    """
-    return six.b("").join(_char_to_bin[ord(ch)] for ch in data)
+    def decode_bin(data):
+        if len(data) & 7:
+            raise ValueError("Data length must be a multiple of 8")
+        i = 0
+        j = 0
+        l = len(data) // 8
+        chars = [""] * l
+        while j < l:
+            chars[j] = _bin_to_char[data[i:i+8]]
+            i += 8
+            j += 1
+        return "".join(chars)
 
-def decode_bin(data):
-    if len(data) & 7:
-        raise ValueError("Data length must be a multiple of 8")
-    i = 0
-    j = 0
-    l = len(data) // 8
-    chars = [b""] * l
-    while j < l:
-        chars[j] = _bin_to_char[data[i:i+8]]
-        i += 8
-        j += 1
-    return six.b("").join(chars)
-
+    def swap_bytes(bits, bytesize=8):
+        r"""
+        Bits is a b'' object containing a binary representation. Assuming each
+        bytesize bits constitute a bytes, perform a endianness byte swap. Example:
+    
+            >>> swap_bytes(b'00011011', 2)
+            b'11100100'
+        """
+        i = 0
+        l = len(bits)
+        output = [""] * ((l // bytesize) + 1)
+        j = len(output) - 1
+        while i < l:
+            output[j] = bits[i : i + bytesize]
+            i += bytesize
+            j -= 1
+        return "".join(output)

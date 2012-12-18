@@ -121,12 +121,9 @@ def elf32_body(ElfInt16, ElfInt32):
 elf32_body_little_endian = elf32_body(ULInt16, ULInt32)
 elf32_body_big_endian = elf32_body(UBInt16, UBInt32)
 
-def Magic(name, value):
-    return Const(Bytes(name, len(value)), value)
-
 elf32_file = Struct("elf32_file",
     Struct("identifier",
-        Magic("magic", "\x7fELF"),
+        Magic("\x7fELF"),
         Enum(Byte("file_class"),
             NONE = 0,
             CLASS32 = 1,
@@ -148,9 +145,9 @@ elf32_file = Struct("elf32_file",
 
 
 if __name__ == "__main__":
-    obj = elf32_file.parse_stream(open("../../tests/_ctypes_test.so", "rb"))
+    obj = elf32_file.parse_stream(open("../../../tests/_ctypes_test.so", "rb"))
     #[s.data.value for s in obj.sections]
-    print obj
+    print(obj)
 
 
 
