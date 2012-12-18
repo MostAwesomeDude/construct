@@ -8,9 +8,12 @@ from binascii import unhexlify
 
 class IpAddressAdapter(Adapter):
     def _encode(self, obj, context):
-        return "".join(chr(int(b)) for b in obj.split("."))
+        return bytes(int(b) for b in obj.split("."))
     def _decode(self, obj, context):
-        return ".".join(str(ord(b)) for b in obj)
+        if bytes is str:
+            return ".".join(str(ord(b)) for b in obj)
+        else:
+            return ".".join("%d" % (b,) for b in obj)
 
 def IpAddress(name):
     return IpAddressAdapter(Bytes(name, 4))

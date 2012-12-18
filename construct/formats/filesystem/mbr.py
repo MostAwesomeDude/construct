@@ -46,7 +46,7 @@ mbr = Struct("mbr",
             UBInt32("size"), # in sectors
         )
     ),
-    Const(Bytes("signature", 2), "\x55\xAA"),
+    Const(Bytes("signature", 2), six.b("\x55\xAA")),
 )
 
 

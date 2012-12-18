@@ -10,6 +10,7 @@ http://download.microsoft.com/download/9/c/5/9c5b2167-8017-4bae-9fde-d599bac8184
 """
 from construct import *
 import time
+import six
 
 
 class UTCTimeStampAdapter(Adapter):
@@ -91,7 +92,7 @@ msdos_header = Struct("msdos_header",
 )
 
 symbol_table = Struct("symbol_table",
-    String("name", 8, padchar = "\x00"),
+    String("name", 8, padchar = six.b("\x00")),
     ULInt32("value"),
     Enum(ExprAdapter(SLInt16("section_number"),
             encoder = lambda obj, ctx: obj + 1,
@@ -307,7 +308,7 @@ optional_header = Struct("optional_header",
 )
 
 section = Struct("section",
-    String("name", 8, padchar = "\x00"),
+    String("name", 8, padchar = six.b("\x00")),
     ULInt32("virtual_size"),
     ULInt32("virtual_address"),
     ULInt32("raw_data_size"),

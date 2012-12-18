@@ -69,7 +69,7 @@ def BitField(name, length, swapped = False, signed = False, bytesize = 8):
         bytesize=bytesize
     )
 
-def Padding(length, pattern = "\x00", strict = False):
+def Padding(length, pattern = six.b("\x00"), strict = False):
     r"""a padding field (value is discarded)
     * length - the length of the field. the length can be either an integer,
       or a function that takes the context as an argument and returns the

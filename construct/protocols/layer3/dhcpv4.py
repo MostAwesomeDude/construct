@@ -168,7 +168,7 @@ dhcp_header = Struct("dhcp_header",
     Bytes("boot_filename", 128),
     # BOOTP/DHCP options
     # "The first four bytes contain the (decimal) values 99, 130, 83 and 99"
-    Const(Bytes("magic", 4), "\x63\x82\x53\x63"),
+    Const(Bytes("magic", 4), six.b("\x63\x82\x53\x63")),
     Rename("options", OptionalGreedyRange(dhcp_option)),
 )
 

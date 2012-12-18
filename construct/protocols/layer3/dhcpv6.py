@@ -5,6 +5,7 @@ http://www.networksorcery.com/enp/rfc/rfc3315.txt
 """
 from construct import *
 from ipv6 import Ipv6Address
+import six
 
 
 dhcp_option = Struct("dhcp_option",
@@ -92,8 +93,8 @@ dhcp_message = Struct("dhcp_message",
 
 
 if __name__ == "__main__":
-    test1 = "\x03\x11\x22\x33\x00\x17\x00\x03ABC\x00\x05\x00\x05HELLO"
-    test2 = "\x0c\x040123456789abcdef0123456789abcdef\x00\x09\x00\x0bhello world\x00\x01\x00\x00"
+    test1 = six.b("\x03\x11\x22\x33\x00\x17\x00\x03ABC\x00\x05\x00\x05HELLO")
+    test2 = six.b("\x0c\x040123456789abcdef0123456789abcdef\x00\x09\x00\x0bhello world\x00\x01\x00\x00")
     print (dhcp_message.parse(test1))
     print (dhcp_message.parse(test2))
 

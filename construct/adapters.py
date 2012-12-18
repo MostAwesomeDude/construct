@@ -168,7 +168,7 @@ class PaddedStringAdapter(Adapter):
       building, when the given string is too long. 
     """
     __slots__ = ["padchar", "paddir", "trimdir"]
-    def __init__(self, subcon, padchar = "\x00", paddir = "right", 
+    def __init__(self, subcon, padchar = six.b("\x00"), paddir = "right", 
                  trimdir = "right"):
         if paddir not in ("right", "left", "center"):
             raise ValueError("paddir must be 'right', 'left' or 'center'", 
@@ -386,7 +386,7 @@ class PaddingAdapter(Adapter):
       padding matches the padding pattern. default is False (unstrict)
     """
     __slots__ = ["pattern", "strict"]
-    def __init__(self, subcon, pattern = "\x00", strict = False):
+    def __init__(self, subcon, pattern = six.b("\x00"), strict = False):
         Adapter.__init__(self, subcon)
         self.pattern = pattern
         self.strict = strict

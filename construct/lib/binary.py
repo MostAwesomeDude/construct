@@ -18,6 +18,7 @@ if six.PY3:
             >>> int_to_bin(19, 8)
             b'\x00\x00\x00\x01\x00\x00\x01\x01'
         """
+        number = int(number)
         if number < 0:
             number += 1 << width
         i = width - 1
@@ -27,59 +28,31 @@ if six.PY3:
             number >>= 1
             i -= 1
         return bytes(bits)
-else:
-    def int_to_bin(number, width = 32):
+
+    # heavily optimized for performance
+    def bin_to_int(bits, signed = False):
         r"""
-        Convert an integer into its binary representation in a bytes object.
-        Width is the amount of bits to generate. If width is larger than the actual
-        amount of bits required to represent number in binary, sign-extension is
-        used. If it's smaller, the representation is trimmed to width bits.
-        Each "bit" is either '\x00' or '\x01'. The MSBit is first.
-    
-        Examples:
-    
-            >>> int_to_bin(19, 5)
-            '\x01\x00\x00\x01\x01'
-            >>> int_to_bin(19, 8)
-            '\x00\x00\x00\x01\x00\x00\x01\x01'
+        Logical opposite of int_to_bin. Both '0' and '\x00' are considered zero,
+        and both '1' and '\x01' are considered one. Set sign to True to interpret
+        the number as a 2-s complement signed integer.
         """
-        if number < 0:
-            number += 1 << width
-        i = width - 1
-        bits = ["\x00"] * width
-        while number and i >= 0:
-            bits[i] = "\x00\x01"[number & 1]
-            number >>= 1
-            i -= 1
-        return "".join(bits)
+        bits = "".join("01"[b & 1] for b in bits)
+        if signed and bits[0] == "1":
+            bits = bits[1:]
+            bias = 1 << len(bits)
+        else:
+            bias = 0
+        return int(bits, 2) - bias
 
+    _char_to_bin = [0] * 256
+    _bin_to_char = {}
+    for i in range(256):
+        ch = int2byte(i)
+        bin = int_to_bin(i, 8)
+        # Populate with for both keys i and ch, to support Python 2 & 3
+        _char_to_bin[i] = bin
+        _bin_to_char[bin] = ord(ch)
 
-# heavily optimized for performance
-def bin_to_int(bits, signed = False):
-    r"""
-    Logical opposite of int_to_bin. Both '0' and '\x00' are considered zero,
-    and both '1' and '\x01' are considered one. Set sign to True to interpret
-    the number as a 2-s complement signed integer.
-    """
-    bits = "".join("01"[ord(b) & 1] for b in bits)
-    if signed and bits[0] == "1":
-        bits = bits[1:]
-        bias = 1 << len(bits)
-    else:
-        bias = 0
-    return int(bits, 2) - bias
-
-
-_char_to_bin = [0] * 256
-_bin_to_char = {}
-for i in range(256):
-    ch = int2byte(i)
-    bin = int_to_bin(i, 8)
-    # Populate with for both keys i and ch, to support Python 2 & 3
-    _char_to_bin[i] = bin
-    _bin_to_char[bin] = ch
-
-if six.PY3:
     def encode_bin(data):
         """ 
         Create a binary representation of the given b'' object. Assume 8-bit
@@ -88,7 +61,7 @@ if six.PY3:
             >>> encode_bin('ab')
             b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
         """
-        return bytes(data)
+        return six.b("").join(_char_to_bin[int(ch)] for ch in data)
 
     def decode_bin(data):
         if len(data) & 7:
@@ -121,6 +94,56 @@ if six.PY3:
             j -= 1
         return output
 else:
+
+    def int_to_bin(number, width = 32):
+        r"""
+        Convert an integer into its binary representation in a bytes object.
+        Width is the amount of bits to generate. If width is larger than the actual
+        amount of bits required to represent number in binary, sign-extension is
+        used. If it's smaller, the representation is trimmed to width bits.
+        Each "bit" is either '\x00' or '\x01'. The MSBit is first.
+    
+        Examples:
+    
+            >>> int_to_bin(19, 5)
+            '\x01\x00\x00\x01\x01'
+            >>> int_to_bin(19, 8)
+            '\x00\x00\x00\x01\x00\x00\x01\x01'
+        """
+        if number < 0:
+            number += 1 << width
+        i = width - 1
+        bits = ["\x00"] * width
+        while number and i >= 0:
+            bits[i] = "\x00\x01"[number & 1]
+            number >>= 1
+            i -= 1
+        return "".join(bits)
+
+    # heavily optimized for performance
+    def bin_to_int(bits, signed = False):
+        r"""
+        Logical opposite of int_to_bin. Both '0' and '\x00' are considered zero,
+        and both '1' and '\x01' are considered one. Set sign to True to interpret
+        the number as a 2-s complement signed integer.
+        """
+        bits = "".join("01"[ord(b) & 1] for b in bits)
+        if signed and bits[0] == "1":
+            bits = bits[1:]
+            bias = 1 << len(bits)
+        else:
+            bias = 0
+        return int(bits, 2) - bias
+
+    _char_to_bin = [0] * 256
+    _bin_to_char = {}
+    for i in range(256):
+        ch = int2byte(i)
+        bin = int_to_bin(i, 8)
+        # Populate with for both keys i and ch, to support Python 2 & 3
+        _char_to_bin[i] = bin
+        _bin_to_char[bin] = ch
+
     def encode_bin(data):
         """ 
         Create a binary representation of the given b'' object. Assume 8-bit

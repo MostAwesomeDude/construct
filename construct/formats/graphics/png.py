@@ -7,6 +7,7 @@ Original code contributed by Robin Munn (rmunn at pobox dot com)
 coding conventions)
 """
 from construct import *
+import six
 
 
 #===============================================================================
@@ -348,7 +349,7 @@ image_header_chunk = Struct("image_header",
 # the complete PNG file
 #===============================================================================
 png_file = Struct("png",
-    Magic("\x89PNG\r\n\x1a\n"),
+    Magic(six.b("\x89PNG\r\n\x1a\n")),
     image_header_chunk,
     Rename("chunks", GreedyRange(chunk)),
 )

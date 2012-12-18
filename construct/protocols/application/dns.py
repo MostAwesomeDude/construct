@@ -51,7 +51,7 @@ query_record = Struct("query_record",
 rdata = Field("rdata", lambda ctx: ctx.rdata_length)
 
 resource_record = Struct("resource_record",
-    CString("name", terminators = "\xc0\x00"),
+    CString("name", terminators = six.b("\xc0\x00")),
     Padding(1),
     dns_record_type,
     dns_record_class,
