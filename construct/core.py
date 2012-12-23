@@ -1323,3 +1323,42 @@ class Terminator(Construct):
     def _sizeof(self, context):
         return 0
 Terminator = Terminator(None)
+
+
+#=======================================================================================================================
+# Extra
+#=======================================================================================================================
+class ULInt24(StaticField):
+    """
+    A custom made construct for handling 3-byte types as used in ancient file formats.
+    A better implementation would be writing a more flexable version of FormatField,
+    rather then specifically implementing it for this case
+    """
+    __slots__ = ["packer"]
+    def __init__(self, name):
+        self.packer = Packer("<BH")
+        StaticField.__init__(self, name, self.packer.size)
+    def __getstate__(self):
+        attrs = StaticField.__getstate__(self)
+        attrs["packer"] = attrs["packer"].format
+        return attrs
+    def __setstate__(self, attrs):
+        attrs["packer"] = Packer(attrs["packer"])
+        return StaticField.__setstate__(attrs)
+    def _parse(self, stream, context):
+        try:
+            vals = self.packer.unpack(_read_stream(stream, self.length))
+            return vals[0] + (vals[1] << 8)
+        except Exception, ex:
+            raise FieldError(ex)
+    def _build(self, obj, stream, context):
+        try:
+            vals = (obj%256, obj >> 8)
+            _write_stream(stream, self.length, self.packer.pack(vals))
+        except Exception, ex:
+            raise FieldError(ex)
+
+
+
+
+
