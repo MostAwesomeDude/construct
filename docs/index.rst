@@ -6,6 +6,14 @@
 Welcome to Construct's documentation!
 =======================================
 
+.. raw:: html
+
+    <div style="background: #FCF9DA; padding: 10px; border-radius: 8px;">
+    <p>Join Construct's new <a href="https://groups.google.com/d/forum/construct3"><strong>mailing list</strong></a> -  
+    a place to discuss Construct (2.x and 3), ask questions or suggest features.</p>
+    <p>Reports bugs on <a href="https://github.com/construct/construct/issues"><strong>Github issues</strong></a></p>
+    </div>
+
 Contents:
 
 .. toctree::
