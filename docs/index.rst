@@ -3,8 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Construct's documentation!
-=======================================
+Welcome to Construct's Home page!
+=================================
+
+.. image:: _static/construct-logo.png
 
 .. raw:: html
 
@@ -26,7 +28,6 @@ Contents:
    meta
    string
    misc
-   text
    extending
    debugging
    api
