@@ -3,7 +3,7 @@ Various containers.
 """
 
 from collections import MutableMapping
-from pprint import pformat
+
 
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
     def decorator(func):
@@ -82,8 +82,29 @@ class Container(MutableMapping):
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self.__dict__))
 
+    #def __str__(self):
+    #    return "%s(%s)" % (self.__class__.__name__, str(self.__dict__))
+
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, str(self.__dict__))
+        return self.__pretty_str__()
+
+    @recursion_lock("<...>")
+    def __pretty_str__(self, nesting = 1, indentation = "    "):
+        attrs = []
+        ind = indentation * nesting
+        for k, v in self.items():
+            if not k.startswith("_"):
+                text = [ind, k, " = "]
+                if hasattr(v, "__pretty_str__"):
+                    text.append(v.__pretty_str__(nesting + 1, indentation))
+                else:
+                    text.append(repr(v))
+                attrs.append("".join(text))
+        if not attrs:
+            return "%s()" % (self.__class__.__name__,)
+        attrs.insert(0, self.__class__.__name__ + ":")
+        return "\n".join(attrs)
+
 
 class FlagsContainer(Container):
     """
@@ -93,21 +114,46 @@ class FlagsContainer(Container):
     """
 
     @recursion_lock("<...>")
-    def __str__(self):
-        d = dict((k, self[k]) for k in self
-                 if self[k] and not k.startswith("_"))
-        return "%s(%s)" % (self.__class__.__name__, pformat(d))
+    def __pretty_str__(self, nesting = 1, indentation = "    "):
+        attrs = []
+        ind = indentation * nesting
+        for k in self.keys():
+            v = self.__dict__[k]
+            if not k.startswith("_") and v:
+                attrs.append(ind + k)
+        if not attrs:
+            return "%s()" % (self.__class__.__name__,)
+        attrs.insert(0, self.__class__.__name__+ ":")
+        return "\n".join(attrs)
+     
 
 class ListContainer(list):
     """
     A container for lists.
     """
-
     __slots__ = ["__recursion_lock__"]
 
-    @recursion_lock("[...]")
     def __str__(self):
-        return pformat(self)
+        return self.__pretty_str__()
+
+    @recursion_lock("[...]")
+    def __pretty_str__(self, nesting = 1, indentation = "    "):
+        if not self:
+            return "[]"
+        ind = indentation * nesting
+        lines = ["["]
+        for elem in self:
+            lines.append("\n")
+            lines.append(ind)
+            if hasattr(elem, "__pretty_str__"):
+                lines.append(elem.__pretty_str__(nesting + 1, indentation))
+            else:
+                lines.append(repr(elem))
+        lines.append("\n")
+        lines.append(indentation * (nesting - 1))
+        lines.append("]")
+        return "".join(lines)
+
 
 class LazyContainer(object):
 
@@ -159,3 +205,11 @@ class LazyContainer(object):
     value = property(_get_value)
 
     has_value = property(lambda self: self._value is not NotImplemented)
+
+
+
+if __name__ == "__main__":
+    c = Container(a = 5, b = 6)
+    print c
+
+
