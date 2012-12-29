@@ -26,6 +26,8 @@ class SelectError(ConstructError):
     pass
 class TerminatorError(ConstructError):
     pass
+class OverwriteError(ValueError):
+    pass
 
 #===============================================================================
 # abstract constructs
@@ -627,9 +629,10 @@ class Struct(Construct):
         UBInt8("third_element"),
     )
     """
-    __slots__ = ["subcons", "nested"]
+    __slots__ = ["subcons", "nested", "allow_overwrite"]
     def __init__(self, name, *subcons, **kw):
         self.nested = kw.pop("nested", True)
+        self.allow_overwrite = kw.pop("allow_overwrite", False)
         if kw:
             raise TypeError("the only keyword argument accepted is 'nested'", kw)
         Construct.__init__(self, name)
@@ -651,6 +654,8 @@ class Struct(Construct):
             else:
                 subobj = sc._parse(stream, context)
                 if sc.name is not None:
+                    if sc.name in obj and not self.allow_overwrite:
+                        raise OverwriteError("%r would be overwritten but allow_overwrite is False" % (sc.name,))
                     obj[sc.name] = subobj
                     context[sc.name] = subobj
         return obj

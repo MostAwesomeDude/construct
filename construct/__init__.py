@@ -73,4 +73,5 @@ __all__ = [
     'TunnelAdapter', 'UBInt16', 'UBInt32', 'UBInt64', 'UBInt8', 'ULInt16',
     'ULInt32', 'ULInt64', 'ULInt8', 'UNInt16', 'UNInt32', 'UNInt64', 'UNInt8',
     'Union', 'ValidationError', 'Validator', 'Value', "Magic", "this",
+    "OverwriteError"
 ]
