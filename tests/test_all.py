@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", category = DeprecationWarning)
 
 
 # declarative to the bitter end!
-tests = [
+all_tests = [
     #
     # constructs
     #
@@ -273,34 +273,33 @@ tests = [
 ]
 
 
-def run_tests(tests):
-    errors = []
-    for i, (func, args, res, exctype) in enumerate(tests):
-        if type(args) is not tuple:
-            args = (args,)
-        try:
-            r = func(*args)
-        except:
-            t, ex, tb = sys.exc_info()
-            if exctype is None:
-                errors.append("%d::: %s" % (i, "".join(traceback.format_exception(t, ex, tb))))
-                continue
-            if t is not exctype:
-                errors.append("%s: raised %r, expected %r" % (func, t, exctype))
-                continue
-        else:
-            if exctype is not None:
-                errors.append("%s: expected exception %r" % (func, exctype))
-                continue
-            if r != res:
-                errors.append("%s: returned %r, expected %r" % (func, r, res))
-                continue
-    return errors
-
-
 class TestAll(unittest.TestCase):
-    def test(self):
-        errors = run_tests(tests)
+    def _run_tests(self, tests):
+        errors = []
+        for i, (func, args, res, exctype) in enumerate(tests):
+            if type(args) is not tuple:
+                args = (args,)
+            try:
+                r = func(*args)
+            except:
+                t, ex, tb = sys.exc_info()
+                if exctype is None:
+                    errors.append("%d::: %s" % (i, "".join(traceback.format_exception(t, ex, tb))))
+                    continue
+                if t is not exctype:
+                    errors.append("%s: raised %r, expected %r" % (func, t, exctype))
+                    continue
+            else:
+                if exctype is not None:
+                    errors.append("%s: expected exception %r" % (func, exctype))
+                    continue
+                if r != res:
+                    errors.append("%s: returned %r, expected %r" % (func, r, res))
+                    continue
+        return errors
+
+    def test_all(self):
+        errors = self._run_tests(all_tests)
         if errors:
             self.fail("\n=========================\n".join(str(e) for e in errors))
 

@@ -7,6 +7,10 @@ from construct.core import (Struct, MetaField, StaticField, FormatField,
 from construct.adapters import (BitIntegerAdapter, PaddingAdapter,
     ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter,
     PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
+try:
+    from sys import maxsize
+except ImportError:
+    from sys import maxint as maxsize
 
 
 #===============================================================================
@@ -263,7 +267,6 @@ def PrefixedArray(subcon, length_field = UBInt8("length")):
     )
 
 def OpenRange(mincount, subcon):
-    from sys import maxsize
     return Range(mincount, maxsize, subcon)
 
 def GreedyRange(subcon):

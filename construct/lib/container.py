@@ -5,7 +5,9 @@ Various containers.
 try:
     from collections import MutableMapping
 except ImportError:
-    from UserDict import UserDict as MutableMapping
+    from UserDict import UserDict
+    class MutableMapping(UserDict):
+        data = property(lambda self: self.__dict__)
 
 
 def recursion_lock(retval, lock_name = "__recursion_lock__"):

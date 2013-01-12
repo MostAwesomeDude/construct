@@ -4,6 +4,10 @@ from construct.lib.py3compat import BytesIO, advance_iterator, bchr
 from construct.lib import Container, ListContainer, LazyContainer
 import sys
 
+try:
+    bytes
+except NameError:
+    bytes = str
 
 #===============================================================================
 # exceptions
