@@ -14,8 +14,8 @@ class TestHexDumpAdapter(unittest.TestCase):
         pass
 
     def test_parse(self):
-        parsed = self.hda.parse(b'abcdef')
-        self.assertEqual(parsed, b'abcdef')
+        parsed = self.hda.parse(six.b('abcdef'))
+        self.assertEqual(parsed, six.b('abcdef'))
 
     def test_build(self):
         self.assertEqual(self.hda.build(six.b("abcdef")), six.b("abcdef"))

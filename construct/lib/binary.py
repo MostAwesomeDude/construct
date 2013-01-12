@@ -86,13 +86,14 @@ if six.PY3:
         """
         i = 0
         l = len(bits)
-        output = bytearray((l // bytesize) + 1)
+        output = [six.b("")] * ((l // bytesize) + 1)
         j = len(output) - 1
         while i < l:
             output[j] = bits[i : i + bytesize]
             i += bytesize
             j -= 1
-        return output
+        return six.b("").join(output)
+
 else:
 
     def int_to_bin(number, width = 32):

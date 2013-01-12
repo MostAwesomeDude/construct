@@ -39,3 +39,7 @@ class TestBinary(unittest.TestCase):
     def test_decode_bin_length(self):
         self.assertRaises(ValueError, decode_bin, six.b("\x00"))
 
+
+if __name__ == "__main__":
+    unittest.main()
+    

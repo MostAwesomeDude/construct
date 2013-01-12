@@ -30,8 +30,8 @@ class TestStaticField(unittest.TestCase):
 
     def test_field_parse(self):
         f = Field('name', 6)
-        self.assertEqual(f.parse(b'abcdef'), six.b('abcdef'))
-        self.assertEqual(f.parse(b'12abcdef'), six.b('12abcd'))
+        self.assertEqual(f.parse(six.b('abcdef')), six.b('abcdef'))
+        self.assertEqual(f.parse(six.b('12abcdef')), six.b('12abcd'))
         
 
 class TestFormatField(unittest.TestCase):

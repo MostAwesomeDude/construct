@@ -168,11 +168,9 @@ class PaddedStringAdapter(Adapter):
       building, when the given string is too long. 
     """
     __slots__ = ["padchar", "paddir", "trimdir"]
-    def __init__(self, subcon, padchar = six.b("\x00"), paddir = "right", 
-                 trimdir = "right"):
+    def __init__(self, subcon, padchar = six.b("\x00"), paddir = "right", trimdir = "right"):
         if paddir not in ("right", "left", "center"):
-            raise ValueError("paddir must be 'right', 'left' or 'center'", 
-                paddir)
+            raise ValueError("paddir must be 'right', 'left' or 'center'", paddir)
         if trimdir not in ("right", "left"):
             raise ValueError("trimdir must be 'right' or 'left'", trimdir)
         Adapter.__init__(self, subcon)
@@ -235,7 +233,7 @@ class CStringAdapter(StringAdapter):
     def _encode(self, obj, context):
         return StringAdapter._encode(self, obj, context) + self.terminators[0:1]
     def _decode(self, obj, context):
-        return StringAdapter._decode(self, b''.join(obj[:-1]), context)
+        return StringAdapter._decode(self, six.b('').join(obj[:-1]), context)
 
 class TunnelAdapter(Adapter):
     """
