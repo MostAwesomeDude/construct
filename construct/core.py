@@ -1354,13 +1354,15 @@ class ULInt24(StaticField):
         try:
             vals = self.packer.unpack(_read_stream(stream, self.length))
             return vals[0] + (vals[1] << 8)
-        except Exception, ex:
+        except Exception:
+            ex = sys.exc_info()[1]
             raise FieldError(ex)
     def _build(self, obj, stream, context):
         try:
             vals = (obj%256, obj >> 8)
             _write_stream(stream, self.length, self.packer.pack(vals))
-        except Exception, ex:
+        except Exception:
+            ex = sys.exc_info()[1]
             raise FieldError(ex)
 
 

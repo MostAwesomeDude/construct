@@ -2,6 +2,7 @@ import unittest
 
 from construct import BitField, BitStruct, Struct, Container
 from construct import Bit, Flag, Nibble, Padding
+import six
 
 class TestBitStruct(unittest.TestCase):
 
@@ -13,7 +14,7 @@ class TestBitStruct(unittest.TestCase):
             Nibble("c"),
             BitField("d", 5),
         )
-        self.assertEqual(struct.parse(b"\xe1\x1f"),
+        self.assertEqual(struct.parse(six.b("\xe1\x1f")),
             Container(a=7, b=False, c=8, d=31))
 
     def test_parse_nested(self):
@@ -27,5 +28,5 @@ class TestBitStruct(unittest.TestCase):
                 Bit("e"),
             )
         )
-        self.assertEqual(struct.parse(b"\xe1\x1f"),
+        self.assertEqual(struct.parse(six.b("\xe1\x1f")),
             Container(a=7, b=False, bar=Container(d=15, e=1), c=8))

@@ -20,9 +20,22 @@ Hands-on example:
     "\\x01\\x02\\x03"
 """
 
-from construct.core import *
-from construct.adapters import *
-from construct.macros import *
+from construct.core import (AdaptationError, Adapter, Anchor, ArrayError, Buffered, Construct, ConstructError, 
+    Container, FieldError, FormatField, LazyBound, LazyContainer, ListContainer, MetaArray, MetaField, OnDemand, 
+    OverwriteError, Packer, Pass, Peek, Pointer, Range, RangeError, Reconfig, RepeatUntil, Restream, Select, 
+    SelectError, Sequence, SizeofError, StaticField, Struct, Subconstruct, Switch, SwitchError, Terminator, 
+    TerminatorError, ULInt24, Union, Value)
+from construct.adapters import (BitIntegerAdapter, BitIntegerError, CStringAdapter, ConstAdapter, ConstError, 
+    ExprAdapter, FlagsAdapter, FlagsContainer, HexDumpAdapter, HexString, IndexingAdapter, LengthValueAdapter, 
+    MappingAdapter, MappingError, NoneOf, OneOf, PaddedStringAdapter, PaddingAdapter, PaddingError, SlicingAdapter, 
+    StringAdapter, TunnelAdapter, ValidationError, Validator) 
+from construct.macros import (Alias, Aligned, AlignedStruct, Array, BFloat32, BFloat64, Bit, BitField, 
+    BitStreamReader, BitStreamWriter, BitStruct, Bitwise, CString, Embedded, EmbeddedBitStruct, Enum, Field,
+    Flag, FlagsEnum, GreedyRange, If, IfThenElse, LFloat32, LFloat64, Magic, NFloat32, NFloat64, Nibble, Octet, 
+    OnDemandPointer, OpenRange, Optional, OptionalGreedyRange, Padding, PascalString, PrefixedArray, 
+    Rename, SBInt16, SBInt32, SBInt64, SBInt8, SLInt16, SLInt32, SLInt64, SLInt8, SNInt16, SNInt32, SNInt64, 
+    SNInt8, SeqOfOne, String, SymmetricMapping, UBInt16, UBInt32, UBInt64, UBInt8, ULInt16, ULInt32, ULInt64, 
+    ULInt8, UNInt16, UNInt32, UNInt64, UNInt8)
 from construct.lib.expr import this
 from construct.debug import Probe, Debugger
 from construct.version import version, version_string as __version__

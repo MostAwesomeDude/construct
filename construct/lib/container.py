@@ -2,7 +2,10 @@
 Various containers.
 """
 
-from collections import MutableMapping
+try:
+    from collections import MutableMapping
+except ImportError:
+    from UserDict import UserDict as MutableMapping
 
 
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
@@ -208,8 +211,8 @@ class LazyContainer(object):
 
 
 
-if __name__ == "__main__":
-    c = Container(a = 5, b = 6)
-    print c
+#if __name__ == "__main__":
+#    c = Container(a = 5, b = 6)
+#    print c
 
 
