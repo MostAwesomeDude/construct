@@ -1,5 +1,9 @@
 .project
 .pydevproject
 *.pyc
+__pycache__
 .settings
+*.egg-info
+dist/
+build/
 
