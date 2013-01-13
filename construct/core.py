@@ -326,7 +326,7 @@ class StaticField(Construct):
     def _parse(self, stream, context):
         return _read_stream(stream, self.length)
     def _build(self, obj, stream, context):
-        _write_stream(stream, self.length, obj)
+        _write_stream(stream, self.length, bchr(obj) if isinstance(obj, int) else obj)
     def _sizeof(self, context):
         return self.length
 

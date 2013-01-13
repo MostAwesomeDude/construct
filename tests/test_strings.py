@@ -84,5 +84,9 @@ class TestCString(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    #unittest.main()
+    s = CString("foo", encoding="utf8")
+    s.build(six.u("hello"))
+
+
 
