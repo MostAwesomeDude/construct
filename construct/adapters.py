@@ -146,11 +146,17 @@ class StringAdapter(Adapter):
         self.encoding = encoding
     def _encode(self, obj, context):
         if self.encoding:
-            obj = obj.encode(self.encoding)
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
         return obj
     def _decode(self, obj, context):
         if self.encoding:
-            obj = obj.decode(self.encoding)
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
         return obj
 
 class PaddedStringAdapter(Adapter):

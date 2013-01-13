@@ -1,6 +1,11 @@
 import sys
 from construct import *
 from construct.lib import LazyContainer
+import zlib
+
+class ZlibCodec(object):
+    encode = staticmethod(zlib.compress)
+    decode = staticmethod(zlib.decompress)
 
 
 # some tests require doing bad things...
@@ -179,9 +184,9 @@ all_tests = [
     [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build,
         six.b("abcde"), six.b("\x05abcde"), None],
         
-    [TunnelAdapter(PascalString("data", encoding = "zlib"), GreedyRange(UBInt16("elements"))).parse, 
+    [TunnelAdapter(PascalString("data", encoding = ZlibCodec), GreedyRange(UBInt16("elements"))).parse, 
         six.b("\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-"), [3] * 100, None],
-    [TunnelAdapter(PascalString("data", encoding = "zlib"), GreedyRange(UBInt16("elements"))).build, 
+    [TunnelAdapter(PascalString("data", encoding = ZlibCodec), GreedyRange(UBInt16("elements"))).build, 
         [3] * 100, six.b("\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-"), None],
     
     [Const(Field("const", 2), six.b("MZ")).parse, six.b("MZ"), six.b("MZ"), None],
@@ -191,19 +196,19 @@ all_tests = [
     [Const(Field("const", 2), six.b("MZ")).build, None, six.b("MZ"), None],
     
     [ExprAdapter(UBInt8("expradapter"), 
-        encoder = lambda obj, ctx: obj / 7, 
+        encoder = lambda obj, ctx: obj // 7, 
         decoder = lambda obj, ctx: obj * 7).parse, 
         six.b("\x06"), 42, None],
     [ExprAdapter(UBInt8("expradapter"), 
-        encoder = lambda obj, ctx: obj / 7, 
+        encoder = lambda obj, ctx: obj // 7, 
         decoder = lambda obj, ctx: obj * 7).build, 
         42, six.b("\x06"), None],
    
     #
     # macros
     #
-    [Aligned(UBInt8("aligned")).parse, "\x01\x00\x00\x00", 1, None],
-    [Aligned(UBInt8("aligned")).build, 1, "\x01\x00\x00\x00", None],
+    [Aligned(UBInt8("aligned")).parse, six.b("\x01\x00\x00\x00"), 1, None],
+    [Aligned(UBInt8("aligned")).build, 1, six.b("\x01\x00\x00\x00"), None],
     [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).parse, 
         six.b("\x01\x00\x00\x00\x02"), Container(a=1,b=2), None],
     [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, 
@@ -272,7 +277,6 @@ all_tests = [
     [Magic(six.b("MZ")).build, None, six.b("MZ"), None],
 ]
 
-
 class TestAll(unittest.TestCase):
     def _run_tests(self, tests):
         errors = []
@@ -305,4 +309,3 @@ class TestAll(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -598,7 +598,7 @@ class RepeatUntil(Subconstruct):
                     break
         else:
             for subobj in obj:
-                subobj = bchr(subobj)
+                #subobj = bchr(subobj)  -- WTF is that for?!
                 self.subcon._build(subobj, stream, context.__copy__())
                 if self.predicate(subobj, context):
                     terminated = True
