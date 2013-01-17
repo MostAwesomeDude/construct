@@ -2,11 +2,14 @@
 Changelog
 =========
 
-2.1.0
+2.5.0
 =====
 * Adding ``this`` expressions
 * Restructuring the library
-* Kill ``construct.text`` (it's highly inefficient and it was a side-project anyway)
+* Adding Python 3 support
+* Killing ``construct.text`` (it's highly inefficient and it was a side-project anyway)
+* Adding Travis CI tests
+* Kill old site in favor of ``readthedocs``
 
 2.06
 ====

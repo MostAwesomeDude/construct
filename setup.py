@@ -35,7 +35,7 @@ setup(
     install_requires = ["six"],
     requires = ["six"],
     provides = ["construct"],
-    keywords = "construct, data structure, binary, parser, builder, pack, unpack",
+    keywords = "construct, declarative, data structure, binary, parser, builder, pack, unpack",
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
@@ -48,5 +48,4 @@ setup(
         "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
     ],
-    #test_suite = "tests",
 )

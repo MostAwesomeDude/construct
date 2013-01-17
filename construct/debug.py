@@ -15,22 +15,19 @@ class Probe(Construct):
     to aid the debugging process.
     See also Debugger.
     
-    Parameters:
-    * name - the display name
-    * show_stream - whether or not to show stream contents. default is True. 
-      the stream must be seekable.
-    * show_context - whether or not to show the context. default is True.
-    * show_stack - whether or not to show the upper stack frames. default 
-      is True.
-    * stream_lookahead - the number of bytes to dump when show_stack is set.
-      default is 100.
+    :param name: the display name
+    :param show_stream: whether or not to show stream contents. default is True. the stream must be seekable.
+    :param show_context: whether or not to show the context. default is True.
+    :param show_stack: whether or not to show the upper stack frames. default is True.
+    :param stream_lookahead: the number of bytes to dump when show_stack is set. default is 100.
     
-    Example:
-    Struct("foo",
-        UBInt8("a"),
-        Probe("between a and b"),
-        UBInt8("b"),
-    )
+    Example::
+    
+        Struct("foo",
+            UBInt8("a"),
+            Probe("between a and b"),
+            UBInt8("b"),
+        )
     """
     __slots__ = [
         "printname", "show_stream", "show_context", "show_stack", 
@@ -93,17 +90,17 @@ class Debugger(Subconstruct):
     A pdb-based debugger. When an exception occurs in the subcon, a debugger
     will appear and allow you to debug the error (and even fix on-the-fly).
     
-    Parameters:
-    * subcon - the subcon to debug
+    :param subcon: the subcon to debug
     
-    Example:
-    Debugger(
-        Enum(UBInt8("foo"),
-            a = 1,
-            b = 2,
-            c = 3
+    Example::
+    
+        Debugger(
+            Enum(UBInt8("foo"),
+                a = 1,
+                b = 2,
+                c = 3
+            )
         )
-    )
     """
     __slots__ = ["retval"]
     def _parse(self, stream, context):

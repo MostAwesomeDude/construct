@@ -20,7 +20,7 @@ def Field(name, length):
     """
     A field consisting of a specified number of bytes.
 
-    :param str name: the name of the field
+    :param name: the name of the field
     :param length: the length of the field. the length can be either an integer
       (StaticField), or a function that takes the context as an argument and
       returns the length (MetaField)
@@ -31,39 +31,41 @@ def Field(name, length):
         return StaticField(name, length)
 
 def BitField(name, length, swapped = False, signed = False, bytesize = 8):
-    """
+    r"""
     BitFields, as the name suggests, are fields that operate on raw, unaligned
     bits, and therefore must be enclosed in a BitStruct. Using them is very
     similar to all normal fields: they take a name and a length (in bits).
 
-    :param str name: name of the field
-    :param int length: number of bits in the field, or a function that takes
-                       the context as its argument and returns the length
-    :param bool swapped: whether the value is byte-swapped
-    :param bool signed: whether the value is signed
-    :param int bytesize: number of bits per byte, for byte-swapping
+    :param name: name of the field
+    :param length: number of bits in the field, or a function that takes
+                   the context as its argument and returns the length
+    :param swapped: whether the value is byte-swapped
+    :param signed: whether the value is signed
+    :param bytesize: number of bits per byte, for byte-swapping
 
-    >>> foo = BitStruct("foo",
-    ...     BitField("a", 3),
-    ...     Flag("b"),
-    ...     Padding(3),
-    ...     Nibble("c"),
-    ...     BitField("d", 5),
-    ... )
-    >>> foo.parse("\\xe1\\x1f")
-    Container(a = 7, b = False, c = 8, d = 31)
-    >>> foo = BitStruct("foo",
-    ...     BitField("a", 3),
-    ...     Flag("b"),
-    ...     Padding(3),
-    ...     Nibble("c"),
-    ...     Struct("bar",
-    ...             Nibble("d"),
-    ...             Bit("e"),
-    ...     )
-    ... )
-    >>> foo.parse("\\xe1\\x1f")
-    Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
+    Example::
+    
+        >>> foo = BitStruct("foo",
+        ...     BitField("a", 3),
+        ...     Flag("b"),
+        ...     Padding(3),
+        ...     Nibble("c"),
+        ...     BitField("d", 5),
+        ... )
+        >>> foo.parse("\xe1\x1f")
+        Container(a = 7, b = False, c = 8, d = 31)
+        >>> foo = BitStruct("foo",
+        ...     BitField("a", 3),
+        ...     Flag("b"),
+        ...     Padding(3),
+        ...     Nibble("c"),
+        ...     Struct("bar",
+        ...             Nibble("d"),
+        ...             Bit("e"),
+        ...     )
+        ... )
+        >>> foo.parse("\xe1\x1f")
+        Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
     """
 
     return BitIntegerAdapter(Field(name, length),
@@ -75,12 +77,12 @@ def BitField(name, length, swapped = False, signed = False, bytesize = 8):
 
 def Padding(length, pattern = six.b("\x00"), strict = False):
     r"""a padding field (value is discarded)
-    * length - the length of the field. the length can be either an integer,
-      or a function that takes the context as an argument and returns the
-      length
-    * pattern - the padding pattern (character) to use. default is "\x00"
-    * strict - whether or not to raise an exception is the actual padding
-      pattern mismatches the desired pattern. default is False.
+    
+    :param length: the length of the field. the length can be either an integer,
+                   or a function that takes the context as an argument and returns the length
+    :param pattern: the padding pattern (character) to use. default is "\x00"
+    :param strict: whether or not to raise an exception is the actual padding
+                   pattern mismatches the desired pattern. default is False.
     """
     return PaddingAdapter(Field(None, length),
         pattern = pattern,
@@ -100,10 +102,10 @@ def Flag(name, truth = 1, falsehood = 0, default = False):
         C and Python way of thinking about truth, and may be subject to change
         in the future.
 
-    :param str name: field name
-    :param int truth: value of truth (default 1)
-    :param int falsehood: value of falsehood (default 0)
-    :param bool default: default value (default False)
+    :param name: field name
+    :param truth: value of truth (default 1)
+    :param falsehood: value of falsehood (default 0)
+    :param default: default value (default False)
     """
 
     return SymmetricMapping(Field(name, 1),
@@ -227,23 +229,25 @@ def NFloat64(name):
 # arrays
 #===============================================================================
 def Array(count, subcon):
-    """
+    r"""
     Repeats the given unit a fixed number of times.
 
-    :param int count: number of times to repeat
-    :param ``Construct`` subcon: construct to repeat
+    :param count: number of times to repeat
+    :param subcon: construct to repeat
 
-    >>> c = Array(4, UBInt8("foo"))
-    >>> c.parse("\\x01\\x02\\x03\\x04")
-    [1, 2, 3, 4]
-    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
-    [1, 2, 3, 4]
-    >>> c.build([5,6,7,8])
-    '\\x05\\x06\\x07\\x08'
-    >>> c.build([5,6,7,8,9])
-    Traceback (most recent call last):
-      ...
-    construct.core.RangeError: expected 4..4, found 5
+    Example::
+    
+        >>> c = Array(4, UBInt8("foo"))
+        >>> c.parse("\x01\x02\x03\x04")
+        [1, 2, 3, 4]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06")
+        [1, 2, 3, 4]
+        >>> c.build([5,6,7,8])
+        '\x05\x06\x07\x08'
+        >>> c.build([5,6,7,8,9])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 4..4, found 5
     """
 
     if callable(count):
@@ -255,8 +259,9 @@ def Array(count, subcon):
 
 def PrefixedArray(subcon, length_field = UBInt8("length")):
     """an array prefixed by a length field.
-    * subcon - the subcon to be repeated
-    * length_field - a construct returning an integer
+    
+    :param subcon: the subcon to be repeated
+    :param length_field: a construct returning an integer
     """
     return LengthValueAdapter(
         Sequence(subcon.name,
@@ -270,49 +275,53 @@ def OpenRange(mincount, subcon):
     return Range(mincount, maxsize, subcon)
 
 def GreedyRange(subcon):
-    """
+    r"""
     Repeats the given unit one or more times.
 
-    :param ``Construct`` subcon: construct to repeat
+    :param subcon: construct to repeat
 
-    >>> from construct import GreedyRange, UBInt8
-    >>> c = GreedyRange(UBInt8("foo"))
-    >>> c.parse("\\x01")
-    [1]
-    >>> c.parse("\\x01\\x02\\x03")
-    [1, 2, 3]
-    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
-    [1, 2, 3, 4, 5, 6]
-    >>> c.parse("")
-    Traceback (most recent call last):
-      ...
-    construct.core.RangeError: expected 1..2147483647, found 0
-    >>> c.build([1,2])
-    '\\x01\\x02'
-    >>> c.build([])
-    Traceback (most recent call last):
-      ...
-    construct.core.RangeError: expected 1..2147483647, found 0
+    Example::
+    
+        >>> from construct import GreedyRange, UBInt8
+        >>> c = GreedyRange(UBInt8("foo"))
+        >>> c.parse("\x01")
+        [1]
+        >>> c.parse("\x01\x02\x03")
+        [1, 2, 3]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06")
+        [1, 2, 3, 4, 5, 6]
+        >>> c.parse("")
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 1..2147483647, found 0
+        >>> c.build([1,2])
+        '\x01\x02'
+        >>> c.build([])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 1..2147483647, found 0
     """
     return OpenRange(1, subcon)
 
 def OptionalGreedyRange(subcon):
-    """
+    r"""
     Repeats the given unit zero or more times. This repeater can't
     fail, as it accepts lists of any length.
 
-    :param ``Construct`` subcon: construct to repeat
+    :param subcon: construct to repeat
 
-    >>> from construct import OptionalGreedyRange, UBInt8
-    >>> c = OptionalGreedyRange(UBInt8("foo"))
-    >>> c.parse("")
-    []
-    >>> c.parse("\\x01\\x02")
-    [1, 2]
-    >>> c.build([])
-    ''
-    >>> c.build([1,2])
-    '\\x01\\x02'
+    Example::
+    
+        >>> from construct import OptionalGreedyRange, UBInt8
+        >>> c = OptionalGreedyRange(UBInt8("foo"))
+        >>> c.parse("")
+        []
+        >>> c.parse("\x01\x02")
+        [1, 2]
+        >>> c.build([])
+        ''
+        >>> c.build([1,2])
+        '\x01\x02'
     """
     return OpenRange(0, subcon)
 
@@ -322,13 +331,15 @@ def OptionalGreedyRange(subcon):
 #===============================================================================
 def Optional(subcon):
     """an optional construct. if parsing fails, returns None.
-    * subcon - the subcon to optionally parse or build
+    
+    :param subcon: the subcon to optionally parse or build
     """
     return Select(subcon.name, subcon, Pass)
 
 def Bitwise(subcon):
     """converts the stream to bits, and passes the bitstream to subcon
-    * subcon - a bitwise construct (usually BitField)
+    
+    :param subcon: a bitwise construct (usually BitField)
     """
     # subcons larger than MAX_BUFFER will be wrapped by Restream instead
     # of Buffered. implementation details, don't stick your nose in :)
@@ -352,9 +363,10 @@ def Bitwise(subcon):
 
 def Aligned(subcon, modulus = 4, pattern = six.b("\x00")):
     r"""aligns subcon to modulus boundary using padding pattern
-    * subcon - the subcon to align
-    * modulus - the modulus boundary (default is 4)
-    * pattern - the padding pattern (default is \x00)
+    
+    :param subcon: the subcon to align
+    :param modulus: the modulus boundary (default is 4)
+    :param pattern: the padding pattern (default is \x00)
     """
     if modulus < 2:
         raise ValueError("modulus must be >= 2", modulus)
@@ -371,31 +383,35 @@ def Aligned(subcon, modulus = 4, pattern = six.b("\x00")):
     )
 
 def SeqOfOne(name, *args, **kw):
-    """a sequence of one element. only the first element is meaningful, the
+    r"""a sequence of one element. only the first element is meaningful, the
     rest are discarded
-    * name - the name of the sequence
-    * args - subconstructs
-    * kw - any keyword arguments to Sequence
+    
+    :param name: the name of the sequence
+    :param \*args: subconstructs
+    :param \*\*kw: any keyword arguments to Sequence
     """
     return IndexingAdapter(Sequence(name, *args, **kw), index = 0)
 
 def Embedded(subcon):
     """embeds a struct into the enclosing struct.
-    * subcon - the struct to embed
+    
+    :param subcon: the struct to embed
     """
     return Reconfig(subcon.name, subcon, subcon.FLAG_EMBED)
 
 def Rename(newname, subcon):
     """renames an existing construct
-    * newname - the new name
-    * subcon - the subcon to rename
+    
+    :param newname: the new name
+    :param subcon: the subcon to rename
     """
     return Reconfig(newname, subcon)
 
 def Alias(newname, oldname):
     """creates an alias for an existing element in a struct
-    * newname - the new name
-    * oldname - the name of an existing element
+    
+    :param newname: the new name
+    :param oldname: the name of an existing element
     """
     return Value(newname, lambda ctx: ctx[oldname])
 
@@ -405,12 +421,13 @@ def Alias(newname, oldname):
 #===============================================================================
 def SymmetricMapping(subcon, mapping, default = NotImplemented):
     """defines a symmetrical mapping: a->b, b->a.
-    * subcon - the subcon to map
-    * mapping - the encoding mapping (a dict); the decoding mapping is
-      achieved by reversing this mapping
-    * default - the default value to use when no mapping is found. if no
-      default value is given, and exception is raised. setting to Pass would
-      return the value "as is" (unmapped)
+    
+    :param subcon: the subcon to map
+    :param mapping: the encoding mapping (a dict); the decoding mapping is
+                    achieved by reversing this mapping
+    :param default: the default value to use when no mapping is found. if no
+                    default value is given, and exception is raised. setting to Pass would
+                    return the value "as is" (unmapped)
     """
     reversed_mapping = dict((v, k) for k, v in mapping.items())
     return MappingAdapter(subcon,
@@ -421,20 +438,22 @@ def SymmetricMapping(subcon, mapping, default = NotImplemented):
     )
 
 def Enum(subcon, **kw):
-    """a set of named values mapping.
-    * subcon - the subcon to map
-    * kw - keyword arguments which serve as the encoding mapping
-    * _default_ - an optional, keyword-only argument that specifies the
-      default value to use when the mapping is undefined. if not given,
-      and exception is raised when the mapping is undefined. use `Pass` to
-      pass the unmapped value as-is
+    r"""a set of named values mapping.
+    
+    :param subcon: the subcon to map
+    :param \*\*kw: - keyword arguments which serve as the encoding mapping
+    :param _default_: an optional, keyword-only argument that specifies the
+                      default value to use when the mapping is undefined. if not given,
+                      and exception is raised when the mapping is undefined. use `Pass` to
+                      pass the unmapped value as-is
     """
     return SymmetricMapping(subcon, kw, kw.pop("_default_", NotImplemented))
 
 def FlagsEnum(subcon, **kw):
-    """a set of flag values mapping.
-    * subcon - the subcon to map
-    * kw - keyword arguments which serve as the encoding mapping
+    r"""a set of flag values mapping.
+    
+    :param subcon: the subcon to map
+    :param \*\*kw: keyword arguments which serve as the encoding mapping
     """
     return FlagsAdapter(subcon, kw)
 
@@ -443,23 +462,25 @@ def FlagsEnum(subcon, **kw):
 # structs
 #===============================================================================
 def AlignedStruct(name, *subcons, **kw):
-    """a struct of aligned fields
-    * name - the name of the struct
-    * subcons - the subcons that make up this structure
-    * kw - keyword arguments to pass to Aligned: 'modulus' and 'pattern'
+    r"""a struct of aligned fields
+    
+    :param name: the name of the struct
+    :param \*subcons: the subcons that make up this structure
+    :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
     """
     return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
 
 def BitStruct(name, *subcons):
-    """a struct of bitwise fields
-    * name - the name of the struct
-    * subcons - the subcons that make up this structure
+    r"""a struct of bitwise fields
+    :param name: the name of the struct
+    :param \*subcons: the subcons that make up this structure
     """
     return Bitwise(Struct(name, *subcons))
 
 def EmbeddedBitStruct(*subcons):
-    """an embedded BitStruct. no name is necessary.
-    * subcons - the subcons that make up this structure
+    r"""an embedded BitStruct. no name is necessary.
+    
+    :param \*subcons: - the subcons that make up this structure
     """
     return Bitwise(Embedded(Struct(None, *subcons)))
 
@@ -468,33 +489,33 @@ def EmbeddedBitStruct(*subcons):
 #===============================================================================
 def String(name, length, encoding=None, padchar=None, paddir="right",
         trimdir="right"):
-    """
+    r"""
     A configurable, fixed-length string field.
 
     The padding character must be specified for padding and trimming to work.
 
-    :param str name: name
-    :param int length: length, in bytes
-    :param str encoding: encoding (e.g. "utf8") or None for no encoding
-    :param str padchar: optional character to pad out strings
-    :param str paddir: direction to pad out strings; one of "right", "left",
-                       or "both"
+    :param name: name
+    :param length: length, in bytes
+    :param encoding: encoding (e.g. "utf8") or None for no encoding
+    :param padchar: optional character to pad out strings
+    :param paddir: direction to pad out strings; one of "right", "left", or "both"
     :param str trim: direction to trim strings; one of "right", "left"
 
-    >>> from construct import String
-    >>> String("foo", 5).parse("hello")
-    'hello'
-    >>>
-    >>> String("foo", 12, encoding = "utf8").parse("hello joh\\xd4\\x83n")
-    u'hello joh\\u0503n'
-    >>>
-    >>> foo = String("foo", 10, padchar = "X", paddir = "right")
-    >>> foo.parse("helloXXXXX")
-    'hello'
-    >>> foo.build("hello")
-    'helloXXXXX'
+    Example::
+    
+        >>> from construct import String
+        >>> String("foo", 5).parse("hello")
+        'hello'
+        >>>
+        >>> String("foo", 12, encoding = "utf8").parse("hello joh\xd4\x83n")
+        u'hello joh\u0503n'
+        >>>
+        >>> foo = String("foo", 10, padchar = "X", paddir = "right")
+        >>> foo.parse("helloXXXXX")
+        'hello'
+        >>> foo.build("hello")
+        'helloXXXXX'
     """
-
     con = StringAdapter(Field(name, length), encoding=encoding)
     if padchar is not None:
         con = PaddedStringAdapter(con, padchar=padchar, paddir=paddir,
@@ -502,7 +523,7 @@ def String(name, length, encoding=None, padchar=None, paddir="right",
     return con
 
 def PascalString(name, length_field=UBInt8("length"), encoding=None):
-    """
+    r"""
     A length-prefixed string.
 
     ``PascalString`` is named after the string types of Pascal, which are
@@ -511,22 +532,23 @@ def PascalString(name, length_field=UBInt8("length"), encoding=None):
     The length field will appear in the same ``Container`` as the
     ``PascalString``, with the given name.
 
-    :param str name: name
-    :param ``Construct`` length_field: a field which will store the length of
-                                       the string
-    :param str encoding: encoding (e.g. "utf8") or None for no encoding
+    :param name: name
+    :param length_field: a field which will store the length of the string
+    :param encoding: encoding (e.g. "utf8") or None for no encoding
 
-    >>> foo = PascalString("foo")
-    >>> foo.parse("\\x05hello")
-    'hello'
-    >>> foo.build("hello world")
-    '\\x0bhello world'
-    >>>
-    >>> foo = PascalString("foo", length_field = UBInt16("length"))
-    >>> foo.parse("\\x00\\x05hello")
-    'hello'
-    >>> foo.build("hello")
-    '\\x00\\x05hello'
+    Example::
+    
+        >>> foo = PascalString("foo")
+        >>> foo.parse("\x05hello")
+        'hello'
+        >>> foo.build("hello world")
+        '\x0bhello world'
+        >>>
+        >>> foo = PascalString("foo", length_field = UBInt16("length"))
+        >>> foo.parse("\x00\x05hello")
+        'hello'
+        >>> foo.build("hello")
+        '\x00\x05hello'
     """
 
     return StringAdapter(
@@ -541,7 +563,7 @@ def PascalString(name, length_field=UBInt8("length"), encoding=None):
 
 def CString(name, terminators=six.b("\x00"), encoding=None,
             char_field=Field(None, 1)):
-    """
+    r"""
     A string ending in a terminator.
 
     ``CString`` is similar to the strings of C, C++, and other related
@@ -549,26 +571,27 @@ def CString(name, terminators=six.b("\x00"), encoding=None,
 
     By default, the terminator is the NULL byte (b``0x00``).
 
-    :param str name: name
-    :param iterable terminators: sequence of valid terminators, in order of
-                                 preference
-    :param str encoding: encoding (e.g. "utf8") or None for no encoding
-    :param ``Construct`` char_field: construct representing a single character
+    :param name: name
+    :param terminators: sequence of valid terminators, in order of preference
+    :param encoding: encoding (e.g. "utf8") or None for no encoding
+    :param char_field: construct representing a single character
 
-    >>> foo = CString("foo")
-    >>> foo.parse(b"hello\\x00")
-    b'hello'
-    >>> foo.build(b"hello")
-    b'hello\\x00'
-    >>> foo = CString("foo", terminators = b"XYZ")
-    >>> foo.parse(b"helloX")
-    b'hello'
-    >>> foo.parse(b"helloY")
-    b'hello'
-    >>> foo.parse(b"helloZ")
-    b'hello'
-    >>> foo.build(b"hello")
-    b'helloX'
+    Example::
+
+        >>> foo = CString("foo")
+        >>> foo.parse(b"hello\x00")
+        b'hello'
+        >>> foo.build(b"hello")
+        b'hello\x00'
+        >>> foo = CString("foo", terminators = b"XYZ")
+        >>> foo.parse(b"helloX")
+        b'hello'
+        >>> foo.parse(b"helloY")
+        b'hello'
+        >>> foo.parse(b"helloZ")
+        b'hello'
+        >>> foo.build(b"hello")
+        b'helloX'
     """
 
     return Rename(name,
@@ -586,11 +609,11 @@ def CString(name, terminators=six.b("\x00"), encoding=None,
 def IfThenElse(name, predicate, then_subcon, else_subcon):
     """an if-then-else conditional construct: if the predicate indicates True,
     `then_subcon` will be used; otherwise `else_subcon`
-    * name - the name of the construct
-    * predicate - a function taking the context as an argument and returning
-      True or False
-    * then_subcon - the subcon that will be used if the predicate returns True
-    * else_subcon - the subcon that will be used if the predicate returns False
+    
+    :param name: the name of the construct
+    :param predicate: a function taking the context as an argument and returning True or False
+    :param then_subcon: the subcon that will be used if the predicate returns True
+    :param else_subcon: the subcon that will be used if the predicate returns False
     """
     return Switch(name, lambda ctx: bool(predicate(ctx)),
         {
@@ -602,11 +625,11 @@ def IfThenElse(name, predicate, then_subcon, else_subcon):
 def If(predicate, subcon, elsevalue = None):
     """an if-then conditional construct: if the predicate indicates True,
     subcon will be used; otherwise, `elsevalue` will be returned instead.
-    * predicate - a function taking the context as an argument and returning
-      True or False
-    * subcon - the subcon that will be used if the predicate returns True
-    * elsevalue - the value that will be used should the predicate return False.
-      by default this value is None.
+    
+    :param predicate: a function taking the context as an argument and returning True or False
+    :param subcon: the subcon that will be used if the predicate returns True
+    :param elsevalue: the value that will be used should the predicate return False.
+                      by default this value is None.
     """
     return IfThenElse(subcon.name,
         predicate,
@@ -620,11 +643,11 @@ def If(predicate, subcon, elsevalue = None):
 #===============================================================================
 def OnDemandPointer(offsetfunc, subcon, force_build = True):
     """an on-demand pointer.
-    * offsetfunc - a function taking the context as an argument and returning
-      the absolute stream position
-    * subcon - the subcon that will be parsed from the `offsetfunc()` stream
-      position on demand
-    * force_build - see OnDemand. by default True.
+    
+    :param offsetfunc: a function taking the context as an argument and returning
+                       the absolute stream position
+    :param subcon: the subcon that will be parsed from the `offsetfunc()` stream position on demand
+    :param force_build: see OnDemand. by default True.
     """
     return OnDemand(Pointer(offsetfunc, subcon),
         advance_stream = False,

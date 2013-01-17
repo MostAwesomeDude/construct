@@ -27,15 +27,14 @@ class BitIntegerAdapter(Adapter):
     Adapter for bit-integers (converts bitstrings to integers, and vice versa).
     See BitField.
     
-    Parameters:
-    * subcon - the subcon to adapt
-    * width - the size of the subcon, in bits
-    * swapped - whether to swap byte order (little endian/big endian). 
-      default is False (big endian)
-    * signed - whether the value is signed (two's complement). the default
-      is False (unsigned)
-    * bytesize - number of bits per byte, used for byte-swapping (if swapped).
-      default is 8.
+    :param subcon: the subcon to adapt
+    :param width: the size of the subcon, in bits
+    :param swapped: whether to swap byte order (little endian/big endian). 
+                    default is False (big endian)
+    :param signed: whether the value is signed (two's complement). the default
+                   is False (unsigned)
+    :param bytesize: number of bits per byte, used for byte-swapping (if swapped).
+                     default is 8.
     """
     __slots__ = ["width", "swapped", "signed", "bytesize"]
     def __init__(self, subcon, width, swapped = False, signed = False, 
@@ -63,16 +62,15 @@ class MappingAdapter(Adapter):
     Adapter that maps objects to other objects.
     See SymmetricMapping and Enum.
     
-    Parameters:
-    * subcon - the subcon to map
-    * decoding - the decoding (parsing) mapping (a dict)
-    * encoding - the encoding (building) mapping (a dict)
-    * decdefault - the default return value when the object is not found
-      in the decoding mapping. if no object is given, an exception is raised.
-      if `Pass` is used, the unmapped object will be passed as-is
-    * encdefault - the default return value when the object is not found
-      in the encoding mapping. if no object is given, an exception is raised.
-      if `Pass` is used, the unmapped object will be passed as-is
+    :param subcon: the subcon to map
+    :param decoding: the decoding (parsing) mapping (a dict)
+    :param encoding: the encoding (building) mapping (a dict)
+    :param decdefault: the default return value when the object is not found
+                       in the decoding mapping. if no object is given, an exception is raised.
+                       if ``Pass`` is used, the unmapped object will be passed as-is
+    :param encdefault: the default return value when the object is not found
+                       in the encoding mapping. if no object is given, an exception is raised.
+                       if ``Pass`` is used, the unmapped object will be passed as-is
     """
     __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
     def __init__(self, subcon, decoding, encoding, 
@@ -106,12 +104,10 @@ class MappingAdapter(Adapter):
 class FlagsAdapter(Adapter):
     """
     Adapter for flag fields. Each flag is extracted from the number, resulting
-    in a FlagsContainer object. Not intended for direct usage.
-    See FlagsEnum.
+    in a FlagsContainer object. Not intended for direct usage. See FlagsEnum.
     
-    Parameters
-    * subcon - the subcon to extract
-    * flags - a dictionary mapping flag-names to their value
+    :param subcon: the subcon to extract
+    :param flags: a dictionary mapping flag-names to their value
     """
     __slots__ = ["flags"]
     def __init__(self, subcon, flags):
@@ -132,13 +128,11 @@ class FlagsAdapter(Adapter):
 class StringAdapter(Adapter):
     """
     Adapter for strings. Converts a sequence of characters into a python 
-    string, and optionally handles character encoding.
-    See String.
+    string, and optionally handles character encoding. See String.
     
-    Parameters:
-    * subcon - the subcon to convert
-    * encoding - the character encoding name (e.g., "utf8"), or None to 
-      return raw bytes (usually 8-bit ASCII).
+    :param subcon: the subcon to convert
+    :param encoding: the character encoding name (e.g., "utf8"), or None to 
+                     return raw bytes (usually 8-bit ASCII).
     """
     __slots__ = ["encoding"]
     def __init__(self, subcon, encoding = None):
@@ -161,17 +155,15 @@ class StringAdapter(Adapter):
 
 class PaddedStringAdapter(Adapter):
     r"""
-    Adapter for padded strings.
-    See String.
+    Adapter for padded strings. See String.
     
-    Parameters:
-    * subcon - the subcon to adapt
-    * padchar - the padding character. default is "\x00".
-    * paddir - the direction where padding is placed ("right", "left", or 
-      "center"). the default is "right". 
-    * trimdir - the direction where trimming will take place ("right" or 
-      "left"). the default is "right". trimming is only meaningful for
-      building, when the given string is too long. 
+    :param subcon: the subcon to adapt
+    :param padchar: the padding character. default is "\x00".
+    :param paddir: the direction where padding is placed ("right", "left", or 
+                   "center"). the default is "right". 
+    :param trimdir: the direction where trimming will take place ("right" or 
+                    "left"). the default is "right". trimming is only meaningful for
+                    building, when the given string is too long. 
     """
     __slots__ = ["padchar", "paddir", "trimdir"]
     def __init__(self, subcon, padchar = six.b("\x00"), paddir = "right", trimdir = "right"):
@@ -212,8 +204,7 @@ class LengthValueAdapter(Adapter):
     pair, and calculates the length based on the value.
     See PrefixedArray and PascalString.
     
-    Parameters:
-    * subcon - the subcon returning a length-value pair
+    :param subcon: the subcon returning a length-value pair
     """
     __slots__ = []
     def _encode(self, obj, context):
@@ -225,12 +216,10 @@ class CStringAdapter(StringAdapter):
     r"""
     Adapter for C-style strings (strings terminated by a terminator char).
     
-    Parameters:
-    * subcon - the subcon to convert
-    * terminators - a sequence of terminator chars. default is "\x00".
-    * encoding - the character encoding to use (e.g., "utf8"), or None to
-      return raw-bytes. the terminator characters are not affected by the 
-      encoding.
+    :param subcon: the subcon to convert
+    :param terminators: a sequence of terminator chars. default is "\x00".
+    :param encoding: the character encoding to use (e.g., "utf8"), or None to return raw-bytes. 
+                     the terminator characters are not affected by the encoding.
     """
     __slots__ = ["terminators"]
     def __init__(self, subcon, terminators = six.b("\x00"), encoding = None):
@@ -250,18 +239,19 @@ class TunnelAdapter(Adapter):
     first the upper layer builds the data, then the lower layer takes it and
     writes it to the stream.
     
-    Parameters:
-    * subcon - the lower layer subcon
-    * inner_subcon - the upper layer (tunneled/nested) subcon
+    :param subcon: the lower layer subcon
+    :param inner_subcon: the upper layer (tunneled/nested) subcon
     
-    Example:
-    # a pascal string containing compressed data (zlib encoding), so first
-    # the string is read, decompressed, and finally re-parsed as an array
-    # of UBInt16
-    TunnelAdapter(
-        PascalString("data", encoding = "zlib"),
-        GreedyRange(UBInt16("elements"))
-    )
+    Example::
+    
+        # a pascal string containing compressed data (zlib encoding), so first
+        # the string is read, decompressed, and finally re-parsed as an array
+        # of UBInt16
+        TunnelAdapter(
+            PascalString("data", encoding = "zlib"),
+            GreedyRange(UBInt16("elements"))
+        )
+    
     """
     __slots__ = ["inner_subcon"]
     def __init__(self, subcon, inner_subcon):
@@ -281,17 +271,16 @@ class ExprAdapter(Adapter):
     simple expression is needed.
     
     Parameters:
-    * subcon - the subcon to adapt
-    * encoder - a function that takes (obj, context) and returns an encoded 
-      version of obj
-    * decoder - a function that takes (obj, context) and returns an decoded 
-      version of obj
+    :param subcon: the subcon to adapt
+    :param encoder: a function that takes (obj, context) and returns an encoded version of obj
+    :param decoder: a function that takes (obj, context) and returns an decoded version of obj
     
-    Example:
-    ExprAdapter(UBInt8("foo"), 
-        encoder = lambda obj, ctx: obj / 4,
-        decoder = lambda obj, ctx: obj * 4,
-    )
+    Example::
+    
+        ExprAdapter(UBInt8("foo"), 
+            encoder = lambda obj, ctx: obj / 4,
+            decoder = lambda obj, ctx: obj * 4,
+        )
     """
     __slots__ = ["_encode", "_decode"]
     def __init__(self, subcon, encoder, decoder):
@@ -317,12 +306,12 @@ class ConstAdapter(Adapter):
     Adapter for enforcing a constant value ("magic numbers"). When decoding,
     the return value is checked; when building, the value is substituted in.
     
-    Parameters:
-    * subcon - the subcon to validate
-    * value - the expected value
+    :param subcon: the subcon to validate
+    :param value: the expected value
     
-    Example:
-    Const(Field("signature", 2), "MZ")
+    Example::
+    
+        Const(Field("signature", 2), "MZ")
     """
     __slots__ = ["value"]
     def __init__(self, subcon, value):
@@ -342,11 +331,10 @@ class SlicingAdapter(Adapter):
     """
     Adapter for slicing a list (getting a slice from that list)
     
-    Parameters:
-    * subcon - the subcon to slice
-    * start - start index
-    * stop - stop index (or None for up-to-end)
-    * step - step (or None for every element)
+    :param subcon: the subcon to slice
+    :param start: start index
+    :param stop: stop index (or None for up-to-end)
+    :param step: step (or None for every element)
     """
     __slots__ = ["start", "stop", "step"]
     def __init__(self, subcon, start, stop = None):
@@ -364,9 +352,8 @@ class IndexingAdapter(Adapter):
     """
     Adapter for indexing a list (getting a single item from that list)
     
-    Parameters:
-    * subcon - the subcon to index
-    * index - the index of the list to get
+    :param subcon: the subcon to index
+    :param index: the index of the list to get
     """
     __slots__ = ["index"]
     def __init__(self, subcon, index):
@@ -383,11 +370,10 @@ class PaddingAdapter(Adapter):
     r"""
     Adapter for padding.
     
-    Parameters:
-    * subcon - the subcon to pad
-    * pattern - the padding pattern (character). default is "\x00"
-    * strict - whether or not to verify, during parsing, that the given 
-      padding matches the padding pattern. default is False (unstrict)
+    :param subcon: the subcon to pad
+    :param pattern: the padding pattern (character). default is "\x00"
+    :param strict: whether or not to verify, during parsing, that the given 
+                   padding matches the padding pattern. default is False (unstrict)
     """
     __slots__ = ["pattern", "strict"]
     def __init__(self, subcon, pattern = six.b("\x00"), strict = False):
@@ -412,8 +398,7 @@ class Validator(Adapter):
     Abstract class: validates a condition on the encoded/decoded object. 
     Override _validate(obj, context) in deriving classes.
     
-    Parameters:
-    * subcon - the subcon to validate
+    :param subcon: the subcon to validate
     """
     __slots__ = []
     def _decode(self, obj, context):
@@ -429,22 +414,24 @@ class OneOf(Validator):
     """
     Validates that the object is one of the listed values.
 
-    :param ``Construct`` subcon: object to validate
-    :param iterable valids: a set of valid values
+    :param subcon: object to validate
+    :param valids: a set of valid values
 
-    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x05")
-    5
-    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
-    Traceback (most recent call last):
-        ...
-    construct.core.ValidationError: ('invalid object', 8)
-    >>>
-    >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(5)
-    '\\x05'
-    >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(9)
-    Traceback (most recent call last):
-        ...
-    construct.core.ValidationError: ('invalid object', 9)
+    Example::
+    
+        >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x05")
+        5
+        >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+        Traceback (most recent call last):
+            ...
+        construct.core.ValidationError: ('invalid object', 8)
+        >>>
+        >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(5)
+        '\\x05'
+        >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(9)
+        Traceback (most recent call last):
+            ...
+        construct.core.ValidationError: ('invalid object', 9)
     """
     __slots__ = ["valids"]
     def __init__(self, subcon, valids):
@@ -457,15 +444,17 @@ class NoneOf(Validator):
     """
     Validates that the object is none of the listed values.
 
-    :param ``Construct`` subcon: object to validate
-    :param iterable invalids: a set of invalid values
-
-    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
-    8
-    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x06")
-    Traceback (most recent call last):
-        ...
-    construct.core.ValidationError: ('invalid object', 6)
+    :param subcon: object to validate
+    :param invalids: a set of invalid values
+    
+    Example::
+    
+        >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+        8
+        >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x06")
+        Traceback (most recent call last):
+            ...
+        construct.core.ValidationError: ('invalid object', 6)
     """
     __slots__ = ["invalids"]
     def __init__(self, subcon, invalids):
