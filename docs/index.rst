@@ -6,7 +6,7 @@
     <ul>
     <li><a href="#user-guide" title="Jump to user guide">User Guide</a></li>
     <li><a href="#api-reference" title="Jump to API reference">API Reference</a></li>
-    <li><a href="http://pypi.python.org/pypi/construct">Download</a></li>
+    <li><a href="http://pypi.python.org/pypi/construct#downloads">Download</a></li>
     <li><a href="https://groups.google.com/d/forum/construct3">Discussion Group</a></li>
     <li><a href="https://github.com/construct/construct/">Github Repo</a></li>
     </ul>

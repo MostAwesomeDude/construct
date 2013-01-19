@@ -681,8 +681,8 @@ class Struct(Construct):
                 context[sc.name] = subobj
             sc._build(subobj, stream, context)
     def _sizeof(self, context):
-        if self.nested:
-            context = Container(_ = context)
+        #if self.nested:
+        #    context = Container(_ = context)
         return sum(sc._sizeof(context) for sc in self.subcons)
 
 class Sequence(Struct):
