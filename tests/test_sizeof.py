@@ -16,7 +16,7 @@ class TestSizeof(unittest.TestCase):
             )
         )
         obj = pstring.parse(six.b("\x03\x02helloXXX"))
-        print repr(obj)
+        print(repr(obj))
         self.assertEqual(obj, Container(length = 3, inner = Container(inner_length = 2, data = six.b("hello"))))
         size = pstring._sizeof(Container(inner_length = 2, _ = Container(length = 3)))
         self.assertEqual(size, 7)
