@@ -3,7 +3,7 @@ from construct import Struct, UBInt8, Bytes, Container
 import six
 
 def foo(ctx):
-    print "!!", repr(ctx)
+    print("!! %r" % (ctx,))
     return ctx._.length + ctx.inner_length
 
 class TestSizeof(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestSizeof(unittest.TestCase):
         )
         obj = pstring.parse(six.b("\x03\x02helloXXX"))
         print repr(obj)
-        self.assertEqual(obj, Container(length = 3, inner = Container(inner_length = 2, data = 'hello')))
+        self.assertEqual(obj, Container(length = 3, inner = Container(inner_length = 2, data = six.b("hello"))))
         size = pstring._sizeof(Container(inner_length = 2, _ = Container(length = 3)))
         self.assertEqual(size, 7)
 
