@@ -19,6 +19,7 @@
                                Comment Extension
 """
 from construct import *
+import six
 
 
 data_sub_block = Struct("data_sub_block",
@@ -49,8 +50,8 @@ gif_logical_screen = Struct("logical_screen",
 )
 
 gif_header = Struct("gif_header",
-    Const(String("signature", 3), "GIF"),
-    Const(String("version", 3), "89a")
+    Const(String("signature", 3), six.b("GIF")),
+    Const(String("version", 3), six.b("89a")),
 )
 
 application_extension = Struct("application_extension",
@@ -140,11 +141,11 @@ gif_file = Struct("gif_file",
     gif_header,
     gif_logical_screen,
     OptionalGreedyRange(gif_data),
-    Const(ULInt8("trailer"), 0x3B)
+    #Const(ULInt8("trailer"), 0x3B)
 )
 
 if __name__ == "__main__":
-    f = open("white.gif", "r")
+    f = open("../../../tests/sample.gif", "rb")
     s = f.read()
     f.close()
-    print gif_file.parse(s)
+    print(gif_file.parse(s))
