@@ -8,20 +8,41 @@
     <li><a href="#api-reference" title="Jump to API reference">API Reference</a></li>
     <li><a href="http://pypi.python.org/pypi/construct#downloads">Download</a></li>
     <li><a href="https://groups.google.com/d/forum/construct3">Discussion Group</a></li>
-    <li><a href="https://github.com/construct/construct/">Github Repo</a></li>
     </ul>
     <hr/>
     <a href="http://tomerfiliba.com" target="_blank">
     <img style="display: block; margin-left: auto; margin-right: auto" 
     src="_static/fish-text-black.png" title="Tomer's Blog"/></a>
     <br/>
+    <a href="http://github.com/construct/construct" target="_blank">
+    <img style="display: block; margin-left: auto; margin-right: auto; opacity: 0.7; width: 70px;" 
+    src="_static/github-logo.png" title="Github Repo"/></a>
+    <br/>
     <a href="http://travis-ci.org/construct/construct" target="_blank">
-    <img src="https://secure.travis-ci.org/construct/construct.png" 
+    <img src="https://travis-ci.org/construct/construct.png?branch=master" 
     style="display: block; margin-left: auto; margin-right: auto;" title="Travis CI status"></a>
     </div>
 
 Construct
 =========
+.. raw:: html
+
+   <div style="width:770px; margin: 1em 0 2em 0; display: block; padding: 1em; border: 1px dotted #DDD; 
+    background-color: rgba(255, 255, 202, 0.69); border-radius: 5px;">
+   
+   <strong>Sticky</strong><br/>
+   
+   <a class="reference external" href="https://pypi.python.org/pypi/construct">Version 2.5</a> 
+   was released on January 17<br/>
+   
+   Please use the 
+   <a class="reference external" href="https://groups.google.com/d/forum/construct3">mailing list</a> 
+   to ask questions and use 
+   <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> 
+   to report problems. <strong>Please do not email me directly</strong>.
+   
+   </div>
+
 Construct is a powerful **declarative** parser (and builder) for binary data.
 
 Instead of writing *imperative code* to parse a piece of data, you declaratively
