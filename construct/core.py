@@ -956,14 +956,14 @@ class Pointer(Subconstruct):
     def _parse(self, stream, context):
         newpos = self.offsetfunc(context)
         origpos = stream.tell()
-        stream.seek(newpos, newpos < 0 and 2 or 0)
+        stream.seek(newpos, 2 if newpos < 0 else 0)
         obj = self.subcon._parse(stream, context)
         stream.seek(origpos)
         return obj
     def _build(self, obj, stream, context):
         newpos = self.offsetfunc(context)
         origpos = stream.tell()
-        stream.seek(newpos, newpos < 0 and 2 or 0)
+        stream.seek(newpos, 2 if newpos < 0 else 0)
         self.subcon._build(obj, stream, context)
         stream.seek(origpos)
     def _sizeof(self, context):
