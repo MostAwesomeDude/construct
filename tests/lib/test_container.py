@@ -1,6 +1,7 @@
 import unittest
 
 from construct.lib.container import Container, ListContainer
+from random import randint
 
 class TestContainer(unittest.TestCase):
 
@@ -31,7 +32,7 @@ class TestContainer(unittest.TestCase):
 
     def test_ne_wrong_type(self):
         c = Container(a=1)
-        d = {"a": 1}
+        d = [("a", 1)]
         self.assertNotEqual(c, d)
 
     def test_ne_wrong_key(self):
@@ -91,6 +92,15 @@ class TestContainer(unittest.TestCase):
         c = Container(a=1, b=2)
         c.c = c
         str(c)
+    
+    def test_order(self):
+        c = Container()
+        while True:
+            words = [("".join(chr(randint(65, 97)) for _ in range(randint(3,7))), i) for i in range(20)]
+            if words != list(dict(words).keys()):
+                break
+        c.update(words)
+        self.assertEqual([k for k, _ in words], list(c.keys()))
 
 class TestListContainer(unittest.TestCase):
 

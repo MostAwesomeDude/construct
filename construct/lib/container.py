@@ -2,14 +2,6 @@
 Various containers.
 """
 
-try:
-    from collections import MutableMapping
-except ImportError:
-    from UserDict import UserDict
-    class MutableMapping(UserDict):
-        data = property(lambda self: self.__dict__)
-
-
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
     def decorator(func):
         def wrapper(self, *args, **kw):
@@ -24,80 +16,85 @@ def recursion_lock(retval, lock_name = "__recursion_lock__"):
         return wrapper
     return decorator
 
-class Container(MutableMapping):
+class Container(dict):
     """
     A generic container of attributes.
 
     Containers are the common way to express parsed data.
     """
+    __slots__ = ["__keys_order__"]
 
     def __init__(self, **kw):
-        self.__dict__ = kw
-
-    # The core dictionary interface.
-
-    def __getitem__(self, name):
-        return self.__dict__[name]
-
-    def __delitem__(self, name):
-        del self.__dict__[name]
-
-    def __setitem__(self, name, value):
-        self.__dict__[name] = value
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def __len__(self):
-        return len(self.__dict__.keys())
-
-    # Extended dictionary interface.
-
-    def update(self, other):
-        self.__dict__.update(other)
-
-    __update__ = update
-
-    def __contains__(self, value):
-        return value in self.__dict__
-
-    # Rich comparisons.
-
-    def __eq__(self, other):
+        object.__setattr__(self, "__keys_order__", [])
+        for k, v in kw.items():
+            self[k] = v
+    def __getattr__(self, name):
         try:
-            return self.__dict__ == other.__dict__
-        except AttributeError:
-            return False
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+    def __setitem__(self, key, val):
+        if key not in self:
+            self.__keys_order__.append(key)    
+        dict.__setitem__(self, key, val)
+    def __delitem__(self, key):
+        dict.__delitem__(self, key)
+        self.__keys_order__.remove(key)
+    
+    __delattr__ = __delitem__
+    __setattr__ = __setitem__
 
-    def __ne__(self, other):
-        return not self == other
+    def clear(self):
+        dict.clear(self)
+        del self.__keys_order__[:]
+    def pop(self, key, *default):
+        val = dict.pop(self, key, *default)
+        self.__keys_order__.remove(key)
+        return val
+    def popitem(self):
+        k, v = dict.popitem(self)
+        self.__keys_order__.remove(k)
+        return k, v
 
-    # Copy interface.
+    def update(self, seq, **kw):
+        if hasattr(seq, "keys"):
+            for k in seq.keys():
+                self[k] = seq[k]
+        else:
+            for k, v in seq:
+                self[k] = v
+        dict.update(self, kw)
 
     def copy(self):
-        return self.__class__(**self.__dict__)
+        inst = self.__class__()
+        inst.update(self.iteritems())
+        return inst
 
+    __update__ = update
     __copy__ = copy
 
-    # Iterator interface.
-
     def __iter__(self):
-        return iter(self.__dict__)
+        return iter(self.__keys_order__)
+    iterkeys = __iter__
+    def itervalues(self):
+        return (self[k] for k in self.__keys_order__)
+    def iteritems(self):
+        return ((k, self[k]) for k in self.__keys_order__)
+    def keys(self):
+        return self.__keys_order__
+    def values(self):
+        return list(self.itervalues())
+    def items(self):
+        return list(self.iteritems())
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.__dict__))
-
-    #def __str__(self):
-    #    return "%s(%s)" % (self.__class__.__name__, str(self.__dict__))
-
-    def __str__(self):
-        return self.__pretty_str__()
+        return "%s(%s)" % (self.__class__.__name__, dict.__repr__(self))
 
     @recursion_lock("<...>")
     def __pretty_str__(self, nesting = 1, indentation = "    "):
         attrs = []
         ind = indentation * nesting
-        for k, v in self.items():
+        for k, v in self.iteritems():
             if not k.startswith("_"):
                 text = [ind, k, " = "]
                 if hasattr(v, "__pretty_str__"):
@@ -109,6 +106,8 @@ class Container(MutableMapping):
             return "%s()" % (self.__class__.__name__,)
         attrs.insert(0, self.__class__.__name__ + ":")
         return "\n".join(attrs)
+
+    __str__ = __pretty_str__
 
 
 class FlagsContainer(Container):
@@ -213,8 +212,13 @@ class LazyContainer(object):
 
 
 
-#if __name__ == "__main__":
-#    c = Container(a = 5, b = 6)
-#    print c
+if __name__ == "__main__":
+    c = Container(x=5)
+    c.y = 8
+    c.z = 9
+    c.w = 10
+    c.foo = 5
+    
+    print c
 
 
