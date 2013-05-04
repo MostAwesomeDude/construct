@@ -219,6 +219,6 @@ if __name__ == "__main__":
     c.w = 10
     c.foo = 5
     
-    print c
+    print (c)
 
 
