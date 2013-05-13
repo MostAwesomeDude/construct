@@ -5,6 +5,11 @@ from construct import *
 import six
 from binascii import unhexlify
 
+try:
+    bytes
+except NameError:
+    bytes = str
+
 
 class IpAddressAdapter(Adapter):
     def _encode(self, obj, context):
