@@ -14,7 +14,7 @@ except NameError:
 class IpAddressAdapter(Adapter):
     def _encode(self, obj, context):
         if bytes is str:
-            return str(bytearray((int(b) for b in obj.split("."))))
+            return "".join(chr(int(b)) for b in obj.split("."))
         else:
             return bytes(int(b) for b in obj.split("."))
     def _decode(self, obj, context):
