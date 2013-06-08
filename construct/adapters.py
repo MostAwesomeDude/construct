@@ -5,6 +5,11 @@ from six import BytesIO
 import six
 
 
+try:
+    bytes
+except NameError:
+    bytes = str
+
 #===============================================================================
 # exceptions
 #===============================================================================
@@ -146,7 +151,7 @@ class StringAdapter(Adapter):
                 obj = self.encoding.encode(obj)
         return obj
     def _decode(self, obj, context):
-        if not isinstance(obj, six.string_types):
+        if not isinstance(obj, bytes):
             obj = six.b("").join(obj)
         if self.encoding:
             if isinstance(self.encoding, str):
