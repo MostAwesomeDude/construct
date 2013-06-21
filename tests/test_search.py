@@ -34,9 +34,9 @@ class TestSearch(unittest.TestCase):
     def test_search_sanity(self):
         obj1 = struct.parse(six.b("\x11\x21\x22\x02\x02\x13\x51\x52"))
 
-        self.assertIsNone(obj1.search("bb"))
-        self.assertIsNotNone(obj1.search("abcb"))
-        self.assertIsNotNone(obj1.search("ad"))
+        self.assertEqual(obj1.search("bb"), None)
+        self.assertNotEqual(obj1.search("abcb"), None)
+        self.assertNotEqual(obj1.search("ad"), None)
         self.assertEqual(obj1.search("aa"), 0x11)
         self.assertEqual(obj1.search("aba"), 0x21)
         self.assertEqual(obj1.search("abb"), 0x22)
@@ -46,14 +46,14 @@ class TestSearch(unittest.TestCase):
         obj1 = struct.parse(six.b("\x11\x21\x22\x02\x02\x13\x51\x52"))
         obj2 = struct.parse(six.b("\x11\x21\x22\x03\x03\x13\x51\x52"))
 
-        self.assertIsNone(obj1.search('abcb1a'))
-        self.assertIsNone(obj1.search('abcb3a'))
-        self.assertIsNone(obj1.search('abcb4a'))
+        self.assertEqual(obj1.search('abcb1a'), None)
+        self.assertEqual(obj1.search('abcb3a'), None)
+        self.assertEqual(obj1.search('abcb4a'), None)
         self.assertEqual(obj1.search('abcb2a'), 0x02)
         
-        self.assertIsNone(obj2.search('abcb1a'))
-        self.assertIsNone(obj2.search('abcb2a'))
-        self.assertIsNone(obj2.search('abcb4a'))
+        self.assertEqual(obj2.search('abcb1a'), None)
+        self.assertEqual(obj2.search('abcb2a'), None)
+        self.assertEqual(obj2.search('abcb4a'), None)
         self.assertEqual(obj2.search('abcb3a'), 0x03)
         # Return only the first one
         self.assertEqual(obj1.search("ada"), 0x51)
@@ -62,7 +62,7 @@ class TestSearch(unittest.TestCase):
         obj1 = struct.parse(six.b("\x11\x21\x22\x02\x02\x13\x51\x52"))
 
         self.assertEqual(obj1.search_all("bb"), [])
-        self.assertIsNotNone(obj1.search_all("ad"))
+        self.assertNotEqual(obj1.search_all("ad"), None)
         self.assertEqual(obj1.search_all("aa"), [0x11])
         self.assertEqual(obj1.search_all("aba"), [0x21])
         self.assertEqual(obj1.search_all("abb"), [0x22])
