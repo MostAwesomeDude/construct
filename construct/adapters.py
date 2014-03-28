@@ -53,7 +53,7 @@ class BitIntegerAdapter(Adapter):
         if obj < 0 and not self.signed:
             raise BitIntegerError("object is negative, but field is not signed",
                 obj)
-        obj2 = int_to_bin(obj, width = self.width)
+        obj2 = int_to_bin(obj, width = self.width(context) if callable(self.width) else self.width)
         if self.swapped:
             obj2 = swap_bytes(obj2, bytesize = self.bytesize)
         return obj2
