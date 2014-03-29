@@ -141,6 +141,7 @@ all_tests = [
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, swapped = True, bytesize = 4).parse, 
         six.b("\x01") * 4 + six.b("\x00") * 4, 0x0f, None],
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).build, 255, six.b("\x01") * 8, None],
+    [BitIntegerAdapter(Field("bitintegeradapter", lambda c: 8), lambda c: 8).build, 255, six.b("\x01") * 8, None],
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).build, -1, None, BitIntegerError],
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, signed = True).build, -1, six.b("\x01") * 8, None],
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, swapped = True, bytesize = 4).build, 
