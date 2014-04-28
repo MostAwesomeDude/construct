@@ -174,7 +174,7 @@ class Construct(object):
     def __copy__(self):
         """returns a copy of this construct"""
         self2 = object.__new__(self.__class__)
-        self2.__setstate__(self.__getstate__())
+        self2.__setstate__(self, self.__getstate__())
         return self2
 
     def parse(self, data):
@@ -357,7 +357,7 @@ class FormatField(StaticField):
         return attrs
     def __setstate__(self, attrs):
         attrs["packer"] = Packer(attrs["packer"])
-        return StaticField.__setstate__(attrs)
+        return StaticField.__setstate__(self, attrs)
     def _parse(self, stream, context):
         try:
             return self.packer.unpack(_read_stream(stream, self.length))[0]
@@ -1390,7 +1390,7 @@ class ULInt24(StaticField):
         return attrs
     def __setstate__(self, attrs):
         attrs["packer"] = Packer(attrs["packer"])
-        return StaticField.__setstate__(attrs)
+        return StaticField.__setstate__(self, attrs)
     def _parse(self, stream, context):
         try:
             vals = self.packer.unpack(_read_stream(stream, self.length))

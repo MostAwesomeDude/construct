@@ -32,8 +32,8 @@ Construct
    
    <strong>Sticky</strong><br/>
    
-   <a class="reference external" href="https://pypi.python.org/pypi/construct">Version 2.5.1</a> 
-   was released on May 4th, 2013<br/>
+   <a class="reference external" href="https://pypi.python.org/pypi/construct">Version 2.5.2</a> 
+   was released on April 28th, 2014<br/>
    
    Please use the 
    <a class="reference external" href="https://groups.google.com/d/forum/construct3">mailing list</a> 
