@@ -44,7 +44,7 @@ class BitIntegerAdapter(Adapter):
     __slots__ = ["width", "swapped", "signed", "bytesize"]
     def __init__(self, subcon, width, swapped = False, signed = False,
                  bytesize = 8):
-        Adapter.__init__(self, subcon)
+        super(BitIntegerAdapter, self).__init__(subcon)
         self.width = width
         self.swapped = swapped
         self.signed = signed
@@ -80,7 +80,7 @@ class MappingAdapter(Adapter):
     __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
     def __init__(self, subcon, decoding, encoding,
                  decdefault = NotImplemented, encdefault = NotImplemented):
-        Adapter.__init__(self, subcon)
+        super(MappingAdapter, self).__init__(subcon)
         self.decoding = decoding
         self.encoding = encoding
         self.decdefault = decdefault
@@ -116,7 +116,7 @@ class FlagsAdapter(Adapter):
     """
     __slots__ = ["flags"]
     def __init__(self, subcon, flags):
-        Adapter.__init__(self, subcon)
+        super(FlagsAdapter, self).__init__(subcon)
         self.flags = flags
     def _encode(self, obj, context):
         flags = 0
@@ -141,7 +141,7 @@ class StringAdapter(Adapter):
     """
     __slots__ = ["encoding"]
     def __init__(self, subcon, encoding = None):
-        Adapter.__init__(self, subcon)
+        super(StringAdapter, self).__init__(subcon)
         self.encoding = encoding
     def _encode(self, obj, context):
         if self.encoding:
@@ -178,7 +178,7 @@ class PaddedStringAdapter(Adapter):
             raise ValueError("paddir must be 'right', 'left' or 'center'", paddir)
         if trimdir not in ("right", "left"):
             raise ValueError("trimdir must be 'right' or 'left'", trimdir)
-        Adapter.__init__(self, subcon)
+        super(PaddedStringAdapter, self).__init__(subcon)
         self.padchar = padchar
         self.paddir = paddir
         self.trimdir = trimdir
@@ -230,7 +230,7 @@ class CStringAdapter(StringAdapter):
     """
     __slots__ = ["terminators"]
     def __init__(self, subcon, terminators = six.b("\x00"), encoding = None):
-        StringAdapter.__init__(self, subcon, encoding = encoding)
+        super(CStringAdapter, self).__init__(subcon, encoding = encoding)
         self.terminators = terminators
     def _encode(self, obj, context):
         return StringAdapter._encode(self, obj, context) + self.terminators[0:1]
@@ -262,7 +262,7 @@ class TunnelAdapter(Adapter):
     """
     __slots__ = ["inner_subcon"]
     def __init__(self, subcon, inner_subcon):
-        Adapter.__init__(self, subcon)
+        super(TunnelAdapter, self).__init__(subcon)
         self.inner_subcon = inner_subcon
     def _decode(self, obj, context):
         return self.inner_subcon._parse(BytesIO(obj), context)
@@ -290,7 +290,7 @@ class ExprAdapter(Adapter):
     """
     __slots__ = ["_encode", "_decode"]
     def __init__(self, subcon, encoder, decoder):
-        Adapter.__init__(self, subcon)
+        super(ExprAdapter, self).__init__(subcon)
         self._encode = encoder
         self._decode = decoder
 
@@ -300,7 +300,7 @@ class HexDumpAdapter(Adapter):
     """
     __slots__ = ["linesize"]
     def __init__(self, subcon, linesize = 16):
-        Adapter.__init__(self, subcon)
+        super(HexDumpAdapter, self).__init__(subcon)
         self.linesize = linesize
     def _encode(self, obj, context):
         return obj
@@ -321,7 +321,7 @@ class ConstAdapter(Adapter):
     """
     __slots__ = ["value"]
     def __init__(self, subcon, value):
-        Adapter.__init__(self, subcon)
+        super(ConstAdapter, self).__init__(subcon)
         self.value = value
     def _encode(self, obj, context):
         if obj is None or obj == self.value:
@@ -344,7 +344,7 @@ class SlicingAdapter(Adapter):
     """
     __slots__ = ["start", "stop", "step"]
     def __init__(self, subcon, start, stop = None):
-        Adapter.__init__(self, subcon)
+        super(SlicingAdapter, self).__init__(subcon)
         self.start = start
         self.stop = stop
     def _encode(self, obj, context):
@@ -363,7 +363,7 @@ class IndexingAdapter(Adapter):
     """
     __slots__ = ["index"]
     def __init__(self, subcon, index):
-        Adapter.__init__(self, subcon)
+        super(IndexingAdapter, self).__init__(subcon)
         if type(index) is not int:
             raise TypeError("index must be an integer", type(index))
         self.index = index
@@ -383,7 +383,7 @@ class PaddingAdapter(Adapter):
     """
     __slots__ = ["pattern", "strict"]
     def __init__(self, subcon, pattern = six.b("\x00"), strict = False):
-        Adapter.__init__(self, subcon)
+        super(PaddingAdapter, self).__init__(subcon)
         self.pattern = pattern
         self.strict = strict
     def _encode(self, obj, context):
@@ -441,7 +441,7 @@ class OneOf(Validator):
     """
     __slots__ = ["valids"]
     def __init__(self, subcon, valids):
-        Validator.__init__(self, subcon)
+        super(OneOf, self).__init__(subcon)
         self.valids = valids
     def _validate(self, obj, context):
         return obj in self.valids
@@ -464,7 +464,7 @@ class NoneOf(Validator):
     """
     __slots__ = ["invalids"]
     def __init__(self, subcon, invalids):
-        Validator.__init__(self, subcon)
+        super(NoneOf, self).__init__(subcon)
         self.invalids = invalids
     def _validate(self, obj, context):
         return obj not in self.invalids
