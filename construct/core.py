@@ -1172,8 +1172,8 @@ class Reconfig(Subconstruct):
     """
     __slots__ = []
     def __init__(self, name, subcon, setflags = 0, clearflags = 0):
-        super(Reconfig, self).__init__(name, subcon.conflags)
-        self.subcon = subcon
+        subcon.name = name
+        super(Reconfig, self).__init__(subcon)
         self._set_flag(setflags)
         self._clear_flag(clearflags)
 
