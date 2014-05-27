@@ -55,7 +55,7 @@ rle8pixel = RunLengthAdapter(
 #===============================================================================
 bitmap_file = Struct("bitmap_file",
     # header
-    Const(String("signature", 2), "BM"),
+    Const(String("signature", 2), b"BM"),
     ULInt32("file_size"),
     Padding(4),
     ULInt32("data_offset"),
