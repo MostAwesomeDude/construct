@@ -296,7 +296,7 @@ def _read_stream(stream, length):
         raise ValueError("length must be >= 0", length)
     data = stream.read(length)
     if len(data) != length:
-        raise FieldError("expected %d, found %d" % (length, len(data)))
+        return data[:len(data)]
     return data
 
 def _write_stream(stream, length, data):
