@@ -608,6 +608,34 @@ def CString(name, terminators=six.b("\x00"), encoding=None,
         )
     )
 
+def GreedyString(name, encoding=None, char_field=Field(None, 1)):
+    r"""
+    A configurable, variable-length string field.
+
+    :param name: name
+    :param encoding: encoding (e.g. "utf8") or None for no encoding
+    :param char_field: construct representing a single character
+
+    Example::
+
+        >>> foo = GreedyString("foo")
+        >>> foo.parse(b"hello\x00")
+        b'hello\x00'
+        >>> foo.build(b"hello\x00")
+        b'hello\x00'
+        >>> foo.parse(b"hello")
+        b'hello'
+        >>> foo.build(b"hello")
+        b'hello'
+    """
+
+    return Rename(name,
+        StringAdapter(
+           OptionalGreedyRange(char_field),
+           encoding=encoding,
+        )
+    )
+
 
 #===============================================================================
 # conditional
