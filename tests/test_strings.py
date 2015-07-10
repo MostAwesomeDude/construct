@@ -1,6 +1,6 @@
 import unittest
 import six
-from construct import String, PascalString, CString, UBInt16
+from construct import String, PascalString, CString, UBInt16, GreedyString
 
 
 class TestString(unittest.TestCase):
@@ -81,6 +81,16 @@ class TestCString(unittest.TestCase):
     def test_build_terminator(self):
         s = CString("foo", terminators=six.b("XYZ"), encoding="utf8")
         self.assertEqual(s.build(six.u("hello")), six.b("helloX"))
+
+
+class TestGreedyString(unittest.TestCase):
+    def test_parse(self):
+        s = GreedyString("foo", encoding="utf8")
+        self.assertEqual(s.parse(six.b("hello\x00")), six.u("hello\x00"))
+
+    def test_build(self):
+        s = GreedyString("foo", encoding="utf8")
+        self.assertEqual(s.build(six.u("hello")), six.b("hello"))
 
 
 if __name__ == "__main__":

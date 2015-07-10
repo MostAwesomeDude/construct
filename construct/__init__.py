@@ -33,7 +33,7 @@ from construct.macros import (Alias, Aligned, AlignedStruct, Array, BFloat32, BF
     OnDemandPointer, OpenRange, Optional, OptionalGreedyRange, Padding, PascalString, PrefixedArray, 
     Rename, SBInt16, SBInt32, SBInt64, SBInt8, SLInt16, SLInt32, SLInt64, SLInt8, SNInt16, SNInt32, SNInt64, 
     SNInt8, SeqOfOne, String, SymmetricMapping, UBInt16, UBInt32, UBInt64, UBInt8, ULInt16, ULInt32, ULInt64, 
-    ULInt8, UNInt16, UNInt32, UNInt64, UNInt8)
+    ULInt8, UNInt16, UNInt32, UNInt64, UNInt8, GreedyString)
 from construct.lib.expr import this
 from construct.debug import Probe, Debugger
 from construct.version import version, version_string as __version__
