@@ -92,10 +92,6 @@ class TestGreedyString(unittest.TestCase):
         s = GreedyString("foo", encoding="utf8")
         self.assertEqual(s.build(six.u("hello")), six.b("hello"))
 
-    def test_build_terminator(self):
-        s = CString("foo", terminators=six.b("XYZ"), encoding="utf8")
-        self.assertEqual(s.build(six.u("hello")), six.b("helloX"))
-
 
 if __name__ == "__main__":
     #unittest.main()
