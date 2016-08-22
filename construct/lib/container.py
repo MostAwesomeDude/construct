@@ -70,6 +70,35 @@ class Container(dict):
         inst.update(self.iteritems())
         return inst
 
+    def _search(self, name, search_all):
+        items = []
+        for key in self.keys():
+            try:
+                if key == name:
+                    if search_all:
+                        items.append(self[key])
+                    else:
+                        return self[key]
+                if type(self[key]) == Container or type(self[key]) == ListContainer:
+                    ret = self[key]._search(name, search_all)
+                    if ret is not None:
+                        if search_all:
+                            items.extend(ret)
+                        else:
+                            return ret
+            except:
+                pass
+        if search_all:
+            return items
+        else:    
+            return None
+        
+    def search(self, name):
+        return self._search(name, False)
+    
+    def search_all(self, name):
+        return self._search(name, True)
+    
     __update__ = update
     __copy__ = copy
 
@@ -157,6 +186,29 @@ class ListContainer(list):
         lines.append(indentation * (nesting - 1))
         lines.append("]")
         return "".join(lines)
+    
+    def _search(self, name, search_all):
+        items = []
+        for item in self:
+            try:
+                ret = item._search(name, search_all)
+            except:
+                continue
+            if ret is not None:
+                if search_all:
+                    items.extend(ret)
+                else:
+                    return ret
+        if search_all:
+            return items
+        else:
+            return None
+        
+    def search(self, name):
+        return self._search(name, False)
+    
+    def search_all(self, name):
+        return self._search(name, True)
 
 
 class LazyContainer(object):
