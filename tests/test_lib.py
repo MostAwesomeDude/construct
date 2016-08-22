@@ -1,6 +1,7 @@
 import unittest
 
 from construct.lib.binary import int_to_bin, bin_to_int, swap_bytes, encode_bin, decode_bin
+from construct.lib.expr import Path
 
 
 class TestBinary(unittest.TestCase):
@@ -37,4 +38,12 @@ class TestBinary(unittest.TestCase):
 
     def test_decode_bin_length(self):
         self.assertRaises(ValueError, decode_bin, b"\x00")
+
+
+class TestExpr(unittest.TestCase):
+    def test(self):
+        path = Path("path")
+        x = ~((path.foo * 2 + 3 << 2) % 11)
+        self.assertEqual(x, 'not ((((this.foo * 2) + 3) >> 2) % 11)')
+        self.assertFalse(x(dict(foo=7)))
 

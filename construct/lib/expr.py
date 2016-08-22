@@ -152,15 +152,6 @@ class Path(ExprMixin):
         return Path(name, self)
 
 
-# let the magic begin!
+# where is `this` being referenced from?
 this = Path("this")
-
-
-if __name__ == "__main__":
-    x = ~((this.foo * 2 + 3 << 2) % 11)
-    print (x)
-    print (x({"foo" : 7}))
-
-
-
 
