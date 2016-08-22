@@ -10,7 +10,7 @@ opnames = {
     operator.mul : "*",
     operator.div : "/",
     operator.floordiv : "//",
-    operator.mod : "+",
+    operator.mod : "%",
     operator.pow : "**",
     operator.xor : "^",
     operator.lshift : "<<",
