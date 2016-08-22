@@ -2,6 +2,10 @@
 Changelog
 =========
 
+2.5.3
+=====
+* Commits since bb1e037887860a23df833f4068c4fe39de55e56e
+
 2.5.0
 =====
 * Adding ``this`` expressions
