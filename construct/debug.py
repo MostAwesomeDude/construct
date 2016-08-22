@@ -39,7 +39,7 @@ class Probe(Construct):
     def __init__(self, name = None, show_stream = True, 
                  show_context = True, show_stack = True, 
                  stream_lookahead = 100):
-        Construct.__init__(self, None)
+        super(Probe, self).__init__(None)
         if name is None:
             Probe.counter += 1
             name = "<unnamed %d>" % (Probe.counter,)

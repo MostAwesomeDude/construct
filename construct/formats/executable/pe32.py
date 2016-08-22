@@ -32,7 +32,7 @@ class NamedSequence(Adapter):
     __slots__ = ["mapping", "rev_mapping"]
     prefix = "unnamed_"
     def __init__(self, subcon, mapping):
-        Adapter.__init__(self, subcon)
+        super(NamedSequence, self).__init__(subcon)
         self.mapping = mapping
         self.rev_mapping = dict((v, k) for k, v in mapping.items())
     def _encode(self, obj, context):

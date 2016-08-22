@@ -125,7 +125,7 @@ class File(object):
 
 class Directory(File):
     def __init__(self, dirEntry, fs, children=None):
-        File.__init__(self, dirEntry, fs)
+        super(Directory, self).__init__(dirEntry, fs)
         self.children = children
         if not self.children:
             self.children = File.fromDirEntries(\
@@ -151,7 +151,7 @@ class FatFs(Directory):
     def __init__(self, stream):
         self.stream = stream
         self.pdr = PreDataRegion("pdr").parse_stream(stream)
-        Directory.__init__(self, dirEntry = None, 
+        super(FatFs, self).__init__(dirEntry = None, 
                 fs = self, children = File.fromDirEntries(
                         self.pdr.rootdirs, self))
 

@@ -265,7 +265,7 @@ class Subconstruct(Construct):
 
     __slots__ = ["subcon"]
     def __init__(self, subcon):
-        Construct.__init__(self, subcon.name, subcon.conflags)
+        super(Subconstruct, self).__init__(subcon.name, subcon.conflags)
         self.subcon = subcon
     def _parse(self, stream, context):
         return self.subcon._parse(stream, context)
@@ -322,7 +322,7 @@ class StaticField(Construct):
 
     __slots__ = ["length"]
     def __init__(self, name, length):
-        Construct.__init__(self, name)
+        super(StaticField, self).__init__(name)
         self.length = length
     def _parse(self, stream, context):
         return _read_stream(stream, self.length)
@@ -350,14 +350,14 @@ class FormatField(StaticField):
         if len(format) != 1:
             raise ValueError("must specify one and only one format char")
         self.packer = Packer(endianity + format)
-        StaticField.__init__(self, name, self.packer.size)
+        super(FormatField, self).__init__(name, self.packer.size)
     def __getstate__(self):
-        attrs = StaticField.__getstate__(self)
+        attrs = super(FormatField, self).__getstate__()
         attrs["packer"] = attrs["packer"].format
         return attrs
     def __setstate__(self, attrs):
         attrs["packer"] = Packer(attrs["packer"])
-        return StaticField.__setstate__(self, attrs)
+        return super(FormatField, self).__setstate__(attrs)
     def _parse(self, stream, context):
         try:
             return self.packer.unpack(_read_stream(stream, self.length))[0]
@@ -391,7 +391,7 @@ class MetaField(Construct):
 
     __slots__ = ["lengthfunc"]
     def __init__(self, name, lengthfunc):
-        Construct.__init__(self, name)
+        super(MetaField, self).__init__(name)
         self.lengthfunc = lengthfunc
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
@@ -424,7 +424,7 @@ class MetaArray(Subconstruct):
     """
     __slots__ = ["countfunc"]
     def __init__(self, countfunc, subcon):
-        Subconstruct.__init__(self, subcon)
+        super(MetaArray, self).__init__(subcon)
         self.countfunc = countfunc
         self._clear_flag(self.FLAG_COPY_CONTEXT)
         self._set_flag(self.FLAG_DYNAMIC)
@@ -507,7 +507,7 @@ class Range(Subconstruct):
 
     __slots__ = ["mincount", "maxcout"]
     def __init__(self, mincount, maxcout, subcon):
-        Subconstruct.__init__(self, subcon)
+        super(Range, self).__init__(subcon)
         self.mincount = mincount
         self.maxcout = maxcout
         self._clear_flag(self.FLAG_COPY_CONTEXT)
@@ -576,7 +576,7 @@ class RepeatUntil(Subconstruct):
     """
     __slots__ = ["predicate"]
     def __init__(self, predicate, subcon):
-        Subconstruct.__init__(self, subcon)
+        super(RepeatUntil, self).__init__(subcon)
         self.predicate = predicate
         self._clear_flag(self.FLAG_COPY_CONTEXT)
         self._set_flag(self.FLAG_DYNAMIC)
@@ -650,7 +650,7 @@ class Struct(Construct):
         self.allow_overwrite = kw.pop("allow_overwrite", False)
         if kw:
             raise TypeError("the only keyword argument accepted is 'nested'", kw)
-        Construct.__init__(self, name)
+        super(Struct, self).__init__(name)
         self.subcons = subcons
         self._inherit_flags(*subcons)
         self._clear_flag(self.FLAG_EMBED)
@@ -777,7 +777,7 @@ class Union(Construct):
     """
     __slots__ = ["parser", "builder"]
     def __init__(self, name, master, *subcons, **kw):
-        Construct.__init__(self, name)
+        super(Union, self).__init__(name)
         args = [Peek(sc) for sc in subcons]
         args.append(MetaField(None, lambda ctx: master._sizeof(ctx)))
         self.parser = Struct(name, Peek(master, perform_build = True), *args)
@@ -838,7 +838,7 @@ class Switch(Construct):
 
     def __init__(self, name, keyfunc, cases, default = NoDefault,
                  include_key = False):
-        Construct.__init__(self, name)
+        super(Switch, self).__init__(name)
         self._inherit_flags(*cases.values())
         self.keyfunc = keyfunc
         self.cases = cases
@@ -892,7 +892,7 @@ class Select(Construct):
         if kw:
             raise TypeError("the only keyword argument accepted "
                 "is 'include_name'", kw)
-        Construct.__init__(self, name)
+        super(Select, self).__init__(name)
         self.subcons = subcons
         self.include_name = include_name
         self._inherit_flags(*subcons)
@@ -965,7 +965,7 @@ class Pointer(Subconstruct):
     """
     __slots__ = ["offsetfunc"]
     def __init__(self, offsetfunc, subcon):
-        Subconstruct.__init__(self, subcon)
+        super(Pointer, self).__init__(subcon)
         self.offsetfunc = offsetfunc
     def _parse(self, stream, context):
         newpos = self.offsetfunc(context)
@@ -1001,7 +1001,7 @@ class Peek(Subconstruct):
     """
     __slots__ = ["perform_build"]
     def __init__(self, subcon, perform_build = False):
-        Subconstruct.__init__(self, subcon)
+        super(Peek, self).__init__(subcon)
         self.perform_build = perform_build
     def _parse(self, stream, context):
         pos = stream.tell()
@@ -1043,7 +1043,7 @@ class OnDemand(Subconstruct):
     """
     __slots__ = ["advance_stream", "force_build"]
     def __init__(self, subcon, advance_stream = True, force_build = True):
-        Subconstruct.__init__(self, subcon)
+        super(OnDemand, self).__init__(subcon)
         self.advance_stream = advance_stream
         self.force_build = force_build
     def _parse(self, stream, context):
@@ -1086,7 +1086,7 @@ class Buffered(Subconstruct):
     """
     __slots__ = ["encoder", "decoder", "resizer"]
     def __init__(self, subcon, decoder, encoder, resizer):
-        Subconstruct.__init__(self, subcon)
+        super(Buffered, self).__init__(subcon)
         self.encoder = encoder
         self.decoder = decoder
         self.resizer = resizer
@@ -1136,7 +1136,7 @@ class Restream(Subconstruct):
     """
     __slots__ = ["stream_reader", "stream_writer", "resizer"]
     def __init__(self, subcon, stream_reader, stream_writer, resizer):
-        Subconstruct.__init__(self, subcon)
+        super(Restream, self).__init__(subcon)
         self.stream_reader = stream_reader
         self.stream_writer = stream_writer
         self.resizer = resizer
@@ -1172,8 +1172,8 @@ class Reconfig(Subconstruct):
     """
     __slots__ = []
     def __init__(self, name, subcon, setflags = 0, clearflags = 0):
-        Construct.__init__(self, name, subcon.conflags)
-        self.subcon = subcon
+        subcon.name = name
+        super(Reconfig, self).__init__(subcon)
         self._set_flag(setflags)
         self._clear_flag(clearflags)
 
@@ -1222,7 +1222,7 @@ class Value(Construct):
     """
     __slots__ = ["func"]
     def __init__(self, name, func):
-        Construct.__init__(self, name)
+        super(Value, self).__init__(name)
         self.func = func
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
@@ -1257,7 +1257,7 @@ class Value(Construct):
 #    """
 #    __slots__ = ["factoryfunc"]
 #    def __init__(self, name, factoryfunc):
-#        Construct.__init__(self, name, self.FLAG_COPY_CONTEXT)
+#        super(Dynamic, self).__init__(name, self.FLAG_COPY_CONTEXT)
 #        self.factoryfunc = factoryfunc
 #        self._set_flag(self.FLAG_DYNAMIC)
 #    def _parse(self, stream, context):
@@ -1284,7 +1284,7 @@ class LazyBound(Construct):
     """
     __slots__ = ["bindfunc", "bound"]
     def __init__(self, name, bindfunc):
-        Construct.__init__(self, name)
+        super(LazyBound, self).__init__(name)
         self.bound = None
         self.bindfunc = bindfunc
     def _parse(self, stream, context):
@@ -1383,14 +1383,14 @@ class ULInt24(StaticField):
     __slots__ = ["packer"]
     def __init__(self, name):
         self.packer = Packer("<BH")
-        StaticField.__init__(self, name, self.packer.size)
+        super(ULInt24, self).__init__(name, self.packer.size)
     def __getstate__(self):
-        attrs = StaticField.__getstate__(self)
+        attrs = super(ULInt24, self).__getstate__()
         attrs["packer"] = attrs["packer"].format
         return attrs
     def __setstate__(self, attrs):
         attrs["packer"] = Packer(attrs["packer"])
-        return StaticField.__setstate__(self, attrs)
+        return super(ULInt24, self).__setstate__(attrs)
     def _parse(self, stream, context):
         try:
             vals = self.packer.unpack(_read_stream(stream, self.length))
