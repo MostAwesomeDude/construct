@@ -1,7 +1,6 @@
 import unittest
 from construct import Struct, UBInt8, UBInt32, IfThenElse, Value, Field, Container
 from construct import this
-import six
 
 
 class TestThisExpressions(unittest.TestCase):
@@ -26,19 +25,15 @@ class TestThisExpressions(unittest.TestCase):
     )
 
     def test_parse(self):
-        res = self.this_example.parse(six.b("\x05helloABXXXX"))
-        expected = Container(length = 5, value = six.b('hello'), 
+        res = self.this_example.parse(b"\x05helloABXXXX")
+        expected = Container(length = 5, value = b'hello', 
             nested = Container(b1 = 65, b2 = 66, b3 = 4295), 
             condition = 1482184792)
         self.assertEquals(res, expected)
     
     def test_build(self):
-        obj = Container(length = 5, value = six.b('hello'), 
+        obj = Container(length = 5, value = b'hello', 
             nested = Container(b1 = 65, b2 = 66, b3 = None), condition = 1482184792)
         data = self.this_example.build(obj)
-        self.assertEquals(data, six.b("\x05helloABXXXX"))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.assertEquals(data, b"\x05helloABXXXX")
 
