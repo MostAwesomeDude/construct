@@ -1,6 +1,6 @@
 import unittest
+
 from construct import Struct, UBInt8, Bytes, Container, Switch, GreedyRange
-import six
 
 struct = Struct("a",
     UBInt8("aa"),
@@ -32,7 +32,7 @@ struct = Struct("a",
 
 class TestSearch(unittest.TestCase):
     def test_search_sanity(self):
-        obj1 = struct.parse(six.b("\x11\x21\x22\x02\x02\x13\x51\x52"))
+        obj1 = struct.parse(b"\x11\x21\x22\x02\x02\x13\x51\x52")
 
         self.assertEqual(obj1.search("bb"), None)
         self.assertNotEqual(obj1.search("abcb"), None)
@@ -43,8 +43,8 @@ class TestSearch(unittest.TestCase):
         self.assertEqual(obj1.search('ac'), 0x13)
         
     def test_search_functionality(self):
-        obj1 = struct.parse(six.b("\x11\x21\x22\x02\x02\x13\x51\x52"))
-        obj2 = struct.parse(six.b("\x11\x21\x22\x03\x03\x13\x51\x52"))
+        obj1 = struct.parse(b"\x11\x21\x22\x02\x02\x13\x51\x52")
+        obj2 = struct.parse(b"\x11\x21\x22\x03\x03\x13\x51\x52")
 
         self.assertEqual(obj1.search('abcb1a'), None)
         self.assertEqual(obj1.search('abcb3a'), None)
@@ -59,7 +59,7 @@ class TestSearch(unittest.TestCase):
         self.assertEqual(obj1.search("ada"), 0x51)
         
     def test_search_all_sanity(self):
-        obj1 = struct.parse(six.b("\x11\x21\x22\x02\x02\x13\x51\x52"))
+        obj1 = struct.parse(b"\x11\x21\x22\x02\x02\x13\x51\x52")
 
         self.assertEqual(obj1.search_all("bb"), [])
         self.assertNotEqual(obj1.search_all("ad"), None)
@@ -69,9 +69,6 @@ class TestSearch(unittest.TestCase):
         self.assertEqual(obj1.search_all('ac'), [0x13])
         
     def test_search_all_functionality(self):
-        obj1 = struct.parse(six.b("\x11\x21\x22\x02\x02\x13\x51\x52"))
+        obj1 = struct.parse(b"\x11\x21\x22\x02\x02\x13\x51\x52")
         # Return all of them
         self.assertEqual(obj1.search_all("ada"), [0x51,0x52])
-
-if __name__ == "__main__":
-    unittest.main()
