@@ -1,4 +1,3 @@
-import six
 import unittest
 
 from construct import Struct, MetaField, StaticField, FormatField, Field
@@ -21,24 +20,24 @@ class TestStaticField(unittest.TestCase):
         pass
 
     def test_parse(self):
-        self.assertEqual(self.sf.parse(six.b("ab")), six.b("ab"))
+        self.assertEqual(self.sf.parse(b"ab"), b"ab")
 
     def test_build(self):
-        self.assertEqual(self.sf.build(six.b("ab")), six.b("ab"))
+        self.assertEqual(self.sf.build(b"ab"), b"ab")
 
     def test_parse_too_short(self):
-        self.assertRaises(FieldError, self.sf.parse, six.b("a"))
+        self.assertRaises(FieldError, self.sf.parse, b"a")
 
     def test_build_too_short(self):
-        self.assertRaises(FieldError, self.sf.build, six.b("a"))
+        self.assertRaises(FieldError, self.sf.build, b"a")
 
     def test_sizeof(self):
         self.assertEqual(self.sf.sizeof(), 2)
 
     def test_field_parse(self):
         f = Field('name', 6)
-        self.assertEqual(f.parse(six.b('abcdef')), six.b('abcdef'))
-        self.assertEqual(f.parse(six.b('12abcdef')), six.b('12abcd'))
+        self.assertEqual(f.parse(b'abcdef'), b'abcdef')
+        self.assertEqual(f.parse(b'12abcdef'), b'12abcd')
         
 
 class TestFormatField(unittest.TestCase):
@@ -50,13 +49,13 @@ class TestFormatField(unittest.TestCase):
         pass
 
     def test_parse(self):
-        self.assertEqual(self.ff.parse(six.b("\x12\x34\x56\x78")), 0x78563412)
+        self.assertEqual(self.ff.parse(b"\x12\x34\x56\x78"), 0x78563412)
 
     def test_build(self):
-        self.assertEqual(self.ff.build(0x78563412), six.b("\x12\x34\x56\x78"))
+        self.assertEqual(self.ff.build(0x78563412), b"\x12\x34\x56\x78")
 
     def test_parse_too_short(self):
-        self.assertRaises(FieldError, self.ff.parse, six.b("\x12\x34\x56"))
+        self.assertRaises(FieldError, self.ff.parse, b"\x12\x34\x56")
 
     def test_build_too_long(self):
         self.assertRaises(FieldError, self.ff.build, 9e9999)
@@ -73,16 +72,16 @@ class TestMetaField(unittest.TestCase):
         pass
 
     def test_parse(self):
-        self.assertEqual(self.mf.parse(six.b("abc")), six.b("abc"))
+        self.assertEqual(self.mf.parse(b"abc"), b"abc")
 
     def test_build(self):
-        self.assertEqual(self.mf.build(six.b("abc")), six.b("abc"))
+        self.assertEqual(self.mf.build(b"abc"), b"abc")
 
     def test_parse_too_short(self):
-        self.assertRaises(FieldError, self.mf.parse, six.b("ab"))
+        self.assertRaises(FieldError, self.mf.parse, b"ab")
 
     def test_build_too_short(self):
-        self.assertRaises(FieldError, self.mf.build, six.b("ab"))
+        self.assertRaises(FieldError, self.mf.build, b"ab")
 
     def test_sizeof(self):
         self.assertEqual(self.mf.sizeof(), 3)
@@ -97,13 +96,13 @@ class TestMetaFieldStruct(unittest.TestCase):
         pass
 
     def test_parse(self):
-        c = self.s.parse(six.b("\x03ABC"))
+        c = self.s.parse(b"\x03ABC")
         self.assertEqual(c.length, 3)
-        self.assertEqual(c.data, six.b("ABC"))
+        self.assertEqual(c.data, b"ABC")
 
-        c = self.s.parse(six.b("\x04ABCD"))
+        c = self.s.parse(b"\x04ABCD")
         self.assertEqual(c.length, 4)
-        self.assertEqual(c.data, six.b("ABCD"))
+        self.assertEqual(c.data, b"ABCD")
 
     def test_sizeof_default(self):
         self.assertRaises(SizeofError, self.mf.sizeof)
