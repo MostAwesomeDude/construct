@@ -5,6 +5,13 @@ from construct import Struct, MetaField, StaticField, FormatField, Field
 from construct import Container, Byte
 from construct import FieldError, SizeofError
 
+
+class TestStruct(unittest.TestCase):
+    def test_build_from_nested_dicts(self):
+        s = Struct(None, Struct('substruct1', Byte('field1')))
+        self.assertEqual(s.build(dict(substruct1=dict(field1=5))), b'\x05')
+
+
 class TestStaticField(unittest.TestCase):
 
     def setUp(self):
