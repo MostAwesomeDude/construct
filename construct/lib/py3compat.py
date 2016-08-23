@@ -5,13 +5,10 @@
 #-------------------------------------------------------------------------------
 import sys
 PY3 = sys.version_info[0] == 3
+from io import BytesIO, StringIO
 
 
 if PY3:
-    import io
-    StringIO = io.StringIO
-    BytesIO = io.BytesIO
-
     def bchr(i):
         """ When iterating over b'...' in Python 2 you get single b'_' chars
             and in Python 3 you get integers. Call bchr to always turn this
@@ -43,9 +40,6 @@ if PY3:
     advance_iterator = next
         
 else:
-    import cStringIO
-    StringIO = BytesIO = cStringIO.StringIO
-
     int2byte = chr
     byte2int = ord
     bchr = lambda i: i
