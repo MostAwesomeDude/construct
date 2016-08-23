@@ -24,12 +24,7 @@ def hexdump(data, linesize):
     return prettylines
 
 
-try:
-    basecls = bytes
-except NameError:
-    basecls = str
-
-class HexString(basecls):
+class HexString(bytes):
     """
     Represents bytes that will be hex-dumped to a string when its string
     representation is requested.
@@ -37,10 +32,9 @@ class HexString(basecls):
     def __init__(self, data, linesize = 16):
         self.linesize = linesize
     def __new__(cls, data, *args, **kwargs):
-        return basecls.__new__(cls, data)
+        return bytes.__new__(cls, data)
     def __str__(self):
         if not self:
             return "''"
         return "\n" + "\n".join(hexdump(self, self.linesize))
-
 
