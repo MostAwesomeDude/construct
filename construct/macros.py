@@ -368,7 +368,7 @@ def Aligned(subcon, modulus=4, pattern=b"\x00"):
     if modulus < 2:
         raise ValueError("modulus must be >= 2", modulus)
     def padlength(ctx):
-        return (modulus - (subcon._sizeof(ctx) % modulus)) % modulus
+        return -subcon._sizeof(ctx) % modulus
     return SeqOfOne(subcon.name,
         subcon,
         # ??????
