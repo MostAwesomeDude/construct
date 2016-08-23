@@ -1,16 +1,9 @@
-import six
+from sys import maxsize
+
 from construct.lib.py3compat import int2byte
-from construct.lib import (BitStreamReader, BitStreamWriter, encode_bin, decode_bin)
-from construct.core import (Struct, MetaField, StaticField, FormatField,
-    OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range,
-    Select, Pass, SizeofError, Buffered, Restream, Reconfig)
-from construct.adapters import (BitIntegerAdapter, PaddingAdapter,
-    ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter,
-    PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
-try:
-    from sys import maxsize
-except ImportError:
-    from sys import maxint as maxsize
+from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
+from construct.core import Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig
+from construct.adapters import BitIntegerAdapter, PaddingAdapter, ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
 
 
 #===============================================================================
@@ -30,7 +23,7 @@ def Field(name, length):
     else:
         return StaticField(name, length)
 
-def BitField(name, length, swapped = False, signed = False, bytesize = 8):
+def BitField(name, length, swapped=False, signed=False, bytesize=8):
     r"""
     BitFields, as the name suggests, are fields that operate on raw, unaligned
     bits, and therefore must be enclosed in a BitStruct. Using them is very
@@ -67,7 +60,6 @@ def BitField(name, length, swapped = False, signed = False, bytesize = 8):
         >>> foo.parse("\xe1\x1f")
         Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
     """
-
     return BitIntegerAdapter(Field(name, length),
         length,
         swapped=swapped,
@@ -75,7 +67,7 @@ def BitField(name, length, swapped = False, signed = False, bytesize = 8):
         bytesize=bytesize
     )
 
-def Padding(length, pattern = six.b("\x00"), strict = False):
+def Padding(length, pattern=b"\x00", strict=False):
     r"""A padding field (value is discarded)
 
     :param length: the length of the field. the length can be either an integer,
@@ -89,7 +81,7 @@ def Padding(length, pattern = six.b("\x00"), strict = False):
         strict = strict,
     )
 
-def Flag(name, truth = 1, falsehood = 0, default = False):
+def Flag(name, truth=1, falsehood=0, default=False):
     """
     A flag.
 
@@ -257,7 +249,7 @@ def Array(count, subcon):
         con._clear_flag(con.FLAG_DYNAMIC)
     return con
 
-def PrefixedArray(subcon, length_field = UBInt8("length")):
+def PrefixedArray(subcon, length_field=UBInt8("length")):
     """An array prefixed by a length field.
 
     :param subcon: the subcon to be repeated
@@ -366,7 +358,7 @@ def Bitwise(subcon):
             resizer = resizer)
     return con
 
-def Aligned(subcon, modulus = 4, pattern = six.b("\x00")):
+def Aligned(subcon, modulus=4, pattern=b"\x00"):
     r"""Aligns subcon to modulus boundary using padding pattern
 
     :param subcon: the subcon to align
@@ -424,7 +416,7 @@ def Alias(newname, oldname):
 #===============================================================================
 # mapping
 #===============================================================================
-def SymmetricMapping(subcon, mapping, default = NotImplemented):
+def SymmetricMapping(subcon, mapping, default=NotImplemented):
     """Defines a symmetrical mapping: a->b, b->a.
 
     :param subcon: the subcon to map
@@ -490,11 +482,11 @@ def EmbeddedBitStruct(*subcons):
     """
     return Bitwise(Embedded(Struct(None, *subcons)))
 
+
 #===============================================================================
 # strings
 #===============================================================================
-def String(name, length, encoding=None, padchar=None, paddir="right",
-        trimdir="right"):
+def String(name, length, encoding=None, padchar=None, paddir="right", trimdir="right"):
     r"""
     A configurable, fixed-length string field.
 
@@ -524,8 +516,7 @@ def String(name, length, encoding=None, padchar=None, paddir="right",
     """
     con = StringAdapter(Field(name, length), encoding=encoding)
     if padchar is not None:
-        con = PaddedStringAdapter(con, padchar=padchar, paddir=paddir,
-            trimdir=trimdir)
+        con = PaddedStringAdapter(con, padchar=padchar, paddir=paddir, trimdir=trimdir)
     return con
 
 def PascalString(name, length_field=UBInt8("length"), encoding=None):
@@ -567,8 +558,7 @@ def PascalString(name, length_field=UBInt8("length"), encoding=None):
         encoding=encoding,
     )
 
-def CString(name, terminators=six.b("\x00"), encoding=None,
-            char_field=Field(None, 1)):
+def CString(name, terminators=b"\x00", encoding=None, char_field=Field(None, 1)):
     r"""
     A string ending in a terminator.
 
@@ -608,7 +598,7 @@ def CString(name, terminators=six.b("\x00"), encoding=None,
         )
     )
 
-def GreedyString(name, encoding=None, char_field=Field(None, 1)):
+def GreedyString(name, encoding=None, char_field=Field(None,1)):
     r"""
     A configurable, variable-length string field.
 
@@ -656,7 +646,7 @@ def IfThenElse(name, predicate, then_subcon, else_subcon):
         }
     )
 
-def If(predicate, subcon, elsevalue = None):
+def If(predicate, subcon, elsevalue=None):
     """An if-then conditional construct: if the predicate indicates True,
     subcon will be used; otherwise, `elsevalue` will be returned instead.
 
@@ -675,7 +665,7 @@ def If(predicate, subcon, elsevalue = None):
 #===============================================================================
 # misc
 #===============================================================================
-def OnDemandPointer(offsetfunc, subcon, force_build = True):
+def OnDemandPointer(offsetfunc, subcon, force_build=True):
     """An on-demand pointer.
 
     :param offsetfunc: a function taking the context as an argument and returning
@@ -689,8 +679,10 @@ def OnDemandPointer(offsetfunc, subcon, force_build = True):
     )
 
 def Magic(data):
-    """A 'magic number' construct. it is used for file signatures, etc., to validate
-    that the given pattern exists.
+    """A 'magic number' construct. It is used for file signatures, to validate
+    that the given pattern exists. When parsed. the value must match.
+
+    :param data: a bytes object
 
     Example::
 
@@ -700,5 +692,4 @@ def Magic(data):
         )
     """
     return ConstAdapter(Field(None, len(data)), data)
-
 
