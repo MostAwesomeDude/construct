@@ -1,8 +1,10 @@
-import six
+import sys
+PY3 = sys.version_info[0] == 3
+
 from construct.lib.py3compat import int2byte
 
 
-if six.PY3:
+if PY3:
     def int_to_bin(number, width = 32):
         r"""
         Convert an integer into its binary representation in a bytes object.
@@ -61,7 +63,7 @@ if six.PY3:
             >>> encode_bin('ab')
             b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
         """
-        return six.b("").join(_char_to_bin[int(ch)] for ch in data)
+        return b"".join(_char_to_bin[int(ch)] for ch in data)
 
     def decode_bin(data):
         if len(data) & 7:
@@ -86,13 +88,13 @@ if six.PY3:
         """
         i = 0
         l = len(bits)
-        output = [six.b("")] * ((l // bytesize) + 1)
+        output = [b""] * ((l // bytesize) + 1)
         j = len(output) - 1
         while i < l:
             output[j] = bits[i : i + bytesize]
             i += bytesize
             j -= 1
-        return six.b("").join(output)
+        return b"".join(output)
 
 else:
 
@@ -185,3 +187,4 @@ else:
             i += bytesize
             j -= 1
         return "".join(output)
+
