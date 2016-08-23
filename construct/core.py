@@ -1,14 +1,9 @@
 from struct import Struct as Packer
+import sys
 
 from construct.lib.py3compat import BytesIO, advance_iterator, bchr
 from construct.lib import Container, ListContainer, LazyContainer
-import sys
-import six
 
-try:
-    bytes
-except NameError:
-    bytes = str
 
 #===============================================================================
 # exceptions
@@ -100,7 +95,7 @@ class Construct(object):
     __slots__ = ["name", "conflags"]
     def __init__(self, name, flags = 0):
         if name is not None:
-            if not isinstance(name, six.string_types):
+            if not isinstance(name, (str, bytes)):
                 raise TypeError("name must be a string or None", name)
             if name == "_" or name.startswith("<"):
                 raise ValueError("reserved name", name)
@@ -1371,9 +1366,9 @@ Example::
     Terminator
 """
 
-#=======================================================================================================================
+#===============================================================================
 # Extra
-#=======================================================================================================================
+#===============================================================================
 class ULInt24(StaticField):
     """
     A custom made construct for handling 3-byte types as used in ancient file formats.
@@ -1405,7 +1400,4 @@ class ULInt24(StaticField):
         except Exception:
             ex = sys.exc_info()[1]
             raise FieldError(ex)
-
-
-
 
