@@ -1,10 +1,12 @@
 """
 Debugging utilities for constructs
 """
+
 import sys
 import traceback
 import pdb
 import inspect
+
 from construct.core import Construct, Subconstruct
 from construct.lib import HexString, Container, ListContainer
 
