@@ -1,9 +1,28 @@
 import unittest
 
+from construct import FlagsAdapter, Byte, FlagsContainer
 from construct import Field, UBInt8
 from construct import OneOf, NoneOf, HexDumpAdapter
 from construct import ValidationError
 from construct.protocols.layer3.ipv4 import IpAddress
+
+
+
+class TestFlagsAdapter(unittest.TestCase):
+
+    def setUp(self):
+        self.fa = FlagsAdapter(Byte('HID_type'), {'feature': 4, 'output': 2, 'input': 1})
+        self.flags = {'feature': True, 'output': False, 'input': False}
+        self.byte = six.b('\x04')
+
+    def test_trivial(self):
+        pass
+
+    def test_parse(self):
+        self.assertEqual(self.fa.parse(self.byte), FlagsContainer(**self.flags))
+
+    def test_build(self):
+        self.assertEqual(self.fa.build(self.flags), self.byte)
 
 
 class TestHexDumpAdapter(unittest.TestCase):
