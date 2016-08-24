@@ -29,6 +29,9 @@ class TestRange(unittest.TestCase):
     def test_build_too_short(self):
         self.assertRaises(RangeError, self.simple_range.build, [0])
 
+    def test_parse_too_long(self):
+        self.assertEqual(self.simple_range.parse(b'\x00\x01\x02\x03\x04\x05\x06'), [0, 1, 2, 3, 4])
+
     def test_build_too_long(self):
         self.assertRaises(RangeError, self.simple_range.parse, range(6))
 
