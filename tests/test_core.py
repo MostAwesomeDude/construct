@@ -1,14 +1,47 @@
 import unittest
 
+from construct import Range, RangeError, OptionalGreedyRange
 from construct import Struct, MetaField, StaticField, FormatField, Field
 from construct import Container, Byte
 from construct import FieldError, SizeofError
+
+
+class TestRange(unittest.TestCase):
+
+    def setUp(self):
+        self.simple_range = Range(2, 5, Byte('byte'))
+        self.nested_range = OptionalGreedyRange(Struct('report', Byte('id')))
+
+    def test_trivial(self):
+        pass
+
+    def test_parse(self):
+        self.assertEqual(self.simple_range.parse(b'\x01\x02'), [1, 2])
+        self.assertEqual(self.nested_range.parse(b'\x01\x02'), [Container(id=1), Container(id=2)])
+
+    def test_build(self):
+        self.assertEqual(self.simple_range.build(range(5)), b'\x00\x01\x02\x03\x04')
+        self.assertEqual(self.nested_range.build([dict(id=i) for i in range(5)]), b'\x00\x01\x02\x03\x04')
+
+    def test_parse_too_short(self):
+        self.assertRaises(RangeError, self.simple_range.parse, b'\x00')
+
+    def test_build_too_short(self):
+        self.assertRaises(RangeError, self.simple_range.build, [0])
+
+    def test_build_too_long(self):
+        self.assertRaises(RangeError, self.simple_range.parse, range(6))
+
+    def test_build_invalid_build_input(self):
+        self.assertRaises(RangeError, self.simple_range.build, 0)
+        self.assertRaises(RangeError, self.nested_range.build, {'id': 1})
 
 
 class TestStruct(unittest.TestCase):
     def test_build_from_nested_dicts(self):
         s = Struct(None, Struct('substruct1', Byte('field1')))
         self.assertEqual(s.build(dict(substruct1=dict(field1=5))), b'\x05')
+
 
 
 class TestStaticField(unittest.TestCase):

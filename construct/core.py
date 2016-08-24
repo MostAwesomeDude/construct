@@ -524,12 +524,12 @@ class Range(Subconstruct):
         except ConstructError:
             if c < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcout, c), sys.exc_info()[1])
+                    (self.mincount, self.maxcout, c))
             stream.seek(pos)
         return obj
     def _build(self, obj, stream, context):
-        if hasattr(obj, 'get'):
-            raise RangeError("expected array-like iterable, found map-like %r" % (obj,))
+        if not hasattr(obj, '__len__') or hasattr(obj, 'get'):
+            raise RangeError("expected sequence type, found %s" % type(obj))
         if len(obj) < self.mincount or len(obj) > self.maxcout:
             raise RangeError("expected %d to %d, found %d" %
                 (self.mincount, self.maxcout, len(obj)))
