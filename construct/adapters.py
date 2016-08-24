@@ -117,13 +117,13 @@ class FlagsAdapter(Adapter):
     def _encode(self, obj, context):
         flags = 0
         for name, value in self.flags.items():
-            if getattr(obj, name, False):
+            if name in obj and obj[name]:
                 flags |= value
         return flags
     def _decode(self, obj, context):
         obj2 = FlagsContainer()
         for name, value in self.flags.items():
-            setattr(obj2, name, bool(obj & value))
+            obj2[name] = bool(obj & value)
         return obj2
 
 class StringAdapter(Adapter):
