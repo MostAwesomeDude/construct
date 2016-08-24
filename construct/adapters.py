@@ -117,11 +117,13 @@ class FlagsAdapter(Adapter):
     def _encode(self, obj, context):
         flags = 0
         try:
-            for name, value in self.flags.items():
-                if obj.get(name, False):
-                    flags |= value
-        except TypeError:
+            for name, value in obj.items():
+                if value:
+                    flags |= self.flags[name]
+        except AttributeError:
             raise MappingError("not a mapping type: %r" % (obj,))
+        except KeyError:
+            raise MappingError("unknown flag: %s" % name)
         return flags
     def _decode(self, obj, context):
         obj2 = FlagsContainer()

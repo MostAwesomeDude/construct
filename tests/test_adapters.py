@@ -1,6 +1,6 @@
 import unittest
 
-from construct import FlagsAdapter, Byte, FlagsContainer
+from construct import FlagsAdapter, Byte, FlagsContainer, MappingError
 from construct import Field, UBInt8
 from construct import OneOf, NoneOf, HexDumpAdapter
 from construct import ValidationError
@@ -11,17 +11,19 @@ class TestFlagsAdapter(unittest.TestCase):
 
     def setUp(self):
         self.fa = FlagsAdapter(Byte('HID_type'), {'feature': 4, 'output': 2, 'input': 1})
-        self.flags = {'feature': True, 'output': False, 'input': False}
         self.byte = b'\x04'
 
     def test_trivial(self):
         pass
 
     def test_parse(self):
-        self.assertEqual(self.fa.parse(self.byte), FlagsContainer(**self.flags))
+        self.assertEqual(self.fa.parse(self.byte), FlagsContainer(feature=True, output=False, input=False))
 
     def test_build(self):
-        self.assertEqual(self.fa.build(self.flags), self.byte)
+        self.assertEqual(self.fa.build(dict(feature=True)), self.byte)
+
+    def test_build_unknown_flag_given(self):
+        self.assertRaises(MappingError, self.fa.build, dict(unknown=True, feature=True))
 
 
 class TestHexDumpAdapter(unittest.TestCase):
