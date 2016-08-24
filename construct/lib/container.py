@@ -28,8 +28,11 @@ class Container(dict):
     """
     __slots__ = ["__keys_order__"]
 
-    def __init__(self, **kw):
+    def __init__(self, *args, **kw):
         object.__setattr__(self, "__keys_order__", [])
+        for arg in args:
+            for k, v in arg.items():
+                self[k] = v
         for k, v in kw.items():
             self[k] = v
 
