@@ -1,14 +1,9 @@
 """
 Internet Protocol version 4 (TCP/IP protocol stack)
 """
-from construct import *
-import six
 from binascii import unhexlify
 
-try:
-    bytes
-except NameError:
-    bytes = str
+from construct import *
 
 
 class IpAddressAdapter(Adapter):
@@ -70,7 +65,7 @@ ipv4_header = Struct("ip_header",
 
 
 if __name__ == "__main__":
-    cap = unhexlify(six.b("4500003ca0e3000080116185c0a80205d474a126"))
+    cap = unhexlify(b"4500003ca0e3000080116185c0a80205d474a126")
     obj = ipv4_header.parse(cap)
     print (obj)
     print (repr(ipv4_header.build(obj)))

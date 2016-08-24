@@ -4,9 +4,9 @@ The first sector on disk, contains the partition table, bootloader, et al.
 
 http://www.win.tue.nl/~aeb/partitions/partition_types-1.html
 """
-from construct import *
 from binascii import unhexlify
-import six
+
+from construct import *
 
 
 mbr = Struct("mbr",
@@ -46,7 +46,7 @@ mbr = Struct("mbr",
             UBInt32("size"), # in sectors
         )
     ),
-    Const(Bytes("signature", 2), six.b("\x55\xAA")),
+    Const(Bytes("signature", 2), b"\x55\xAA"),
 )
 
 

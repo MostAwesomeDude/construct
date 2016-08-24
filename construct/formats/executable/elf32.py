@@ -5,7 +5,6 @@ Used on *nix systems as a replacement of the older a.out format
 Big-endian support kindly submitted by Craig McQueen (mcqueen-c#edsrd1!yzk!co!jp)
 """
 from construct import *
-import six
 
 
 def elf32_body(ElfInt16, ElfInt32):
@@ -124,7 +123,7 @@ elf32_body_big_endian = elf32_body(UBInt16, UBInt32)
 
 elf32_file = Struct("elf32_file",
     Struct("identifier",
-        Magic(six.b("\x7fELF")),
+        Magic(b"\x7fELF"),
         Enum(Byte("file_class"),
             NONE = 0,
             CLASS32 = 1,

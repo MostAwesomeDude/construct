@@ -5,8 +5,9 @@ what : snoop v2 capture file.
 """
 
 import time
-from construct import (Adapter, Enum, Field, HexDumpAdapter, Magic, OptionalGreedyRange,
-        Padding, Struct, UBInt32)
+
+from construct import Adapter, Enum, Field, HexDumpAdapter, Magic, OptionalGreedyRange, Padding, Struct, UBInt32
+
 
 class EpochTimeStampAdapter(Adapter):
     """ Convert epoch timestamp <-> localtime """

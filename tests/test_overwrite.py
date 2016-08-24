@@ -1,6 +1,6 @@
 import unittest
+
 from construct import Struct, Byte, Embedded, OverwriteError
-import six
 
 
 class TestOverwrite(unittest.TestCase):
@@ -10,7 +10,7 @@ class TestOverwrite(unittest.TestCase):
             Byte("a"),
             allow_overwrite = True
         )
-        self.assertEqual(s.parse(six.b("\x01\x02")).a, 2)
+        self.assertEqual(s.parse(b"\x01\x02").a, 2)
 
         s = Struct("s",
             Byte("a"),
@@ -19,7 +19,7 @@ class TestOverwrite(unittest.TestCase):
                 allow_overwrite = True
             )),
         )
-        self.assertEqual(s.parse(six.b("\x01\x02")).a, 2)
+        self.assertEqual(s.parse(b"\x01\x02").a, 2)
 
         s = Struct("s",
             Embedded(Struct("b",
@@ -28,14 +28,14 @@ class TestOverwrite(unittest.TestCase):
             Byte("a"),
             allow_overwrite = True
         )
-        self.assertEqual(s.parse(six.b("\x01\x02")).a, 2)
+        self.assertEqual(s.parse(b"\x01\x02").a, 2)
 
     def test_no_overwrite(self):
         s = Struct("s",
             Byte("a"),
             Byte("a"),
         )
-        self.assertRaises(OverwriteError, s.parse, six.b("\x01\x02")) 
+        self.assertRaises(OverwriteError, s.parse, b"\x01\x02")
 
         s = Struct("s",
             Byte("a"),
@@ -44,7 +44,7 @@ class TestOverwrite(unittest.TestCase):
             )),
             allow_overwrite = True
         )
-        self.assertRaises(OverwriteError, s.parse, six.b("\x01\x02"))
+        self.assertRaises(OverwriteError, s.parse, b"\x01\x02")
 
         s = Struct("s",
             Embedded(Struct("b",
@@ -53,7 +53,5 @@ class TestOverwrite(unittest.TestCase):
             )),
             Byte("a"),
         )
-        self.assertRaises(OverwriteError, s.parse, six.b("\x01\x02")) 
+        self.assertRaises(OverwriteError, s.parse, b"\x01\x02")
 
-if __name__ == "__main__":
-    unittest.main()

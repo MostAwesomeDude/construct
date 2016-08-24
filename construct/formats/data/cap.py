@@ -1,9 +1,10 @@
 """
 tcpdump capture file
 """
-from construct import *
 import time
 from datetime import datetime
+
+from construct import *
 
 
 class MicrosecAdapter(Adapter):

@@ -4,10 +4,10 @@ Dynamic Host Configuration Protocol for IPv4
 http://www.networksorcery.com/enp/protocol/dhcp.htm
 http://www.networksorcery.com/enp/protocol/bootp/options.htm
 """
+from binascii import unhexlify
+
 from construct import *
 from ipv4 import IpAddress
-from binascii import unhexlify
-import six
 
 
 dhcp_option = Struct("dhcp_option",
@@ -167,7 +167,7 @@ dhcp_header = Struct("dhcp_header",
     Bytes("boot_filename", 128),
     # BOOTP/DHCP options
     # "The first four bytes contain the (decimal) values 99, 130, 83 and 99"
-    Const(Bytes("magic", 4), six.b("\x63\x82\x53\x63")),
+    Const(Bytes("magic", 4), b"\x63\x82\x53\x63"),
     Rename("options", OptionalGreedyRange(dhcp_option)),
 )
 

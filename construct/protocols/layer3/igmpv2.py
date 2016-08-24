@@ -4,10 +4,10 @@ What : Internet Group Management Protocol, Version 2
  Who : jesse @ housejunkie . ca
 """
 
+from binascii import unhexlify
+
 from construct import Byte, Enum,Struct, UBInt16
 from construct.protocols.layer3.ipv4 import IpAddress
-from binascii import unhexlify
-import six
 
 
 igmp_type = Enum(Byte("igmp_type"), 
@@ -25,5 +25,5 @@ igmpv2_header = Struct("igmpv2_header",
 )
 
 if __name__ == '__main__':
-    capture = unhexlify(six.b("1600FA01EFFFFFFD"))
+    capture = unhexlify(b"1600FA01EFFFFFFD")
     print (igmpv2_header.parse(capture))

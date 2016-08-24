@@ -1,9 +1,9 @@
 """
 User Datagram Protocol (TCP/IP protocol stack)
 """
-from construct import *
-import six
 from binascii import unhexlify
+
+from construct import *
 
 
 udp_header = Struct("udp_header",
@@ -18,7 +18,7 @@ udp_header = Struct("udp_header",
 )
 
 if __name__ == "__main__":
-    cap = unhexlify(six.b("0bcc003500280689"))
+    cap = unhexlify(b"0bcc003500280689")
     obj = udp_header.parse(cap)
     print (obj)
     print (repr(udp_header.build(obj)))

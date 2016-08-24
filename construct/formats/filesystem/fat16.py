@@ -12,8 +12,8 @@
 #            print rootdir
 import numbers
 from io import BytesIO, BufferedReader
-from construct import Struct, Byte, Bytes, ULInt16, ULInt32, Enum, \
-        Array, Padding, Embed, Pass, BitStruct, Flag, Const
+
+from construct import Struct, Byte, Bytes, ULInt16, ULInt32, Enum, Array, Padding, Embed, Pass, BitStruct, Flag, Const
 
 
 def Fat16Header(name):

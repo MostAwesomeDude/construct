@@ -1,10 +1,10 @@
 """
 Internet Protocol version 6 (TCP/IP protocol stack)
 """
+from binascii import unhexlify
+
 from construct import *
 from ipv4 import ProtocolEnum
-from binascii import unhexlify
-import six
 
 
 class Ipv6AddressAdapter(Adapter):

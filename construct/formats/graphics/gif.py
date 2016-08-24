@@ -19,7 +19,6 @@
                                Comment Extension
 """
 from construct import *
-import six
 
 
 data_sub_block = Struct("data_sub_block",
@@ -50,8 +49,8 @@ gif_logical_screen = Struct("logical_screen",
 )
 
 gif_header = Struct("gif_header",
-    Const(String("signature", 3), six.b("GIF")),
-    Const(String("version", 3), six.b("89a")),
+    Const(String("signature", 3), b"GIF"),
+    Const(String("version", 3), b"89a"),
 )
 
 application_extension = Struct("application_extension",

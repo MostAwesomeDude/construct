@@ -1,10 +1,10 @@
 """
 Internet Control Message Protocol for IPv4 (TCP/IP protocol stack)
 """
+from binascii import unhexlify
+
 from construct import *
 from ipv4 import IpAddress
-from binascii import unhexlify
-import six
 
 
 echo_payload = Struct("echo_payload",
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         "63646566676869"))
     cap2 = unhexlify(six.b("0000385c02001b006162636465666768696a6b6c6d6e6f70717273747576776162"
         "63646566676869"))
-    cap3 = unhexlify(six.b("0301000000001122aabbccdd0102030405060708"))
+    cap3 = unhexlify(b"0301000000001122aabbccdd0102030405060708")
     
     print (icmp_header.parse(cap1))
     print (icmp_header.parse(cap2))
