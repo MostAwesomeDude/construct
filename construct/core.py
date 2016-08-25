@@ -528,7 +528,7 @@ class Range(Subconstruct):
             stream.seek(pos)
         return obj
     def _build(self, obj, stream, context):
-        if not hasattr(obj, '__len__') or hasattr(obj, 'get'):
+        if (not hasattr(obj, '__len__')) or hasattr(obj, 'get'):
             raise RangeError("expected sequence type, found %s" % type(obj))
         if len(obj) < self.mincount or len(obj) > self.maxcout:
             raise RangeError("expected %d to %d, found %d" %

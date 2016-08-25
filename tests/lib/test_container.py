@@ -102,6 +102,21 @@ class TestContainer(unittest.TestCase):
         c.update(words)
         self.assertEqual([k for k, _ in words], list(c.keys()))
 
+    def test_dict_arg(self):
+        c = Container({'a': 1})
+        d = Container(a=1)
+        self.assertEqual(c, d)
+
+    def test_multiple_dict_args(self):
+        c = Container({'a': 1, 'b': 42}, {'b': 2})
+        d = Container(a=1, b=2)
+        self.assertEqual(c, d)
+
+    def test_dict_and_kw_args(self):
+        c = Container({'b': 42, 'c': 43}, {'a': 1, 'b': 2, 'c': 4}, c=3, d=4)
+        d = Container(a=1, b=2, c=3, d=4)
+        self.assertEqual(c, d)
+
 class TestListContainer(unittest.TestCase):
 
     def test_str(self):
