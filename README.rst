@@ -72,5 +72,5 @@ github pull-requests to send in patches. For general discussion or questions, pl
 
 Requirements
 ------------
-Construct should run on any Python 2.5-3.5 or PyPy implementation. 
+Construct should run on any Python 2.6-3.5 or PyPy/PyPy3 implementation. 
 
