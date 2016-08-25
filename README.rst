@@ -74,6 +74,3 @@ Requirements
 ------------
 Construct should run on any Python 2.5-3.5 or PyPy implementation. 
 
-Its only requirement is `six <http://pypi.python.org/pypi/six>`_, which is used to overcome the 
-differences between Python 2 and 3.
-
