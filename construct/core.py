@@ -1,5 +1,6 @@
 from struct import Struct as Packer
 import sys
+import collections
 
 from construct.lib.py3compat import BytesIO, advance_iterator, bchr
 from construct.lib import Container, ListContainer, LazyContainer
@@ -452,6 +453,7 @@ class MetaArray(Subconstruct):
     def _sizeof(self, context):
         return self.subcon._sizeof(context) * self.countfunc(context)
 
+
 class Range(Subconstruct):
     r"""
     A range-array. The subcon will iterate between ``mincount`` to ``maxcount``
@@ -501,12 +503,14 @@ class Range(Subconstruct):
     """
 
     __slots__ = ["mincount", "maxcout"]
+
     def __init__(self, mincount, maxcout, subcon):
         super(Range, self).__init__(subcon)
         self.mincount = mincount
         self.maxcout = maxcout
         self._clear_flag(self.FLAG_COPY_CONTEXT)
         self._set_flag(self.FLAG_DYNAMIC)
+
     def _parse(self, stream, context):
         obj = ListContainer()
         c = 0
@@ -524,10 +528,13 @@ class Range(Subconstruct):
         except ConstructError:
             if c < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcout, c), sys.exc_info()[1])
+                    (self.mincount, self.maxcout, c))
             stream.seek(pos)
         return obj
+
     def _build(self, obj, stream, context):
+        if not isinstance(obj, collections.Sequence):
+            raise RangeError("expected sequence type, found %s" % type(obj))
         if len(obj) < self.mincount or len(obj) > self.maxcout:
             raise RangeError("expected %d to %d, found %d" %
                 (self.mincount, self.maxcout, len(obj)))
@@ -549,8 +556,10 @@ class Range(Subconstruct):
             if cnt < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
                     (self.mincount, self.maxcout, len(obj)), sys.exc_info()[1])
+
     def _sizeof(self, context):
         raise SizeofError("can't calculate size")
+
 
 class RepeatUntil(Subconstruct):
     r"""
