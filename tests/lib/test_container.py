@@ -1,7 +1,9 @@
 import unittest
+from random import randint
+from copy import copy
 
 from construct.lib.container import Container, ListContainer
-from random import randint
+
 
 class TestContainer(unittest.TestCase):
 
@@ -52,8 +54,6 @@ class TestContainer(unittest.TestCase):
         self.assertTrue(c is not d)
 
     def test_copy_module(self):
-        from copy import copy
-
         c = Container(a=1)
         d = copy(c)
         self.assertEqual(c, d)
@@ -122,3 +122,4 @@ class TestListContainer(unittest.TestCase):
     def test_str(self):
         l = ListContainer(range(5))
         str(l)
+
