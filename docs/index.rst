@@ -107,10 +107,7 @@ github pull-requests to send in patches. For general discussion or questions, pl
 
 Requirements
 ------------
-Construct should run on any Python 2.5-3.3 implementation. 
-
-Its only requirement is `six <http://pypi.python.org/pypi/six>`_, which is used to overcome the 
-differences between Python 2 and 3.
+Construct should run on any Python 2.6-3.3 and pypy/pypy3 implementation. 
 
 User Guide
 ==========

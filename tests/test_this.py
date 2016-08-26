@@ -1,5 +1,5 @@
 import unittest
-from construct import Struct, UBInt8, UBInt32, IfThenElse, Value, Field, Container
+from construct import Struct, UBInt8, UBInt32, IfThenElse, Computed, Field, Container
 from construct import this
 
 
@@ -14,7 +14,7 @@ class TestThisExpressions(unittest.TestCase):
         Struct("nested",
             UBInt8("b1"),
             UBInt8("b2"),
-            Value("b3", this.b1 * this.b2 + this._.length)
+            Computed("b3", this.b1 * this.b2 + this._.length)
         ),
         
         # and conditions work as expected

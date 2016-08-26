@@ -15,7 +15,8 @@ class TestRange(unittest.TestCase):
         pass
 
     def test_parse(self):
-        self.assertEqual(self.c.parse(b"\x01\x02\x03"), [1, 2, 3])
+        self.assertEqual(self.c.parse(b"\x01\x02\x03"), 
+                         [1, 2, 3])
         self.assertEqual(self.c.parse(b"\x01\x02\x03\x04\x05\x06"),
                          [1, 2, 3, 4, 5, 6])
         self.assertEqual(self.c.parse(b"\x01\x02\x03\x04\x05\x06\x07"),
@@ -43,6 +44,12 @@ class TestRange(unittest.TestCase):
     def test_build_invalid_build_input(self):
         self.assertRaises(RangeError, self.c.build, 0)
         self.assertRaises(RangeError, self.nested_range.build, {'id': 1})
+
+    def test_unsane_constructor_min_max(self):
+        self.assertRaises(RangeError, Range, -2, 7, UBInt8("byte"))
+        self.assertRaises(RangeError, Range, -2, -7, UBInt8("byte"))
+        self.assertRaises(RangeError, Range, 2, -7, UBInt8("byte"))
+        self.assertRaises(RangeError, Range, 7, 2, UBInt8("byte"))
 
 
 class TestArray(unittest.TestCase):

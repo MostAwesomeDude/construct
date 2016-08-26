@@ -2,7 +2,7 @@ from sys import maxsize
 
 from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.core import Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig
+from construct.core import Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig
 from construct.adapters import BitIntegerAdapter, PaddingAdapter, ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
 
 
@@ -68,7 +68,7 @@ def BitField(name, length, swapped=False, signed=False, bytesize=8):
     )
 
 def Padding(length, pattern=b"\x00", strict=False):
-    r"""A padding field (value is discarded)
+    r"""A padding field (adds bytes when building, discards bytes when parsing)
 
     :param length: the length of the field. the length can be either an integer,
                    or a function that takes the context as an argument and returns the length
@@ -410,7 +410,7 @@ def Alias(newname, oldname):
     :param newname: the new name
     :param oldname: the name of an existing element
     """
-    return Value(newname, lambda ctx: ctx[oldname])
+    return Computed(newname, lambda ctx: ctx[oldname])
 
 
 #===============================================================================
@@ -658,7 +658,7 @@ def If(predicate, subcon, elsevalue=None):
     return IfThenElse(subcon.name,
         predicate,
         subcon,
-        Value("elsevalue", lambda ctx: elsevalue)
+        Computed("elsevalue", lambda ctx: elsevalue)
     )
 
 

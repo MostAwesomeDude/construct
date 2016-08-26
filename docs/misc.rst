@@ -143,15 +143,15 @@ Creates an alias for an existing field of a Struct.
 Container(a = 3, b = 3)
 
 
-Value
------
+Computed
+--------
 
 Represents a computed value. Value does not read or write anything to the
 stream; it only returns its computed value as the result.
 
 >>> foo = Struct("foo",
 ...     Byte("a"),
-...     Value("b", lambda ctx: ctx["a"] + 7)
+...     Value("b", lambda ctx: ctx.a + 7)
 ... )
 >>>
 >>> foo.parse("\x02")

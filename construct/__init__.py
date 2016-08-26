@@ -22,7 +22,7 @@ from construct.core import (AdaptationError, Adapter, Anchor, ArrayError, Buffer
     Container, FieldError, FormatField, LazyBound, LazyContainer, ListContainer, MetaArray, MetaField, OnDemand, 
     OverwriteError, Packer, Pass, Peek, Pointer, Range, RangeError, Reconfig, RepeatUntil, Restream, Select, 
     SelectError, Sequence, SizeofError, StaticField, Struct, Subconstruct, Switch, SwitchError, Terminator, 
-    TerminatorError, ULInt24, Union, Value)
+    TerminatorError, ULInt24, Union, Computed)
 from construct.adapters import (BitIntegerAdapter, BitIntegerError, CStringAdapter, ConstAdapter, ConstError, 
     ExprAdapter, FlagsAdapter, FlagsContainer, HexDumpAdapter, HexString, IndexingAdapter, LengthValueAdapter, 
     MappingAdapter, MappingError, NoneOf, OneOf, PaddedStringAdapter, PaddingAdapter, PaddingError, SlicingAdapter, 
@@ -74,6 +74,6 @@ __all__ = [
     'Sequence', 'SizeofError', 'SlicingAdapter', 'StaticField', 'String', 'StringAdapter', 'Struct', 
     'Subconstruct', 'Switch', 'SwitchError', 'SymmetricMapping', 'Terminator', 'TerminatorError', 
     'TunnelAdapter', 'UBInt16', 'UBInt32', 'UBInt64', 'UBInt8', 'ULInt16', 'ULInt24', 'ULInt32', 'ULInt64', 
-    'ULInt8', 'UNInt16', 'UNInt32', 'UNInt64', 'UNInt8', 'Union', 'ValidationError', 'Validator', 'Value', 
+    'ULInt8', 'UNInt16', 'UNInt32', 'UNInt64', 'UNInt8', 'Union', 'ValidationError', 'Validator', 'Computed', 
     'this', 'Bits', 'Byte', 'Bytes', 'Const', 'Tunnel', 'Embed',
 ]

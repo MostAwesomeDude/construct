@@ -502,12 +502,14 @@ class Range(Subconstruct):
         construct.core.RangeError: expected 3..7, found 8
     """
 
-    __slots__ = ["mincount", "maxcout"]
+    __slots__ = ["mincount", "maxcount"]
 
-    def __init__(self, mincount, maxcout, subcon):
+    def __init__(self, mincount, maxcount, subcon):
+        if not 0 <= mincount <= maxcount:
+            raise RangeError("unsane mincount %s and maxcount %s" % (mincount,maxcount))
         super(Range, self).__init__(subcon)
         self.mincount = mincount
-        self.maxcout = maxcout
+        self.maxcount = maxcount
         self._clear_flag(self.FLAG_COPY_CONTEXT)
         self._set_flag(self.FLAG_DYNAMIC)
 
@@ -516,28 +518,28 @@ class Range(Subconstruct):
         c = 0
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                while c < self.maxcout:
+                while c < self.maxcount:
                     pos = stream.tell()
                     obj.append(self.subcon._parse(stream, context.__copy__()))
                     c += 1
             else:
-                while c < self.maxcout:
+                while c < self.maxcount:
                     pos = stream.tell()
                     obj.append(self.subcon._parse(stream, context))
                     c += 1
         except ConstructError:
             if c < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcout, c))
+                    (self.mincount, self.maxcount, c))
             stream.seek(pos)
         return obj
 
     def _build(self, obj, stream, context):
         if not isinstance(obj, collections.Sequence):
             raise RangeError("expected sequence type, found %s" % type(obj))
-        if len(obj) < self.mincount or len(obj) > self.maxcout:
+        if len(obj) < self.mincount or len(obj) > self.maxcount:
             raise RangeError("expected %d to %d, found %d" %
-                (self.mincount, self.maxcout, len(obj)))
+                (self.mincount, self.maxcount, len(obj)))
         cnt = 0
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
@@ -555,10 +557,10 @@ class Range(Subconstruct):
         except ConstructError:
             if cnt < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcout, len(obj)), sys.exc_info()[1])
+                    (self.mincount, self.maxcount, len(obj)), sys.exc_info()[1])
 
     def _sizeof(self, context):
-        raise SizeofError("can't calculate size")
+        raise SizeofError("cannot calculate size")
 
 
 class RepeatUntil(Subconstruct):
@@ -688,6 +690,8 @@ class Struct(Construct):
                 context["<unnested>"] = True
                 subobj = obj
             elif sc.name is None:
+                subobj = None
+            elif isinstance(sc, Computed):
                 subobj = None
             else:
                 subobj = obj[sc.name]
@@ -1200,7 +1204,6 @@ class Anchor(Construct):
 
     .. seealso:: :func:`Pointer`
     """
-
     __slots__ = []
     def _parse(self, stream, context):
         return stream.tell()
@@ -1209,9 +1212,11 @@ class Anchor(Construct):
     def _sizeof(self, context):
         return 0
 
-class Value(Construct):
+class Computed(Construct):
     """
     A computed value.
+
+    Underlying byte stream is unaffected. When parsing `func(context)` provides the value, building is noop.
 
     :param name: the name of the value
     :param func: a function that takes the context and return the computed value
@@ -1221,18 +1226,21 @@ class Value(Construct):
         Struct("foo",
             UBInt8("width"),
             UBInt8("height"),
-            Value("total_pixels", lambda ctx: ctx.width * ctx.height),
+            Computed("total", lambda ctx: ctx.width * ctx.height),
         )
+
+        foo.parse(b'\x05\x05') -> Container(width=5,height=5,total=25)
+        foo.build(Container(width=5,height=5,total=25)) -> b'\x05\x05'
     """
     __slots__ = ["func"]
     def __init__(self, name, func):
-        super(Value, self).__init__(name)
+        super(Computed, self).__init__(name)
         self.func = func
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         return self.func(context)
     def _build(self, obj, stream, context):
-        context[self.name] = self.func(context)
+        pass
     def _sizeof(self, context):
         return 0
 

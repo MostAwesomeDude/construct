@@ -45,7 +45,7 @@ ipv4_header = Struct("ip_header",
         Padding(1),
     ),
     UBInt16("total_length"),
-    Value("payload_length", lambda ctx: ctx.total_length - ctx.header_length),
+    Computed("payload_length", lambda ctx: ctx.total_length - ctx.header_length),
     UBInt16("identification"),
     EmbeddedBitStruct(
         Struct("flags",

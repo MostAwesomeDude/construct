@@ -76,8 +76,8 @@ all_tests = [
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).parse, b"\x01\x02", Container(a=1,b=0x102), None],
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).build, Container(a=1,b=0x102), b"\x01\x02", None],
     
-    [Value("value", lambda ctx: "moo").parse, b"", "moo", None],
-    [Value("value", lambda ctx: "moo").build, None, b"", None],
+    [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
+    [Computed("computed", lambda ctx: "moo").build, None, b"", None],
     
     [Anchor("anchor").parse, b"", 0, None],
     [Anchor("anchor").build, None, b"", None],
@@ -306,4 +306,20 @@ class TestAll(unittest.TestCase):
         errors = self._run_tests(all_tests)
         if errors:
             self.fail("\n=========================\n".join(str(e) for e in errors))
+
+
+class TestComputed(unittest.TestCase):
+    def setUp(self):
+        self.s = Struct("s",
+            UBInt8("width"),
+            UBInt8("height"),
+            Computed("total", lambda ctx: ctx.width * ctx.height),
+        )
+
+    def test_parse(self):
+        self.assertEquals(self.s.parse(b'\x05\x05'), Container(width=5,height=5,total=25))
+
+    def test_build(self):
+        self.assertEquals(self.s.build(Container(width=5,height=5,total=25)), b'\x05\x05')
+        self.assertEquals(self.s.build(Container(width=5,height=5)), b'\x05\x05')
 

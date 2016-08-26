@@ -28,7 +28,7 @@ compression_method = Enum(UBInt8("compression_method"),
 # 11.2.3: PLTE - Palette
 #===============================================================================
 plte_info = Struct("plte_info",
-    Value("num_entries", lambda ctx: ctx._.length / 3),
+    Computed("num_entries", lambda ctx: ctx._.length / 3),
     Array(lambda ctx: ctx.num_entries,
         Struct("palette_entries",
             UBInt8("red"),
