@@ -42,7 +42,7 @@ from construct.version import version, version_string as __version__
 #===============================================================================
 # Metadata
 #===============================================================================
-__author__ = "Tomer Filiba <tomerfiliba@gmail.com>, Corbin Simpson <MostAwesomeDude@gmail.com>"
+__author__ = "Arkadiusz Bulski <arek.bulski@gmail.com>, Tomer Filiba <tomerfiliba@gmail.com>, Corbin Simpson <MostAwesomeDude@gmail.com>"
 
 #===============================================================================
 # Shorthand expressions
