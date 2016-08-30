@@ -44,22 +44,5 @@ Embed = Embedded
 # exposed names
 #===============================================================================
 __all__ = [
-    'AdaptationError', 'Adapter', 'Alias', 'Aligned', 'AlignedStruct', 'Anchor', 'Array', 'ArrayError', 
-    'BFloat32', 'BFloat64', 'Bit', 'BitField', 'BitIntegerAdapter', 'BitIntegerError', 'BitStreamReader', 
-    'BitStreamWriter', 'BitStruct', 'Bitwise', 'Buffered', 'CString', 'CStringAdapter', 
-    'Construct', 'ConstructError', 'Container', 'Debugger', 'Embedded', 'EmbeddedBitStruct', 
-    'Enum', 'ExprAdapter', 'Field', 'FieldError', 'Flag', 'FlagsAdapter', 'FlagsContainer', 'FlagsEnum', 
-    'FormatField', 'GreedyRange', 'HexDumpAdapter', 'HexString', 'If', 'IfThenElse', 'IndexingAdapter', 
-    'LFloat32', 'LFloat64', 'LazyBound', 'LazyContainer', 'LengthValueAdapter', 'ListContainer', 
-    'MappingAdapter', 'MappingError', 'MetaArray', 'MetaField', 'NFloat32', 'NFloat64', 'Nibble', 'NoneOf', 
-    'Octet', 'OnDemand', 'OnDemandPointer', 'OneOf', 'OpenRange', 'Optional', 'OptionalGreedyRange', 
-    'OverwriteError', 'Packer', 'PaddedStringAdapter', 'Padding', 'PaddingError', 
-    'PascalString', 'Pass', 'Peek', 'Pointer', 'PrefixedArray', 'Probe', 'Range', 'RangeError', 'Reconfig', 
-    'Rename', 'RepeatUntil', 'Restream', 'SBInt16', 'SBInt32', 'SBInt64', 'SBInt8', 'SLInt16', 'SLInt32', 
-    'SLInt64', 'SLInt8', 'SNInt16', 'SNInt32', 'SNInt64', 'SNInt8', 'Select', 'SelectError', 'SeqOfOne', 
-    'Sequence', 'SizeofError', 'SlicingAdapter', 'StaticField', 'String', 'StringAdapter', 'Struct', 
-    'Subconstruct', 'Switch', 'SwitchError', 'SymmetricMapping', 'Terminator', 'TerminatorError', 
-    'TunnelAdapter', 'UBInt16', 'UBInt32', 'UBInt64', 'UBInt8', 'ULInt16', 'ULInt24', 'ULInt32', 'ULInt64', 
-    'ULInt8', 'UNInt16', 'UNInt32', 'UNInt64', 'UNInt8', 'Union', 'ValidationError', 'Validator', 'Computed', 
-    'this', 'Bits', 'Byte', 'Bytes', 'Tunnel', 'Embed', 'Const', 'ConstError', 
+    'AdaptationError', 'Adapter', 'Alias', 'Aligned', 'AlignedStruct', 'Anchor', 'Array', 'ArrayError', 'BFloat32', 'BFloat64', 'Bit', 'BitField', 'BitIntegerAdapter', 'BitIntegerError', 'BitStreamReader', 'BitStreamWriter', 'BitStruct', 'Bitwise', 'Buffered', 'CString', 'CStringAdapter', 'Construct', 'ConstructError', 'Container', 'Debugger', 'Embedded', 'EmbeddedBitStruct', 'Enum', 'ExprAdapter', 'Field', 'FieldError', 'Flag', 'FlagsAdapter', 'FlagsContainer', 'FlagsEnum', 'FormatField', 'GreedyRange', 'HexDumpAdapter', 'HexString', 'If', 'IfThenElse', 'IndexingAdapter', 'LFloat32', 'LFloat64', 'LazyBound', 'LazyContainer', 'LengthValueAdapter', 'ListContainer', 'MappingAdapter', 'MappingError', 'MetaArray', 'MetaField', 'NFloat32', 'NFloat64', 'Nibble', 'NoneOf', 'Octet', 'OnDemand', 'OnDemandPointer', 'OneOf', 'OpenRange', 'Optional', 'OptionalGreedyRange', 'OverwriteError', 'Packer', 'PaddedStringAdapter', 'Padding', 'PaddingError', 'PascalString', 'Pass', 'Peek', 'Pointer', 'PrefixedArray', 'Probe', 'Range', 'RangeError', 'Reconfig', 'Rename', 'RepeatUntil', 'Restream', 'SBInt16', 'SBInt32', 'SBInt64', 'SBInt8', 'SLInt16', 'SLInt32', 'SLInt64', 'SLInt8', 'SNInt16', 'SNInt32', 'SNInt64', 'SNInt8', 'Select', 'SelectError', 'SeqOfOne', 'Sequence', 'SizeofError', 'SlicingAdapter', 'StaticField', 'String', 'StringAdapter', 'Struct', 'Subconstruct', 'Switch', 'SwitchError', 'SymmetricMapping', 'Terminator', 'TerminatorError', 'TunnelAdapter', 'UBInt16', 'UBInt32', 'UBInt64', 'UBInt8', 'ULInt16', 'ULInt24', 'ULInt32', 'ULInt64', 'ULInt8', 'UNInt16', 'UNInt32', 'UNInt64', 'UNInt8', 'Union', 'ValidationError', 'Validator', 'Computed', 'this', 'Bits', 'Byte', 'Bytes', 'Tunnel', 'Embed', 'Const', 'ConstError', 
 ]
