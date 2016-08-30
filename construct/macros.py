@@ -353,16 +353,14 @@ def Aligned(subcon, modulus=4, pattern=b"\x00"):
     """
     if modulus < 2:
         raise ValueError("modulus must be >= 2", modulus)
+    if len(pattern) != 1:
+        raise ValueError("expected b-string character, given %r" % pattern)
     def padlength(ctx):
         return -subcon._sizeof(ctx) % modulus
     return SeqOfOne(subcon.name,
         subcon,
-        # ??????
-        # ??????
-        # ??????
-        # ??????
         Padding(padlength, pattern),
-        nested = False,
+        nested=False,
     )
 
 def SeqOfOne(name, *args, **kw):

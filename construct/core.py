@@ -1427,12 +1427,22 @@ class Padding(Construct):
     r"""
     A padding field (adds bytes when building, discards bytes when parsing).
 
-    :param length: the length of the field. the length can be either an integer,
-                   or a function that takes the context as an argument and returns the length
-    :param pattern: the padding pattern (b-string character), default is b"\x00"
-    :param strict: whether to verify during parsing that the stream contains the pattern,
-                   raises an exception if actual padding differs from the pattern. 
-                   default is False.
+    :param length: length of the field. can be either an integer or a function 
+                   that takes the context as an argument and returns the length
+    :param pattern: the padding pattern (b-string character). default is b"\x00"
+    :param strict: whether to verify during parsing that the stream contains 
+                   the pattern. raises an exception if actual padding differs 
+                   from the pattern. default is False.
+
+    Example::
+
+        Struct("struct",
+            Byte("num"),
+            Padding(4),
+        )
+
+        parse(b"\xff\x00\x00\x00\x00") -> Container(num=255)
+        build(Container(num=255)) -> b"\xff\x00\x00\x00\x00"
     """
     __slots__ = ["length", "pattern", "strict"]
     def __init__(self, length, pattern=b"\x00", strict=False):
@@ -1491,7 +1501,7 @@ class Const(Construct):
             raise ConstError("expected %r but parsed %r" % (self.value,obj))
         return obj
     def _build(self, obj, stream, context):
-        return self.subcon._build(self.value, stream, context)
+        self.subcon._build(self.value, stream, context)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 
