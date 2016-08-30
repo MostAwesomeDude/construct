@@ -78,6 +78,10 @@ all_tests = [
     
     [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
     [Computed("computed", lambda ctx: "moo").build, None, b"", None],
+
+    [Struct("s",Computed("c", lambda ctx: None)).parse, b"", Container(c=None), None],
+    [Struct("s",Computed("c", lambda ctx: None)).build, Container(c=None), b"", None],
+    [Struct("s",Computed("c", lambda ctx: None)).build, Container(), b"", None],
     
     [Anchor("anchor").parse, b"", 0, None],
     [Anchor("anchor").build, None, b"", None],
