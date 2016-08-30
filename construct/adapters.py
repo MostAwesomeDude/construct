@@ -12,8 +12,6 @@ class BitIntegerError(AdaptationError):
     pass
 class MappingError(AdaptationError):
     pass
-class ConstError(AdaptationError):
-    pass
 class ValidationError(AdaptationError):
     pass
 
@@ -305,32 +303,6 @@ class HexDumpAdapter(Adapter):
         return obj
     def _decode(self, obj, context):
         return HexString(obj, linesize = self.linesize)
-
-class ConstAdapter(Adapter):
-    """
-    Adapter for enforcing a constant value ("magic numbers"). When decoding,
-    the return value is checked; when building, the value is substituted in.
-
-    :param subcon: the subcon to validate
-    :param value: the expected value
-
-    Example::
-
-        Const(Field("signature", 2), "MZ")
-    """
-    __slots__ = ["value"]
-    def __init__(self, subcon, value):
-        super(ConstAdapter, self).__init__(subcon)
-        self.value = value
-    def _encode(self, obj, context):
-        if obj is None or obj == self.value:
-            return self.value
-        else:
-            raise ConstError("expected %r, found %r" % (self.value, obj))
-    def _decode(self, obj, context):
-        if obj != self.value:
-            raise ConstError("expected %r, found %r" % (self.value, obj))
-        return obj
 
 class SlicingAdapter(Adapter):
     """

@@ -31,6 +31,8 @@ class OverwriteError(ValueError):
     pass
 class PaddingError(ConstructError):
     pass
+class ConstError(ConstructError):
+    pass
 
 #===============================================================================
 # abstract constructs
@@ -1455,3 +1457,41 @@ class Padding(Construct):
     def _sizeof(self, context):
         length = self.length(context) if callable(self.length) else self.length
         return length
+
+class Const(Construct):
+    r"""
+    Constant field enforcing a constant value. It is used for file signatures, 
+    to validate that the given pattern exists. When parsed, the value must match.
+
+    :param data: a bytes object
+    :param subcon: the subcon to validate
+    :param value: the expected value
+
+    Example::
+
+        Const(b"IHDR")
+        
+        Const("signature", b"IHDR")
+
+        Const(ULInt64("signature"), 123)
+
+    """
+    __slots__ = ["subcon", "value"]
+    def __init__(self, subcon, value=None):
+        if value is None:
+            subcon, value = StaticField(None, len(subcon)), subcon
+        if isinstance(subcon, str):
+            subcon, value = StaticField(subcon, len(value)), value
+        super(Const, self).__init__(subcon.name)
+        self.subcon = subcon
+        self.value = value
+    def _parse(self, stream, context):
+        obj = self.subcon._parse(stream, context)
+        if obj != self.value:
+            raise ConstError("expected %r but parsed %r" % (self.value,obj))
+        return obj
+    def _build(self, obj, stream, context):
+        return self.subcon._build(self.value, stream, context)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
+

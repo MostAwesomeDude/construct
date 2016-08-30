@@ -22,14 +22,14 @@ from construct.core import (AdaptationError, Adapter, Anchor, ArrayError, Buffer
     Container, FieldError, FormatField, LazyBound, LazyContainer, ListContainer, MetaArray, MetaField, OnDemand, 
     OverwriteError, Packer, Pass, Peek, Pointer, Range, RangeError, Reconfig, RepeatUntil, Restream, Select, 
     SelectError, Sequence, SizeofError, StaticField, Struct, Subconstruct, Switch, SwitchError, Terminator, 
-    TerminatorError, ULInt24, Union, Computed, Padding, PaddingError)
-from construct.adapters import (BitIntegerAdapter, BitIntegerError, CStringAdapter, ConstAdapter, ConstError, 
+    TerminatorError, ULInt24, Union, Computed, Padding, PaddingError, Const, ConstError)
+from construct.adapters import (BitIntegerAdapter, BitIntegerError, CStringAdapter, 
     ExprAdapter, FlagsAdapter, FlagsContainer, HexDumpAdapter, HexString, IndexingAdapter, LengthValueAdapter, 
     MappingAdapter, MappingError, NoneOf, OneOf, PaddedStringAdapter, SlicingAdapter, 
     StringAdapter, TunnelAdapter, ValidationError, Validator) 
 from construct.macros import (Alias, Aligned, AlignedStruct, Array, BFloat32, BFloat64, Bit, BitField, 
     BitStreamReader, BitStreamWriter, BitStruct, Bitwise, CString, Embedded, EmbeddedBitStruct, Enum, Field,
-    Flag, FlagsEnum, GreedyRange, If, IfThenElse, LFloat32, LFloat64, Magic, NFloat32, NFloat64, Nibble, Octet, 
+    Flag, FlagsEnum, GreedyRange, If, IfThenElse, LFloat32, LFloat64, NFloat32, NFloat64, Nibble, Octet, 
     OnDemandPointer, OpenRange, Optional, OptionalGreedyRange, PascalString, PrefixedArray, 
     Rename, SBInt16, SBInt32, SBInt64, SBInt8, SLInt16, SLInt32, SLInt64, SLInt8, SNInt16, SNInt32, SNInt64, 
     SNInt8, SeqOfOne, String, SymmetricMapping, UBInt16, UBInt32, UBInt64, UBInt8, ULInt16, ULInt32, ULInt64, 
@@ -50,7 +50,6 @@ __author__ = "Arkadiusz Bulski <arek.bulski@gmail.com>, Tomer Filiba <tomerfilib
 Bits = BitField
 Byte = UBInt8
 Bytes = Field
-Const = ConstAdapter
 Tunnel = TunnelAdapter
 Embed = Embedded
 
@@ -60,11 +59,11 @@ Embed = Embedded
 __all__ = [
     'AdaptationError', 'Adapter', 'Alias', 'Aligned', 'AlignedStruct', 'Anchor', 'Array', 'ArrayError', 
     'BFloat32', 'BFloat64', 'Bit', 'BitField', 'BitIntegerAdapter', 'BitIntegerError', 'BitStreamReader', 
-    'BitStreamWriter', 'BitStruct', 'Bitwise', 'Buffered', 'CString', 'CStringAdapter', 'ConstAdapter', 
-    'ConstError', 'Construct', 'ConstructError', 'Container', 'Debugger', 'Embedded', 'EmbeddedBitStruct', 
+    'BitStreamWriter', 'BitStruct', 'Bitwise', 'Buffered', 'CString', 'CStringAdapter', 
+    'Construct', 'ConstructError', 'Container', 'Debugger', 'Embedded', 'EmbeddedBitStruct', 
     'Enum', 'ExprAdapter', 'Field', 'FieldError', 'Flag', 'FlagsAdapter', 'FlagsContainer', 'FlagsEnum', 
     'FormatField', 'GreedyRange', 'HexDumpAdapter', 'HexString', 'If', 'IfThenElse', 'IndexingAdapter', 
-    'LFloat32', 'LFloat64', 'LazyBound', 'LazyContainer', 'LengthValueAdapter', 'ListContainer', 'Magic', 
+    'LFloat32', 'LFloat64', 'LazyBound', 'LazyContainer', 'LengthValueAdapter', 'ListContainer', 
     'MappingAdapter', 'MappingError', 'MetaArray', 'MetaField', 'NFloat32', 'NFloat64', 'Nibble', 'NoneOf', 
     'Octet', 'OnDemand', 'OnDemandPointer', 'OneOf', 'OpenRange', 'Optional', 'OptionalGreedyRange', 
     'OverwriteError', 'Packer', 'PaddedStringAdapter', 'Padding', 'PaddingError', 
@@ -75,5 +74,5 @@ __all__ = [
     'Subconstruct', 'Switch', 'SwitchError', 'SymmetricMapping', 'Terminator', 'TerminatorError', 
     'TunnelAdapter', 'UBInt16', 'UBInt32', 'UBInt64', 'UBInt8', 'ULInt16', 'ULInt24', 'ULInt32', 'ULInt64', 
     'ULInt8', 'UNInt16', 'UNInt32', 'UNInt64', 'UNInt8', 'Union', 'ValidationError', 'Validator', 'Computed', 
-    'this', 'Bits', 'Byte', 'Bytes', 'Const', 'Tunnel', 'Embed',
+    'this', 'Bits', 'Byte', 'Bytes', 'Tunnel', 'Embed', 'Const', 'ConstError', 
 ]

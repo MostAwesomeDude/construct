@@ -189,12 +189,19 @@ all_tests = [
     [TunnelAdapter(PascalString("data", encoding = ZlibCodec), GreedyRange(UBInt16("elements"))).build, 
         [3] * 100, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", None],
     
-    [Const(Field("const", 2), b"MZ").parse, b"MZ", b"MZ", None],
-    [Const(Field("const", 2), b"MZ").parse, b"MS", None, ConstError],
-    [Const(Field("const", 2), b"MZ").build, b"MZ", b"MZ", None],
-    [Const(Field("const", 2), b"MZ").build, b"MS", None, ConstError],
-    [Const(Field("const", 2), b"MZ").build, None, b"MZ", None],
-    
+    [Const(b"MZ").parse, b"MZ", b"MZ", None],
+    [Const(b"MZ").parse, b"ELF", None, ConstError],
+    [Const(b"MZ").build, None, b"MZ", None],
+    [Const(b"MZ").build, b"MZ", b"MZ", None],
+    [Const("const", b"MZ").parse, b"MZ", b"MZ", None],
+    [Const("const", b"MZ").parse, b"ELF", None, ConstError],
+    [Const("const", b"MZ").build, None, b"MZ", None],
+    [Const("const", b"MZ").build, b"MZ", b"MZ", None],
+    [Const(ULInt32("const"), 255).parse, b"\xff\x00\x00\x00", 255, None],
+    [Const(ULInt32("const"), 255).parse, b"\x00\x00\x00\x00", 255, ConstError],
+    [Const(ULInt32("const"), 255).build, None, b"\xff\x00\x00\x00", None],
+    [Const(ULInt32("const"), 255).build, 255, b"\xff\x00\x00\x00", None],
+
     [ExprAdapter(UBInt8("expradapter"), 
         encoder = lambda obj, ctx: obj // 7, 
         decoder = lambda obj, ctx: obj * 7).parse, 
@@ -266,10 +273,6 @@ all_tests = [
     [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).parse, b"\x00\x01", 1, None],
     [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).build, 1, b"\x01", None],
     [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).build, 1, b"\x00\x01", None],
-    
-    [Magic(b"MZ").parse, b"MZ", b"MZ", None],
-    [Magic(b"MZ").parse, b"ELF", None, ConstError],
-    [Magic(b"MZ").build, None, b"MZ", None],
 ]
 
 
@@ -291,6 +294,7 @@ class TestAll(unittest.TestCase):
                     continue
             else:
                 if exctype is not None:
+                    print("Testing: %r", (i, func, args, res, exctype))
                     errors.append("%s: expected exception %r" % (func, exctype))
                     continue
                 if r != res:

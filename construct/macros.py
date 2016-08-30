@@ -2,8 +2,8 @@ from sys import maxsize
 
 from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.core import Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig, Padding
-from construct.adapters import BitIntegerAdapter, ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
+from construct.core import Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig, Padding, Const
+from construct.adapters import BitIntegerAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
 
 
 #===============================================================================
@@ -663,19 +663,4 @@ def OnDemandPointer(offsetfunc, subcon, force_build=True):
         advance_stream = False,
         force_build = force_build
     )
-
-def Magic(data):
-    """A 'magic number' construct. It is used for file signatures, to validate
-    that the given pattern exists. When parsed. the value must match.
-
-    :param data: a bytes object
-
-    Example::
-
-        elf_header = Struct("elf_header",
-            Magic("\x7fELF"),
-            # ...
-        )
-    """
-    return ConstAdapter(Field(None, len(data)), data)
 
