@@ -1213,10 +1213,10 @@ class Anchor(Construct):
         return 0
 
 class Computed(Construct):
-    """
+    r"""
     A computed value.
 
-    Underlying byte stream is unaffected. When parsing `func(context)` provides the value, building is noop.
+    Underlying byte stream is unaffected. When parsing `func(context)` provides the value.
 
     :param name: the name of the value
     :param func: a function that takes the context and return the computed value
@@ -1229,8 +1229,8 @@ class Computed(Construct):
             Computed("total", lambda ctx: ctx.width * ctx.height),
         )
 
-        foo.parse(b'\x05\x05') -> Container(width=5,height=5,total=25)
-        foo.build(Container(width=5,height=5,total=25)) -> b'\x05\x05'
+        foo.parse(b'\x04\x05') -> Container(width=4,height=5,total=20)
+        foo.build(Container(width=4,height=5,total=20)) -> b'\x04\x05'
     """
     __slots__ = ["func"]
     def __init__(self, name, func):
