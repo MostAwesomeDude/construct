@@ -214,10 +214,10 @@ all_tests = [
     #
     # macros
     #
-    [Aligned(UBInt8("aligned")).parse, b"\x01\x00\x00\x00", 1, None],
-    [Aligned(UBInt8("aligned")).build, 1, b"\x01\x00\x00\x00", None],
+    # [Aligned(UBInt8("aligned")).parse, b"\x01\x00\x00\x00", 1, None],
+    # [Aligned(UBInt8("aligned")).build, 1, b"\x01\x00\x00\x00", None],
     [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).parse, b"\x01\x00\x00\x00\x02", Container(a=1,b=2), None],
-    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, Container(a=1,b=2), b"\x01\x00\x00\x00\x02", None],
+    # [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, Container(a=1,b=2), b"\x01\x00\x00\x00\x02", None],
     
     [Bitwise(Field("bitwise", 8)).parse, b"\xff", b"\x01" * 8, None],
     [Bitwise(Field("bitwise", lambda ctx: 8)).parse, b"\xff", b"\x01" * 8, None],

@@ -1468,6 +1468,7 @@ class Padding(Construct):
         length = self.length(context) if callable(self.length) else self.length
         return length
 
+
 class Const(Construct):
     r"""
     Constant field enforcing a constant value. It is used for file signatures, 
@@ -1502,6 +1503,43 @@ class Const(Construct):
         return obj
     def _build(self, obj, stream, context):
         self.subcon._build(self.value, stream, context)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
+
+
+class Aligned(Construct):
+    r"""Aligns subcon to modulus boundary using padding pattern
+
+    :param subcon: the subcon to align
+    :param modulus: the modulus boundary (default is 4)
+    :param pattern: the padding pattern (default is \x00)
+    """
+    __slots__ = ["subcon", "modulus", "pattern"]
+    def __init__(self, subcon, modulus=4, pattern=b"\x00"):
+        if modulus < 2:
+            raise ValueError("modulus must be at least 2", modulus)
+        if len(pattern) != 1:
+            raise PaddingError("expected a pattern of single byte, given %r" % pattern)
+        super(Aligned, self).__init__(subcon.name)
+        self.subcon = subcon
+        self.modulus = modulus
+        self.pattern = pattern
+    def _parse(self, stream, context):
+        position1 = stream.tell()
+        obj = self.subcon._parse(stream, context)
+        # context[self.subcon.name] = obj
+        position2 = stream.tell()
+        pad = -(position2 - position1) % self.modulus
+        _read_stream(stream, pad)
+        print("parse",self.subcon,obj,pad,context)
+        return obj
+    def _build(self, obj, stream, context):
+        print("build",self.subcon,obj,context)
+        position1 = stream.tell()
+        self.subcon._build(obj, stream, context)
+        position2 = stream.tell()
+        pad = -(position2 - position1) % self.modulus
+        _write_stream(stream, pad, self.pattern * pad)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 

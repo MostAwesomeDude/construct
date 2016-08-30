@@ -344,24 +344,6 @@ def Bitwise(subcon):
             resizer = resizer)
     return con
 
-def Aligned(subcon, modulus=4, pattern=b"\x00"):
-    r"""Aligns subcon to modulus boundary using padding pattern
-
-    :param subcon: the subcon to align
-    :param modulus: the modulus boundary (default is 4)
-    :param pattern: the padding pattern (default is \x00)
-    """
-    if modulus < 2:
-        raise ValueError("modulus must be >= 2", modulus)
-    if len(pattern) != 1:
-        raise ValueError("expected b-string character, given %r" % pattern)
-    def padlength(ctx):
-        return -subcon._sizeof(ctx) % modulus
-    return SeqOfOne(subcon.name,
-        subcon,
-        Padding(padlength, pattern),
-        nested=False,
-    )
 
 def SeqOfOne(name, *args, **kw):
     r"""A sequence of one element. only the first element is meaningful, the
