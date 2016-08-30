@@ -78,7 +78,6 @@ all_tests = [
     
     [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
     [Computed("computed", lambda ctx: "moo").build, None, b"", None],
-
     [Struct("s",Computed("c", lambda ctx: None)).parse, b"", Container(c=None), None],
     [Struct("s",Computed("c", lambda ctx: None)).build, Container(c=None), b"", None],
     [Struct("s",Computed("c", lambda ctx: None)).build, Container(), b"", None],
@@ -106,12 +105,9 @@ all_tests = [
         b"\x07\x09", Container(a=7,b=LazyContainer(None, None, None, None),c=9), None],
     
     [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, 
-        Container(a=7,b=8,c=9), b"\x07\x08\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False), UBInt8("c")).build, 
-        Container(a=7,b=LazyContainer(None, None, None, None),c=9), b"\x07\x00\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False, advance_stream = False), UBInt8("c")).build, 
-        Container(a=7,b=LazyContainer(None, None, None, None),c=9), b"\x07\x09", None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7,b=8,c=9), b"\x07\x08\x09", None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False), UBInt8("c")).build, Container(a=7,b=LazyContainer(None, None, None, None),c=9), b"\x07\x00\x09", None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False, advance_stream = False), UBInt8("c")).build, Container(a=7,b=LazyContainer(None, None, None, None),c=9), b"\x07\x09", None],
     
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).parse, b"\x01", Container(foo=1), None],
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).build, Container(foo=1), b"\x01", None],
@@ -176,11 +172,13 @@ all_tests = [
     [SlicingAdapter(Array(3, UBInt8("indexingadapter")), 1, 3).parse, b"\x11\x22\x33", [0x22, 0x33], None],
     [SlicingAdapter(Array(3, UBInt8("indexingadapter")), 1, 3)._encode, ([0x22, 0x33], {}), [None, 0x22, 0x33], None],
     
-    [PaddingAdapter(Field("paddingadapter", 4)).parse, b"abcd", b"abcd", None],
-    [PaddingAdapter(Field("paddingadapter", 4), strict = True).parse, b"abcd", None, PaddingError],
-    [PaddingAdapter(Field("paddingadapter", 4), strict = True).parse, b"\x00\x00\x00\x00", b"\x00\x00\x00\x00", None],
-    [PaddingAdapter(Field("paddingadapter", 4)).build, b"abcd", b"\x00\x00\x00\x00", None],
-    
+    [Padding(4).parse,              b"\x00\x00\x00\x00", None, None],
+    [Padding(4, strict=True).parse, b"\x00\x00\x00\x00", None, None],
+    [Padding(4, strict=True).parse, b"????", None, PaddingError],
+    [Padding(4).build,              None, b"\x00\x00\x00\x00", None],
+    [Padding(4, strict=True).build, None, b"\x00\x00\x00\x00", None],
+    [lambda none: Padding(4, pattern=b"??"), None, None, PaddingError],
+
     [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).parse,
         b"\x05abcde", b"abcde", None],
     [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build,
@@ -211,10 +209,8 @@ all_tests = [
     #
     [Aligned(UBInt8("aligned")).parse, b"\x01\x00\x00\x00", 1, None],
     [Aligned(UBInt8("aligned")).build, 1, b"\x01\x00\x00\x00", None],
-    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).parse, 
-        b"\x01\x00\x00\x00\x02", Container(a=1,b=2), None],
-    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, 
-        Container(a=1,b=2), b"\x01\x00\x00\x00\x02", None],
+    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).parse, b"\x01\x00\x00\x00\x02", Container(a=1,b=2), None],
+    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, Container(a=1,b=2), b"\x01\x00\x00\x00\x02", None],
     
     [Bitwise(Field("bitwise", 8)).parse, b"\xff", b"\x01" * 8, None],
     [Bitwise(Field("bitwise", lambda ctx: 8)).parse, b"\xff", b"\x01" * 8, None],
@@ -266,14 +262,10 @@ all_tests = [
     [PrefixedArray(UBInt8("array"), UBInt8("count")).sizeof, [1,1,1], 4, None],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).build, [1,1,1], b"\x03\x01\x01\x01", None],
     
-    [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).parse, 
-        b"\x01", 1, None],
-    [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).parse, 
-        b"\x00\x01", 1, None],
-    [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).build, 
-        1, b"\x01", None],
-    [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).build, 
-        1, b"\x00\x01", None],
+    [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).parse, b"\x01", 1, None],
+    [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).parse, b"\x00\x01", 1, None],
+    [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).build, 1, b"\x01", None],
+    [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).build, 1, b"\x00\x01", None],
     
     [Magic(b"MZ").parse, b"MZ", b"MZ", None],
     [Magic(b"MZ").parse, b"ELF", None, ConstError],
@@ -310,20 +302,4 @@ class TestAll(unittest.TestCase):
         errors = self._run_tests(all_tests)
         if errors:
             self.fail("\n=========================\n".join(str(e) for e in errors))
-
-
-class TestComputed(unittest.TestCase):
-    def setUp(self):
-        self.s = Struct("s",
-            UBInt8("width"),
-            UBInt8("height"),
-            Computed("total", lambda ctx: ctx.width * ctx.height),
-        )
-
-    def test_parse(self):
-        self.assertEquals(self.s.parse(b'\x05\x05'), Container(width=5,height=5,total=25))
-
-    def test_build(self):
-        self.assertEquals(self.s.build(Container(width=5,height=5,total=25)), b'\x05\x05')
-        self.assertEquals(self.s.build(Container(width=5,height=5)), b'\x05\x05')
 

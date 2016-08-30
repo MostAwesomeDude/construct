@@ -22,15 +22,15 @@ from construct.core import (AdaptationError, Adapter, Anchor, ArrayError, Buffer
     Container, FieldError, FormatField, LazyBound, LazyContainer, ListContainer, MetaArray, MetaField, OnDemand, 
     OverwriteError, Packer, Pass, Peek, Pointer, Range, RangeError, Reconfig, RepeatUntil, Restream, Select, 
     SelectError, Sequence, SizeofError, StaticField, Struct, Subconstruct, Switch, SwitchError, Terminator, 
-    TerminatorError, ULInt24, Union, Computed)
+    TerminatorError, ULInt24, Union, Computed, Padding, PaddingError)
 from construct.adapters import (BitIntegerAdapter, BitIntegerError, CStringAdapter, ConstAdapter, ConstError, 
     ExprAdapter, FlagsAdapter, FlagsContainer, HexDumpAdapter, HexString, IndexingAdapter, LengthValueAdapter, 
-    MappingAdapter, MappingError, NoneOf, OneOf, PaddedStringAdapter, PaddingAdapter, PaddingError, SlicingAdapter, 
+    MappingAdapter, MappingError, NoneOf, OneOf, PaddedStringAdapter, SlicingAdapter, 
     StringAdapter, TunnelAdapter, ValidationError, Validator) 
 from construct.macros import (Alias, Aligned, AlignedStruct, Array, BFloat32, BFloat64, Bit, BitField, 
     BitStreamReader, BitStreamWriter, BitStruct, Bitwise, CString, Embedded, EmbeddedBitStruct, Enum, Field,
     Flag, FlagsEnum, GreedyRange, If, IfThenElse, LFloat32, LFloat64, Magic, NFloat32, NFloat64, Nibble, Octet, 
-    OnDemandPointer, OpenRange, Optional, OptionalGreedyRange, Padding, PascalString, PrefixedArray, 
+    OnDemandPointer, OpenRange, Optional, OptionalGreedyRange, PascalString, PrefixedArray, 
     Rename, SBInt16, SBInt32, SBInt64, SBInt8, SLInt16, SLInt32, SLInt64, SLInt8, SNInt16, SNInt32, SNInt64, 
     SNInt8, SeqOfOne, String, SymmetricMapping, UBInt16, UBInt32, UBInt64, UBInt8, ULInt16, ULInt32, ULInt64, 
     ULInt8, UNInt16, UNInt32, UNInt64, UNInt8, GreedyString)
@@ -67,7 +67,7 @@ __all__ = [
     'LFloat32', 'LFloat64', 'LazyBound', 'LazyContainer', 'LengthValueAdapter', 'ListContainer', 'Magic', 
     'MappingAdapter', 'MappingError', 'MetaArray', 'MetaField', 'NFloat32', 'NFloat64', 'Nibble', 'NoneOf', 
     'Octet', 'OnDemand', 'OnDemandPointer', 'OneOf', 'OpenRange', 'Optional', 'OptionalGreedyRange', 
-    'OverwriteError', 'Packer', 'PaddedStringAdapter', 'Padding', 'PaddingAdapter', 'PaddingError', 
+    'OverwriteError', 'Packer', 'PaddedStringAdapter', 'Padding', 'PaddingError', 
     'PascalString', 'Pass', 'Peek', 'Pointer', 'PrefixedArray', 'Probe', 'Range', 'RangeError', 'Reconfig', 
     'Rename', 'RepeatUntil', 'Restream', 'SBInt16', 'SBInt32', 'SBInt64', 'SBInt8', 'SLInt16', 'SLInt32', 
     'SLInt64', 'SLInt8', 'SNInt16', 'SNInt32', 'SNInt64', 'SNInt8', 'Select', 'SelectError', 'SeqOfOne', 

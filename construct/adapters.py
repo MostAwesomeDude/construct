@@ -16,8 +16,6 @@ class ConstError(AdaptationError):
     pass
 class ValidationError(AdaptationError):
     pass
-class PaddingError(AdaptationError):
-    pass
 
 
 #===============================================================================
@@ -372,29 +370,6 @@ class IndexingAdapter(Adapter):
         return [None] * self.index + [obj]
     def _decode(self, obj, context):
         return obj[self.index]
-
-class PaddingAdapter(Adapter):
-    r"""
-    Adapter for padding.
-
-    :param subcon: the subcon to pad
-    :param pattern: the padding pattern (character). default is "\x00"
-    :param strict: whether or not to verify, during parsing, that the given
-                   padding matches the padding pattern. default is False (unstrict)
-    """
-    __slots__ = ["pattern", "strict"]
-    def __init__(self, subcon, pattern = b"\x00", strict = False):
-        super(PaddingAdapter, self).__init__(subcon)
-        self.pattern = pattern
-        self.strict = strict
-    def _encode(self, obj, context):
-        return self._sizeof(context) * self.pattern
-    def _decode(self, obj, context):
-        if self.strict:
-            expected = self._sizeof(context) * self.pattern
-            if obj != expected:
-                raise PaddingError("expected %r, found %r" % (expected, obj))
-        return obj
 
 
 #===============================================================================

@@ -29,6 +29,8 @@ class TerminatorError(ConstructError):
     pass
 class OverwriteError(ValueError):
     pass
+class PaddingError(ConstructError):
+    pass
 
 #===============================================================================
 # abstract constructs
@@ -1418,3 +1420,38 @@ class ULInt24(StaticField):
             ex = sys.exc_info()[1]
             raise FieldError(ex)
 
+
+class Padding(Construct):
+    r"""
+    A padding field (adds bytes when building, discards bytes when parsing).
+
+    :param length: the length of the field. the length can be either an integer,
+                   or a function that takes the context as an argument and returns the length
+    :param pattern: the padding pattern (b-string character), default is b"\x00"
+    :param strict: whether to verify during parsing that the stream contains the pattern,
+                   raises an exception if actual padding differs from the pattern. 
+                   default is False.
+    """
+    __slots__ = ["length", "pattern", "strict"]
+    def __init__(self, length, pattern=b"\x00", strict=False):
+        if len(pattern) != 1:
+            raise PaddingError("expected a pattern of single byte, given %r" % pattern)
+        super(Padding, self).__init__(None)
+        self.length = length
+        self.pattern = pattern
+        self.strict = strict
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        read = _read_stream(stream, length)
+        if self.strict:
+            expected = length * self.pattern
+            if read != expected:
+                raise PaddingError("expected %r, found %r" % (expected, read))
+        return None
+    def _build(self, obj, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        padding = length * self.pattern
+        _write_stream(stream, length, padding)
+    def _sizeof(self, context):
+        length = self.length(context) if callable(self.length) else self.length
+        return length

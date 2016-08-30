@@ -2,8 +2,8 @@ from sys import maxsize
 
 from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.core import Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig
-from construct.adapters import BitIntegerAdapter, PaddingAdapter, ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
+from construct.core import Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig, Padding
+from construct.adapters import BitIntegerAdapter, ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
 
 
 #===============================================================================
@@ -67,22 +67,8 @@ def BitField(name, length, swapped=False, signed=False, bytesize=8):
         bytesize=bytesize
     )
 
-def Padding(length, pattern=b"\x00", strict=False):
-    r"""A padding field (adds bytes when building, discards bytes when parsing)
-
-    :param length: the length of the field. the length can be either an integer,
-                   or a function that takes the context as an argument and returns the length
-    :param pattern: the padding pattern (character) to use. default is "\x00"
-    :param strict: whether or not to raise an exception is the actual padding
-                   pattern mismatches the desired pattern. default is False.
-    """
-    return PaddingAdapter(Field(None, length),
-        pattern = pattern,
-        strict = strict,
-    )
-
 def Flag(name, truth=1, falsehood=0, default=False):
-    """
+    r"""
     A flag.
 
     Flags are usually used to signify a Boolean value, and this construct
@@ -375,7 +361,7 @@ def Aligned(subcon, modulus=4, pattern=b"\x00"):
         # ??????
         # ??????
         # ??????
-        Padding(padlength, pattern = pattern),
+        Padding(padlength, pattern),
         nested = False,
     )
 
