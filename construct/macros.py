@@ -10,7 +10,7 @@ from construct.adapters import BitIntegerAdapter, CStringAdapter, LengthValueAda
 # fields
 #===============================================================================
 def Field(name, length):
-    """
+    r"""
     A field consisting of a specified number of bytes.
 
     :param name: the name of the field
@@ -236,7 +236,8 @@ def Array(count, subcon):
     return con
 
 def PrefixedArray(subcon, length_field=UBInt8("length")):
-    """An array prefixed by a length field.
+    r"""
+    An array prefixed by a length field.
 
     :param subcon: the subcon to be repeated
     :param length_field: a construct returning an integer
@@ -313,14 +314,16 @@ def OptionalGreedyRange(subcon):
 # subconstructs
 #===============================================================================
 def Optional(subcon):
-    """An optional construct. if parsing fails, returns None.
+    r"""
+    An optional construct. if parsing fails, returns None.
 
     :param subcon: the subcon to optionally parse or build
     """
     return Select(subcon.name, subcon, Pass)
 
 def Bitwise(subcon):
-    """Converts the stream to bits, and passes the bitstream to subcon
+    r"""
+    Converts the stream to bits, and passes the bitstream to subcon
 
     :param subcon: a bitwise construct (usually BitField)
     """
@@ -346,7 +349,8 @@ def Bitwise(subcon):
 
 
 def SeqOfOne(name, *args, **kw):
-    r"""A sequence of one element. only the first element is meaningful, the
+    r"""
+    A sequence of one element. only the first element is meaningful, the
     rest are discarded
 
     :param name: the name of the sequence
@@ -356,14 +360,16 @@ def SeqOfOne(name, *args, **kw):
     return IndexingAdapter(Sequence(name, *args, **kw), index = 0)
 
 def Embedded(subcon):
-    """Embeds a struct into the enclosing struct.
+    r"""
+    Embeds a struct into the enclosing struct.
 
     :param subcon: the struct to embed
     """
     return Reconfig(subcon.name, subcon, subcon.FLAG_EMBED)
 
 def Rename(newname, subcon):
-    """Renames an existing construct
+    r"""
+    Renames an existing construct
 
     :param newname: the new name
     :param subcon: the subcon to rename
@@ -371,7 +377,8 @@ def Rename(newname, subcon):
     return Reconfig(newname, subcon)
 
 def Alias(newname, oldname):
-    """Creates an alias for an existing element in a struct
+    r"""
+    Creates an alias for an existing element in a struct
 
     :param newname: the new name
     :param oldname: the name of an existing element
@@ -383,7 +390,8 @@ def Alias(newname, oldname):
 # mapping
 #===============================================================================
 def SymmetricMapping(subcon, mapping, default=NotImplemented):
-    """Defines a symmetrical mapping: a->b, b->a.
+    r"""
+    Defines a symmetrical mapping: a->b, b->a.
 
     :param subcon: the subcon to map
     :param mapping: the encoding mapping (a dict); the decoding mapping is
@@ -401,7 +409,8 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
     )
 
 def Enum(subcon, **kw):
-    r"""A set of named values mapping.
+    r"""
+    A set of named values mapping.
 
     :param subcon: the subcon to map
     :param \*\*kw: keyword arguments which serve as the encoding mapping
@@ -413,7 +422,8 @@ def Enum(subcon, **kw):
     return SymmetricMapping(subcon, kw, kw.pop("_default_", NotImplemented))
 
 def FlagsEnum(subcon, **kw):
-    r"""A set of flag values mapping.
+    r"""
+    A set of flag values mapping.
 
     :param subcon: the subcon to map
     :param \*\*kw: keyword arguments which serve as the encoding mapping
@@ -425,7 +435,8 @@ def FlagsEnum(subcon, **kw):
 # structs
 #===============================================================================
 def AlignedStruct(name, *subcons, **kw):
-    r"""A struct of aligned fields
+    r"""
+    A struct of aligned fields
 
     :param name: the name of the struct
     :param \*subcons: the subcons that make up this structure
@@ -434,7 +445,8 @@ def AlignedStruct(name, *subcons, **kw):
     return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
 
 def BitStruct(name, *subcons):
-    r"""A struct of bitwise fields
+    r"""
+    A struct of bitwise fields
 
     :param name: the name of the struct
     :param \*subcons: the subcons that make up this structure
@@ -442,7 +454,8 @@ def BitStruct(name, *subcons):
     return Bitwise(Struct(name, *subcons))
 
 def EmbeddedBitStruct(*subcons):
-    r"""An embedded BitStruct. no name is necessary.
+    r"""
+    An embedded BitStruct. no name is necessary.
 
     :param \*subcons: the subcons that make up this structure
     """
@@ -597,7 +610,8 @@ def GreedyString(name, encoding=None, char_field=Field(None,1)):
 # conditional
 #===============================================================================
 def IfThenElse(name, predicate, then_subcon, else_subcon):
-    """An if-then-else conditional construct: if the predicate indicates True,
+    r"""
+    An if-then-else conditional construct: if the predicate indicates True,
     `then_subcon` will be used; otherwise `else_subcon`
 
     :param name: the name of the construct
@@ -613,7 +627,8 @@ def IfThenElse(name, predicate, then_subcon, else_subcon):
     )
 
 def If(predicate, subcon, elsevalue=None):
-    """An if-then conditional construct: if the predicate indicates True,
+    r"""
+    An if-then conditional construct: if the predicate indicates True,
     subcon will be used; otherwise, `elsevalue` will be returned instead.
 
     :param predicate: a function taking the context as an argument and returning True or False
@@ -632,7 +647,8 @@ def If(predicate, subcon, elsevalue=None):
 # misc
 #===============================================================================
 def OnDemandPointer(offsetfunc, subcon, force_build=True):
-    """An on-demand pointer.
+    r"""
+    An on-demand pointer.
 
     :param offsetfunc: a function taking the context as an argument and returning
                        the absolute stream position
