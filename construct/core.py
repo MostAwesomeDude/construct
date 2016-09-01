@@ -33,6 +33,8 @@ class PaddingError(ConstructError):
     pass
 class ConstError(ConstructError):
     pass
+class StringError(ConstructError):
+    pass
 
 #===============================================================================
 # abstract constructs
@@ -1553,7 +1555,8 @@ class Const(Construct):
 
 
 class Aligned(Construct):
-    r"""Aligns subcon to modulus boundary using padding pattern
+    r"""
+    Aligns subcon to modulus boundary using padding pattern
 
     :param subcon: the subcon to align
     :param modulus: the modulus boundary (default is 4)
@@ -1587,4 +1590,98 @@ class Aligned(Construct):
         _write_stream(stream, pad, self.pattern * pad)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
+
+class String(Construct):
+    r"""
+    A configurable, variable-length string field.
+
+    When parsing, the byte string is stripped of pad character (as specified) from the direction (as specified) then decoded (as specified). Length is a constant integer or a function of the context.
+    When building, the string is encoded (as specified) then padded (as specified) from the direction (as specified) or trimmed as bytes (as specified).
+
+    The padding character and direction must be specified for padding to work. The trim direction must be specified for trimming to work.
+
+    :param name: name
+    :param length: length in bytes (not unicode characters), as int or function
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+    :param padchar: optional byte or unicode character to pad out strings
+    :param paddir: direction to pad out strings (one of: right left both)
+    :param trimdir: direction to trim strings (one of: right left)
+
+    Example::
+
+        String("string", 5)
+        .parse(b"hello") -> b"hello"
+
+        String("string", 12, encoding="utf8")
+        .parse(b"hello joh\xd4\x83n") -> u'hello joh\u0503n'
+        
+        String("string", 10, padchar="X", paddir="right")
+        .parse(b"helloXXXXX") -> b"hello"
+        .build(u"hello") -> b"helloXXXXX"
+
+        String("string", 5, trimdir="right")
+        .build(u"hello12345") -> b"hello"
+    """
+    __slots__ = ["length", "encoding", "padchar", "paddir", "trimdir"]
+    def __init__(self, name, length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
+        if not isinstance(padchar, bytes):
+            if encoding:
+                if isinstance(encoding, str):
+                    padchar = padchar.encode(encoding)
+                else:
+                    padchar = encoding.encode(padchar)
+            else:
+                raise TypeError("padchar must be or be encodable to a byte string")
+        if len(padchar) != 1:
+            raise ValueError("padchar must be 1 character byte string, given %r" % (padchar,))
+        if paddir not in ("right", "left", "center"):
+            raise ValueError("paddir must be one of: right left center", paddir)
+        if trimdir not in ("right", "left"):
+            raise ValueError("trimdir must be one of: right left", trimdir)
+        super(String, self).__init__(name)
+        self.length = length
+        self.encoding = encoding
+        self.padchar = padchar
+        self.paddir = paddir
+        self.trimdir = trimdir
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        obj = _read_stream(stream, length)
+        padchar = self.padchar
+        if self.paddir == "right":
+            obj = obj.rstrip(padchar)
+        elif self.paddir == "left":
+            obj = obj.lstrip(padchar)
+        else:
+            obj = obj.strip(padchar)
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _build(self, obj, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        padchar = self.padchar
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        if self.paddir == "right":
+            obj = obj.ljust(length, padchar)
+        elif self.paddir == "left":
+            obj = obj.rjust(length, padchar)
+        else:
+            obj = obj.center(length, padchar)
+        if len(obj) > length:
+            if self.trimdir == "right":
+                obj = obj[:length]
+            elif self.trimdir == "left":
+                obj = obj[-length:]
+            else:
+                raise StringError("expected a string of length %s given %s (%r)" % (length,len(obj),obj))
+        _write_stream(stream, length, obj)
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
 

@@ -1,6 +1,7 @@
 import unittest
 
 from construct import String, PascalString, CString, UBInt16, GreedyString
+from construct.core import StringError
 
 
 class TestString(unittest.TestCase):
@@ -12,7 +13,7 @@ class TestString(unittest.TestCase):
         s = String("foo", 12, encoding="utf8")
         self.assertEqual(s.parse(b"hello joh\xd4\x83n"), u"hello joh\u0503n")
 
-    def test_parse_padded(self):
+    def test_parse_padded_right(self):
         s = String("foo", 10, padchar=b"X", paddir="right")
         self.assertEqual(s.parse(b"helloXXXXX"), b"hello")
 
@@ -32,17 +33,38 @@ class TestString(unittest.TestCase):
         s = String("foo", 12, encoding="utf8")
         self.assertEqual(s.build(u"hello joh\u0503n"), b"hello joh\xd4\x83n")
 
-    def test_build_padded(self):
-        s = String("foo", 10, padchar="X", paddir="right", encoding="utf8")
+    def test_build_padded_right(self):
+        s = String("foo", 10, padchar=u"X", paddir="right", encoding="utf8")
+        self.assertEqual(s.build(u"hello"), b"helloXXXXX")
+        s = String("foo", 10, padchar=b"X", paddir="right", encoding="utf8")
         self.assertEqual(s.build(u"hello"), b"helloXXXXX")
 
     def test_build_padded_left(self):
-        s = String("foo", 10, padchar="X", paddir="left", encoding="utf8")
+        s = String("foo", 10, padchar=u"X", paddir="left", encoding="utf8")
+        self.assertEqual(s.build(u"hello"), b"XXXXXhello")
+        s = String("foo", 10, padchar=b"X", paddir="left", encoding="utf8")
         self.assertEqual(s.build(u"hello"), b"XXXXXhello")
 
     def test_build_padded_center(self):
-        s = String("foo", 10, padchar="X", paddir="center", encoding="utf8")
+        s = String("foo", 10, padchar=u"X", paddir="center", encoding="utf8")
         self.assertEqual(s.build(u"hello"), b"XXhelloXXX")
+        s = String("foo", 10, padchar=b"X", paddir="center", encoding="utf8")
+        self.assertEqual(s.build(u"hello"), b"XXhelloXXX")
+
+    def test_build_too_long(self):
+        s = String("string", 5, trimdir="right")
+        self.assertEqual(s.build(b"1234567890"), b"12345")
+        s = String("string", 5, trimdir="left")
+        self.assertEqual(s.build(b"1234567890"), b"67890")
+
+    def test_size(self):
+        s = String("foo", 5)
+        self.assertEqual(s.sizeof(), 5)
+        s = String("foo", 12, encoding="utf8")
+        self.assertEqual(s.sizeof(), 12)
+        s = String("foo", 10, padchar=u"X", paddir="left", encoding="utf8")
+        self.assertEqual(s.sizeof(), 10)
+
 
 
 class TestPascalString(unittest.TestCase):

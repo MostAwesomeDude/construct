@@ -2,7 +2,7 @@ from sys import maxsize
 
 from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.core import Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig, Padding, Const
+from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig, Padding, Const
 from construct.adapters import BitIntegerAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
 
 
@@ -465,38 +465,6 @@ def EmbeddedBitStruct(*subcons):
 #===============================================================================
 # strings
 #===============================================================================
-def String(name, length, encoding=None, padchar=None, paddir="right", trimdir="right"):
-    r"""
-    A configurable, fixed-length string field.
-
-    The padding character must be specified for padding and trimming to work.
-
-    :param name: name
-    :param length: length, in bytes
-    :param encoding: encoding (e.g. "utf8") or None for no encoding
-    :param padchar: optional character to pad out strings
-    :param paddir: direction to pad out strings; one of "right", "left", or "both"
-    :param str trim: direction to trim strings; one of "right", "left"
-
-    Example::
-
-        >>> from construct import String
-        >>> String("foo", 5).parse("hello")
-        'hello'
-        >>>
-        >>> String("foo", 12, encoding = "utf8").parse("hello joh\xd4\x83n")
-        u'hello joh\u0503n'
-        >>>
-        >>> foo = String("foo", 10, padchar = "X", paddir = "right")
-        >>> foo.parse("helloXXXXX")
-        'hello'
-        >>> foo.build("hello")
-        'helloXXXXX'
-    """
-    con = StringAdapter(Field(name, length), encoding=encoding)
-    if padchar is not None:
-        con = PaddedStringAdapter(con, padchar=padchar, paddir=paddir, trimdir=trimdir)
-    return con
 
 def PascalString(name, length_field=UBInt8("length"), encoding=None):
     r"""
