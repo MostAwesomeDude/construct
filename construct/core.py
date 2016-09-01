@@ -814,7 +814,6 @@ class Union(Construct):
             _updcon(ret, sc, sc._parse(stream, context))
         return ret
     def _build(self, obj, stream, context):
-        print(str(obj))
         if self.buildfrom is not None:
             if isinstance(self.buildfrom, int):
                 index = self.buildfrom
@@ -835,7 +834,7 @@ class Union(Construct):
                 else:
                     break
     def _sizeof(self, context):
-        return max([sc.sizeof(context) for sc in self.subcons])
+        return max([sc._sizeof(context) for sc in self.subcons])
 
 
 #===============================================================================
@@ -1069,7 +1068,7 @@ class Peek(Subconstruct):
                 stream.seek(pos)
                 raise
     def _sizeof(self, context):
-        return 0
+        return self.subcon._sizeof(context)
 
 class OnDemand(Subconstruct):
     """

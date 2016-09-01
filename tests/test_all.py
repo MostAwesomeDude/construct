@@ -296,7 +296,14 @@ all_tests = [
         Struct("both",ULInt8("a"),ULInt8("b")),
         ULInt16("c"),
         ).build, dict(c=513), b'\x01\x02', None],
-
+    [Union("samesize",
+        Struct("both",ULInt8("a"),ULInt8("b")),
+        ULInt16("c"),
+        ).sizeof, None, 2, None],
+    [Union("mixedsize",
+        Struct("both",ULInt8("a"),ULInt8("b")),
+        ULInt32("c"),
+        ).sizeof, None, 4, None],
 
     [Enum(UBInt8("enum"),q=3,r=4,t=5).parse, b"\x04", "r", None],
     [Enum(UBInt8("enum"),q=3,r=4,t=5).parse, b"\x07", None, MappingError],
