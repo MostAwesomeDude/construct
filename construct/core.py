@@ -790,17 +790,21 @@ class Union(Construct):
 
     Example::
 
-        Union("twobytes",
-            Struct("both",
-                ULInt8("a"),
-                ULInt8("b")
-            ),
-            ULInt16("c"),
+        Union("union",
+            Struct("sub1", ULInt8("a"), ULInt8("b") ),
+            Struct("sub2", ULInt16("c") ),
         )
 
-        .parse(b'\x01\x02') -> Container(both=Container(a=1,b=2),c=258)
-        .build(a=1,b=2) -> b'\x01\x02'
-        .build(c=258)   -> b'\x01\x02'
+        .build(dict(sub1=dict(a=1,b=2))) -> b"\x01\x02"
+        .build(dict(sub2=dict(c=3)))     -> b"\x03\x00"
+
+        Union("union",
+            Embed(Struct("sub1", ULInt8("a"), ULInt8("b") )),
+            Embed(Struct("sub2", ULInt16("c") )),
+        )
+
+        .build(dict(a=1,b=2)) -> b"\x01\x02"
+        .build(dict(c=3)) -> b"\x03\x00"
     """
     __slots__ = ["name","subcons","buildfrom"]
     def __init__(self, name, *subcons, **kw):
