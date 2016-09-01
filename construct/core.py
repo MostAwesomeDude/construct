@@ -764,42 +764,79 @@ class Sequence(Struct):
                 context[sc.name] = subobj
             sc._build(subobj, stream, context)
 
-class Union(Construct):
-    """
-    a set of overlapping fields (like unions in C). when parsing,
-    all fields read the same data; when building, only the first subcon
-    (called "master") is used.
 
-    :param name: the name of the union
-    :param master: the master subcon, i.e., the subcon used for building and calculating the total size
-    :param subcons: additional subcons
+def _subobj(sc, obj):
+    if sc.conflags & sc.FLAG_EMBED:
+        return obj
+    else:
+        return obj[sc.name]
+
+def _updcon(con, sc, obj):
+    if sc.conflags & sc.FLAG_EMBED:
+        con.update(obj)
+    else:
+        con[sc.name] = obj
+
+
+class Union(Construct):
+    r"""
+    Set of overlapping fields (like unions in C). When parsing, all fields read the same data. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name. Size is the maximum of subcon sizes.
+
+    .. note:: Requires a seekable stream.
+
+    :param name: name of the union
+    :param buildfrom: the subcon used for building and calculating the total size, can be integer index or string name or None (then tries each subcon)
+    :param subcons: subconstructs for parsing, one of them used for building
 
     Example::
 
-        Union("what_are_four_bytes",
-            UBInt32("one_dword"),
-            Struct("two_words", UBInt16("first"), UBInt16("second")),
-            Struct("four_bytes",
-                UBInt8("a"),
-                UBInt8("b"),
-                UBInt8("c"),
-                UBInt8("d")
+        Union("twobytes",
+            Struct("both",
+                ULInt8("a"),
+                ULInt8("b")
             ),
+            ULInt16("c"),
         )
+
+        .parse(b'\x01\x02') -> Container(both=Container(a=1,b=2),c=258)
+        .build(a=1,b=2) -> b'\x01\x02'
+        .build(c=258)   -> b'\x01\x02'
     """
-    __slots__ = ["parser", "builder"]
-    def __init__(self, name, master, *subcons, **kw):
+    __slots__ = ["name","subcons","buildfrom"]
+    def __init__(self, name, *subcons, **kw):
         super(Union, self).__init__(name)
-        args = [Peek(sc) for sc in subcons]
-        args.append(MetaField(None, lambda ctx: master._sizeof(ctx)))
-        self.parser = Struct(name, Peek(master, perform_build = True), *args)
-        self.builder = Struct(name, master)
+        args = [Peek(sc,perform_build=True) for sc in subcons]
+        self.buildfrom = kw.get("buildfrom", None)
+        self.subcons = args
     def _parse(self, stream, context):
-        return self.parser._parse(stream, context)
+        ret = Container()
+        for sc in self.subcons:
+            _updcon(ret, sc, sc._parse(stream, context))
+        return ret
     def _build(self, obj, stream, context):
-        return self.builder._build(obj, stream, context)
+        print(str(obj))
+        if self.buildfrom is not None:
+            if isinstance(self.buildfrom, int):
+                index = self.buildfrom
+                name = self.subcons[index].name
+                self.subcons[index]._build(_subobj(self.subcons[index], obj), stream, context)
+            elif isinstance(self.buildfrom, str):
+                index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
+                name = self.subcons[index].name
+                self.subcons[index]._build(_subobj(self.subcons[index], obj), stream, context)
+            else:
+                raise TypeError("buildfrom is not int or str")
+        else:
+            for sc in self.subcons:
+                try:
+                    sc._build(_subobj(sc, obj), stream, context)
+                except Exception:
+                    pass
+                else:
+                    break
     def _sizeof(self, context):
-        return self.builder._sizeof(context)
+        return max([sc.sizeof(context) for sc in self.subcons])
+
 
 #===============================================================================
 # conditional
@@ -1012,7 +1049,7 @@ class Peek(Subconstruct):
         Peek(UBInt8("foo"))
     """
     __slots__ = ["perform_build"]
-    def __init__(self, subcon, perform_build = False):
+    def __init__(self, subcon, perform_build=False):
         super(Peek, self).__init__(subcon)
         self.perform_build = perform_build
     def _parse(self, stream, context):
@@ -1025,7 +1062,12 @@ class Peek(Subconstruct):
             stream.seek(pos)
     def _build(self, obj, stream, context):
         if self.perform_build:
-            self.subcon._build(obj, stream, context)
+            try:
+                pos = stream.tell()
+                self.subcon._build(obj, stream, context)
+            except:
+                stream.seek(pos)
+                raise
     def _sizeof(self, context):
         return 0
 
