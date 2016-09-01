@@ -2,6 +2,10 @@
 Changelog
 =========
 
+2.5.4
+=====
+* Commits since 73ac7c86b486ab17840c3f6a3dba89386acd9dd7
+
 2.5.3
 =====
 * Commits since bb1e037887860a23df833f4068c4fe39de55e56e
