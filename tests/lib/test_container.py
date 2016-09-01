@@ -2,7 +2,7 @@ import unittest
 from random import randint
 from copy import copy
 
-from construct.lib.container import Container, ListContainer
+from construct.lib.container import Container, FlagsContainer, ListContainer
 
 
 class TestContainer(unittest.TestCase):
@@ -88,6 +88,10 @@ class TestContainer(unittest.TestCase):
         c = Container(a=1, b=2)
         str(c)
 
+    def test_str_nested(self):
+        c = Container(a=1, b=2, c=Container())
+        str(c)
+    
     def test_str_recursive(self):
         c = Container(a=1, b=2)
         c.c = c
@@ -117,9 +121,25 @@ class TestContainer(unittest.TestCase):
         d = Container(a=1, b=2, c=3, d=4)
         self.assertEqual(c, d)
 
+
+class TestFlagsContainer(unittest.TestCase):
+
+    def test_str(self):
+        c = FlagsContainer(a=True, b=False, c=True, d=False)
+        str(c)
+        repr(c)
+
+
 class TestListContainer(unittest.TestCase):
 
     def test_str(self):
         l = ListContainer(range(5))
         str(l)
+        repr(l)
+
+    def test_recursive_str(self):
+        l = ListContainer(range(5))
+        l.append(l)
+        str(l)
+        repr(l)
 

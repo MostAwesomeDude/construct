@@ -3,7 +3,7 @@ Various containers.
 """
 
 
-def recursion_lock(retval, lock_name="__recursion_lock__"):
+def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"):
     def decorator(func):
         def wrapper(self, *args, **kw):
             if getattr(self, lock_name, False):
@@ -21,12 +21,12 @@ def recursion_lock(retval, lock_name="__recursion_lock__"):
 
 
 class Container(dict):
-    """
+    r"""
     A generic container of attributes.
 
-    Containers are the common way to express parsed data.
+    Containers are dictionaries, translating attribute access into key access, and preserving key order.
     """
-    __slots__ = ["__keys_order__"]
+    __slots__ = ["__keys_order__","__recursion_lock__"]
 
     def __init__(self, *args, **kw):
         object.__setattr__(self, "__keys_order__", [])
@@ -137,73 +137,48 @@ class Container(dict):
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, dict.__repr__(self))
 
-    @recursion_lock("<...>")
-    def __pretty_str__(self, nesting=1, indentation="    "):
-        attrs = []
-        ind = indentation * nesting
-        for k, v in self.iteritems():
+    @recursion_lock()
+    def __str__(self, indentation="\n    "):
+        text = ["Container: "]
+        for k,v in self.iteritems():
             if not k.startswith("_"):
-                text = [ind, k, " = "]
-                if hasattr(v, "__pretty_str__"):
-                    text.append(v.__pretty_str__(nesting + 1, indentation))
-                else:
-                    text.append(repr(v))
-                attrs.append("".join(text))
-        if not attrs:
-            return "%s()" % (self.__class__.__name__,)
-        attrs.insert(0, self.__class__.__name__ + ":")
-        return "\n".join(attrs)
-
-    __str__ = __pretty_str__
+                text.extend([indentation, k, " = "])
+                lines = str(v).split("\n")
+                text.append(indentation.join(lines))
+        return "".join(text)
 
 
 class FlagsContainer(Container):
-    """
+    r"""
     A container providing pretty-printing for flags.
 
     Only set flags are displayed.
     """
 
-    @recursion_lock("<...>")
-    def __pretty_str__(self, nesting=1, indentation="    "):
-        attrs = []
-        ind = indentation * nesting
-        for k in self.keys():
-            v = self[k]
+    @recursion_lock()
+    def __str__(self, indentation="\n    "):
+        text = ["FlagsContainer: "]
+        for k,v in self.iteritems():
             if not k.startswith("_") and v:
-                attrs.append(ind + k)
-        if not attrs:
-            return "%s()" % (self.__class__.__name__,)
-        attrs.insert(0, self.__class__.__name__ + ":")
-        return "\n".join(attrs)
+                text.extend([indentation, k, " = "])
+                lines = str(v).split("\n")
+                text.append(indentation.join(lines))
+        return "".join(text)
 
 
 class ListContainer(list):
-    """
+    r"""
     A container for lists.
     """
-    __slots__ = ["__recursion_lock__"]
 
-    def __str__(self):
-        return self.__pretty_str__()
-
-    @recursion_lock("[...]")
-    def __pretty_str__(self, nesting=1, indentation="    "):
-        if not self:
-            return "[]"
-        ind = indentation * nesting
-        lines = ["["]
-        for elem in self:
-            lines.append("\n")
-            lines.append(ind)
-            if hasattr(elem, "__pretty_str__"):
-                lines.append(elem.__pretty_str__(nesting + 1, indentation))
-            else:
-                lines.append(repr(elem))
-        lines.append("\n")
-        lines.append(indentation * (nesting - 1))
-        lines.append("]")
-        return "".join(lines)
+    @recursion_lock()
+    def __str__(self, indentation="\n    "):
+        text = ["ListContainer: "]
+        for k in self:
+            text.extend([indentation])
+            lines = str(k).split("\n")
+            text.append(indentation.join(lines))
+        return "".join(text)
 
     def _search(self, name, search_all):
         items = []
@@ -278,3 +253,4 @@ class LazyContainer(object):
     value = property(_get_value)
 
     has_value = property(lambda self: self._value is not NotImplemented)
+
