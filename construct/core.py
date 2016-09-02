@@ -296,9 +296,11 @@ class Adapter(Subconstruct):
         raise NotImplementedError()
 
 
+
 #===============================================================================
-# Fields
+# Helper methods
 #===============================================================================
+
 def _read_stream(stream, length):
     if length < 0:
         raise ValueError("length must be >= 0", length)
@@ -313,6 +315,12 @@ def _write_stream(stream, length, data):
     if len(data) != length:
         raise FieldError("expected %d, found %d" % (length, len(data)))
     stream.write(data)
+
+
+
+#===============================================================================
+# Fields
+#===============================================================================
 
 class StaticField(Construct):
     """
