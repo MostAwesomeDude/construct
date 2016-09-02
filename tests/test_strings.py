@@ -33,6 +33,10 @@ class TestString(unittest.TestCase):
         s = String("foo", 12, encoding="utf8")
         self.assertEqual(s.build(u"hello joh\u0503n"), b"hello joh\xd4\x83n")
 
+    def test_build_missing_encoding(self):
+        s = String("foo", 5)
+        self.assertRaises(StringError, s.build, u"hello")
+
     def test_build_padded_right(self):
         s = String("foo", 10, padchar=u"X", paddir="right", encoding="utf8")
         self.assertEqual(s.build(u"hello"), b"helloXXXXX")

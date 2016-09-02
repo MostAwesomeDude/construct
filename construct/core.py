@@ -1619,9 +1619,11 @@ class String(Construct):
 
         String("string", 5)
         .parse(b"hello") -> b"hello"
+        .build(u"hello") raises StringError
 
         String("string", 12, encoding="utf8")
         .parse(b"hello joh\xd4\x83n") -> u'hello joh\u0503n'
+        .build(u'abc') -> b'abc\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         
         String("string", 10, padchar="X", paddir="right")
         .parse(b"helloXXXXX") -> b"hello"
@@ -1676,6 +1678,9 @@ class String(Construct):
                 obj = obj.encode(self.encoding)
             else:
                 obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
         if self.paddir == "right":
             obj = obj.ljust(length, padchar)
         elif self.paddir == "left":
