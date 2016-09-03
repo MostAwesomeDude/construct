@@ -97,10 +97,14 @@ class TestCString(unittest.TestCase):
     def test_parse(self):
         s = CString("s", encoding="utf8")
         self.assertEqual(s.parse(b"hello\x00"), u"hello")
+        s = CString("s")
+        self.assertEqual(s.parse(b"hello\x00"), b"hello")
 
     def test_build(self):
         s = CString("s", encoding="utf8")
         self.assertEqual(s.build(u"hello"), b"hello\x00")
+        s = CString("s")
+        self.assertEqual(s.build(b"hello"), b"hello\x00")
 
     def test_parse_terminator(self):
         s = CString("s", terminators=b"XYZ", encoding="utf8")
@@ -118,8 +122,13 @@ class TestGreedyString(unittest.TestCase):
         s = GreedyString("s", encoding="utf8")
         self.assertEqual(s.parse(b"hello\x00"), u"hello\x00")
         self.assertEqual(s.parse(b""), u"")
+        s = GreedyString("s")
+        self.assertEqual(s.parse(b"hello\x00"), b"hello\x00")
+        self.assertEqual(s.parse(b""), b"")
 
     def test_build(self):
         s = GreedyString("s", encoding="utf8")
         self.assertEqual(s.build(u"hello"), b"hello")
+        s = GreedyString("s")
+        self.assertEqual(s.build(b"hello"), b"hello")
 
