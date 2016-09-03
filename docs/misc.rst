@@ -192,14 +192,14 @@ A constant value that is required to exist in the data. If the value is not
 matched, ConstError is raised. Useful for magic numbers, signatures, asserting
 correct protocol version, etc.
 
->>> foo = Const(Bytes("magic", 6), "FOOBAR")
->>> foo.parse("FOOBAR")
-'FOOBAR'
->>> foo.parse("FOOBAX")
+>>> foo = Const("jpegsignature", b"IHDR")
+>>> foo.parse(b"IHDR")
+b"IHDR"
+>>> foo.parse(b"JPEG")
 Traceback (most recent call last):
   .
   .
-construct.extensions.ConstError: expected 'FOOBAR', found 'FOOBAX'
+construct.extensions.ConstError: expected 'IHDR', found 'JPEG'
 >>>
 
 

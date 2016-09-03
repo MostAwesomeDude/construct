@@ -49,8 +49,8 @@ gif_logical_screen = Struct("logical_screen",
 )
 
 gif_header = Struct("gif_header",
-    Const(String("signature", 3), b"GIF"),
-    Const(String("version", 3), b"89a"),
+    Const("signature", b"GIF"),
+    Const("version", b"89a"),
 )
 
 application_extension = Struct("application_extension",
