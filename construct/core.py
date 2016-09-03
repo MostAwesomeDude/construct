@@ -120,7 +120,6 @@ class Construct(object):
 
         :param int flag: flag to set; may be OR'd combination of flags
         """
-
         self.conflags |= flag
 
     def _clear_flag(self, flag):
@@ -129,14 +128,12 @@ class Construct(object):
 
         :param int flag: flag to clear; may be OR'd combination of flags
         """
-
         self.conflags &= ~flag
 
     def _inherit_flags(self, *subcons):
         """
         Pull flags from subconstructs.
         """
-
         for sc in subcons:
             self._set_flag(sc.conflags)
 
@@ -146,14 +143,12 @@ class Construct(object):
 
         :param int flag: flag to check
         """
-
         return bool(self.conflags & flag)
 
     def __getstate__(self):
         """
         Obtain a dictionary representing this construct's state.
         """
-
         attrs = {}
         if hasattr(self, "__dict__"):
             attrs.update(self.__dict__)
@@ -176,7 +171,9 @@ class Construct(object):
             setattr(self, name, value)
 
     def __copy__(self):
-        """returns a copy of this construct"""
+        """
+        Returns a copy of this construct.
+        """
         self2 = object.__new__(self.__class__)
         self2.__setstate__(self, self.__getstate__())
         return self2
@@ -185,27 +182,22 @@ class Construct(object):
         """
         Parse an in-memory buffer.
 
-        Strings, buffers, memoryviews, and other complete buffers can be
-        parsed with this method.
+        Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
         """
-
         return self.parse_stream(BytesIO(data))
 
     def parse_stream(self, stream):
         """
-        Parse a stream.
+        Parse a stream. 
 
-        Files, pipes, sockets, and other streaming sources of data are handled
-        by this method.
+        Files, pipes, sockets, and other streaming sources of data are handled by this method.
         """
-
         return self._parse(stream, Container())
 
     def _parse(self, stream, context):
         """
         Override me in your subclass.
         """
-
         raise NotImplementedError()
 
     def build(self, obj):
@@ -226,7 +218,6 @@ class Construct(object):
         """
         Override me in your subclass.
         """
-
         raise NotImplementedError()
 
     def sizeof(self, context=None):
@@ -242,7 +233,6 @@ class Construct(object):
         :returns: int of the length of this construct
         :raises SizeofError: the size could not be determined
         """
-
         if context is None:
             context = Container()
         try:
@@ -254,8 +244,8 @@ class Construct(object):
         """
         Override me in your subclass.
         """
-
         raise SizeofError("Raw Constructs have no size!")
+
 
 class Subconstruct(Construct):
     """
@@ -266,7 +256,6 @@ class Subconstruct(Construct):
 
     :param subcon: the construct to wrap
     """
-
     __slots__ = ["subcon"]
     def __init__(self, subcon):
         super(Subconstruct, self).__init__(subcon.name, subcon.conflags)
@@ -286,7 +275,6 @@ class Adapter(Subconstruct):
 
     :param subcon: the construct to wrap
     """
-
     __slots__ = []
     def _parse(self, stream, context):
         return self._decode(self.subcon._parse(stream, context), context)
@@ -331,7 +319,6 @@ class StaticField(Construct):
     :param name: field name
     :param length: number of bytes in the field
     """
-
     __slots__ = ["length"]
     def __init__(self, name, length):
         super(StaticField, self).__init__(name)
@@ -343,6 +330,7 @@ class StaticField(Construct):
     def _sizeof(self, context):
         return self.length
 
+
 class FormatField(StaticField):
     """
     A field that uses ``struct`` to pack and unpack data.
@@ -353,7 +341,6 @@ class FormatField(StaticField):
     :param endianness: format endianness string; one of "<", ">", or "="
     :param format: a single format character
     """
-
     __slots__ = ["packer"]
     def __init__(self, name, endianity, format):
         if endianity not in (">", "<", "="):
@@ -381,6 +368,7 @@ class FormatField(StaticField):
         except Exception:
             raise FieldError(sys.exc_info()[1])
 
+
 class MetaField(Construct):
     r"""
     A variable-length field. The length is obtained at runtime from a
@@ -400,7 +388,6 @@ class MetaField(Construct):
         >>> foo.parse("\x04ABCD")
         Container(data = 'ABCD', length = 4)
     """
-
     __slots__ = ["lengthfunc"]
     def __init__(self, name, lengthfunc):
         super(MetaField, self).__init__(name)
@@ -412,6 +399,7 @@ class MetaField(Construct):
         _write_stream(stream, self.lengthfunc(context), obj)
     def _sizeof(self, context):
         return self.lengthfunc(context)
+
 
 
 #===============================================================================
@@ -517,7 +505,6 @@ class Range(Subconstruct):
           ...
         construct.core.RangeError: expected 3..7, found 8
     """
-
     __slots__ = ["mincount", "maxcount"]
 
     def __init__(self, mincount, maxcount, subcon):
@@ -573,6 +560,7 @@ class Range(Subconstruct):
 
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
+
 
 
 class RepeatUntil(Subconstruct):
@@ -714,6 +702,7 @@ class Struct(Construct):
         #if self.nested:
         #    context = Container(_ = context)
         return sum(sc._sizeof(context) for sc in self.subcons)
+
 
 class Sequence(Struct):
     """
@@ -924,6 +913,7 @@ class Switch(Construct):
     def _sizeof(self, context):
         case = self.cases.get(self.keyfunc(context), self.default)
         return case._sizeof(context)
+
 
 class Select(Construct):
     """
@@ -1382,10 +1372,12 @@ class Pass(Construct):
     Example::
 
         Pass
+        .parse(b'...') -> None
+        .build(None) -> None
     """
     __slots__ = []
     def _parse(self, stream, context):
-        pass
+        return None
     def _build(self, obj, stream, context):
         assert obj is None
     def _sizeof(self, context):
@@ -1403,6 +1395,8 @@ to indicate Enums.
 Example::
 
     Pass
+    .parse(b'...') -> None
+    .build(None) -> None
 """
 
 class Terminator(Construct):
