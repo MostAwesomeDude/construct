@@ -3,6 +3,7 @@ from io import BytesIO, StringIO
 import sys
 import collections
 
+# from construct.macros import UBInt8
 from construct.lib.py3compat import int2byte
 from construct.lib import Container, ListContainer, LazyContainer
 
@@ -1695,6 +1696,7 @@ class String(Construct):
         _write_stream(stream, length, obj)
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
+
 
 
 class VarInt(Construct):

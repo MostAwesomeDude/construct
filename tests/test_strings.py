@@ -1,7 +1,7 @@
 import unittest
 
 from construct import String, PascalString, CString, UBInt16, GreedyString
-from construct.core import StringError
+from construct import StringError
 
 
 class TestString(unittest.TestCase):
@@ -73,19 +73,23 @@ class TestString(unittest.TestCase):
 
 class TestPascalString(unittest.TestCase):
     def test_parse(self):
-        s = PascalString("foo", encoding="utf8")
+        s = PascalString("s", encoding="utf8")
         self.assertEqual(s.parse(b"\x05hello"), u"hello")
+        s = PascalString("s")
+        self.assertEqual(s.parse(b"\x05hello"), b"hello")
 
     def test_build(self):
-        s = PascalString("foo", encoding="utf8")
+        s = PascalString("s", encoding="utf8")
         self.assertEqual(s.build(u"hello world"), b"\x0bhello world")
+        s = PascalString("s")
+        self.assertEqual(s.build(b"hello world"), b"\x0bhello world")
 
     def test_parse_custom_length_field(self):
-        s = PascalString("foo", length_field=UBInt16("length"), encoding="utf8")
+        s = PascalString("s", lengthfield=UBInt16(None), encoding="utf8")
         self.assertEqual(s.parse(b"\x00\x05hello"), u"hello")
 
     def test_build_custom_length_field(self):
-        s = PascalString("foo", length_field=UBInt16("length"), encoding="utf8")
+        s = PascalString("s", lengthfield=UBInt16(None), encoding="utf8")
         self.assertEqual(s.build(u"hello"), b"\x00\x05hello")
 
 

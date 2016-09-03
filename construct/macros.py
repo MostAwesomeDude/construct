@@ -3,6 +3,7 @@ from sys import maxsize
 from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
 from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig, Padding, Const
+from construct.core import _read_stream, _write_stream
 from construct.adapters import BitIntegerAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
 
 
@@ -466,45 +467,6 @@ def EmbeddedBitStruct(*subcons):
 # strings
 #===============================================================================
 
-def PascalString(name, length_field=UBInt8("length"), encoding=None):
-    r"""
-    A length-prefixed string.
-
-    ``PascalString`` is named after the string types of Pascal, which are
-    length-prefixed. Lisp strings also follow this convention.
-
-    The length field will appear in the same ``Container`` as the
-    ``PascalString``, with the given name.
-
-    :param name: name
-    :param length_field: a field which will store the length of the string
-    :param encoding: encoding (e.g. "utf8") or None for no encoding
-
-    Example::
-
-        >>> foo = PascalString("foo")
-        >>> foo.parse("\x05hello")
-        'hello'
-        >>> foo.build("hello world")
-        '\x0bhello world'
-        >>>
-        >>> foo = PascalString("foo", length_field = UBInt16("length"))
-        >>> foo.parse("\x00\x05hello")
-        'hello'
-        >>> foo.build("hello")
-        '\x00\x05hello'
-    """
-
-    return StringAdapter(
-        LengthValueAdapter(
-            Sequence(name,
-                length_field,
-                Field("data", lambda ctx: ctx[length_field.name]),
-            )
-        ),
-        encoding=encoding,
-    )
-
 def CString(name, terminators=b"\x00", encoding=None, char_field=Field(None, 1)):
     r"""
     A string ending in a terminator.
@@ -627,4 +589,54 @@ def OnDemandPointer(offsetfunc, subcon, force_build=True):
         advance_stream = False,
         force_build = force_build
     )
+
+class PascalString(Construct):
+    r"""
+    A length-prefixed string.
+
+    ``PascalString`` is named after the string types of Pascal, which are length-prefixed. Lisp strings also follow this convention.
+
+    The length field will not appear in the same ``Container``, when parsing. Only the string will be returned. When building, the length is taken from len(the string). The length field can be anonymous (name is None) and can be variable length (such as VarInt).
+
+    :param name: name
+    :param lengthfield: a field which will store the length of the string
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    Example::
+
+        PascalString("string", ULInt32(None))
+        .parse(b"\x05\x00\x00\x00hello") -> "hello"
+        .build("hello") -> -> b"\x05\x00\x00\x00hello"
+
+        PascalString("string", ULInt32(None), encoding="utf8")
+        .parse(b"\x05\x00\x00\x00hello") -> u"hello"
+        .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
+    """
+    __slots__ = ["name", "lengthfield", "encoding"]
+    def __init__(self, name, lengthfield=UBInt8(None), encoding=None):
+        super(PascalString, self).__init__(name)
+        self.lengthfield = lengthfield
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        length = self.lengthfield._parse(stream, context)
+        obj = _read_stream(stream, length)
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _build(self, obj, stream, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
+        self.lengthfield._build(len(obj), stream, context)
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
 
