@@ -50,6 +50,7 @@ class TestHexDumpAdapter(unittest.TestCase):
         self.assertEqual(digits, "61 62 63 64 65 66")
         self.assertEqual(ascii, "abcdef")
 
+
 class TestNoneOf(unittest.TestCase):
 
     def setUp(self):
@@ -63,6 +64,7 @@ class TestNoneOf(unittest.TestCase):
 
     def test_parse_invalid(self):
         self.assertRaises(ValidationError, self.n.parse, b"\x06")
+
 
 class TestOneOf(unittest.TestCase):
 
