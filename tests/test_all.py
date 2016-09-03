@@ -18,6 +18,13 @@ all_tests = [
     #
     # constructs
     #
+    [VarInt("varint").parse, b"\x05", 5, None],
+    [VarInt("varint").parse, b"\x85\x05", 645, None],
+    [VarInt("varint").build, 5, b"\x05", None],
+    [VarInt("varint").build, 645, b"\x85\x05", None],
+    [VarInt("varint").parse, b"", None, FieldError],
+    [VarInt("varint").build, -1, None, ValueError],
+
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, b"\x01\x02\x03", [1,2,3], None],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, b"\x01\x02", None, ArrayError],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2,3], b"\x01\x02\x03", None],

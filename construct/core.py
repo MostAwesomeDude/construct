@@ -1442,9 +1442,11 @@ Example::
     Terminator
 """
 
+
 #===============================================================================
 # Extra
 #===============================================================================
+
 class ULInt24(StaticField):
     """
     A custom made construct for handling 3-byte types as used in ancient file formats.
@@ -1599,6 +1601,7 @@ class Aligned(Construct):
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 
+
 class String(Construct):
     r"""
     A configurable, variable-length string field.
@@ -1697,4 +1700,39 @@ class String(Construct):
         _write_stream(stream, length, obj)
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
+
+
+class VarInt(Construct):
+    r"""
+    Varint encoded integer. Each 7 bits of the number are encoded in one byte in the stream.
+
+    Scheme defined at Google's site:
+    https://developers.google.com/protocol-buffers/docs/encoding
+
+    Example::
+
+        VarInt("number")
+        .parse(b"\x85\x05") -> 645
+        .build(645) -> b"\x85\x05"
+    """
+    def __init__(self, name):
+        super(VarInt, self).__init__(name)
+    def _parse(self, stream, context):
+        acc = 0
+        while True:
+            b = ord(_read_stream(stream, 1))
+            acc = (acc << 7) | (b & 127)
+            if not b & 128:
+                break
+        return acc
+    def _build(self, obj, stream, context):
+        if obj < 0:
+            raise ValueError("varint cannot build from negative number")
+        while obj > 127:
+            b = 128 | (obj & 127)
+            obj >>= 7
+            _write_stream(stream, 1, bchr(b))
+        _write_stream(stream, 1, bchr(obj))
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
 
