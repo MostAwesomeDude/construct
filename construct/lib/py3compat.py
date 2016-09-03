@@ -28,9 +28,6 @@ if PY3:
     def bytes2str(b):
         return b.decode('latin-1')
 
-    def decodebytes(b, encoding):
-        return bytes(b, encoding)
-
 else:
     int2byte = chr
     byte2int = ord
@@ -48,5 +45,3 @@ else:
     def bytes2str(b):
         return b
 
-    def decodebytes(b, encoding):
-        return b.decode(encoding)
