@@ -7,14 +7,12 @@ PY3 = sys.version_info[0] == 3
 
 
 if PY3:
-    def bchr(i):
+    def int2byte(i):
         """Converts int (0 through 255) into b'...' character."""
         return bytes((i,))
 
-    def int2byte(i):
-        return bytes((i,))
-
     def byte2int(b):
+        """Converts b'...' character into int (0 through 255)."""
         return b
 
     def str2bytes(s):
@@ -27,12 +25,13 @@ if PY3:
         return b.decode('latin-1')
 
 else:
-    int2byte = chr
-    byte2int = ord
-
-    def bchr(i):
+    def int2byte(i):
         """Converts int (0 through 255) into b'...' character."""
         return chr(i)
+
+    def byte2int(s):
+        """Converts b'...' character into int (0 through 255)."""
+        return ord(s)
 
     def str2bytes(s):
         return s

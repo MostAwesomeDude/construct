@@ -3,7 +3,7 @@ from io import BytesIO, StringIO
 import sys
 import collections
 
-from construct.lib.py3compat import bchr
+from construct.lib.py3compat import int2byte
 from construct.lib import Container, ListContainer, LazyContainer
 
 
@@ -338,7 +338,7 @@ class StaticField(Construct):
     def _parse(self, stream, context):
         return _read_stream(stream, self.length)
     def _build(self, obj, stream, context):
-        _write_stream(stream, self.length, bchr(obj) if isinstance(obj, int) else obj)
+        _write_stream(stream, self.length, int2byte(obj) if isinstance(obj, int) else obj)
     def _sizeof(self, context):
         return self.length
 
@@ -626,6 +626,7 @@ class RepeatUntil(Subconstruct):
         else:
             for subobj in obj:
                 #subobj = bchr(subobj)  -- WTF is that for?!
+                #subobj = int2byte(subobj)  -- WTF is that for?!
                 self.subcon._build(subobj, stream, context.__copy__())
                 if self.predicate(subobj, context):
                     terminated = True
@@ -1725,8 +1726,8 @@ class VarInt(Construct):
         while obj > 127:
             b = 128 | (obj & 127)
             obj >>= 7
-            _write_stream(stream, 1, bchr(b))
-        _write_stream(stream, 1, bchr(obj))
+            _write_stream(stream, 1, int2byte(b))
+        _write_stream(stream, 1, int2byte(obj))
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
 
