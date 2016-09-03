@@ -1698,6 +1698,108 @@ class String(Construct):
         return self.length(context) if callable(self.length) else self.length
 
 
+class CString(Construct):
+    r"""
+    A string ending in a terminator bytes character.
+
+    ``CString`` is similar to the strings of C, C++, and other related
+    programming languages.
+
+    By default, the terminator is the NULL byte (b'\x00'). Terminators field can be a longer bytes string, and any of the characters breaks parsing. First character is used when building.
+
+    :param name: name
+    :param terminators: sequence of valid terminators, in order of preference
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    Example::
+
+        CString("text")
+        .parse(b"hello\x00") -> b"hello"
+        .build(b"hello") -> b"hello\x00"
+
+        CString("text", terminators=b"XYZ")
+        .parse(b"helloX") -> b"hello"
+        .parse(b"helloY") -> b"hello"
+        .parse(b"helloZ") -> b"hello"
+        .build(b"hello") -> b"helloX"
+    """
+    __slots__ = ["name", "terminators", "encoding", "charfield"]
+    def __init__(self, name, terminators=b"\x00", encoding=None):
+        if len(terminators) < 1:
+            raise ValueError("terminators must be a bytes string of length >= 1")
+        super(CString, self).__init__(name)
+        self.terminators = terminators
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        obj = b""
+        while True:
+            char = _read_stream(stream, 1)
+            if char in self.terminators:
+                break
+            obj += char
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _build(self, obj, stream, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
+        obj += self.terminators[:1]
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
+
+class GreedyString(Construct):
+    r"""
+    A string that reads the rest of the stream until EOF, or writes a given string as is.
+
+    :param name: name
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    Example::
+
+        GreedyString("greedy")
+        .parse(b"hello\x00") -> b"hello\x00"
+        .build(b"hello\x00") -> b"hello\x00"
+
+        GreedyString("greedy", encoding="utf8")
+        .parse(b"hello\x00") -> u"hello\x00"
+        .build(u"hello\x00") -> b"hello\x00"
+    """
+    __slots__ = ["name", "encoding"]
+    def __init__(self, name, encoding=None):
+        super(GreedyString, self).__init__(name)
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        obj = stream.read()
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _build(self, obj, stream, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
 
 class VarInt(Construct):
     r"""
