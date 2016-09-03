@@ -173,8 +173,8 @@ dhcp_header = Struct("dhcp_header",
 
 
 if __name__ == "__main__":
-    test = unhexlify(six.b(
-        "0101060167c05f5a00000000"
+    test = unhexlify(
+        b"0101060167c05f5a00000000"
         "0102030405060708090a0b0c"
         "0d0e0f10"
         "DEADBEEFBEEF"
@@ -190,20 +190,6 @@ if __name__ == "__main__":
         "3501083d0701DEADBEEFBEEF0c04417375733c084d53465420352e"
         "30370d010f03062c2e2f1f2179f92bfc52210117566c616e333338"
         "382b45746865726e6574312f302f32340206f8f0827348f9ff"
-    ))
-    
-    print (dhcp_header.parse(test))
-
-
-
-
-
-
-
-
-
-
-
-
-
+    )
+    print(dhcp_header.parse(test))
 

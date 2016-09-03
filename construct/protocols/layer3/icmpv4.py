@@ -76,23 +76,13 @@ icmp_header = Struct("icmp_header",
 
 
 if __name__ == "__main__":
-    cap1 = unhexlify(six.b("0800305c02001b006162636465666768696a6b6c6d6e6f70717273747576776162"
-        "63646566676869"))
-    cap2 = unhexlify(six.b("0000385c02001b006162636465666768696a6b6c6d6e6f70717273747576776162"
-        "63646566676869"))
+    cap1 = unhexlify(b"0800305c02001b006162636465666768696a6b6c6d6e6f70717273747576776162"
+        "63646566676869")
+    cap2 = unhexlify(b"0000385c02001b006162636465666768696a6b6c6d6e6f70717273747576776162"
+        "63646566676869")
     cap3 = unhexlify(b"0301000000001122aabbccdd0102030405060708")
     
     print (icmp_header.parse(cap1))
     print (icmp_header.parse(cap2))
     print (icmp_header.parse(cap3))
-
-
-
-
-
-
-
-
-
-
 
