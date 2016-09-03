@@ -13,7 +13,7 @@ if PY3:
 
     def byte2int(b):
         """Converts b'...' character into int (0 through 255)."""
-        return b
+        return ord(b)
 
     def str2bytes(s):
         """Converts '...' str into b'...' bytes. On PY2 they are equivalent."""
