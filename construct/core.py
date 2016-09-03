@@ -558,14 +558,10 @@ class Range(Subconstruct):
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
                 for subobj in obj:
-                    if isinstance(obj, bytes):
-                        subobj = bchr(subobj)
                     self.subcon._build(subobj, stream, context.__copy__())
                     cnt += 1
             else:
                 for subobj in obj:
-                    if isinstance(obj, bytes):
-                        subobj = bchr(subobj)
                     self.subcon._build(subobj, stream, context)
                     cnt += 1
         except ConstructError:

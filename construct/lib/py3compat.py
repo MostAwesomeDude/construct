@@ -10,10 +10,7 @@ from io import BytesIO, StringIO
 
 if PY3:
     def bchr(i):
-        """ When iterating over b'...' in Python 2 you get single b'_' chars
-            and in Python 3 you get integers. Call bchr to always turn this
-            to single b'_' chars.
-        """
+        """Converts int (0 through 255) into b'...' character."""
         return bytes((i,))
 
     def u(s):
@@ -42,7 +39,10 @@ if PY3:
 else:
     int2byte = chr
     byte2int = ord
-    bchr = lambda i: i
+
+    def bchr(i):
+        """Converts int (0 through 255) into b'...' character."""
+        return chr(i)
 
     def u(s):
         return unicode(s, "unicode_escape")
