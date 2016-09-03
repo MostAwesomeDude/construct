@@ -13,9 +13,6 @@ if PY3:
         """Converts int (0 through 255) into b'...' character."""
         return bytes((i,))
 
-    def u(s):
-        return s
-
     def int2byte(i):
         return bytes((i,))
 
@@ -43,9 +40,6 @@ else:
     def bchr(i):
         """Converts int (0 through 255) into b'...' character."""
         return chr(i)
-
-    def u(s):
-        return unicode(s, "unicode_escape")
 
     def str2bytes(s):
         return s
