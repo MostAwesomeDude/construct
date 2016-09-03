@@ -467,34 +467,6 @@ def EmbeddedBitStruct(*subcons):
 # strings
 #===============================================================================
 
-def GreedyString(name, encoding=None, char_field=Field(None,1)):
-    r"""
-    A configurable, variable-length string field.
-
-    :param name: name
-    :param encoding: encoding (e.g. "utf8") or None for no encoding
-    :param char_field: construct representing a single character
-
-    Example::
-
-        >>> foo = GreedyString("foo")
-        >>> foo.parse(b"hello\x00")
-        b'hello\x00'
-        >>> foo.build(b"hello\x00")
-        b'hello\x00'
-        >>> foo.parse(b"hello")
-        b'hello'
-        >>> foo.build(b"hello")
-        b'hello'
-    """
-
-    return Rename(name,
-        StringAdapter(
-           OptionalGreedyRange(char_field),
-           encoding=encoding,
-        )
-    )
-
 
 #===============================================================================
 # conditional
@@ -549,6 +521,7 @@ def OnDemandPointer(offsetfunc, subcon, force_build=True):
         advance_stream = False,
         force_build = force_build
     )
+
 
 class PascalString(Construct):
     r"""
@@ -612,7 +585,7 @@ class CString(Construct):
 
     :param name: name
     :param terminators: sequence of valid terminators, in order of preference
-    :param encoding: encoding (e.g. "utf8") or None for no encoding
+    :param encoding: encoding (e.g. "utf8") or None for bytes
 
     Example::
 
@@ -656,6 +629,49 @@ class CString(Construct):
             if not isinstance(obj, bytes):
                 raise StringError("no encoding provided but building from unicode string?")
         obj += self.terminators[:1]
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
+
+class GreedyString(Construct):
+    r"""
+    A string that reads the rest of the stream until EOF, or writes a given string as is.
+
+    :param name: name
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    Example::
+
+        GreedyString("greedy")
+        .parse(b"hello\x00") -> b"hello\x00"
+        .build(b"hello\x00") -> b"hello\x00"
+
+        GreedyString("greedy", encoding="utf8")
+        .parse(b"hello\x00") -> u"hello\x00"
+        .build(u"hello\x00") -> b"hello\x00"
+    """
+    __slots__ = ["name", "encoding"]
+    def __init__(self, name, encoding=None):
+        super(GreedyString, self).__init__(name)
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        obj = stream.read()
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _build(self, obj, stream, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
         _write_stream(stream, len(obj), obj)
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
