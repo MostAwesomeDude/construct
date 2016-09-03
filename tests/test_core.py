@@ -1,8 +1,6 @@
 import unittest
 
-from construct import Struct, MetaField, StaticField, FormatField, Field
-from construct import Container, Byte
-from construct import FieldError, SizeofError
+from construct import *
 
 
 class TestStruct(unittest.TestCase):
@@ -63,6 +61,7 @@ class TestFormatField(unittest.TestCase):
     def test_sizeof(self):
         self.assertEqual(self.ff.sizeof(), 4)
 
+
 class TestMetaField(unittest.TestCase):
 
     def setUp(self):
@@ -85,6 +84,7 @@ class TestMetaField(unittest.TestCase):
 
     def test_sizeof(self):
         self.assertEqual(self.mf.sizeof(), 3)
+
 
 class TestMetaFieldStruct(unittest.TestCase):
 
@@ -110,4 +110,22 @@ class TestMetaFieldStruct(unittest.TestCase):
     def test_sizeof(self):
         context = Container(length=4)
         self.assertEqual(self.mf.sizeof(context), 4)
+
+
+class TestAligned(unittest.TestCase):
+
+    def test_from_nucular(self):
+        def barLength(ctx):
+            # print("Context of field2 is", ctx)
+            return ctx.field1
+        test1 = Struct("test1",
+            Aligned(
+                Struct("test2",
+                    ULInt8("field1"),
+                    Field("field2", barLength)
+                ),
+                modulus=4,
+            )
+        )
+        self.assertEqual(test1.parse(b"\x02\xab\xcd\x00"), Container(test2=Container(field1=2,field2=b"\xab\xcd")))
 
