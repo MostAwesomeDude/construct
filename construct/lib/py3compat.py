@@ -16,12 +16,15 @@ if PY3:
         return b
 
     def str2bytes(s):
+        """Converts '...' str into b'...' bytes. On PY2 they are equivalent."""
         return s.encode("latin-1")
 
     def str2unicode(s):
+        """Converts '...' str into u'...' unicode string. On PY3 they are equivalent."""
         return s
 
     def bytes2str(b):
+        """Converts b'...' bytes into str. On PY2 they are equivalent."""
         return b.decode('latin-1')
 
 else:
@@ -34,11 +37,13 @@ else:
         return ord(s)
 
     def str2bytes(s):
+        """Converts '...' str into b'...' bytes. On PY2 they are equivalent."""
         return s
 
     def str2unicode(s):
+        """Converts '...' str into u'...' unicode string. On PY3 they are equivalent."""
         return unicode(s, "unicode_escape")
 
     def bytes2str(b):
+        """Converts b'...' bytes into str. On PY2 they are equivalent."""
         return b
-
