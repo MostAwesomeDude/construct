@@ -1585,14 +1585,11 @@ class Aligned(Construct):
     def _parse(self, stream, context):
         position1 = stream.tell()
         obj = self.subcon._parse(stream, context)
-        # context[self.subcon.name] = obj
         position2 = stream.tell()
         pad = -(position2 - position1) % self.modulus
         _read_stream(stream, pad)
-        print("parse",self.subcon,obj,pad,context)
         return obj
     def _build(self, obj, stream, context):
-        print("build",self.subcon,obj,context)
         position1 = stream.tell()
         self.subcon._build(obj, stream, context)
         position2 = stream.tell()

@@ -6,7 +6,7 @@ Homepage:
 
 Hands-on example:
     >>> from construct import *
-    >>> s = Struct("foo",
+    >>> s = Struct("struct",
     ...     UBInt8("a"),
     ...     UBInt16("b"),
     ... )
