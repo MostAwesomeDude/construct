@@ -117,6 +117,7 @@ class TestGreedyString(unittest.TestCase):
     def test_parse(self):
         s = GreedyString("s", encoding="utf8")
         self.assertEqual(s.parse(b"hello\x00"), u"hello\x00")
+        self.assertEqual(s.parse(b""), u"")
 
     def test_build(self):
         s = GreedyString("s", encoding="utf8")

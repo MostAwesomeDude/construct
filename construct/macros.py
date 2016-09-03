@@ -467,46 +467,6 @@ def EmbeddedBitStruct(*subcons):
 # strings
 #===============================================================================
 
-def CString(name, terminators=b"\x00", encoding=None, char_field=Field(None, 1)):
-    r"""
-    A string ending in a terminator.
-
-    ``CString`` is similar to the strings of C, C++, and other related
-    programming languages.
-
-    By default, the terminator is the NULL byte (b``0x00``).
-
-    :param name: name
-    :param terminators: sequence of valid terminators, in order of preference
-    :param encoding: encoding (e.g. "utf8") or None for no encoding
-    :param char_field: construct representing a single character
-
-    Example::
-
-        >>> foo = CString("foo")
-        >>> foo.parse(b"hello\x00")
-        b'hello'
-        >>> foo.build(b"hello")
-        b'hello\x00'
-        >>> foo = CString("foo", terminators = b"XYZ")
-        >>> foo.parse(b"helloX")
-        b'hello'
-        >>> foo.parse(b"helloY")
-        b'hello'
-        >>> foo.parse(b"helloZ")
-        b'hello'
-        >>> foo.build(b"hello")
-        b'helloX'
-    """
-
-    return Rename(name,
-        CStringAdapter(
-            RepeatUntil(lambda obj, ctx: obj in terminators, char_field),
-            terminators=terminators,
-            encoding=encoding,
-        )
-    )
-
 def GreedyString(name, encoding=None, char_field=Field(None,1)):
     r"""
     A configurable, variable-length string field.
@@ -639,4 +599,65 @@ class PascalString(Construct):
         _write_stream(stream, len(obj), obj)
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
+
+
+class CString(Construct):
+    r"""
+    A string ending in a terminator bytes character.
+
+    ``CString`` is similar to the strings of C, C++, and other related
+    programming languages.
+
+    By default, the terminator is the NULL byte (b'\x00'). Terminators field can be a longer bytes string, and any of the characters breaks parsing. First character is used when building.
+
+    :param name: name
+    :param terminators: sequence of valid terminators, in order of preference
+    :param encoding: encoding (e.g. "utf8") or None for no encoding
+
+    Example::
+
+        CString("text")
+        .parse(b"hello\x00") -> b"hello"
+        .build(b"hello") -> b"hello\x00"
+
+        CString("text", terminators=b"XYZ")
+        .parse(b"helloX") -> b"hello"
+        .parse(b"helloY") -> b"hello"
+        .parse(b"helloZ") -> b"hello"
+        .build(b"hello") -> b"helloX"
+    """
+    __slots__ = ["name", "terminators", "encoding", "charfield"]
+    def __init__(self, name, terminators=b"\x00", encoding=None):
+        if len(terminators) < 1:
+            raise ValueError("terminators must be a bytes string of length >= 1")
+        super(CString, self).__init__(name)
+        self.terminators = terminators
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        obj = b""
+        while True:
+            char = _read_stream(stream, 1)
+            if char in self.terminators:
+                break
+            obj += char
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _build(self, obj, stream, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
+        obj += self.terminators[:1]
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
 
