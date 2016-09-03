@@ -45,9 +45,7 @@ class Construct(object):
     """
     The mother of all constructs.
 
-    This object is generally not directly instantiated, and it does not
-    directly implement parsing and building, so it is largely only of interest
-    to subclass implementors.
+    This object is generally not directly instantiated, and it does not directly implement parsing and building, so it is largely only of interest to subclass implementors.
 
     The external user API:
 
@@ -57,8 +55,7 @@ class Construct(object):
      * ``build_stream()``
      * ``sizeof()``
 
-    Subclass authors should not override the external methods. Instead,
-    another API is available:
+    Subclass authors should not override the external methods. Instead, another API is available:
 
      * ``_parse()``
      * ``_build()``
@@ -79,21 +76,11 @@ class Construct(object):
     Attributes and Inheritance
     ==========================
 
-    All constructs have a name and flags. The name is used for naming struct
-    members and context dictionaries. Note that the name can either be a
-    string, or None if the name is not needed. A single underscore ("_") is a
-    reserved name, and so are names starting with a less-than character ("<").
-    The name should be descriptive, short, and valid as a Python identifier,
-    although these rules are not enforced.
+    All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can either be a string, or None if the name is not needed. A single underscore ("_") is a reserved name, and so are names starting with a less-than character ("<"). The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced.
 
-    The flags specify additional behavioral information about this construct.
-    Flags are used by enclosing constructs to determine a proper course of
-    action. Flags are inherited by default, from inner subconstructs to outer
-    constructs. The enclosing construct may set new flags or clear existing
-    ones, as necessary.
+    The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are inherited by default, from inner subconstructs to outer constructs. The enclosing construct may set new flags or clear existing ones, as necessary.
 
-    For example, if ``FLAG_COPY_CONTEXT`` is set, repeaters will pass a copy of
-    the context for each iteration, which is necessary for OnDemand parsing.
+    For example, if ``FLAG_COPY_CONTEXT`` is set, repeaters will pass a copy of the context for each iteration, which is necessary for OnDemand parsing.
     """
 
     FLAG_COPY_CONTEXT          = 0x0001
@@ -224,9 +211,7 @@ class Construct(object):
         """
         Calculate the size of this object, optionally using a context.
 
-        Some constructs have no fixed size and can only know their size for a
-        given hunk of data; these constructs will raise an error if they are
-        not passed a context.
+        Some constructs have no fixed size and can only know their size for a given hunk of data; these constructs will raise an error if they are not passed a context.
 
         :param context: contextual data
 
@@ -249,8 +234,7 @@ class Construct(object):
 
 class Subconstruct(Construct):
     """
-    Abstract subconstruct (wraps an inner construct, inheriting its
-    name and flags).
+    Abstract subconstruct (wraps an inner construct, inheriting its name and flags).
 
     Subconstructs wrap an inner Construct, inheriting its name and flags.
 
@@ -371,8 +355,7 @@ class FormatField(StaticField):
 
 class MetaField(Construct):
     r"""
-    A variable-length field. The length is obtained at runtime from a
-    function.
+    A variable-length field. The length is obtained at runtime from a function.
 
     :param name: name of the field
     :param lengthfunc: callable that takes a context and returns length as an int
@@ -407,15 +390,13 @@ class MetaField(Construct):
 #===============================================================================
 class MetaArray(Subconstruct):
     """
-    An array (repeater) of a meta-count. The array will iterate exactly
-    ``countfunc()`` times. Will raise ArrayError if less elements are found.
+    An array (repeater) of a meta-count. The array will iterate exactly ``countfunc()`` times. Will raise ArrayError if less elements are found.
 
     .. seealso::
 
         The :func:`~construct.macros.Array` macro, :func:`Range` and :func:`RepeatUntil`.
 
-    :param countfunc: a function that takes the context as a parameter and returns
-                      the number of elements of the array (count)
+    :param countfunc: a function that takes the context as a parameter and returns the number of elements of the array (count)
     :param subcon: the subcon to repeat ``countfunc()`` times
 
     Example::
@@ -460,18 +441,13 @@ class MetaArray(Subconstruct):
 
 class Range(Subconstruct):
     r"""
-    A range-array. The subcon will iterate between ``mincount`` to ``maxcount``
-    times. If less than ``mincount`` elements are found, raises RangeError.
+    A range-array. The subcon will iterate between ``mincount`` to ``maxcount`` times. If less than ``mincount`` elements are found, raises RangeError.
 
     .. seealso::
 
-        The :func:`~construct.macros.GreedyRange` and
-        :func:`~construct.macros.OptionalGreedyRange` macros.
+        The :func:`~construct.macros.GreedyRange` and :func:`~construct.macros.OptionalGreedyRange` macros.
 
-    The general-case repeater. Repeats the given unit for at least ``mincount``
-    times, and up to ``maxcount`` times. If an exception occurs (EOF, validation
-    error), the repeater exits. If less than ``mincount`` units have been
-    successfully parsed, a RangeError is raised.
+    The general-case repeater. Repeats the given unit for at least ``mincount`` times, and up to ``maxcount`` times. If an exception occurs (EOF, validation error), the repeater exits. If less than ``mincount`` units have been successfully parsed, a RangeError is raised.
 
     .. note:: This object requires a seekable stream for parsing.
 
@@ -565,12 +541,9 @@ class Range(Subconstruct):
 
 class RepeatUntil(Subconstruct):
     r"""
-    An array that repeats until the predicate indicates it to stop. Note that
-    the last element (which caused the repeat to exit) is included in the
-    return value.
+    An array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return value.
 
-    :param predicate: a predicate function that takes (obj, context) and returns
-      True if the stop-condition is met, or False to continue.
+    :param predicate: a predicate function that takes (obj, context) and returns True if the stop-condition is met, or False to continue.
     :param subcon: the subcon to repeat.
 
     Example::
@@ -631,16 +604,13 @@ class RepeatUntil(Subconstruct):
 #===============================================================================
 class Struct(Construct):
     """
-    A sequence of named constructs, similar to structs in C. The elements are
-    parsed and built in the order they are defined.
+    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
 
     .. seealso:: The :func:`~construct.macros.Embedded` macro.
 
     :param name: the name of the structure
     :param subcons: a sequence of subconstructs that make up this structure.
-    :param nested: a keyword-only argument that indicates whether this struct
-                   creates a nested context. The default is True. This parameter is
-                   considered "advanced usage", and may be removed in the future.
+    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
 
     Example::
 
@@ -706,16 +676,13 @@ class Struct(Construct):
 
 class Sequence(Struct):
     """
-    A sequence of unnamed constructs. The elements are parsed and built in the
-    order they are defined.
+    A sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
 
     .. seealso:: The :func:`~construct.macros.Embedded` macro.
 
     :param name: the name of the structure
     :param subcons: a sequence of subconstructs that make up this structure.
-    :param nested: a keyword-only argument that indicates whether this struct
-                   creates a nested context. The default is True. This parameter is
-                   considered "advanced usage", and may be removed in the future.
+    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
 
     Example::
 
@@ -844,22 +811,15 @@ class Union(Construct):
 #===============================================================================
 class Switch(Construct):
     """
-    A conditional branch. Switch will choose the case to follow based on
-    the return value of keyfunc. If no case is matched, and no default value
-    is given, SwitchError will be raised.
+    A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
 
     .. seealso:: :func:`Pass`.
 
     :param name: the name of the construct
-    :param keyfunc: a function that takes the context and returns a key, which
-                    will be used to choose the relevant case.
-    :param cases: a dictionary mapping keys to constructs. the keys can be any
-                  values that may be returned by keyfunc.
-    :param default: a default value to use when the key is not found in the cases.
-                    if not supplied, an exception will be raised when the key is not found.
-                    You can use the builtin construct Pass for 'do-nothing'.
-    :param include_key: whether or not to include the key in the return value
-                        of parsing. defualt is False.
+    :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
+    :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc.
+    :param default: a default value to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for 'do-nothing'.
+    :param include_key: whether or not to include the key in the return value of parsing. defualt is False.
 
     Example::
 
@@ -917,16 +877,13 @@ class Switch(Construct):
 
 class Select(Construct):
     """
-    Selects the first matching subconstruct. It will literally try each of
-    the subconstructs, until one matches.
+    Selects the first matching subconstruct. It will literally try each of the subconstructs, until one matches.
 
     .. note:: Requires a seekable stream.
 
     :param name: the name of the construct
     :param subcons: the subcons to try (order-sensitive)
-    :param include_name: a keyword only argument, indicating whether to include
-                         the name of the selected subcon in the return value of parsing. default
-                         is false.
+    :param include_name: a keyword only argument, indicating whether to include the name of the selected subcon in the return value of parsing. default is false.
 
     Example::
 
@@ -992,8 +949,7 @@ class Select(Construct):
 #===============================================================================
 class Pointer(Subconstruct):
     """
-    Changes the stream position to a given offset, where the construction
-    should take place, and restores the stream position when finished.
+    Changes the stream position to a given offset, where the construction should take place, and restores the stream position when finished.
 
     .. seealso::
         :func:`Anchor`, :func:`OnDemand` and the
@@ -1001,8 +957,7 @@ class Pointer(Subconstruct):
 
     .. note:: Requires a seekable stream.
 
-    :param offsetfunc: a function that takes the context and returns an absolute
-                       stream position, where the construction would take place
+    :param offsetfunc: a function that takes the context and returns an absolute stream position, where the construction would take place
     :param subcon: the subcon to use at ``offsetfunc()``
 
     Example::
@@ -1035,16 +990,13 @@ class Pointer(Subconstruct):
         return 0
 
 class Peek(Subconstruct):
-    """
-    Peeks at the stream: parses without changing the stream position.
-    See also Union. If the end of the stream is reached when peeking,
-    returns None.
+    r"""
+    Peeks at the stream: parses without changing the stream position. See also Union. If the end of the stream is reached when peeking, returns None.
 
     .. note:: Requires a seekable stream.
 
     :param subcon: the subcon to peek at
-    :param perform_build: whether or not to perform building. by default this
-                          parameter is set to False, meaning building is a no-op.
+    :param perform_build: whether or not to perform building. by default this parameter is set to False, meaning building is a no-op.
 
     Example::
 
@@ -1073,25 +1025,18 @@ class Peek(Subconstruct):
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 
+
 class OnDemand(Subconstruct):
-    """
-    Allows for on-demand (lazy) parsing. When parsing, it will return a
-    LazyContainer that represents a pointer to the data, but does not actually
-    parses it from stream until it's "demanded".
-    By accessing the 'value' property of LazyContainers, you will demand the
-    data from the stream. The data will be parsed and cached for later use.
-    You can use the 'has_value' property to know whether the data has already
-    been demanded.
+    r"""
+    Allows for on-demand (lazy) parsing. When parsing, it will return a LazyContainer that represents a pointer to the data, but does not actually parses it from stream until it's "demanded". By accessing the 'value' property of LazyContainers, you will demand the data from the stream. The data will be parsed and cached for later use. You can use the 'has_value' property to know whether the data has already been demanded.
 
     .. seealso:: The :func:`~construct.macros.OnDemandPointer` macro.
 
     .. note:: Requires a seekable stream.
 
     :param subcon: the subcon to read/write on demand
-    :param advance_stream: whether or not to advance the stream position. by
-                           default this is True, but if subcon is a pointer, this should be False.
-    :param force_build: whether or not to force build. If set to False, and the
-                        LazyContainer has not been demaned, building is a no-op.
+    :param advance_stream: whether or not to advance the stream position. by default this is True, but if subcon is a pointer, this should be False.
+    :param force_build: whether or not to force build. If set to False, and the LazyContainer has not been demaned, building is a no-op.
 
     Example::
 
@@ -1117,20 +1062,16 @@ class OnDemand(Subconstruct):
 
 class Buffered(Subconstruct):
     """
-    Creates an in-memory buffered stream, which can undergo encoding and
-    decoding prior to being passed on to the subconstruct.
+    Creates an in-memory buffered stream, which can undergo encoding and decoding prior to being passed on to the subconstruct.
 
     .. seealso:: The :func:`~construct.macros.Bitwise` macro.
 
     .. warning:: Do not use pointers inside ``Buffered``.
 
     :param subcon: the subcon which will operate on the buffer
-    :param encoder: a function that takes a string and returns an encoded
-                    string (used after building)
-    :param decoder: a function that takes a string and returns a decoded
-                    string (used before parsing)
-    :param resizer: a function that takes the size of the subcon and "adjusts"
-                    or "resizes" it according to the encoding/decoding process.
+    :param encoder: a function that takes a string and returns an encoded string (used after building)
+    :param decoder: a function that takes a string and returns a decoded string (used before parsing)
+    :param resizer: a function that takes the size of the subcon and "adjusts" or "resizes" it according to the encoding/decoding process.
 
     Example::
 
@@ -1162,25 +1103,18 @@ class Buffered(Subconstruct):
 
 class Restream(Subconstruct):
     """
-    Wraps the stream with a read-wrapper (for parsing) or a
-    write-wrapper (for building). The stream wrapper can buffer the data
-    internally, reading it from- or writing it to the underlying stream
-    as needed. For example, BitStreamReader reads whole bytes from the
-    underlying stream, but returns them as individual bits.
+    Wraps the stream with a read-wrapper (for parsing) or a write-wrapper (for building). The stream wrapper can buffer the data internally, reading it from- or writing it to the underlying stream as needed. For example, BitStreamReader reads whole bytes from the underlying stream, but returns them as individual bits.
 
     .. seealso:: The :func:`~construct.macros.Bitwise` macro.
 
-    When the parsing or building is done, the stream's close method
-    will be invoked. It can perform any finalization needed for the stream
-    wrapper, but it must not close the underlying stream.
+    When the parsing or building is done, the stream's close method will be invoked. It can perform any finalization needed for the stream wrapper, but it must not close the underlying stream.
 
     .. warning:: Do not use pointers inside ``Restream``.
 
     :param subcon: the subcon
     :param stream_reader: the read-wrapper
     :param stream_writer: the write wrapper
-    :param resizer: a function that takes the size of the subcon and "adjusts"
-                    or "resizes" it according to the encoding/decoding process.
+    :param resizer: a function that takes the size of the subcon and "adjusts" or "resizes" it according to the encoding/decoding process.
 
     Example::
 
@@ -1214,8 +1148,7 @@ class Restream(Subconstruct):
 #===============================================================================
 class Reconfig(Subconstruct):
     """
-    Reconfigures a subconstruct. Reconfig can be used to change the name and
-    set and clear flags of the inner subcon.
+    Reconfigures a subconstruct. Reconfig can be used to change the name and set and clear flags of the inner subcon.
 
     :param name: the new name
     :param subcon: the subcon to reconfigure
@@ -1237,18 +1170,15 @@ class Anchor(Construct):
     """
     Gets the *anchor* (stream position) at a point in a Construct.
 
-    Anchors are useful for adjusting relative offsets to absolute positions,
-    or to measure sizes of Constructs.
+    Anchors are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs.
 
-    To get an absolute pointer, use an Anchor plus a relative offset. To get a
-    size, place two Anchors and measure their difference.
+    To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference.
 
     :param name: the name of the anchor
 
     .. note::
 
-       Anchor Requires a seekable stream, or at least a tellable stream; it is
-       implemented using the ``tell()`` method of file-like objects.
+       Anchor Requires a seekable stream, or at least a tellable stream; it is implemented using the ``tell()`` method of file-like objects.
 
     .. seealso:: :func:`Pointer`
     """
@@ -1271,14 +1201,14 @@ class Computed(Construct):
 
     Example::
 
-        Struct("foo",
+        Struct("struct",
             UBInt8("width"),
             UBInt8("height"),
             Computed("total", lambda ctx: ctx.width * ctx.height),
         )
 
-        foo.parse(b'\x04\x05') -> Container(width=4,height=5,total=20)
-        foo.build(Container(width=4,height=5,total=20)) -> b'\x04\x05'
+        .parse(b'\x04\x05') -> Container(width=4,height=5,total=20)
+        .build(Container(width=4,height=5,total=20)) -> b'\x04\x05'
     """
     __slots__ = ["func"]
     def __init__(self, name, func):
@@ -1329,8 +1259,7 @@ class Computed(Construct):
 
 class LazyBound(Construct):
     """
-    Lazily bound construct, useful for constructs that need to make cyclic
-    references (linked-lists, expression trees, etc.).
+    Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees, etc.).
 
     :param name: the name of the construct
     :param bindfunc: the function (called without arguments) returning the bound construct
@@ -1362,8 +1291,7 @@ class LazyBound(Construct):
 
 class Pass(Construct):
     """
-    A do-nothing construct, useful as the default case for Switch, or
-    to indicate Enums.
+    A do-nothing construct, useful as the default case for Switch, or to indicate Enums.
 
     .. seealso:: :func:`Switch` and the :func:`~construct.macros.Enum` macro.
 
@@ -1401,8 +1329,7 @@ Example::
 
 class Terminator(Construct):
     """
-    Asserts the end of the stream has been reached at the point it's placed.
-    You can use this to ensure no more unparsed data follows.
+    Asserts the end of the stream has been reached at the point it's placed. You can use this to ensure no more unparsed data follows.
 
     .. note::
         * This construct is only meaningful for parsing. For building, it's a no-op.
@@ -1442,9 +1369,9 @@ Example::
 
 class ULInt24(StaticField):
     """
-    A custom made construct for handling 3-byte types as used in ancient file formats.
-    A better implementation would be writing a more flexable version of FormatField,
-    rather then specifically implementing it for this case
+    A custom made construct for handling 3-byte types as used in ancient file formats. 
+    
+    Better implementation would be writing a more flexable version of FormatField, rather then specifically implementing it for this case.
     """
     __slots__ = ["packer"]
     def __init__(self, name):
@@ -1477,12 +1404,9 @@ class Padding(Construct):
     r"""
     A padding field (adds bytes when building, discards bytes when parsing).
 
-    :param length: length of the field. can be either an integer or a function 
-                   that takes the context as an argument and returns the length
+    :param length: length of the field. can be either an integer or a function that takes the context as an argument and returns the length
     :param pattern: the padding pattern (b-string character). default is b"\x00"
-    :param strict: whether to verify during parsing that the stream contains 
-                   the pattern. raises an exception if actual padding differs 
-                   from the pattern. default is False.
+    :param strict: whether to verify during parsing that the stream contains the pattern. raises an exception if actual padding differs from the pattern. default is False.
 
     Example::
 
@@ -1491,8 +1415,8 @@ class Padding(Construct):
             Padding(4),
         )
 
-        parse(b"\xff\x00\x00\x00\x00") -> Container(num=255)
-        build(Container(num=255)) -> b"\xff\x00\x00\x00\x00"
+        .parse(b"\xff\x00\x00\x00\x00") -> Container(num=255)
+        .build(Container(num=255)) -> b"\xff\x00\x00\x00\x00"
     """
     __slots__ = ["length", "pattern", "strict"]
     def __init__(self, length, pattern=b"\x00", strict=False):
@@ -1521,8 +1445,7 @@ class Padding(Construct):
 
 class Const(Construct):
     r"""
-    Constant field enforcing a constant value. It is used for file signatures, 
-    to validate that the given pattern exists. When parsed, the value must match.
+    Constant field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
 
     :param data: a bytes object
     :param subcon: the subcon to validate
@@ -1696,8 +1619,7 @@ class CString(Construct):
     r"""
     A string ending in a terminator bytes character.
 
-    ``CString`` is similar to the strings of C, C++, and other related
-    programming languages.
+    ``CString`` is similar to the strings of C, C++, and other related programming languages.
 
     By default, the terminator is the NULL byte (b'\x00'). Terminators field can be a longer bytes string, and any of the characters breaks parsing. First character is used when building.
 
