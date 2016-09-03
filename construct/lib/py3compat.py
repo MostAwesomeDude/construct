@@ -31,8 +31,6 @@ if PY3:
     def decodebytes(b, encoding):
         return bytes(b, encoding)
 
-    advance_iterator = next
-        
 else:
     int2byte = chr
     byte2int = ord
@@ -52,7 +50,3 @@ else:
 
     def decodebytes(b, encoding):
         return b.decode(encoding)
-
-    def advance_iterator(it):
-        return it.next()
-

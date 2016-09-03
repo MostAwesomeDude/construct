@@ -2,7 +2,7 @@ from struct import Struct as Packer
 import sys
 import collections
 
-from construct.lib.py3compat import BytesIO, advance_iterator, bchr
+from construct.lib.py3compat import BytesIO, bchr
 from construct.lib import Container, ListContainer, LazyContainer
 
 
@@ -766,7 +766,7 @@ class Sequence(Struct):
             elif sc.name is None:
                 subobj = None
             else:
-                subobj = advance_iterator(objiter)
+                subobj = next(objiter)
                 context[sc.name] = subobj
             sc._build(subobj, stream, context)
 
