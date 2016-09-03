@@ -1,12 +1,12 @@
 """
 what : snoop v2 capture file.
  how : http://tools.ietf.org/html/rfc1761
- who : jesse @ housejunkie . ca
+ who : jesse@housejunkie.ca
 """
 
 import time
 
-from construct import Adapter, Enum, Field, HexDumpAdapter, Magic, OptionalGreedyRange, Padding, Struct, UBInt32
+from construct import Adapter, Enum, Field, HexDumpAdapter, Const, OptionalGreedyRange, Padding, Struct, UBInt32
 
 
 class EpochTimeStampAdapter(Adapter):
@@ -44,7 +44,7 @@ datalink_type = Enum(UBInt32("datalink"),
     )
 
 snoop_file = Struct("snoop",
-        Magic("snoop\x00\x00\x00"),
+        Const(b"snoop\x00\x00\x00"),
         UBInt32("version"), # snoop v1 is deprecated
         datalink_type,
         OptionalGreedyRange(packet_record),

@@ -62,7 +62,7 @@ class NamedSequence(Adapter):
 
 
 msdos_header = Struct("msdos_header",
-    Magic("MZ"),
+    Const(b"MZ"),
     ULInt16("partPag"),
     ULInt16("page_count"),
     ULInt16("relocation_count"),
@@ -162,7 +162,7 @@ symbol_table = Struct("symbol_table",
 )
 
 coff_header = Struct("coff_header",
-    Magic("PE\x00\x00"),
+    Const(b"PE\x00\x00"),
     Enum(ULInt16("machine_type"),
         UNKNOWN = 0x0,
         AM33 = 0x1d3,

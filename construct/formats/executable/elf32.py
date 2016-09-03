@@ -1,8 +1,8 @@
 """
-Executable and Linkable Format (ELF), 32 bit, big or little endian
-Used on *nix systems as a replacement of the older a.out format
+Executable and Linkable Format (ELF), 32 bit, big or little endian.
+Used on *nix systems as a replacement of the older a.out format.
 
-Big-endian support kindly submitted by Craig McQueen (mcqueen-c#edsrd1!yzk!co!jp)
+Big-endian support kindly submitted by Craig McQueen (mcqueen-c#edsrd1!yzk!co!jp).
 """
 from construct import *
 
@@ -123,7 +123,7 @@ elf32_body_big_endian = elf32_body(UBInt16, UBInt32)
 
 elf32_file = Struct("elf32_file",
     Struct("identifier",
-        Magic(b"\x7fELF"),
+        Const(b"\x7fELF"),
         Enum(Byte("file_class"),
             NONE = 0,
             CLASS32 = 1,
