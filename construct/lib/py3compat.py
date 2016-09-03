@@ -17,7 +17,7 @@ if PY3:
 
     def str2bytes(s):
         """Converts '...' str into b'...' bytes. On PY2 they are equivalent."""
-        return s.encode("latin-1")
+        return s.encode("utf8")
 
     def str2unicode(s):
         """Converts '...' str into u'...' unicode string. On PY3 they are equivalent."""
@@ -25,7 +25,11 @@ if PY3:
 
     def bytes2str(b):
         """Converts b'...' bytes into str. On PY2 they are equivalent."""
-        return b.decode('latin-1')
+        return b.decode("utf8")
+
+    def iteratebytes(s):
+        """Itarates though b'...' string yielding characters as ints. On PY3 iter is the same."""
+        return s
 
 else:
     def int2byte(i):
@@ -47,3 +51,9 @@ else:
     def bytes2str(b):
         """Converts b'...' bytes into str. On PY2 they are equivalent."""
         return b
+
+    def iteratebytes(s):
+        """Itarates though b'...' string yielding characters as ints. On PY3 iter is the same."""
+        for c in s:
+            yield byte2int(c)
+

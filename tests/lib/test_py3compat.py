@@ -27,7 +27,12 @@ class TestAll(unittest.TestCase):
         self.assertEqual(str2bytes("abc"), b"abc")
         self.assertEqual(str2unicode("abc"), u"abc")
         self.assertEqual(bytes2str(b"abc"), "abc")
+        self.assertEqual(list(iteratebytes(b"abc")), [97,98,99])
 
         for i in range(256):
             self.assertEqual(byte2int(int2byte(i)), i)
+        # self.assertEqual(bytes2str(str2bytes("abc123")), "abc123")
+        # self.assertEqual(str2bytes(bytes2str(b"abc123")), b"abc123")
+        # self.assertEqual(unicode2str(str2unicode("abc123")), "abc123")
+        # self.assertEqual(bytes2str(str2bytes("abc123")), "abc123")
 
