@@ -1,8 +1,9 @@
 from struct import Struct as Packer
+from io import BytesIO, StringIO
 import sys
 import collections
 
-from construct.lib.py3compat import BytesIO, bchr
+from construct.lib.py3compat import bchr
 from construct.lib import Container, ListContainer, LazyContainer
 
 

@@ -1,11 +1,9 @@
-#-------------------------------------------------------------------------------
-# py3compat.py
-#
-# Some Python2&3 compatibility code
-#-------------------------------------------------------------------------------
+"""
+Some Python 2 & 3 compatibility code.
+"""
+
 import sys
 PY3 = sys.version_info[0] == 3
-from io import BytesIO, StringIO
 
 
 if PY3:
