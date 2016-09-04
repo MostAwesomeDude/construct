@@ -664,6 +664,8 @@ class Struct(Construct):
                 subobj = None
             elif isinstance(sc, Computed):
                 subobj = None
+            elif isinstance(sc, Anchor):
+                subobj = None
             else:
                 subobj = obj[sc.name]
                 context[sc.name] = subobj
@@ -1166,29 +1168,46 @@ class Reconfig(Subconstruct):
         self._set_flag(setflags)
         self._clear_flag(clearflags)
 
+
+
 class Anchor(Construct):
-    """
-    Gets the *anchor* (stream position) at a point in a Construct.
+    r"""
+    Gets the stream position when parsing or building.
 
     Anchors are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs.
 
-    To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference.
+    To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference using Compute or the subtract field.
 
     :param name: the name of the anchor
+    :param subtract: name of another Anchor or a lambda taking contect and returning int
 
-    .. note::
-
-       Anchor Requires a seekable stream, or at least a tellable stream; it is implemented using the ``tell()`` method of file-like objects.
+    .. note:: Requires a tellable stream.
 
     .. seealso:: :func:`Pointer`
     """
-    __slots__ = []
+    __slots__ = ["name", "subtract"]
+    def __init__(self, name, subtract=None):
+        super(Anchor, self).__init__(name)
+        self.subtract = subtract
     def _parse(self, stream, context):
-        return stream.tell()
+        position = stream.tell()
+        if callable(self.subtract):
+            position -= self.subtract(context)
+        if isinstance(self.subtract, str):
+            position -= context[self.subtract]
+        context[self.name] = position
+        return position
     def _build(self, obj, stream, context):
-        context[self.name] = stream.tell()
+        position = stream.tell()
+        if callable(self.subtract):
+            position -= self.subtract(context)
+        if isinstance(self.subtract, str):
+            position -= context[self.subtract]
+        context[self.name] = position
     def _sizeof(self, context):
         return 0
+
+
 
 class Computed(Construct):
     r"""

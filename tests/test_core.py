@@ -114,7 +114,7 @@ class TestMetaFieldStruct(unittest.TestCase):
 
 class TestAligned(unittest.TestCase):
 
-    def test_from_nucular(self):
+    def test_from_issue_76(self):
         def barLength(ctx):
             # print("Context of field2 is", ctx)
             return ctx.field1
@@ -128,4 +128,42 @@ class TestAligned(unittest.TestCase):
             )
         )
         self.assertEqual(test1.parse(b"\x02\xab\xcd\x00"), Container(test2=Container(field1=2,field2=b"\xab\xcd")))
+
+
+class TestAnchor(unittest.TestCase):
+
+    def test_from_issue_60(self):
+        Header = Struct("header",
+            UBInt8("type"),
+            Switch("size", lambda ctx: ctx.type,
+            {
+                0: UBInt8("size"),
+                1: UBInt16("size"),
+                2: UBInt32("size")
+            }),
+            Anchor("length"),
+        )
+        self.assertEqual(Header.parse(b"\x00\x05"), Container(type=0, size=5, length=2))
+        self.assertEqual(Header.parse(b"\x01\x00\x05"), Container(type=1, size=5, length=3))
+        self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container(type=2, size=5, length=5))
+
+        self.assertEqual(Header.build(Container(type=0, size=5)), b"\x00\x05")
+        self.assertEqual(Header.build(Container(type=1, size=5)), b"\x01\x00\x05")
+        self.assertEqual(Header.build(Container(type=2, size=5)), b"\x02\x00\x00\x00\x05")
+
+    def test_subtract(self):
+        Header = Struct("header",
+            UBInt8("type"),
+            Anchor("start"),
+            Switch("size", lambda ctx: ctx.type,
+            {
+                0: UBInt8("size"),
+                1: UBInt16("size"),
+                2: UBInt32("size")
+            }),
+            Anchor("end", subtract="start"),
+        )
+        self.assertEqual(Header.parse(b"\x00\x05"), Container({'start': 1, 'end': 1, 'type': 0, 'size': 5}))
+        self.assertEqual(Header.parse(b"\x01\x00\x05"), Container({'start': 1, 'end': 2, 'type': 1, 'size': 5}))
+        self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container({'start': 1, 'end': 4, 'type': 2, 'size': 5}))
 
