@@ -1,6 +1,7 @@
 import unittest
 
 from construct import *
+from construct.lib.py3compat import PY26
 
 
 class TestStruct(unittest.TestCase):
@@ -56,7 +57,12 @@ class TestFormatField(unittest.TestCase):
         self.assertRaises(FieldError, self.ff.parse, b"\x12\x34\x56")
 
     def test_build_too_long(self):
+        if not PY26:
+            self.assertRaises(FieldError, self.ff.build, 2**100)
+
+    def test_build_wrong_value(self):
         self.assertRaises(FieldError, self.ff.build, 9e9999)
+        self.assertRaises(FieldError, self.ff.build, "string not int")
 
     def test_sizeof(self):
         self.assertEqual(self.ff.sizeof(), 4)
@@ -65,7 +71,7 @@ class TestFormatField(unittest.TestCase):
 class TestMetaField(unittest.TestCase):
 
     def setUp(self):
-        self.mf = MetaField("metafield", lambda context: 3)
+        self.mf = MetaField("metafield", lambda ctx: 3)
 
     def test_trivial(self):
         pass
