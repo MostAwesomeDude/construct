@@ -89,8 +89,8 @@ class TestMetaField(unittest.TestCase):
 class TestMetaFieldStruct(unittest.TestCase):
 
     def setUp(self):
-        self.mf = MetaField("data", lambda context: context["length"])
-        self.s = Struct("foo", Byte("length"), self.mf)
+        self.mf = MetaField("data", lambda ctx: ctx.length)
+        self.s = Struct("struct", Byte("length"), self.mf)
 
     def test_trivial(self):
         pass
@@ -105,7 +105,8 @@ class TestMetaFieldStruct(unittest.TestCase):
         self.assertEqual(c.data, b"ABCD")
 
     def test_sizeof_default(self):
-        self.assertRaises(SizeofError, self.mf.sizeof)
+        # This no longer raises SizeofError bacuse that error means structure is variable size. If the context is missing entries then the error will reflect that, a missing key.
+        self.assertRaises(AttributeError, self.mf.sizeof)
 
     def test_sizeof(self):
         context = Container(length=4)

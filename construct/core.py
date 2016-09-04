@@ -1,4 +1,5 @@
 from struct import Struct as Packer
+from struct import error as PackerError
 from io import BytesIO, StringIO
 import sys
 import collections
@@ -37,6 +38,8 @@ class ConstError(ConstructError):
     pass
 class StringError(ConstructError):
     pass
+
+
 
 #===============================================================================
 # abstract constructs
@@ -89,7 +92,7 @@ class Construct(object):
     FLAG_NESTING               = 0x0008
 
     __slots__ = ["name", "conflags"]
-    def __init__(self, name, flags = 0):
+    def __init__(self, name, flags=0):
         if name is not None:
             if not isinstance(name, (str, bytes)):
                 raise TypeError("name must be a string or None", name)
@@ -183,13 +186,15 @@ class Construct(object):
 
     def _parse(self, stream, context):
         """
-        Override me in your subclass.
+        Override in your subclass.
         """
         raise NotImplementedError()
 
     def build(self, obj):
         """
         Build an object in memory.
+
+        :returns: bytes
         """
         stream = BytesIO()
         self.build_stream(obj, stream)
@@ -198,12 +203,14 @@ class Construct(object):
     def build_stream(self, obj, stream):
         """
         Build an object directly into a stream.
+
+        :returns: None
         """
         self._build(obj, stream, Container())
 
     def _build(self, obj, stream, context):
         """
-        Override me in your subclass.
+        Override in your subclass.
         """
         raise NotImplementedError()
 
@@ -211,25 +218,22 @@ class Construct(object):
         """
         Calculate the size of this object, optionally using a context.
 
-        Some constructs have no fixed size and can only know their size for a given hunk of data; these constructs will raise an error if they are not passed a context.
+        Some constructs have no fixed size and can only know their size for a given hunk of data. These constructs will raise an error if they are not passed a context.
 
-        :param context: contextual data
+        :param context: a container
 
         :returns: int of the length of this construct
         :raises SizeofError: the size could not be determined
         """
         if context is None:
             context = Container()
-        try:
-            return self._sizeof(context)
-        except Exception:
-            raise SizeofError(sys.exc_info()[1])
+        return self._sizeof(context)
 
     def _sizeof(self, context):
         """
-        Override me in your subclass.
+        Override in your subclass.
         """
-        raise SizeofError("Raw Constructs have no size!")
+        raise SizeofError("Constructs cannot compute size by default. ")
 
 
 class Subconstruct(Construct):
@@ -250,6 +254,7 @@ class Subconstruct(Construct):
         self.subcon._build(obj, stream, context)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
+
 
 class Adapter(Subconstruct):
     """
@@ -280,14 +285,14 @@ def _read_stream(stream, length):
         raise ValueError("length must be >= 0", length)
     data = stream.read(length)
     if len(data) != length:
-        raise FieldError("expected %d, found %d" % (length, len(data)))
+        raise FieldError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
     return data
 
 def _write_stream(stream, length, data):
     if length < 0:
         raise ValueError("length must be >= 0", length)
     if len(data) != length:
-        raise FieldError("expected %d, found %d" % (length, len(data)))
+        raise FieldError("could not write bytes, expected %d, found %d" % (length, len(data)))
     stream.write(data)
 
 
@@ -345,12 +350,12 @@ class FormatField(StaticField):
         try:
             return self.packer.unpack(_read_stream(stream, self.length))[0]
         except Exception:
-            raise FieldError(sys.exc_info()[1])
+            raise FieldError("packer %r error during parsing" % self.packer.format)
     def _build(self, obj, stream, context):
         try:
             _write_stream(stream, self.length, self.packer.pack(obj))
         except Exception:
-            raise FieldError(sys.exc_info()[1])
+            raise FieldError("packer %r error during building, given value %s" % (self.packer.format, obj))
 
 
 class MetaField(Construct):
@@ -1404,19 +1409,11 @@ class ULInt24(StaticField):
         attrs["packer"] = Packer(attrs["packer"])
         return super(ULInt24, self).__setstate__(attrs)
     def _parse(self, stream, context):
-        try:
-            vals = self.packer.unpack(_read_stream(stream, self.length))
-            return vals[0] + (vals[1] << 8)
-        except Exception:
-            ex = sys.exc_info()[1]
-            raise FieldError(ex)
+        vals = self.packer.unpack(_read_stream(stream, self.length))
+        return vals[0] + (vals[1] << 8)
     def _build(self, obj, stream, context):
-        try:
-            vals = (obj%256, obj >> 8)
-            _write_stream(stream, self.length, self.packer.pack(vals))
-        except Exception:
-            ex = sys.exc_info()[1]
-            raise FieldError(ex)
+        vals = (obj%256, obj >> 8)
+        _write_stream(stream, self.length, self.packer.pack(vals))
 
 
 class Padding(Construct):
