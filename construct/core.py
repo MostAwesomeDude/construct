@@ -38,6 +38,8 @@ class ConstError(ConstructError):
     pass
 class StringError(ConstructError):
     pass
+class ChecksumError(ConstructError):
+    pass
 
 
 
@@ -670,6 +672,8 @@ class Struct(Construct):
             elif isinstance(sc, Computed):
                 subobj = None
             elif isinstance(sc, Anchor):
+                subobj = None
+            elif isinstance(sc, Checksum):
                 subobj = None
             else:
                 subobj = obj[sc.name]
@@ -1766,4 +1770,63 @@ class VarInt(Construct):
         _write_stream(stream, 1, int2byte(obj))
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
+
+
+class Checksum(Construct):
+    r"""
+    A field that is build or validated by a hash of a given byte range.
+
+    :param checksumfield: a subcon field that reads the checksum, usually Bytes(int), it's name is reused
+    :param hashfunc: a function taking bytes and returning whatever checksumfield takes
+    :param startsat: name of an Anchor where checksumming starts, if None then starts at offset 0
+    :param endsat: name of an Anchor where checksumming ends, if None then ends at current offset
+
+    Example::
+
+        def sha512(b):
+            return hashlib.sha512(b).digest()
+
+        Struct("struct",
+            Byte("a"),
+            Anchor("offset1"),
+            Byte("b"),
+            Anchor("offset2"),
+            Checksum(Bytes("checksum",64), sha512, "offset1", "offset2"),
+        )
+
+        .parse(b"\x01\x02<...>") -> Container(a=1,b=2,offset1=1,offset2=2,checksum=b"<...>")
+        .build(Container(a=1,b=2)) -> b"\x01\x02<...>"
+    """
+    __slots__ = ["name", "checksumfield", "hashfunc", "startsat", "endsat"]
+    def __init__(self, checksumfield, hashfunc, startsat=None, endsat=None):
+        if not isinstance(checksumfield, Construct):
+            raise TypeError("checksumfield should be a Construct field")
+        if not callable(hashfunc):
+            raise TypeError("hashfunc should be a function(bytes) -> bytes")
+        super(Checksum, self).__init__(checksumfield.name)
+        self.checksumfield = checksumfield
+        self.hashfunc = hashfunc
+        self.startsat = startsat
+        self.endsat = endsat
+    def _parse(self, stream, context):
+        hash1 = self.checksumfield._parse(stream, context)
+        current = stream.tell()
+        startsat = 0 if self.startsat is None else context[self.startsat]
+        endsat = current if self.endsat is None else context[self.endsat]
+        stream.seek(startsat, 0)
+        hash2 = self.hashfunc(_read_stream(stream, endsat-startsat))
+        stream.seek(current, 0)
+        if hash1 != hash2:
+            raise ChecksumError("wrong checksum, read %r, computed %r" % (hash1, hash2))
+        return hash1
+    def _build(self, obj, stream, context):
+        current = stream.tell()
+        startsat = 0 if self.startsat is None else context[self.startsat]
+        endsat = current if self.endsat is None else context[self.endsat]
+        stream.seek(startsat, 0)
+        hash2 = self.hashfunc(_read_stream(stream, endsat-startsat))
+        stream.seek(current, 0)
+        self.checksumfield._build(hash2, stream, context)
+    def _sizeof(self, context):
+        return self.checksumfield._sizeof(context)
 
