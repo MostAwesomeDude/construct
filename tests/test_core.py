@@ -1,5 +1,7 @@
 import unittest
 
+from hashlib import sha512
+
 from construct import *
 from construct.lib.py3compat import PY26
 
@@ -139,6 +141,33 @@ class TestAligned(unittest.TestCase):
 
 class TestAnchor(unittest.TestCase):
 
+    def test_in_struct(self):
+        struct = Struct("struct",
+            Byte("a"),
+            Anchor("start_payload"),
+            Byte("b"),
+            Anchor("end_payload"),
+        )
+        self.assertEqual(struct.parse(b"\x01\x02"), Container(a=1,b=2,start_payload=1,end_payload=2))
+        self.assertEqual(struct.build(Container(a=1,b=2,start_payload=1,end_payload=2)), b"\x01\x02")
+        self.assertEqual(struct.build(Container(a=1,b=2)), b"\x01\x02")
+
+    def test_subtract(self):
+        Header = Struct("header",
+            UBInt8("type"),
+            Anchor("start"),
+            Switch("size", lambda ctx: ctx.type,
+            {
+                0: UBInt8("size"),
+                1: UBInt16("size"),
+                2: UBInt32("size")
+            }),
+            Anchor("end", subtract="start"),
+        )
+        self.assertEqual(Header.parse(b"\x00\x05"), Container({'start': 1, 'end': 1, 'type': 0, 'size': 5}))
+        self.assertEqual(Header.parse(b"\x01\x00\x05"), Container({'start': 1, 'end': 2, 'type': 1, 'size': 5}))
+        self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container({'start': 1, 'end': 4, 'type': 2, 'size': 5}))
+
     def test_from_issue_60(self):
         Header = Struct("header",
             UBInt8("type"),
@@ -158,19 +187,37 @@ class TestAnchor(unittest.TestCase):
         self.assertEqual(Header.build(Container(type=1, size=5)), b"\x01\x00\x05")
         self.assertEqual(Header.build(Container(type=2, size=5)), b"\x02\x00\x00\x00\x05")
 
-    def test_subtract(self):
-        Header = Struct("header",
-            UBInt8("type"),
-            Anchor("start"),
-            Switch("size", lambda ctx: ctx.type,
-            {
-                0: UBInt8("size"),
-                1: UBInt16("size"),
-                2: UBInt32("size")
-            }),
-            Anchor("end", subtract="start"),
+    def test_from_issue_71(self):
+        class ValidatePayloadLength(Validator):
+            def _validate(self, obj, ctx):
+                return ctx.payload_end - ctx.payload_start == ctx.payload_len == len(ctx.raw_payload)
+        class ChecksumValidator(Validator):
+            def _validate(self, obj, ctx):
+                return sha512(ctx.raw_payload).digest() == obj
+
+        Outer = Struct("less_contrived_example",
+            UBInt16('struct_type'),
+            UBInt16('payload_len'),
+
+            Anchor('payload_start'),
+            Peek(String('raw_payload', length=lambda ctx: ctx.payload_len)),
+            PascalString("name"),
+            PascalString("occupation"),
+            Anchor('payload_end'),
+
+            UBInt16('serial'),
+
+            ChecksumValidator(Bytes('checksum', 64)),
+            ValidatePayloadLength(Pass),
+            Terminator,
         )
-        self.assertEqual(Header.parse(b"\x00\x05"), Container({'start': 1, 'end': 1, 'type': 0, 'size': 5}))
-        self.assertEqual(Header.parse(b"\x01\x00\x05"), Container({'start': 1, 'end': 2, 'type': 1, 'size': 5}))
-        self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container({'start': 1, 'end': 4, 'type': 2, 'size': 5}))
+        Inner = Struct('temp', 
+            PascalString('name'), 
+            PascalString('occupation'),
+        )
+
+        payload = Inner.build(Container(name=b"unknown", occupation=b"worker"))
+        payload_len = len(payload)
+        checksum = sha512(payload).digest()
+        Outer.build(Container(name=b"unknown", occupation=b"worker", raw_payload=payload, payload_len=payload_len, checksum=checksum, serial=12345, struct_type=9001))
 
