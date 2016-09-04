@@ -316,11 +316,14 @@ def OptionalGreedyRange(subcon):
 #===============================================================================
 def Optional(subcon):
     r"""
-    An optional construct. if parsing fails, returns None.
+    An optional construct. 
+
+    If parsing fails, returns None. If building fails, writes nothing.
 
     :param subcon: the subcon to optionally parse or build
     """
     return Select(subcon.name, subcon, Pass)
+
 
 def Bitwise(subcon):
     r"""

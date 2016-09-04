@@ -300,6 +300,11 @@ all_tests = [
     [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).parse, b"\x00\x01", 1, None],
     [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).build, 1, b"\x01", None],
     [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).build, 1, b"\x00\x01", None],
+
+    [Optional(ULInt32("int")).parse, b"\x01\x00\x00\x00", 1, None],
+    [Optional(ULInt32("int")).build, 1, b"\x01\x00\x00\x00", None],
+    [Optional(ULInt32("int")).parse, b"?", None, None],
+    [Optional(ULInt32("int")).build, None, b"", None],
 ]
 
 
