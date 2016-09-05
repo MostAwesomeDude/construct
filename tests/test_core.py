@@ -250,7 +250,7 @@ class TestEmbedOptional(unittest.TestCase):
             lfield = "_%s_length" % name.lower()
             s = Struct(name,
                 ULInt8(lfield),
-                String(name, lambda ctx: ctx.lfield))
+                String(name, lambda ctx: getattr(ctx, lfield)))
             if optional:
                 s = Optional(s)
             if embed:

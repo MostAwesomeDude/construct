@@ -650,6 +650,8 @@ class Struct(Construct):
             if sc.conflags & self.FLAG_EMBED:
                 context["<obj>"] = obj
                 sc._parse(stream, context)
+                if "<obj>" in context:
+                    del context["<obj>"]
             else:
                 subobj = sc._parse(stream, context)
                 if sc.name is not None:
