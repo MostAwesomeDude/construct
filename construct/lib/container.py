@@ -95,12 +95,12 @@ class Container(dict):
         v = dict.pop(k)
         return k, v
 
-    def update(self, seq, **kw):
-        if hasattr(seq, "keys"):
-            for k in seq.keys():
-                self[k] = seq[k]
+    def update(self, seqordict, **kw):
+        if isinstance(seqordict, dict):
+            for k, v in seqordict.items():
+                self[k] = v
         else:
-            for k, v in seq:
+            for k, v in seqordict:
                 self[k] = v
         dict.update(self, kw)
 

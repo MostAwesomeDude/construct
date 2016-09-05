@@ -34,12 +34,27 @@ class TestContainer(unittest.TestCase):
         self.assertRaises(KeyError, lambda: c["a"])
         self.assertEqual(c, Container())
 
-    def test_update(self):
-        c = Container(a=1)
+    def test_update_from_dict(self):
+        c = Container(a=1)(b=2)(c=3)(d=4)
         d = Container()
         d.update(c)
         self.assertEqual(d.a, 1)
+        self.assertEqual(d.b, 2)
+        self.assertEqual(d.c, 3)
+        self.assertEqual(d.d, 4)
         self.assertEqual(c, d)
+        self.assertEqual(c.items(), d.items())
+
+    def test_update_from_list(self):
+        c = Container(a=1)(b=2)(c=3)(d=4)
+        d = Container()
+        d.update([("a",1),("b",2),("c",3),("d",4)])
+        self.assertEqual(d.a, 1)
+        self.assertEqual(d.b, 2)
+        self.assertEqual(d.c, 3)
+        self.assertEqual(d.d, 4)
+        self.assertEqual(c, d)
+        self.assertEqual(c.items(), d.items())
 
     def test_items(self):
         c = Container(a=1)(b=2)(c=3)(d=4)
