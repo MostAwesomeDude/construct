@@ -308,11 +308,11 @@ class TestEmbedOptional(unittest.TestCase):
             return s
 
         data = b'\xc3\xc0{\x00\x01\x00\x00\x00HOqA\x12some silly text...\x00\x0e\x00\x00\x00q=jAq=zA\x02dB\x02%f\x02%f\x02%f'
-        print ("\n\nNo embedding for neither g and h, i is a container --> OK")
-        print build_struct(embed_g=False, embed_h=False).parse(data)
-        print ("Embed both g and h, i is not a container --> FAIL")
-        print build_struct(embed_g=True, embed_h=True).parse(data)
-        print ("\n\nEmbed g but not h --> EXCEPTION")
-        print build_struct(embed_g=True, embed_h=False).parse(data)
+        print("\n\nNo embedding for neither g and h, i is a container --> OK")
+        print(build_struct(embed_g=False, embed_h=False).parse(data))
+        print("Embed both g and h, i is not a container --> FAIL")
+        print(build_struct(embed_g=True, embed_h=True).parse(data))
+        print("\n\nEmbed g but not h --> EXCEPTION")
+        print(build_struct(embed_g=True, embed_h=False).parse(data))
         # When setting optional to False in vstring method, all three tests above work fine.
 
