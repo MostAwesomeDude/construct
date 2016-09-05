@@ -37,11 +37,16 @@ class Container(dict):
         # This is NOT correct because keyword arguments order is not preserved.
         Container(name="anonymous",age=21)
 
+        Container(container2tocopy)
     """
     __slots__ = ["__keys_order__","__recursion_lock__"]
 
     def __init__(self, *args, **kw):
         object.__setattr__(self, "__keys_order__", [])
+        if isinstance(args, dict):
+            for k, v in args.items():
+                self[k] = v
+            return
         for arg in args:
             if isinstance(arg, dict):
                 for k, v in arg.items():

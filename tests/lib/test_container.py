@@ -7,6 +7,11 @@ from construct.lib.container import Container, FlagsContainer, ListContainer
 
 class TestContainer(unittest.TestCase):
 
+    def test_ctor_from_dict(self):
+        c = Container(a=1)(b=2)(c=3)(d=4)
+        d = Container(c)
+        self.assertEqual(c, d)
+
     def test_getattr(self):
         c = Container(a=1)
         self.assertEqual(c["a"], 1)
