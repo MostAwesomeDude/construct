@@ -241,3 +241,11 @@ class TestChecksum(unittest.TestCase):
         self.assertEqual(struct.build(Container(a=1,b=2)), b"\x01\x02"+c)
 
 
+class TestNumpy(unittest.TestCase):
+
+    def test(self):
+        import numpy
+        s = Numpy("numpy")
+        a = numpy.array([1,2,3], dtype=numpy.int64)
+        self.assertTrue(numpy.array_equal(s.parse(s.build(a)), a))
+

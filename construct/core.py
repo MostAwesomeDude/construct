@@ -1830,3 +1830,25 @@ class Checksum(Construct):
     def _sizeof(self, context):
         return self.checksumfield._sizeof(context)
 
+
+class Numpy(Construct):
+    r"""
+    Preserves numpy arrays (both shape, dtype and values).
+
+    Example::
+
+    	Numpy("data")
+    	.parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00") -> array([1, 2, 3])
+    	.build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+    """
+    def __init__(self, name):
+        import numpy
+        super(Numpy, self).__init__(name)
+        self.lib = numpy
+    def _parse(self, stream, context):
+    	return self.lib.load(stream)
+    def _build(self, obj, stream, context):
+    	self.lib.save(stream, obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
