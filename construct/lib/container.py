@@ -24,7 +24,14 @@ class Container(dict):
     r"""
     A generic container of attributes.
 
-    Containers are dictionaries, translating attribute access into key access, and preserving key order.
+    Containers are dictionaries, translating attribute access into key access, and preserving key order. Also they use call method to add keys, because **kw does not preserve key order.
+
+    Struct parse returns containers, becuase fields have order too.
+
+    Example::
+
+        Container(name="anonymous")(age=21)
+
     """
     __slots__ = ["__keys_order__","__recursion_lock__"]
 
