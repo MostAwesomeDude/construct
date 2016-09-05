@@ -22,17 +22,20 @@ def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"
 
 class Container(dict):
     r"""
-    A generic container of attributes.
+    Generic ordered dictionary that allows both key and attribute access.
 
-    Containers are dictionaries, translating attribute access into key access, and preserving key order. Also they use call method to add keys, because **kw does not preserve key order.
+    Containers are dictionaries, translating attribute access into key access, and preserving key order. Also they use call method to add keys, because **kw does not preserve order.
 
-    Struct parse returns containers, becuase fields have order too.
+    Structs parse return containers, becuase their fields have order.
 
     Example::
 
         Container([("name","anonymous"),("age",21)])
         
         Container(name="anonymous")(age=21)
+
+        # This is NOT correct because keyword arguments order is not preserved.
+        Container(name="anonymous",age=21)
 
     """
     __slots__ = ["__keys_order__","__recursion_lock__"]
