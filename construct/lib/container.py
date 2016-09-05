@@ -30,6 +30,8 @@ class Container(dict):
 
     Example::
 
+        Container([("name","anonymous"),("age",21)])
+        
         Container(name="anonymous")(age=21)
 
     """
@@ -38,8 +40,12 @@ class Container(dict):
     def __init__(self, *args, **kw):
         object.__setattr__(self, "__keys_order__", [])
         for arg in args:
-            for k, v in arg.items():
-                self[k] = v
+            if isinstance(arg, dict):
+                for k, v in arg.items():
+                    self[k] = v
+            else:
+                for k, v in arg:
+                    self[k] = v
         for k, v in kw.items():
             self[k] = v
 
@@ -62,6 +68,9 @@ class Container(dict):
     __setattr__ = __setitem__
 
     def __call__(self, **kw):
+        """
+        Chains adding new entries to the same container. See ctor.
+        """
         for k,v in kw.items():
             self.__setitem__(k, v)
         return self
@@ -71,13 +80,19 @@ class Container(dict):
         del self.__keys_order__[:]
 
     def pop(self, key, *default):
+        """
+        Removes and returns the value for a given key, raises KeyError if not found.
+        """
         val = dict.pop(self, key, *default)
         self.__keys_order__.remove(key)
         return val
 
     def popitem(self):
-        k, v = dict.popitem(self)
-        self.__keys_order__.remove(k)
+        """
+        Removes and returns the last key and value from order.
+        """
+        k = self.__keys_order__.pop()
+        v = dict.pop(k)
         return k, v
 
     def update(self, seq, **kw):
@@ -90,9 +105,30 @@ class Container(dict):
         dict.update(self, kw)
 
     def copy(self):
-        inst = self.__class__()
-        inst.update(self.iteritems())
-        return inst
+        return Container(self.iteritems())
+
+    __update__ = update
+    __copy__ = copy
+
+    def iterkeys(self):
+        return iter(self.__keys_order__)
+
+    def itervalues(self):
+        return (self[k] for k in self.__keys_order__)
+
+    def iteritems(self):
+        return ((k, self[k]) for k in self.__keys_order__)
+
+    def keys(self):
+        return self.__keys_order__
+
+    def values(self):
+        return list(self.itervalues())
+
+    def items(self):
+        return list(self.iteritems())
+
+    __iter__ = iterkeys
 
     def _search(self, name, search_all):
         items = []
@@ -122,29 +158,6 @@ class Container(dict):
 
     def search_all(self, name):
         return self._search(name, True)
-
-    __update__ = update
-    __copy__ = copy
-
-    def __iter__(self):
-        return iter(self.__keys_order__)
-
-    iterkeys = __iter__
-
-    def itervalues(self):
-        return (self[k] for k in self.__keys_order__)
-
-    def iteritems(self):
-        return ((k, self[k]) for k in self.__keys_order__)
-
-    def keys(self):
-        return self.__keys_order__
-
-    def values(self):
-        return list(self.itervalues())
-
-    def items(self):
-        return list(self.iteritems())
 
     @recursion_lock()
     def __repr__(self):
