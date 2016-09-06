@@ -1187,35 +1187,33 @@ class Anchor(Construct):
     r"""
     Gets the stream position when parsing or building.
 
-    Anchors are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs.
-
-    To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference using Compute or the subtract field.
+    Anchors are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference using a Compute.
 
     :param name: the name of the anchor
-    :param subtract: name of another Anchor or a lambda taking contect and returning int
 
     .. note:: Requires a tellable stream.
 
-    .. seealso:: :func:`Pointer`
+    Example::
+
+        Struct("struct",
+            Anchor("offset1"),
+            Byte("a")
+            Anchor("offset1"),
+            Computed("length", lambda ctx: ctx.offset2 - ctx.offset1),
+        )
+        .parse(b"\xff") -> Container(offset1=0)(a=255)(ofsset2=1)(length=1)
+        .build(dict(a=255)) -> b"\xff"
+        .sizeof() -> 1
     """
-    __slots__ = ["name", "subtract"]
-    def __init__(self, name, subtract=None):
+    __slots__ = ["name"]
+    def __init__(self, name):
         super(Anchor, self).__init__(name)
-        self.subtract = subtract
     def _parse(self, stream, context):
         position = stream.tell()
-        if callable(self.subtract):
-            position -= self.subtract(context)
-        if isinstance(self.subtract, str):
-            position -= context[self.subtract]
         context[self.name] = position
         return position
     def _build(self, obj, stream, context):
         position = stream.tell()
-        if callable(self.subtract):
-            position -= self.subtract(context)
-        if isinstance(self.subtract, str):
-            position -= context[self.subtract]
         context[self.name] = position
     def _sizeof(self, context):
         return 0
@@ -1233,7 +1231,16 @@ class AnchorRange(Construct):
 
     .. note:: Requires a tellable stream.
 
-    .. seealso:: :func:`Pointer`
+    Example::
+
+        Struct("struct",
+            AnchorRange("range"),
+            Byte("a"),
+            AnchorRange("range"),
+        )
+        .parse(b"\xff") -> Container(range=Container(offset1=0)(ofsset2=1)(length=1))(a=255)
+        .build(dict(a=1)) -> b"\x01"
+        .sizeof() -> 1
     """
     __slots__ = ["name"]
     def __init__(self, name):
@@ -1281,7 +1288,7 @@ class Computed(Construct):
         )
 
         .parse(b'\x04\x05') -> Container(width=4,height=5,total=20)
-        .build(Container(width=4,height=5,total=20)) -> b'\x04\x05'
+        .build(dict(width=4,height=5)) -> b'\x04\x05'
     """
     __slots__ = ["func"]
     def __init__(self, name, func):
@@ -1849,8 +1856,7 @@ class Checksum(Construct):
 
     :param checksumfield: a subcon field that reads the checksum, usually Bytes(int), it's name is reused
     :param hashfunc: a function taking bytes and returning whatever checksumfield takes
-    :param startsat: name of an Anchor where checksumming starts, if None then starts at offset 0
-    :param endsat: name of an Anchor where checksumming ends, if None then ends at current offset
+    :param anchors: name of an AnchorRange
 
     Example::
 
@@ -1858,19 +1864,16 @@ class Checksum(Construct):
             return hashlib.sha512(b).digest()
 
         Struct("struct",
+            AnchorRange("range"),
             Byte("a"),
-            Anchor("offset1"),
-            Byte("b"),
-            Anchor("offset2"),
-            Checksum(Bytes("checksum",64), sha512, "offset1", "offset2"),
+            AnchorRange("range"),
+            Checksum(Bytes("checksum",64), sha512, "range"),
         )
-
-        .parse(b"\x01\x02<...>") -> Container(a=1,b=2,offset1=1,offset2=2,checksum=b"<...>")
-        .build(Container(a=1,b=2)) -> b"\x01\x02<...>"
-        .sizeof() -> 64
+        .parse(b"\xff<hash>") -> Container(range=Container(offset1=0)(ofsset2=1)(length=1))(a=255)(checksum=?)
+        .build(dict(a=255)) -> b"\xff<hash>"
     """
-    __slots__ = ["name", "checksumfield", "hashfunc", "startsat", "endsat"]
-    def __init__(self, checksumfield, hashfunc, startsat=None, endsat=None):
+    __slots__ = ["name", "checksumfield", "hashfunc", "anchors"]
+    def __init__(self, checksumfield, hashfunc, anchors):
         if not isinstance(checksumfield, Construct):
             raise TypeError("checksumfield should be a Construct field")
         if not callable(hashfunc):
@@ -1878,13 +1881,12 @@ class Checksum(Construct):
         super(Checksum, self).__init__(checksumfield.name)
         self.checksumfield = checksumfield
         self.hashfunc = hashfunc
-        self.startsat = startsat
-        self.endsat = endsat
+        self.anchors = anchors
     def _parse(self, stream, context):
         hash1 = self.checksumfield._parse(stream, context)
         current = stream.tell()
-        startsat = 0 if self.startsat is None else context[self.startsat]
-        endsat = current if self.endsat is None else context[self.endsat]
+        startsat = context[self.anchors]["offset1"]
+        endsat = context[self.anchors]["offset2"]
         stream.seek(startsat, 0)
         hash2 = self.hashfunc(_read_stream(stream, endsat-startsat))
         stream.seek(current, 0)
@@ -1893,8 +1895,8 @@ class Checksum(Construct):
         return hash1
     def _build(self, obj, stream, context):
         current = stream.tell()
-        startsat = 0 if self.startsat is None else context[self.startsat]
-        endsat = current if self.endsat is None else context[self.endsat]
+        startsat = context[self.anchors]["offset1"]
+        endsat = context[self.anchors]["offset2"]
         stream.seek(startsat, 0)
         hash2 = self.hashfunc(_read_stream(stream, endsat-startsat))
         stream.seek(current, 0)
