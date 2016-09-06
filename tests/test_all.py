@@ -213,12 +213,11 @@ all_tests = [
         Embedded(Struct("q", UBInt8("e"))),
         ).parse,
         b"\x11\x22\x33\x44",
-        Container(a=0x11223344, 
-            b=Container(a=0x1122, b=0x3344), 
-            c=Container(a=0x12),
-            d=Container(a=0x11, b=0x22, c=0x33, d=0x44),
-            e=0x11,
-        ),
+        Container(a=0x11223344)
+            (b=Container(a=0x1122)(b=0x3344))
+            (c=Container(a=0x12))
+            (d=Container(a=0x11)(b=0x22)(c=0x33)(d=0x44))
+            (e=0x11),
         None],
     [Union("union", 
         UBInt32("a"), 

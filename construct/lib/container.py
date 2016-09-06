@@ -1,6 +1,7 @@
 """
 Various containers.
 """
+from itertools import izip
 
 
 def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"):
@@ -137,6 +138,14 @@ class Container(dict):
         return list(self.iteritems())
 
     __iter__ = iterkeys
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for (k,v),(k2,v2) in izip(self.iteritems(), other.iteritems()):
+            if k != k2 or v != v2:
+                return False
+        return True
 
     def _search(self, name, search_all):
         items = []

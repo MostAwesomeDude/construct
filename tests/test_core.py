@@ -148,7 +148,7 @@ class TestAnchor(unittest.TestCase):
             Byte("b"),
             Anchor("end_payload"),
         )
-        self.assertEqual(struct.parse(b"\x01\x02"), Container(a=1,b=2,start_payload=1,end_payload=2))
+        self.assertEqual(struct.parse(b"\x01\x02"), Container(a=1)(start_payload=1)(b=2)(end_payload=2))
         self.assertEqual(struct.build(Container(a=1,b=2,start_payload=1,end_payload=2)), b"\x01\x02")
         self.assertEqual(struct.build(Container(a=1,b=2)), b"\x01\x02")
 
@@ -164,9 +164,9 @@ class TestAnchor(unittest.TestCase):
             }),
             Anchor("end", subtract="start"),
         )
-        self.assertEqual(Header.parse(b"\x00\x05"), Container({'start': 1, 'end': 1, 'type': 0, 'size': 5}))
-        self.assertEqual(Header.parse(b"\x01\x00\x05"), Container({'start': 1, 'end': 2, 'type': 1, 'size': 5}))
-        self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container({'start': 1, 'end': 4, 'type': 2, 'size': 5}))
+        self.assertEqual(Header.parse(b"\x00\x05"), Container(type=0)(start=1)(size=5)(end=1))
+        self.assertEqual(Header.parse(b"\x01\x00\x05"), Container(type=1)(start=1)(size=5)(end=2))
+        self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container(type=2)(start=1)(size=5)(end=4))
 
     def test_from_issue_60(self):
         Header = Struct("header",
@@ -179,9 +179,9 @@ class TestAnchor(unittest.TestCase):
             }),
             Anchor("length"),
         )
-        self.assertEqual(Header.parse(b"\x00\x05"), Container(type=0, size=5, length=2))
-        self.assertEqual(Header.parse(b"\x01\x00\x05"), Container(type=1, size=5, length=3))
-        self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container(type=2, size=5, length=5))
+        self.assertEqual(Header.parse(b"\x00\x05"), Container(type=0)(size=5)(length=2))
+        self.assertEqual(Header.parse(b"\x01\x00\x05"), Container(type=1)(size=5)(length=3))
+        self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container(type=2)(size=5)(length=5))
 
         self.assertEqual(Header.build(Container(type=0, size=5)), b"\x00\x05")
         self.assertEqual(Header.build(Container(type=1, size=5)), b"\x01\x00\x05")
@@ -237,7 +237,7 @@ class TestChecksum(unittest.TestCase):
 
         c = b"\xfa\xb8H\xc9\xb6W\xa8S\xee7\xc0\x9c\xbf\xdd\x14\x9d\x0b8\x07\xb1\x91\xdd\xe9\xb6#\xcc\xd9R\x81\xdd\x18p[H\xc8\x9b\x15\x03\x908E\xbb\xa5u9E5\x1f\xe6\xb4T\x85'`\xf75)\xcf\x01\xca\x8fi\xdc\xca"
         self.assertEqual(sha512(b"\x02"), c)
-        self.assertEqual(struct.parse(b"\x01\x02"+c), Container(a=1,b=2,offset1=1,offset2=2,checksum=c))
+        self.assertEqual(struct.parse(b"\x01\x02"+c), Container(a=1)(offset1=1)(b=2)(offset2=2)(checksum=c))
         self.assertEqual(struct.build(Container(a=1,b=2)), b"\x01\x02"+c)
 
 

@@ -16,7 +16,7 @@ class TestFlagsAdapter(unittest.TestCase):
         pass
 
     def test_parse(self):
-        self.assertEqual(self.fa.parse(b'\x04'), FlagsContainer(feature=True, output=False, input=False))
+        self.assertEqual(self.fa.parse(b'\x04'), FlagsContainer(output=False)(feature=True)(input=False))
 
     def test_build(self):
         self.assertEqual(self.fa.build(dict(feature=True, output=True, input=False)), b'\x06')
