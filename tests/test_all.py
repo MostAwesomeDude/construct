@@ -169,8 +169,8 @@ all_tests = [
     [Padding(4, strict=True).build, None, b"\x00\x00\x00\x00", None],
     [lambda none: Padding(4, pattern=b"??"), None, None, PaddingError],
 
-    [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).parse, b"\x05abcde", b"abcde", None],
-    [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build, b"abcde", b"\x05abcde", None],
+    # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).parse, b"\x05abcde", b"abcde", None],
+    # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build, b"abcde", b"\x05abcde", None],
         
     [TunnelAdapter(PascalString("data", encoding = ZlibCodec), GreedyRange(UBInt16("elements"))).parse, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", [3] * 100, None],
     [TunnelAdapter(PascalString("data", encoding = ZlibCodec), GreedyRange(UBInt16("elements"))).build, [3] * 100, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", None],
@@ -296,8 +296,11 @@ all_tests = [
     [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_ =Pass).build, 9, b"\x09", None],
 
     [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x03\x01\x01\x01", [1,1,1], None],
+    [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x00", [], None],
+    [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"", None, ArrayError],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x03\x01\x01", None, ArrayError],
-    [PrefixedArray(UBInt8("array"), UBInt8("count")).sizeof, [1,1,1], 4, None],
+    # Fix: sizeof takes a context, not an obj.
+    [PrefixedArray(UBInt8("array"), UBInt8("count")).sizeof, [1,1,1], 4, SizeofError],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).build, [1,1,1], b"\x03\x01\x01\x01", None],
     
     [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).parse, b"\x01", 1, None],

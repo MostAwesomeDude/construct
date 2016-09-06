@@ -202,20 +202,6 @@ class PaddedStringAdapter(Adapter):
                 obj = obj[-size:]
         return obj
 
-class LengthValueAdapter(Adapter):
-    """
-    Adapter for length-value pairs. It extracts only the value from the
-    pair, and calculates the length based on the value.
-    See PrefixedArray and PascalString.
-
-    :param subcon: the subcon returning a length-value pair
-    """
-    __slots__ = []
-    def _encode(self, obj, context):
-        return (len(obj), obj)
-    def _decode(self, obj, context):
-        return obj[1]
-
 class CStringAdapter(StringAdapter):
     r"""
     Adapter for C-style strings (strings terminated by a terminator char).

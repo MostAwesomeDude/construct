@@ -2,9 +2,9 @@ from sys import maxsize
 
 from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig, Padding, Const
+from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, ArrayError, StringError, Buffered, Restream, Reconfig, Padding, Const, Aligned
 from construct.core import _read_stream, _write_stream
-from construct.adapters import BitIntegerAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
+from construct.adapters import BitIntegerAdapter, CStringAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
 
 
 #===============================================================================
@@ -236,25 +236,43 @@ def Array(count, subcon):
         con._clear_flag(con.FLAG_DYNAMIC)
     return con
 
-def PrefixedArray(subcon, length_field=UBInt8("length")):
+
+class PrefixedArray(Construct):
     r"""
     An array prefixed by a length field.
 
+    :param lengthfield: a field returning an integer
     :param subcon: the subcon to be repeated
-    :param length_field: a construct returning an integer
-    """
-    def _length(ctx):
-      if issubclass(ctx.__class__, (list, tuple)):
-        return len(ctx)
-      return ctx[length_field.name]
 
-    return LengthValueAdapter(
-        Sequence(subcon.name,
-            length_field,
-            Array(_length, subcon),
-            nested = False
-        )
-    )
+    Example::
+
+        PrefixedArray(UBInt8("array"), UBInt8(None))
+        .parse(b"\x03\x01\x01\x01") -> [1,1,1]
+        .build([1,1,1]) -> b"\x03\x01\x01\x01"
+    """
+
+    def __init__(self, subcon, lengthfield=UBInt8(None)):
+        if not isinstance(lengthfield, Construct):
+            raise TypeError("lengthfield should be a Construct field")
+        if not isinstance(subcon, Construct):
+            raise TypeError("subcon should be a Construct field")
+        super(PrefixedArray, self).__init__(subcon.name)
+        self.lengthfield = lengthfield
+        self.subcon = subcon
+    def _parse(self, stream, context):
+        try:
+            count = self.lengthfield._parse(stream, context)
+            return list(self.subcon._parse(stream, context) for i in range(count))
+        except Exception:
+            raise ArrayError("could not read prefix or enough elements, stream too short")
+    def _build(self, obj, stream, context):
+        self.lengthfield._build(len(obj), stream, context)
+        for element in obj:
+            self.subcon._build(element, stream, context)
+    def _sizeof(self, context):
+        # return self.lengthfield._sizeof(None) + sum(self.subcon._sizeof(element) for element in context)
+        raise SizeofError("cannot calculate size")
+
 
 def OpenRange(mincount, subcon):
     return Range(mincount, maxsize, subcon)
@@ -290,7 +308,7 @@ def GreedyRange(subcon):
 
 def OptionalGreedyRange(subcon):
     r"""
-    Repeats the given unit zero or more times. This repeater can't
+    Repeats the given subcon zero or more times. This repeater can't
     fail, as it accepts lists of any length.
 
     :param subcon: construct to repeat
@@ -316,7 +334,7 @@ def OptionalGreedyRange(subcon):
 #===============================================================================
 def Optional(subcon):
     r"""
-    An optional construct. 
+    An optional construct.
 
     If parsing fails, returns None. If building fails, writes nothing.
 
@@ -327,7 +345,7 @@ def Optional(subcon):
 
 def Bitwise(subcon):
     r"""
-    Converts the stream to bits, and passes the bitstream to subcon
+    Converts the stream to bits, and passes the bitstream to subcon.
 
     :param subcon: a bitwise construct (usually BitField)
     """
@@ -354,8 +372,8 @@ def Bitwise(subcon):
 
 def SeqOfOne(name, *args, **kw):
     r"""
-    A sequence of one element. only the first element is meaningful, the
-    rest are discarded
+    A sequence of one element. Only the first element is meaningful, the
+    rest are discarded.
 
     :param name: the name of the sequence
     :param \*args: subconstructs
@@ -365,7 +383,7 @@ def SeqOfOne(name, *args, **kw):
 
 def Embedded(subcon):
     r"""
-    Embeds a struct into the enclosing struct.
+    Embeds a struct into the enclosing struct, merging fields.
 
     :param subcon: the struct to embed
     """
@@ -373,7 +391,7 @@ def Embedded(subcon):
 
 def Rename(newname, subcon):
     r"""
-    Renames an existing construct
+    Renames an existing construct.
 
     :param newname: the new name
     :param subcon: the subcon to rename
@@ -382,7 +400,9 @@ def Rename(newname, subcon):
 
 def Alias(newname, oldname):
     r"""
-    Creates an alias for an existing element in a struct
+    Creates an alias for an existing element in a struct.
+
+    Does not build.
 
     :param newname: the new name
     :param oldname: the name of an existing element

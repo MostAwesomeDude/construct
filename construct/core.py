@@ -1835,3 +1835,42 @@ class Checksum(Construct):
     def _sizeof(self, context):
         return self.checksumfield._sizeof(context)
 
+
+# class LengthValue(Construct):
+#     r"""
+#     Adapter for length-value pairs. When parsing, it returns only the value from the pair. When building, it calculates the length based on the value. Name of subcon is used.
+
+#     See PrefixedArray and PascalString.
+
+#     :param lengthfield: a subcon used for storing the length, can have no name
+#     :param subcon: the subcon used for storing the value
+
+#     Example::
+
+#         LengthValue(Byte(), CString("text"))
+#         .parse(b"\x06hello\0") -> b"hello"
+#         .build(b"hello") -> b"\x06hello\0"
+#     """
+#     __slots__ = ["name", "lengthfield", "subcon"]
+#     def __init__(self, lengthfield, subcon):
+#         if not isinstance(lengthfield, Construct):
+#             raise TypeError("lengthfield should be a Construct field")
+#         if not isinstance(subcon, Construct):
+#             raise TypeError("subcon should be a Construct field")
+#         super(LengthValue, self).__init__(subcon.name)
+#         self.lengthfield = lengthfield
+#         self.subcon = subcon
+#     def _parse(self, stream, context):
+#         length = self.lengthfield._parse(stream, context)
+
+#     def _build(self, obj, stream, context):
+#         pass
+#     def _sizeof(self, context):
+#         return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
+
+    # __slots__ = []
+    # def _encode(self, obj, context):
+    #     return (len(obj), obj)
+    # def _decode(self, obj, context):
+    #     return obj[1]
+
