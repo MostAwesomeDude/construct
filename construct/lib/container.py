@@ -215,6 +215,9 @@ class FlagsContainer(Container):
     def __eq__(self, other, skiporder=True):
         return super(FlagsContainer, self).__eq__(other, skiporder)
 
+    def __ne__(self, other, skiporder=True):
+        return not self.__eq__(other, skiporder)
+
     @recursion_lock()
     def __str__(self, indentation="\n    "):
         text = ["FlagsContainer: "]
