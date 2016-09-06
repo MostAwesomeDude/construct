@@ -674,11 +674,7 @@ class Struct(Construct):
                 subobj = obj
             elif sc.name is None:
                 subobj = None
-            elif isinstance(sc, Computed):
-                subobj = None
-            elif isinstance(sc, Anchor):
-                subobj = None
-            elif isinstance(sc, Checksum):
+            elif isinstance(sc, (Computed, Anchor, Checksum)):
                 subobj = None
             else:
                 subobj = obj[sc.name]
