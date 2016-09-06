@@ -100,6 +100,11 @@ all_tests = [
     [Anchor("anchor").parse, b"", 0, None],
     [Anchor("anchor").build, None, b"", None],
 
+    [AnchorRange("anchorrange").parse, b"", 0, None],
+    [AnchorRange("anchorrange").build, None, b"", None],
+    [Struct("struct",AnchorRange("anchorrange"),Byte("a"),AnchorRange("anchorrange"),allow_overwrite=True).parse, b"\xff", Container(anchorrange=Container(offset1=0)(offset2=1)(length=1))(a=255), None],
+    [Struct("struct",AnchorRange("anchorrange"),Byte("a"),AnchorRange("anchorrange"),allow_overwrite=True).build, dict(a=255), b"\xff", None],
+
     [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
     [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
 

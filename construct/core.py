@@ -674,7 +674,7 @@ class Struct(Construct):
                 subobj = obj
             elif sc.name is None:
                 subobj = None
-            elif isinstance(sc, (Computed, Anchor, Checksum)):
+            elif isinstance(sc, (Computed, Anchor, AnchorRange, Checksum)):
                 subobj = None
             else:
                 subobj = obj[sc.name]
@@ -1001,6 +1001,7 @@ class Pointer(Subconstruct):
     def _sizeof(self, context):
         return 0
 
+
 class Peek(Subconstruct):
     r"""
     Peeks at the stream: parses without changing the stream position. See also Union. If the end of the stream is reached when peeking, returns None.
@@ -1072,6 +1073,7 @@ class OnDemand(Subconstruct):
         elif self.advance_stream:
             stream.seek(self.subcon._sizeof(context), 1)
 
+
 class Buffered(Subconstruct):
     """
     Creates an in-memory buffered stream, which can undergo encoding and decoding prior to being passed on to the subconstruct.
@@ -1112,6 +1114,7 @@ class Buffered(Subconstruct):
         _write_stream(stream, self._sizeof(context), data)
     def _sizeof(self, context):
         return self.resizer(self.subcon._sizeof(context))
+
 
 class Restream(Subconstruct):
     """
@@ -1214,6 +1217,47 @@ class Anchor(Construct):
         if isinstance(self.subtract, str):
             position -= context[self.subtract]
         context[self.name] = position
+    def _sizeof(self, context):
+        return 0
+
+
+class AnchorRange(Construct):
+    r"""
+    Gets the stream position at two times when parsing or building.
+
+    Anchors are useful to measure sizes of Constructs. Place two AnchorRanges with same name, and the second one will return a container with both offsets and length. 
+
+    This can also be used for checksumming. Give the Checksum field the name of this AnchorRange.
+
+    :param name: the name of the anchor range (same for both instances)
+
+    .. note:: Requires a tellable stream.
+
+    .. seealso:: :func:`Pointer`
+    """
+    __slots__ = ["name"]
+    def __init__(self, name):
+        super(AnchorRange, self).__init__(name)
+    def _parse(self, stream, context):
+        position = stream.tell()
+        if self.name not in context:
+            context[self.name] = position
+            return position
+        else:
+            offset1 = context[self.name]
+            offset2 = position
+            obj = Container(offset1=offset1)(offset2=offset2)(length=offset2-offset1)
+            context[self.name] = obj
+            return obj
+    def _build(self, obj, stream, context):
+        position = stream.tell()
+        if self.name not in context:
+            context[self.name] = position
+        else:
+            offset1 = context[self.name]
+            offset2 = position
+            obj = Container(offset1=offset1)(offset2=offset2)(length=offset2-offset1)
+            context[self.name] = obj
     def _sizeof(self, context):
         return 0
 
