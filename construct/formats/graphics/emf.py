@@ -107,10 +107,11 @@ record_type = Enum(ULInt32("record_type"),
 generic_record = Struct("records",
     record_type,
     ULInt32("record_size"),      # Size of the record in bytes 
-    Union("params",              # Parameters
-        Field("raw", lambda ctx: ctx._.record_size - 8),
-        Array(lambda ctx: (ctx._.record_size - 8) // 4, ULInt32("params"))
-    ),
+    Array(lambda ctx: (ctx.record_size - 8) // 4, ULInt32("params")),
+    # Union("params",              # Parameters
+    #     Field("raw", lambda ctx: ctx._.record_size - 8),
+    #     Array(lambda ctx: (ctx._.record_size - 8) // 4, ULInt32("params")),
+    # ),
 )
 
 header_record = Struct("header_record",
@@ -140,11 +141,12 @@ header_record = Struct("header_record",
     
     # description string
     Pointer(lambda ctx: ctx.description_offset,
-        StringAdapter(
-            Array(lambda ctx: ctx.description_size,
-                Field("description", 2)
-            )
-        )
+        String("description", lambda ctx: ctx.description_size * 2),
+        # StringAdapter(
+        #     Array(lambda ctx: ctx.description_size,
+        #         Field("description", 2)
+        #     )
+        # )
     ),
     
     # padding up to end of record
@@ -157,42 +159,4 @@ emf_file = Struct("emf_file",
         generic_record
     ),
 )
-
-
-if __name__ == "__main__":
-    obj = emf_file.parse_stream(open("../../../tests/emf1.emf", "rb"))
-    print (obj)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

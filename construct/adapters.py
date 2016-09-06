@@ -54,6 +54,7 @@ class BitIntegerAdapter(Adapter):
             obj = swap_bytes(obj, bytesize = self.bytesize)
         return bin_to_int(obj, signed = self.signed)
 
+
 class MappingAdapter(Adapter):
     """
     Adapter that maps objects to other objects.
@@ -98,6 +99,7 @@ class MappingAdapter(Adapter):
                 return obj
             return self.decdefault
 
+
 class FlagsAdapter(Adapter):
     """
     Adapter for flag fields. Each flag is extracted from the number, resulting
@@ -127,98 +129,6 @@ class FlagsAdapter(Adapter):
             obj2[name] = bool(obj & value)
         return obj2
 
-class StringAdapter(Adapter):
-    """
-    Adapter for strings. Converts a sequence of characters into a python
-    string, and optionally handles character encoding. See String.
-
-    :param subcon: the subcon to convert
-    :param encoding: the character encoding name (e.g., "utf8"), or None to
-                     return raw bytes (usually 8-bit ASCII).
-    """
-    __slots__ = ["encoding"]
-    def __init__(self, subcon, encoding = None):
-        super(StringAdapter, self).__init__(subcon)
-        self.encoding = encoding
-    def _encode(self, obj, context):
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.encode(self.encoding)
-            else:
-                obj = self.encoding.encode(obj)
-        return obj
-    def _decode(self, obj, context):
-        if not isinstance(obj, bytes):
-            obj = b"".join(obj)
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.decode(self.encoding)
-            else:
-                obj = self.encoding.decode(obj)
-        return obj
-
-class PaddedStringAdapter(Adapter):
-    r"""
-    Adapter for padded strings. See String.
-
-    :param subcon: the subcon to adapt
-    :param padchar: the padding character. default is "\x00".
-    :param paddir: the direction where padding is placed ("right", "left", or
-                   "center"). the default is "right".
-    :param trimdir: the direction where trimming will take place ("right" or
-                    "left"). the default is "right". trimming is only meaningful for
-                    building, when the given string is too long.
-    """
-    __slots__ = ["padchar", "paddir", "trimdir"]
-    def __init__(self, subcon, padchar = b"\x00", paddir = "right", trimdir = "right"):
-        if paddir not in ("right", "left", "center"):
-            raise ValueError("paddir must be 'right', 'left' or 'center'", paddir)
-        if trimdir not in ("right", "left"):
-            raise ValueError("trimdir must be 'right' or 'left'", trimdir)
-        super(PaddedStringAdapter, self).__init__(subcon)
-        self.padchar = padchar
-        self.paddir = paddir
-        self.trimdir = trimdir
-    def _decode(self, obj, context):
-        if self.paddir == "right":
-            obj = obj.rstrip(self.padchar)
-        elif self.paddir == "left":
-            obj = obj.lstrip(self.padchar)
-        else:
-            obj = obj.strip(self.padchar)
-        return obj
-    def _encode(self, obj, context):
-        size = self._sizeof(context)
-        if self.paddir == "right":
-            obj = obj.ljust(size, self.padchar)
-        elif self.paddir == "left":
-            obj = obj.rjust(size, self.padchar)
-        else:
-            obj = obj.center(size, self.padchar)
-        if len(obj) > size:
-            if self.trimdir == "right":
-                obj = obj[:size]
-            else:
-                obj = obj[-size:]
-        return obj
-
-class CStringAdapter(StringAdapter):
-    r"""
-    Adapter for C-style strings (strings terminated by a terminator char).
-
-    :param subcon: the subcon to convert
-    :param terminators: a sequence of terminator chars. default is "\x00".
-    :param encoding: the character encoding to use (e.g., "utf8"), or None to return raw-bytes.
-                     the terminator characters are not affected by the encoding.
-    """
-    __slots__ = ["terminators"]
-    def __init__(self, subcon, terminators = b"\x00", encoding = None):
-        super(CStringAdapter, self).__init__(subcon, encoding = encoding)
-        self.terminators = terminators
-    def _encode(self, obj, context):
-        return StringAdapter._encode(self, obj, context) + self.terminators[0:1]
-    def _decode(self, obj, context):
-        return StringAdapter._decode(self, b''.join(obj[:-1]), context)
 
 class TunnelAdapter(Adapter):
     """
@@ -254,6 +164,7 @@ class TunnelAdapter(Adapter):
         self.inner_subcon._build(obj, stream, context)
         return stream.getvalue()
 
+
 class ExprAdapter(Adapter):
     """
     A generic adapter that accepts 'encoder' and 'decoder' as parameters. You
@@ -277,6 +188,7 @@ class ExprAdapter(Adapter):
         self._encode = encoder
         self._decode = decoder
 
+
 class HexDumpAdapter(Adapter):
     """
     Adapter for hex-dumping strings. It returns a HexString, which is a string
@@ -289,6 +201,7 @@ class HexDumpAdapter(Adapter):
         return obj
     def _decode(self, obj, context):
         return HexString(obj, linesize = self.linesize)
+
 
 class SlicingAdapter(Adapter):
     """
@@ -310,6 +223,7 @@ class SlicingAdapter(Adapter):
         return [None] * self.start + obj
     def _decode(self, obj, context):
         return obj[self.start:self.stop]
+
 
 class IndexingAdapter(Adapter):
     """
