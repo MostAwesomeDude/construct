@@ -1438,6 +1438,7 @@ class Padding(Construct):
 
         .parse(b"\xff\x00\x00\x00\x00") -> Container(num=255)
         .build(Container(num=255)) -> b"\xff\x00\x00\x00\x00"
+        .sizeof() -> 5
     """
     __slots__ = ["length", "pattern", "strict"]
     def __init__(self, length, pattern=b"\x00", strict=False):
@@ -1462,6 +1463,61 @@ class Padding(Construct):
     def _sizeof(self, context):
         length = self.length(context) if callable(self.length) else self.length
         return length
+
+
+class Aligned(Construct):
+    r"""
+    Aligns subcon to modulus boundary using padding pattern
+
+    :param subcon: the subcon to align
+    :param modulus: the modulus boundary (default is 4)
+    :param pattern: the padding pattern (default is \x00)
+
+    Example::
+
+        Aligned(
+            Byte("num"),
+            modulus=4,
+        )
+
+        .parse(b"\xff\x00\x00\x00") -> Container(num=255)
+        .build(Container(num=255)) -> b"\xff\x00\x00\x00"
+        .sizeof() -> 4
+
+        Aligned(
+            ULInt16("num"),
+            modulus=4,
+        )
+
+        .parse(b"\xff\x00\x00\x00") -> Container(num=255)
+        .build(Container(num=255)) -> b"\xff\x00\x00\x00"
+        .sizeof() -> 4
+    """
+    __slots__ = ["subcon", "modulus", "pattern"]
+    def __init__(self, subcon, modulus=4, pattern=b"\x00"):
+        if modulus < 2:
+            raise ValueError("modulus must be at least 2", modulus)
+        if len(pattern) != 1:
+            raise PaddingError("expected a pattern of single byte, given %r" % pattern)
+        super(Aligned, self).__init__(subcon.name)
+        self.subcon = subcon
+        self.modulus = modulus
+        self.pattern = pattern
+    def _parse(self, stream, context):
+        position1 = stream.tell()
+        obj = self.subcon._parse(stream, context)
+        position2 = stream.tell()
+        pad = -(position2 - position1) % self.modulus
+        _read_stream(stream, pad)
+        return obj
+    def _build(self, obj, stream, context):
+        position1 = stream.tell()
+        self.subcon._build(obj, stream, context)
+        position2 = stream.tell()
+        pad = -(position2 - position1) % self.modulus
+        _write_stream(stream, pad, self.pattern * pad)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
 
 
 class Const(Construct):
@@ -1501,41 +1557,6 @@ class Const(Construct):
         return self.subcon._sizeof(context)
 
 
-class Aligned(Construct):
-    r"""
-    Aligns subcon to modulus boundary using padding pattern
-
-    :param subcon: the subcon to align
-    :param modulus: the modulus boundary (default is 4)
-    :param pattern: the padding pattern (default is \x00)
-    """
-    __slots__ = ["subcon", "modulus", "pattern"]
-    def __init__(self, subcon, modulus=4, pattern=b"\x00"):
-        if modulus < 2:
-            raise ValueError("modulus must be at least 2", modulus)
-        if len(pattern) != 1:
-            raise PaddingError("expected a pattern of single byte, given %r" % pattern)
-        super(Aligned, self).__init__(subcon.name)
-        self.subcon = subcon
-        self.modulus = modulus
-        self.pattern = pattern
-    def _parse(self, stream, context):
-        position1 = stream.tell()
-        obj = self.subcon._parse(stream, context)
-        position2 = stream.tell()
-        pad = -(position2 - position1) % self.modulus
-        _read_stream(stream, pad)
-        return obj
-    def _build(self, obj, stream, context):
-        position1 = stream.tell()
-        self.subcon._build(obj, stream, context)
-        position2 = stream.tell()
-        pad = -(position2 - position1) % self.modulus
-        _write_stream(stream, pad, self.pattern * pad)
-    def _sizeof(self, context):
-        return self.subcon._sizeof(context)
-
-
 class String(Construct):
     r"""
     A configurable, variable-length string field.
@@ -1557,10 +1578,12 @@ class String(Construct):
         String("string", 5)
         .parse(b"hello") -> b"hello"
         .build(u"hello") raises StringError
+        .sizeof() -> 5
 
         String("string", 12, encoding="utf8")
         .parse(b"hello joh\xd4\x83n") -> u'hello joh\u0503n'
         .build(u'abc') -> b'abc\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        .sizeof() -> 12
         
         String("string", 10, padchar="X", paddir="right")
         .parse(b"helloXXXXX") -> b"hello"
@@ -1568,6 +1591,9 @@ class String(Construct):
 
         String("string", 5, trimdir="right")
         .build(u"hello12345") -> b"hello"
+
+        String("string", lambda ctx: ctx.somefield)
+        .sizeof() -> ?
     """
     __slots__ = ["length", "encoding", "padchar", "paddir", "trimdir"]
     def __init__(self, name, length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
@@ -1797,6 +1823,7 @@ class Checksum(Construct):
 
         .parse(b"\x01\x02<...>") -> Container(a=1,b=2,offset1=1,offset2=2,checksum=b"<...>")
         .build(Container(a=1,b=2)) -> b"\x01\x02<...>"
+        .sizeof() -> 64
     """
     __slots__ = ["name", "checksumfield", "hashfunc", "startsat", "endsat"]
     def __init__(self, checksumfield, hashfunc, startsat=None, endsat=None):
