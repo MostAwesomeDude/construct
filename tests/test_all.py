@@ -79,8 +79,8 @@ all_tests = [
     [Peek(UBInt8("peek")).parse, b"\x01", 1, None],
     [Peek(UBInt8("peek")).parse, b"", None, None],
     [Peek(UBInt8("peek")).build, 1, b"", None],
-    [Peek(UBInt8("peek"), perform_build = True).build, 1, b"\x01", None],
-    [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).parse, b"\x01\x02", Container(a=1,b=0x102), None],
+    [Peek(UBInt8("peek"), perform_build=True).build, 1, b"\x01", None],
+    [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).parse, b"\x01\x02", Container(a=1)(b=0x102), None],
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).build, Container(a=1,b=0x102), b"\x01\x02", None],
     
     [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
