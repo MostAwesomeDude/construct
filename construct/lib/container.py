@@ -139,12 +139,17 @@ class Container(dict):
 
     __iter__ = iterkeys
 
-    def __eq__(self, other):
+    def __eq__(self, other, skiporder=False):
         if len(self) != len(other):
             return False
-        for (k,v),(k2,v2) in izip(self.iteritems(), other.iteritems()):
-            if k != k2 or v != v2:
-                return False
+        if skiporder:
+            for k,v in self.iteritems():
+                if k not in other or v != other[k]:
+                    return False
+        else:
+            for (k,v),(k2,v2) in izip(self.iteritems(), other.iteritems()):
+                if k != k2 or v != v2:
+                    return False
         return True
 
     def _search(self, name, search_all):
