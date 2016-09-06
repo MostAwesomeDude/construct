@@ -2,13 +2,17 @@
 Changelog
 =========
 
+2.5.5
+=====
+* Commits up to 5e64857775c9c31ee0a32f66d07df75ff0b9b945
+
 2.5.4
 =====
-* Commits since 73ac7c86b486ab17840c3f6a3dba89386acd9dd7
+* Commits up to 73ac7c86b486ab17840c3f6a3dba89386acd9dd7
 
 2.5.3
 =====
-* Commits since bb1e037887860a23df833f4068c4fe39de55e56e
+* Commits up to bb1e037887860a23df833f4068c4fe39de55e56e
 
 2.5.0
 =====

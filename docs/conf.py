@@ -216,5 +216,5 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'construct', u'Construct Documentation',
-     [u'Tomer Filiba'], 1)
+     [u'Arkadiusz Bulski (taken over from Tomer Filiba)'], 1)
 ]

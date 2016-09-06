@@ -32,8 +32,8 @@ Construct
    
    <strong>Sticky</strong><br/>
    
-   <a class="reference external" href="https://pypi.python.org/pypi/construct">Version 2.5.4</a> 
-   was released on September 2nd, 2016. Framework is undergoing significant API and implementation changes. Documentation is being updated at same time but some confusion may arise.<br/>
+   <a class="reference external" href="https://pypi.python.org/pypi/construct">Version 2.5.5</a> 
+   was released on September 6th, 2016. Framework is undergoing significant API and implementation changes. Documentation is being updated at same time but some confusion may arise.<br/>
    </br>
    
    Please use the 
