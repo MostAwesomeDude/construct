@@ -186,19 +186,25 @@ class TestContainer(unittest.TestCase):
         self.assertEqual(str(c), "Container: \n    a = 1\n    b = 2\n    c = <recursion detected>")
     
     def test_dict_arg(self):
+        print("NOTE: dicts do not preserve order while eq does check it (by default).")
+        print("However, only one entry is in order.")
         c = Container({'a': 1})
         d = Container(a=1)
         self.assertEqual(c, d)
+        self.assertTrue(c.__eq__(d, skiporder=True))
 
     def test_multiple_dict_args(self):
+        print("NOTE: dicts do not preserve order while eq does check it (by default).")
         c = Container({'a': 1, 'b': 42}, {'b': 2})
         d = Container(a=1, b=2)
-        self.assertEqual(c, d)
+        # self.assertEqual(c, d)
+        self.assertTrue(c.__eq__(d, skiporder=True))
 
     def test_dict_and_kw_args(self):
-        # NOTE: dicts do not preserve order while eq does check it (by default).
+        print("NOTE: dicts do not preserve order while eq does check it (by default).")
         c = Container({'b': 42, 'c': 43}, {'a': 1, 'b': 2, 'c': 4}, c=3, d=4)
         d = Container(a=1, b=2, c=3, d=4)
+        # self.assertEqual(c, d)
         self.assertTrue(c.__eq__(d, skiporder=True))
 
 
