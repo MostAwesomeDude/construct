@@ -34,7 +34,7 @@ all_tests = [
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, b"\x01\x02", None, ArrayError],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2,3], b"\x01\x02\x03", None],
     [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2], None, ArrayError],
-    
+
     [Range(3, 5, UBInt8("range")).parse, b"\x01\x02\x03", [1,2,3], None],
     [Range(3, 5, UBInt8("range")).parse, b"\x01\x02\x03\x04", [1,2,3,4], None],
     [Range(3, 5, UBInt8("range")).parse, b"\x01\x02\x03\x04\x05", [1,2,3,4,5], None],
@@ -44,26 +44,26 @@ all_tests = [
     [Range(3, 5, UBInt8("range")).build, [1,2,3,4,5], b"\x01\x02\x03\x04\x05", None],
     [Range(3, 5, UBInt8("range")).build, [1,2], None, RangeError],
     [Range(3, 5, UBInt8("range")).build, [1,2,3,4,5,6], None, RangeError],
-    
+
     [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).parse, b"\x02\x03\x09", [2,3,9], None],
     [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).parse, b"\x02\x03\x08", None, ArrayError],
     [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).build, [2,3,9], b"\x02\x03\x09", None],
     [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).build, [2,3,8], None, ArrayError],
-    
+
     [Struct("struct", UBInt8("a"), UBInt16("b")).parse, b"\x01\x00\x02", Container(a=1)(b=2), None],
     [Struct("struct", UBInt8("a"), UBInt16("b"), Struct("inner", UBInt8("c"), UBInt8("d"))).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(inner=Container(c=3)(d=4)), None],
     [Struct("struct", UBInt8("a"), UBInt16("b"), Embedded(Struct("inner", UBInt8("c"), UBInt8("d")))).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(c=3)(d=4), None],
     [Struct("struct", UBInt8("a"), UBInt16("b")).build, Container(a=1)(b=2), b"\x01\x00\x02", None],
     [Struct("struct", UBInt8("a"), UBInt16("b"), Struct("inner", UBInt8("c"), UBInt8("d"))).build, Container(a=1)(b=2)(inner=Container(c=3)(d=4)), b"\x01\x00\x02\x03\x04", None],
     [Struct("struct", UBInt8("a"), UBInt16("b"), Embedded(Struct("inner", UBInt8("c"), UBInt8("d")))).build, Container(a=1)(b=2)(c=3)(d=4), b"\x01\x00\x02\x03\x04", None],
-    
+
     [Sequence("sequence", UBInt8("a"), UBInt16("b")).parse, b"\x01\x00\x02", [1,2], None],
     [Sequence("sequence", UBInt8("a"), UBInt16("b"), Sequence("foo", UBInt8("c"), UBInt8("d"))).parse, b"\x01\x00\x02\x03\x04", [1,2,[3,4]], None],
     [Sequence("sequence", UBInt8("a"), UBInt16("b"), Embedded(Sequence("foo", UBInt8("c"), UBInt8("d")))).parse, b"\x01\x00\x02\x03\x04", [1,2,3,4], None],
     [Sequence("sequence", UBInt8("a"), UBInt16("b")).build, [1,2], b"\x01\x00\x02", None],
     [Sequence("sequence", UBInt8("a"), UBInt16("b"), Sequence("foo", UBInt8("c"), UBInt8("d"))).build, [1,2,[3,4]], b"\x01\x00\x02\x03\x04", None],
     [Sequence("sequence", UBInt8("a"), UBInt16("b"), Embedded(Sequence("foo", UBInt8("c"), UBInt8("d")))).build, [1,2,3,4], b"\x01\x00\x02\x03\x04", None],
-    
+
     [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}).parse, b"\x00\x02", 2, None],
     [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}).parse, b"\x00\x02", None, SwitchError],
     [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}, default=UBInt8("x")).parse, b"\x00\x02", 0, None],
@@ -86,7 +86,10 @@ all_tests = [
     [Peek(UBInt8("peek")).build, 1, b"", None],
     [Peek(UBInt8("peek"), perform_build=True).build, 1, b"\x01", None],
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).parse, b"\x01\x02", Container(a=1)(b=0x102), None],
-    [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).build, Container(a=1,b=0x102), b"\x01\x02", None],
+    [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).build, dict(a=1,b=0x102), b"\x01\x02", None],
+    [Peek(UBInt16("peek")).sizeof, None, 2, None],
+    [Peek(UBInt64("peek")).sizeof, None, 8, None],
+    [Peek(VarInt("peek")).sizeof, None, None, SizeofError],
     
     [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
     [Computed("computed", lambda ctx: "moo").build, None, b"", None],
@@ -141,9 +144,9 @@ all_tests = [
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).build, 255, b"\x01" * 8, None],
     [BitIntegerAdapter(Field("bitintegeradapter", lambda c: 8), lambda c: 8).build, 255, b"\x01" * 8, None],
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).build, -1, None, BitIntegerError],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, signed = True).build, -1, b"\x01" * 8, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, swapped = True, bytesize = 4).build, 0x0f, b"\x01" * 4 + b"\x00" * 4, None],
-    
+    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, signed=True).build, -1, b"\x01" * 8, None],
+    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, swapped=True, bytesize=4).build, 0x0f, b"\x01" * 4 + b"\x00" * 4, None],
+
     [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x03", "y", None],
     [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x04", None, MappingError],
     [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, decdefault="foo").parse, b"\x04", "foo", None],
@@ -155,7 +158,7 @@ all_tests = [
         
     [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).parse, b"\x81", FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), None],
     [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).build, FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), b"\x81", None],
-    
+
     [IndexingAdapter(Array(3, UBInt8("indexingadapter")), 2).parse, b"\x11\x22\x33", 0x33, None],
     [IndexingAdapter(Array(3, UBInt8("indexingadapter")), 2)._encode, (0x33, {}), [None, None, 0x33], None],
 
@@ -196,7 +199,7 @@ all_tests = [
         encoder = lambda obj, ctx: obj // 7, 
         decoder = lambda obj, ctx: obj * 7).build, 
         42, b"\x06", None],
-   
+
     #
     # macros
     #
@@ -231,12 +234,11 @@ all_tests = [
         Struct("d", UBInt8("a"), UBInt8("b"), UBInt8("c"), UBInt8("d")),
         Embedded(Struct("q", UBInt8("e"))),
         ).build,
-        Container(a=0x11223344,
-            b=Container(a=0x1122, b=0x3344),
-            c=Container(a=0x12),
-            d=Container(a=0x11, b=0x22, c=0x33, d=0x44),
-            e=0x11,
-        ),
+        Container(a=0x11223344)
+            (b=Container(a=0x1122)(b=0x3344))
+            (c=Container(a=0x12))
+            (d=Container(a=0x11)(b=0x22)(c=0x33)(d=0x44))
+            (e=0x11),
         b"\x11\x22\x33\x44",
         None],
     [Union("union",
@@ -285,24 +287,28 @@ all_tests = [
         Struct("both",ULInt8("a"),ULInt8("b")),
         ULInt32("c"),
         ).sizeof, None, 4, None],
+    [Union("somevariablesize",
+        Struct("both",ULInt8("a"),ULInt8("b")),
+        VarInt("c"),
+        ).sizeof, None, None, SizeofError],
 
     [Enum(UBInt8("enum"),q=3,r=4,t=5).parse, b"\x04", "r", None],
     [Enum(UBInt8("enum"),q=3,r=4,t=5).parse, b"\x07", None, MappingError],
-    [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_ = "spam").parse, b"\x07", "spam", None],
-    [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_ =Pass).parse, b"\x07", 7, None],
+    [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_="spam").parse, b"\x07", "spam", None],
+    [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_=Pass).parse, b"\x07", 7, None],
     [Enum(UBInt8("enum"),q=3,r=4,t=5).build, "r", b"\x04", None],
     [Enum(UBInt8("enum"),q=3,r=4,t=5).build, "spam", None, MappingError],
-    [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_ = 9).build, "spam", b"\x09", None],
-    [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_ =Pass).build, 9, b"\x09", None],
+    [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_=9).build, "spam", b"\x09", None],
+    [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_=Pass).build, 9, b"\x09", None],
 
     [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x03\x01\x01\x01", [1,1,1], None],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x00", [], None],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"", None, ArrayError],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x03\x01\x01", None, ArrayError],
-    # Fix: sizeof takes a context, not an obj.
+    # Fixed: sizeof takes a context, not an obj.
     [PrefixedArray(UBInt8("array"), UBInt8("count")).sizeof, [1,1,1], 4, SizeofError],
     [PrefixedArray(UBInt8("array"), UBInt8("count")).build, [1,1,1], b"\x03\x01\x01\x01", None],
-    
+
     [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).parse, b"\x01", 1, None],
     [IfThenElse("ifthenelse", lambda ctx: False, UBInt8("then"), UBInt16("else")).parse, b"\x00\x01", 1, None],
     [IfThenElse("ifthenelse", lambda ctx: True, UBInt8("then"), UBInt16("else")).build, 1, b"\x01", None],
