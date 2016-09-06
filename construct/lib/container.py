@@ -139,6 +139,8 @@ class Container(dict):
     __iter__ = iterkeys
 
     def __eq__(self, other, skiporder=False):
+        if not isinstance(other, dict):
+            return False
         if len(self) != len(other):
             return False
         if skiporder:
@@ -150,6 +152,9 @@ class Container(dict):
                 if k != k2 or v != v2:
                     return False
         return True
+
+    def __ne__(self, other, skiporder=False):
+        return not self.__eq__(other, skiporder)
 
     def _search(self, name, search_all):
         items = []

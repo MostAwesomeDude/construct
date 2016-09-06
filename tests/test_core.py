@@ -113,7 +113,7 @@ class TestMetaFieldStruct(unittest.TestCase):
         self.assertEqual(c.data, b"ABCD")
 
     def test_sizeof_default(self):
-        # This no longer raises SizeofError bacuse that error means structure is variable size. If the context is missing entries then the error will reflect that, a missing key.
+        print("NOTE: This no longer raises SizeofError bacuse that error means structure is variable size. If the context is missing entries then the error will reflect that, a missing key.")
         self.assertRaises(AttributeError, self.mf.sizeof)
 
     def test_sizeof(self):
@@ -125,7 +125,7 @@ class TestAligned(unittest.TestCase):
 
     def test_from_issue_76(self):
         def barLength(ctx):
-            # print("Context of field2 is", ctx)
+            print("Context of field2 is", ctx)
             return ctx.field1
         test1 = Struct("test1",
             Aligned(
@@ -136,7 +136,7 @@ class TestAligned(unittest.TestCase):
                 modulus=4,
             )
         )
-        self.assertEqual(test1.parse(b"\x02\xab\xcd\x00"), Container(test2=Container(field1=2,field2=b"\xab\xcd")))
+        self.assertEqual(test1.parse(b"\x02\xab\xcd\x00"), Container(test2=Container(field1=2)(field2=b"\xab\xcd")))
 
 
 class TestAnchor(unittest.TestCase):
