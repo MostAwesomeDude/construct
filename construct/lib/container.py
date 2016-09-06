@@ -207,6 +207,9 @@ class FlagsContainer(Container):
     Only set flags are displayed.
     """
 
+    def __eq__(self, other, skiporder=True):
+        return super(FlagsContainer, self).__eq__(other, skiporder)
+
     @recursion_lock()
     def __str__(self, indentation="\n    "):
         text = ["FlagsContainer: "]
