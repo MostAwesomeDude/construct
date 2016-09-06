@@ -1,8 +1,14 @@
 import unittest
-from random import randint
 from copy import copy
 
 from construct.lib.container import Container, FlagsContainer, ListContainer
+
+import random
+def shuffled(alist):
+    a = list(alist)
+    random.shuffle(a)
+    return a
+from random import randint
 
 
 class TestContainer(unittest.TestCase):
@@ -83,11 +89,16 @@ class TestContainer(unittest.TestCase):
         c.update(words)
         self.assertEqual([k for k, _ in words], list(c.keys()))
 
-    def test_eq_eq(self):
-    	# Note that eq does not check order, nor is implemented.
-        c = Container(a=1,b=2,c=3,d=4,e=5)
-        d = Container(c=3,a=1,b=2,e=5,d=4)
+    def test_eq(self):
+        c = Container(a=1)(b=2)(c=3)(d=4)(e=5)
+        d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
         self.assertEqual(c, d)
+
+    def test_ne_wrong_order(self):
+        print("WARNING: dict randomizes key order so this test may fail unexpectedly if the order is correct by chance.")
+        c = Container(a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12,m=13,n=14)
+        d = Container(shuffled(c.items()))
+        self.assertNotEqual(c, d)
 
     def test_ne_wrong_type(self):
         c = Container(a=1)
@@ -175,19 +186,26 @@ class TestContainer(unittest.TestCase):
         self.assertEqual(str(c), "Container: \n    a = 1\n    b = 2\n    c = <recursion detected>")
     
     def test_dict_arg(self):
+        print("NOTE: dicts do not preserve order while eq does check it (by default).")
+        print("However, only one entry is in order.")
         c = Container({'a': 1})
         d = Container(a=1)
         self.assertEqual(c, d)
+        self.assertTrue(c.__eq__(d, skiporder=True))
 
     def test_multiple_dict_args(self):
+        print("NOTE: dicts do not preserve order while eq does check it (by default).")
         c = Container({'a': 1, 'b': 42}, {'b': 2})
         d = Container(a=1, b=2)
-        self.assertEqual(c, d)
+        # self.assertEqual(c, d)
+        self.assertTrue(c.__eq__(d, skiporder=True))
 
     def test_dict_and_kw_args(self):
+        print("NOTE: dicts do not preserve order while eq does check it (by default).")
         c = Container({'b': 42, 'c': 43}, {'a': 1, 'b': 2, 'c': 4}, c=3, d=4)
         d = Container(a=1, b=2, c=3, d=4)
-        self.assertEqual(c, d)
+        # self.assertEqual(c, d)
+        self.assertTrue(c.__eq__(d, skiporder=True))
 
 
 class TestFlagsContainer(unittest.TestCase):
@@ -196,6 +214,11 @@ class TestFlagsContainer(unittest.TestCase):
         c = FlagsContainer(a=True, b=False, c=True, d=False)
         str(c)
         repr(c)
+
+    def test_eq(self):
+        c = FlagsContainer(a=True, b=False, c=True, d=False)
+        d = FlagsContainer(a=True, b=False, c=True, d=False)
+        self.assertEqual(c, d)
 
 
 class TestListContainer(unittest.TestCase):

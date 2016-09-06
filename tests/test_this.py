@@ -1,4 +1,5 @@
 import unittest
+
 from construct import Struct, UBInt8, UBInt32, IfThenElse, Computed, Field, Container
 from construct import this
 
@@ -26,14 +27,11 @@ class TestThisExpressions(unittest.TestCase):
 
     def test_parse(self):
         res = self.this_example.parse(b"\x05helloABXXXX")
-        expected = Container(length = 5, value = b'hello', 
-            nested = Container(b1 = 65, b2 = 66, b3 = 4295), 
-            condition = 1482184792)
+        expected = Container(length=5)(value=b'hello')(nested=Container(b1=65)(b2=66)(b3=4295))(condition=1482184792)
         self.assertEquals(res, expected)
     
     def test_build(self):
-        obj = Container(length = 5, value = b'hello', 
-            nested = Container(b1 = 65, b2 = 66, b3 = None), condition = 1482184792)
+        obj = dict(length=5, value=b'hello', nested=dict(b1=65, b2=66, b3=None), condition=1482184792)
         data = self.this_example.build(obj)
         self.assertEquals(data, b"\x05helloABXXXX")
 

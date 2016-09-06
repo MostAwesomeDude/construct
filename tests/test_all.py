@@ -45,12 +45,12 @@ all_tests = [
     [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).build, [2,3,9], b"\x02\x03\x09", None],
     [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).build, [2,3,8], None, ArrayError],
     
-    [Struct("struct", UBInt8("a"), UBInt16("b")).parse, b"\x01\x00\x02", Container(a=1,b=2), None],
-    [Struct("struct", UBInt8("a"), UBInt16("b"), Struct("foo", UBInt8("c"), UBInt8("d"))).parse, b"\x01\x00\x02\x03\x04", Container(a=1,b=2,foo=Container(c=3,d=4)), None],
-    [Struct("struct", UBInt8("a"), UBInt16("b"), Embedded(Struct("foo", UBInt8("c"), UBInt8("d")))).parse, b"\x01\x00\x02\x03\x04", Container(a=1,b=2,c=3,d=4), None],
-    [Struct("struct", UBInt8("a"), UBInt16("b")).build, Container(a=1,b=2), b"\x01\x00\x02", None],
-    [Struct("struct", UBInt8("a"), UBInt16("b"), Struct("foo", UBInt8("c"), UBInt8("d"))).build, Container(a=1,b=2,foo=Container(c=3,d=4)), b"\x01\x00\x02\x03\x04", None],
-    [Struct("struct", UBInt8("a"), UBInt16("b"), Embedded(Struct("foo", UBInt8("c"), UBInt8("d")))).build, Container(a=1,b=2,c=3,d=4), b"\x01\x00\x02\x03\x04", None],
+    [Struct("struct", UBInt8("a"), UBInt16("b")).parse, b"\x01\x00\x02", Container(a=1)(b=2), None],
+    [Struct("struct", UBInt8("a"), UBInt16("b"), Struct("inner", UBInt8("c"), UBInt8("d"))).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(inner=Container(c=3)(d=4)), None],
+    [Struct("struct", UBInt8("a"), UBInt16("b"), Embedded(Struct("inner", UBInt8("c"), UBInt8("d")))).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(c=3)(d=4), None],
+    [Struct("struct", UBInt8("a"), UBInt16("b")).build, Container(a=1)(b=2), b"\x01\x00\x02", None],
+    [Struct("struct", UBInt8("a"), UBInt16("b"), Struct("inner", UBInt8("c"), UBInt8("d"))).build, Container(a=1)(b=2)(inner=Container(c=3)(d=4)), b"\x01\x00\x02\x03\x04", None],
+    [Struct("struct", UBInt8("a"), UBInt16("b"), Embedded(Struct("inner", UBInt8("c"), UBInt8("d")))).build, Container(a=1)(b=2)(c=3)(d=4), b"\x01\x00\x02\x03\x04", None],
     
     [Sequence("sequence", UBInt8("a"), UBInt16("b")).parse, b"\x01\x00\x02", [1,2], None],
     [Sequence("sequence", UBInt8("a"), UBInt16("b"), Sequence("foo", UBInt8("c"), UBInt8("d"))).parse, b"\x01\x00\x02\x03\x04", [1,2,[3,4]], None],
@@ -79,8 +79,8 @@ all_tests = [
     [Peek(UBInt8("peek")).parse, b"\x01", 1, None],
     [Peek(UBInt8("peek")).parse, b"", None, None],
     [Peek(UBInt8("peek")).build, 1, b"", None],
-    [Peek(UBInt8("peek"), perform_build = True).build, 1, b"\x01", None],
-    [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).parse, b"\x01\x02", Container(a=1,b=0x102), None],
+    [Peek(UBInt8("peek"), perform_build=True).build, 1, b"\x01", None],
+    [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).parse, b"\x01\x02", Container(a=1)(b=0x102), None],
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).build, Container(a=1,b=0x102), b"\x01\x02", None],
     
     [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
@@ -92,8 +92,8 @@ all_tests = [
     [Anchor("anchor").parse, b"", 0, None],
     [Anchor("anchor").build, None, b"", None],
     
-    [LazyBound("lazybound", lambda: UBInt8("foo")).parse, b"\x02", 2, None],
-    [LazyBound("lazybound", lambda: UBInt8("foo")).build, 2, b"\x02", None],
+    [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
+    [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
     
     [Pass.parse, b"", None, None],
     [Pass.build, None, b"", None],
@@ -106,13 +106,13 @@ all_tests = [
     [Pointer(lambda ctx: 2, UBInt8("pointer")).build, 7, b"\x00\x00\x07", None],
     
     [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7,b=LazyContainer(None, None, None, None),c=9), None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream = False), UBInt8("c")).parse, b"\x07\x09", Container(a=7,b=LazyContainer(None, None, None, None),c=9), None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream = False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
     
     [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7,b=8,c=9), b"\x07\x08\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False), UBInt8("c")).build, Container(a=7,b=LazyContainer(None, None, None, None),c=9), b"\x07\x00\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False, advance_stream = False), UBInt8("c")).build, Container(a=7,b=LazyContainer(None, None, None, None),c=9), b"\x07\x09", None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7)(b=8)(c=9), b"\x07\x08\x09", None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False, advance_stream = False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
     
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).parse, b"\x01", Container(foo=1), None],
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).build, Container(foo=1), b"\x01", None],
@@ -148,8 +148,8 @@ all_tests = [
     [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, encdefault=17).build, "foo", b"\x11", None],
     [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, encdefault=Pass).build, 4, b"\x04", None],
         
-    [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).parse, b"\x81", Container(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), None],
-    [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).build, Container(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), b"\x81", None],
+    [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).parse, b"\x81", FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), None],
+    [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).build, FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), b"\x81", None],
     
     [IndexingAdapter(Array(3, UBInt8("indexingadapter")), 2).parse, b"\x11\x22\x33", 0x33, None],
     [IndexingAdapter(Array(3, UBInt8("indexingadapter")), 2)._encode, (0x33, {}), [None, None, 0x33], None],
@@ -197,8 +197,8 @@ all_tests = [
     #
     [Aligned(UBInt8("aligned")).parse, b"\x01\x00\x00\x00", 1, None],
     [Aligned(UBInt8("aligned")).build, 1, b"\x01\x00\x00\x00", None],
-    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).parse, b"\x01\x00\x00\x00\x02", Container(a=1,b=2), None],
-    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, Container(a=1,b=2), b"\x01\x00\x00\x00\x02", None],
+    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).parse, b"\x01\x00\x00\x00\x02", Container(a=1)(b=2), None],
+    [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, Container(a=1)(b=2), b"\x01\x00\x00\x00\x02", None],
     
     [Bitwise(Field("bitwise", 8)).parse, b"\xff", b"\x01" * 8, None],
     [Bitwise(Field("bitwise", lambda ctx: 8)).parse, b"\xff", b"\x01" * 8, None],
@@ -213,12 +213,11 @@ all_tests = [
         Embedded(Struct("q", UBInt8("e"))),
         ).parse,
         b"\x11\x22\x33\x44",
-        Container(a=0x11223344, 
-            b=Container(a=0x1122, b=0x3344), 
-            c=Container(a=0x12),
-            d=Container(a=0x11, b=0x22, c=0x33, d=0x44),
-            e=0x11,
-        ),
+        Container(a=0x11223344)
+            (b=Container(a=0x1122)(b=0x3344))
+            (c=Container(a=0x12))
+            (d=Container(a=0x11)(b=0x22)(c=0x33)(d=0x44))
+            (e=0x11),
         None],
     [Union("union", 
         UBInt32("a"), 

@@ -138,6 +138,24 @@ class Container(dict):
 
     __iter__ = iterkeys
 
+    def __eq__(self, other, skiporder=False):
+        if not isinstance(other, dict):
+            return False
+        if len(self) != len(other):
+            return False
+        if skiporder:
+            for k,v in self.iteritems():
+                if k not in other or v != other[k]:
+                    return False
+        else:
+            for (k,v),(k2,v2) in zip(self.iteritems(), other.iteritems()):
+                if k != k2 or v != v2:
+                    return False
+        return True
+
+    def __ne__(self, other, skiporder=False):
+        return not self.__eq__(other, skiporder)
+
     def _search(self, name, search_all):
         items = []
         for key in self.keys():
@@ -193,6 +211,12 @@ class FlagsContainer(Container):
 
     Only set flags are displayed.
     """
+
+    def __eq__(self, other, skiporder=True):
+        return super(FlagsContainer, self).__eq__(other, skiporder)
+
+    def __ne__(self, other, skiporder=True):
+        return not self.__eq__(other, skiporder)
 
     @recursion_lock()
     def __str__(self, indentation="\n    "):
