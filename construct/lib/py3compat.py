@@ -8,6 +8,8 @@ PY26 = sys.version_info[:2] == (2,6)
 
 
 if PY3:
+    stringtypes = (bytes, str, )
+
     def int2byte(i):
         """Converts int (0 through 255) into b'...' character."""
         return bytes((i,))
@@ -32,11 +34,16 @@ if PY3:
         """Converts u'...' string into '...' str. On PY3 they are equivalent."""
         return s
 
+    def unknownstring2bytes(s):
+        return unicode2str(s) if isinstance(s,str) else s
+
     def iteratebytes(s):
         """Itarates though b'...' string yielding characters as ints. On PY3 iter is the same."""
         return s
 
 else:
+    stringtypes = (str, unicode, )
+
     def int2byte(i):
         """Converts int (0 through 255) into b'...' character."""
         return chr(i)
@@ -60,6 +67,9 @@ else:
     def unicode2str(s):
         """Converts u'...' string into '...' str. On PY3 they are equivalent."""
         return s.decode("utf8")
+
+    def unknownstring2bytes(s):
+        return unicode2str(s) if isinstance(s,unicode) else s
 
     def iteratebytes(s):
         """Itarates though b'...' string yielding characters as ints. On PY3 iter is the same."""

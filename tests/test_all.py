@@ -18,6 +18,11 @@ all_tests = [
     #
     # constructs
     #
+    [Byte(None).parse, b"\x00", 0, None],
+    [Byte(u"unicode_name").parse, b"\x00", 0, None],
+    [Byte(b"bytes_name").parse, b"\x00", 0, None],
+    [Byte("string").parse, b"\x00", 0, None],
+
     [VarInt("varint").parse, b"\x05", 5, None],
     [VarInt("varint").parse, b"\x85\x05", 645, None],
     [VarInt("varint").build, 5, b"\x05", None],

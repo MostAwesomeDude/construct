@@ -5,7 +5,7 @@ import sys
 import collections
 
 # from construct.macros import UBInt8
-from construct.lib.py3compat import int2byte
+from construct.lib.py3compat import int2byte, unknownstring2bytes, stringtypes
 from construct.lib import Container, ListContainer, LazyContainer
 
 
@@ -96,10 +96,13 @@ class Construct(object):
     __slots__ = ["name", "conflags"]
     def __init__(self, name, flags=0):
         if name is not None:
-            if not isinstance(name, (str, bytes)):
-                raise TypeError("name must be a string or None", name)
-            if name == "_" or name.startswith("<"):
-                raise ValueError("reserved name", name)
+            if not isinstance(name, stringtypes):
+                raise TypeError("name must be some sort of string or None", name)
+            # NOTE: this tests the name that can be a byte string or unicode string
+            # and only the unicode has startswith method
+            bname = unknownstring2bytes(name)
+            if bname == b"_" or bname[:1] ==b"<":
+                raise ValueError("reserved name: either _ or starts with < ", name)
         self.name = name
         self.conflags = flags
 
