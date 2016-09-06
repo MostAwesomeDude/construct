@@ -10,7 +10,7 @@ class ZlibCodec(object):
 import warnings
 import traceback
 import unittest
-warnings.filterwarnings("ignore", category = DeprecationWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 
@@ -66,21 +66,21 @@ all_tests = [
     
     [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}).parse, b"\x00\x02", 2, None],
     [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}).parse, b"\x00\x02", None, SwitchError],
-    [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}, default = UBInt8("x")).parse, b"\x00\x02", 0, None],
-    [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}, include_key = True).parse, b"\x00\x02", (5, 2), None],
+    [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}, default=UBInt8("x")).parse, b"\x00\x02", 0, None],
+    [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}, include_key=True).parse, b"\x00\x02", (5, 2), None],
     [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}).build, 2, b"\x00\x02", None],
     [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}).build, 9, None, SwitchError],
-    [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}, default = UBInt8("x")).build, 9, b"\x09", None],
-    [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}, include_key = True).build, ((5, 2),), b"\x00\x02", None],
-    [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}, include_key = True).build, ((89, 2),), None, SwitchError],
-    
+    [Switch("switch", lambda ctx: 6, {1:UBInt8("x"), 5:UBInt16("y")}, default=UBInt8("x")).build, 9, b"\x09", None],
+    [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}, include_key=True).build, ((5, 2),), b"\x00\x02", None],
+    [Switch("switch", lambda ctx: 5, {1:UBInt8("x"), 5:UBInt16("y")}, include_key=True).build, ((89, 2),), None, SwitchError],
+
     [Select("select", UBInt32("a"), UBInt16("b"), UBInt8("c")).parse, b"\x07", 7, None],
     [Select("select", UBInt32("a"), UBInt16("b")).parse, b"\x07", None, SelectError],
-    [Select("select", UBInt32("a"), UBInt16("b"), UBInt8("c"), include_name = True).parse, b"\x07", ("c", 7), None],
+    [Select("select", UBInt32("a"), UBInt16("b"), UBInt8("c"), include_name=True).parse, b"\x07", ("c", 7), None],
     [Select("select", UBInt32("a"), UBInt16("b"), UBInt8("c")).build, 7, b"\x00\x00\x00\x07", None],
-    [Select("select", UBInt32("a"), UBInt16("b"), UBInt8("c"), include_name = True).build, (("c", 7),), b"\x07", None],
-    [Select("select", UBInt32("a"), UBInt16("b"), UBInt8("c"), include_name = True).build, (("d", 7),), None, SelectError],
-    
+    [Select("select", UBInt32("a"), UBInt16("b"), UBInt8("c"), include_name=True).build, (("c", 7),), b"\x07", None],
+    [Select("select", UBInt32("a"), UBInt16("b"), UBInt8("c"), include_name=True).build, (("d", 7),), None, SelectError],
+
     [Peek(UBInt8("peek")).parse, b"\x01", 1, None],
     [Peek(UBInt8("peek")).parse, b"", None, None],
     [Peek(UBInt8("peek")).build, 1, b"", None],
@@ -90,54 +90,54 @@ all_tests = [
     
     [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
     [Computed("computed", lambda ctx: "moo").build, None, b"", None],
-    [Struct("s",Computed("c", lambda ctx: None)).parse, b"", Container(c=None), None],
-    [Struct("s",Computed("c", lambda ctx: None)).build, Container(c=None), b"", None],
-    [Struct("s",Computed("c", lambda ctx: None)).build, Container(), b"", None],
-    
+    [Struct("s", Computed("c", lambda ctx: None)).parse, b"", Container(c=None), None],
+    [Struct("s", Computed("c", lambda ctx: None)).build, Container(c=None), b"", None],
+    [Struct("s", Computed("c", lambda ctx: None)).build, Container(), b"", None],
+
     [Anchor("anchor").parse, b"", 0, None],
     [Anchor("anchor").build, None, b"", None],
-    
+
     [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
     [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
-    
+
     [Pass.parse, b"", None, None],
     [Pass.build, None, b"", None],
 
     [Terminator.parse, b"", None, None],
     [Terminator.parse, b"x", None, TerminatorError],
     [Terminator.build, None, b"", None],
-    
+
     [Pointer(lambda ctx: 2, UBInt8("pointer")).parse, b"\x00\x00\x07", 7, None],
     [Pointer(lambda ctx: 2, UBInt8("pointer")).build, 7, b"\x00\x00\x07", None],
-    
+
     [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
     [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream = False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
-    
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream=False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
+
     [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
     [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7)(b=8)(c=9), b"\x07\x08\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build = False, advance_stream = False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
-    
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
+    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False, advance_stream=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
+
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).parse, b"\x01", Container(foo=1), None],
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).build, Container(foo=1), b"\x01", None],
-    
+
     [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
     [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", None, SizeofError],
     [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).build, 7, b"\x07", None],
     [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).build, [7], None, SizeofError],
-    
+
     [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
     [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
     [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
     [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-    
+
     #
     # adapters
     #
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).parse, b"\x01" * 8, 255, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, signed = True).parse, b"\x01" * 8, -1, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, swapped = True, bytesize = 4).parse, b"\x01" * 4 + b"\x00" * 4, 0x0f, None],
+    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, signed=True).parse, b"\x01" * 8, -1, None],
+    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, swapped=True, bytesize=4).parse, b"\x01" * 4 + b"\x00" * 4, 0x0f, None],
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).build, 255, b"\x01" * 8, None],
     [BitIntegerAdapter(Field("bitintegeradapter", lambda c: 8), lambda c: 8).build, 255, b"\x01" * 8, None],
     [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).build, -1, None, BitIntegerError],
@@ -158,23 +158,23 @@ all_tests = [
     
     [IndexingAdapter(Array(3, UBInt8("indexingadapter")), 2).parse, b"\x11\x22\x33", 0x33, None],
     [IndexingAdapter(Array(3, UBInt8("indexingadapter")), 2)._encode, (0x33, {}), [None, None, 0x33], None],
-    
+
     [SlicingAdapter(Array(3, UBInt8("indexingadapter")), 1, 3).parse, b"\x11\x22\x33", [0x22, 0x33], None],
     [SlicingAdapter(Array(3, UBInt8("indexingadapter")), 1, 3)._encode, ([0x22, 0x33], {}), [None, 0x22, 0x33], None],
-    
-    [Padding(4).parse,              b"\x00\x00\x00\x00", None, None],
+
+    [Padding(4).parse, b"\x00\x00\x00\x00", None, None],
     [Padding(4, strict=True).parse, b"\x00\x00\x00\x00", None, None],
     [Padding(4, strict=True).parse, b"????", None, PaddingError],
-    [Padding(4).build,              None, b"\x00\x00\x00\x00", None],
+    [Padding(4).build, None, b"\x00\x00\x00\x00", None],
     [Padding(4, strict=True).build, None, b"\x00\x00\x00\x00", None],
     [lambda none: Padding(4, pattern=b"??"), None, None, PaddingError],
 
     # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).parse, b"\x05abcde", b"abcde", None],
     # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build, b"abcde", b"\x05abcde", None],
-        
-    [TunnelAdapter(PascalString("data", encoding = ZlibCodec), GreedyRange(UBInt16("elements"))).parse, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", [3] * 100, None],
-    [TunnelAdapter(PascalString("data", encoding = ZlibCodec), GreedyRange(UBInt16("elements"))).build, [3] * 100, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", None],
-    
+
+    [TunnelAdapter(PascalString("data", encoding=ZlibCodec), GreedyRange(UBInt16("elements"))).parse, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", [3] * 100, None],
+    [TunnelAdapter(PascalString("data", encoding=ZlibCodec), GreedyRange(UBInt16("elements"))).build, [3] * 100, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", None],
+
     [Const(b"MZ").parse, b"MZ", b"MZ", None],
     [Const(b"MZ").parse, b"ELF", None, ConstError],
     [Const(b"MZ").build, None, b"MZ", None],
@@ -204,16 +204,16 @@ all_tests = [
     [Aligned(UBInt8("aligned")).build, 1, b"\x01\x00\x00\x00", None],
     [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).parse, b"\x01\x00\x00\x00\x02", Container(a=1)(b=2), None],
     [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, Container(a=1)(b=2), b"\x01\x00\x00\x00\x02", None],
-    
+
     [Bitwise(Field("bitwise", 8)).parse, b"\xff", b"\x01" * 8, None],
     [Bitwise(Field("bitwise", lambda ctx: 8)).parse, b"\xff", b"\x01" * 8, None],
     [Bitwise(Field("bitwise", 8)).build, b"\x01" * 8, b"\xff", None],
     [Bitwise(Field("bitwise", lambda ctx: 8)).build, b"\x01" * 8, b"\xff", None],
-    
-    [Union("union", 
-        UBInt32("a"), 
-        Struct("b", UBInt16("a"), UBInt16("b")), 
-        BitStruct("c", Padding(4), Octet("a"), Padding(4)), 
+
+    [Union("union",
+        UBInt32("a"),
+        Struct("b", UBInt16("a"), UBInt16("b")),
+        BitStruct("c", Padding(4), Octet("a"), Padding(4)),
         Struct("d", UBInt8("a"), UBInt8("b"), UBInt8("c"), UBInt8("d")),
         Embedded(Struct("q", UBInt8("e"))),
         ).parse,
@@ -224,15 +224,15 @@ all_tests = [
             (d=Container(a=0x11)(b=0x22)(c=0x33)(d=0x44))
             (e=0x11),
         None],
-    [Union("union", 
-        UBInt32("a"), 
-        Struct("b", UBInt16("a"), UBInt16("b")), 
-        BitStruct("c", Padding(4), Octet("a"), Padding(4)), 
-        Struct("d", UBInt8("a"), UBInt8("b"), UBInt8("c"), UBInt8("d")), 
+    [Union("union",
+        UBInt32("a"),
+        Struct("b", UBInt16("a"), UBInt16("b")),
+        BitStruct("c", Padding(4), Octet("a"), Padding(4)),
+        Struct("d", UBInt8("a"), UBInt8("b"), UBInt8("c"), UBInt8("d")),
         Embedded(Struct("q", UBInt8("e"))),
         ).build,
-        Container(a=0x11223344, 
-            b=Container(a=0x1122, b=0x3344), 
+        Container(a=0x11223344,
+            b=Container(a=0x1122, b=0x3344),
             c=Container(a=0x12),
             d=Container(a=0x11, b=0x22, c=0x33, d=0x44),
             e=0x11,
@@ -312,6 +312,11 @@ all_tests = [
     [Optional(ULInt32("int")).build, 1, b"\x01\x00\x00\x00", None],
     [Optional(ULInt32("int")).parse, b"?", None, None],
     [Optional(ULInt32("int")).build, None, b"", None],
+
+    [ULInt24('int24').parse, b"\x01\x02\x03", 197121, None],
+    [ULInt24('int24').build, 197121, b"\x01\x02\x03", None],
+    [Struct('foo', ULInt24('int24')).parse, b"\x01\x02\x03", Container(int24=197121), None],
+    [Struct('foo', ULInt24('int24')).build, Container(int24=197121), b"\x01\x02\x03", None],
 ]
 
 

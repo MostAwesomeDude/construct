@@ -183,7 +183,7 @@ class Construct(object):
 
     def parse_stream(self, stream):
         """
-        Parse a stream. 
+        Parse a stream.
 
         Files, pipes, sockets, and other streaming sources of data are handled by this method.
         """
@@ -1417,8 +1417,8 @@ class ULInt24(StaticField):
         vals = self.packer.unpack(_read_stream(stream, self.length))
         return vals[0] + (vals[1] << 8)
     def _build(self, obj, stream, context):
-        vals = (obj%256, obj >> 8)
-        _write_stream(stream, self.length, self.packer.pack(vals))
+        vals = (obj % 256, obj >> 8)
+        _write_stream(stream, self.length, self.packer.pack(*vals))
 
 
 class Padding(Construct):
@@ -1531,7 +1531,7 @@ class Const(Construct):
     Example::
 
         Const(b"IHDR")
-        
+
         Const("signature", b"IHDR")
 
         Const(ULInt64("signature"), 123)
@@ -1584,7 +1584,7 @@ class String(Construct):
         .parse(b"hello joh\xd4\x83n") -> u'hello joh\u0503n'
         .build(u'abc') -> b'abc\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         .sizeof() -> 12
-        
+
         String("string", 10, padchar="X", paddir="right")
         .parse(b"helloXXXXX") -> b"hello"
         .build(u"hello") -> b"helloXXXXX"
