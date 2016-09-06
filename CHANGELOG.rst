@@ -2,11 +2,15 @@
 Changelog
 =========
 
-2.5.5
+Current
+=======
+* Changelog is no longer being maintained. Please look at Release info.
+
+2.6.2
 =====
 * Commits up to 5e64857775c9c31ee0a32f66d07df75ff0b9b945
 
-2.5.4
+2.6.1
 =====
 * Commits up to 73ac7c86b486ab17840c3f6a3dba89386acd9dd7
 
