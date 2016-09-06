@@ -70,11 +70,3 @@ if __name__ == "__main__":
     print (obj)
     print (repr(ipv4_header.build(obj)))
 
-
-
-
-
-
-
-
-

@@ -7,7 +7,7 @@ from construct import *
 
 
 udp_header = Struct("udp_header",
-    Value("header_length", lambda ctx: 8),
+    Computed("header_length", lambda ctx: 8),
     UBInt16("source"),
     UBInt16("destination"),
     ExprAdapter(UBInt16("payload_length"), 

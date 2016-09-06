@@ -4,7 +4,8 @@ Internet Protocol version 6 (TCP/IP protocol stack)
 from binascii import unhexlify
 
 from construct import *
-from ipv4 import ProtocolEnum
+from construct.lib.py3compat import str2bytes
+from construct.protocols.layer3.ipv4 import ProtocolEnum
 
 
 class Ipv6AddressAdapter(Adapter):
@@ -39,8 +40,7 @@ ipv6_header = Struct("ip_header",
 
 
 if __name__ == "__main__":
-    o = ipv6_header.parse(b"\x6f\xf0\x00\x00\x01\x02\x06\x80"
-        "0123456789ABCDEF" "FEDCBA9876543210")
+    o = ipv6_header.parse(b"\x6f\xf0\x00\x00\x01\x02\x06\x800123456789ABCDEFFEDCBA9876543210")
     print(o)
     print(repr(ipv6_header.build(o)))
 

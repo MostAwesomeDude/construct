@@ -40,22 +40,6 @@ if __name__ == "__main__":
     
     obj = tcp_header.parse(cap)
     print (obj)
-    built = tcp_header.build(obj)
-    print (built)
-    assert cap == built
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    assert cap == tcp_header.build(tcp_header.parse(cap))
 
