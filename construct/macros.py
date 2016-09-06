@@ -2,7 +2,7 @@ from sys import maxsize
 
 from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, Buffered, Restream, Reconfig, Padding, Const
+from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, ArrayError, StringError, Buffered, Restream, Reconfig, Padding, Const, Aligned
 from construct.core import _read_stream, _write_stream
 from construct.adapters import BitIntegerAdapter, CStringAdapter, IndexingAdapter, PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter
 
@@ -246,9 +246,9 @@ class PrefixedArray(Construct):
 
     Example::
 
-    	PrefixedArray(UBInt8("array"), UBInt8(None))
-    	.parse(b"\x03\x01\x01\x01") -> [1,1,1]
-    	.build([1,1,1]) -> b"\x03\x01\x01\x01"
+        PrefixedArray(UBInt8("array"), UBInt8(None))
+        .parse(b"\x03\x01\x01\x01") -> [1,1,1]
+        .build([1,1,1]) -> b"\x03\x01\x01\x01"
     """
 
     def __init__(self, subcon, lengthfield=UBInt8(None)):
@@ -261,14 +261,14 @@ class PrefixedArray(Construct):
         self.subcon = subcon
     def _parse(self, stream, context):
         try:
-        	count = self.lengthfield._parse(stream, context)
-        	return list(self.subcon._parse(stream, context) for i in range(count))
-    	except Exception:
-    		raise ArrayError("could not read prefix or enough elements, stream too short")
+            count = self.lengthfield._parse(stream, context)
+            return list(self.subcon._parse(stream, context) for i in range(count))
+        except Exception:
+            raise ArrayError("could not read prefix or enough elements, stream too short")
     def _build(self, obj, stream, context):
-    	self.lengthfield._build(len(obj), stream, context)
-    	for element in obj:
-    		self.subcon._build(element, stream, context)
+        self.lengthfield._build(len(obj), stream, context)
+        for element in obj:
+            self.subcon._build(element, stream, context)
     def _sizeof(self, context):
         # return self.lengthfield._sizeof(None) + sum(self.subcon._sizeof(element) for element in context)
         raise SizeofError("cannot calculate size")
@@ -334,7 +334,7 @@ def OptionalGreedyRange(subcon):
 #===============================================================================
 def Optional(subcon):
     r"""
-    An optional construct. 
+    An optional construct.
 
     If parsing fails, returns None. If building fails, writes nothing.
 
