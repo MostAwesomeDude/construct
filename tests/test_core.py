@@ -167,9 +167,18 @@ class TestAnchor(unittest.TestCase):
         self.assertEqual(Header.parse(b"\x01\x00\x05"), Container(type=1)(size=5)(length=3))
         self.assertEqual(Header.parse(b"\x02\x00\x00\x00\x05"), Container(type=2)(size=5)(length=5))
 
-        self.assertEqual(Header.build(Container(type=0, size=5)), b"\x00\x05")
-        self.assertEqual(Header.build(Container(type=1, size=5)), b"\x01\x00\x05")
-        self.assertEqual(Header.build(Container(type=2, size=5)), b"\x02\x00\x00\x00\x05")
+        self.assertEqual(Header.build(dict(type=0, size=5)), b"\x00\x05")
+        self.assertEqual(Header.build(dict(type=1, size=5)), b"\x01\x00\x05")
+        self.assertEqual(Header.build(dict(type=2, size=5)), b"\x02\x00\x00\x00\x05")
+
+        HeaderData = Struct("header",
+            Embed(Header),
+            Bytes("data", lambda ctx: ctx.size),
+        )
+        self.assertEqual(HeaderData.build(dict(type=0, size=5, data=b"12345")), b"\x00\x0512345")
+        self.assertEqual(HeaderData.build(dict(type=1, size=5, data=b"12345")), b"\x01\x00\x0512345")
+        self.assertEqual(HeaderData.build(dict(type=2, size=5, data=b"12345")), b"\x02\x00\x00\x00\x0512345")
+
 
     def test_from_issue_71(self):
         class ValidatePayloadLength(Validator):
