@@ -326,8 +326,8 @@ all_tests = [
 
     [ULInt24('int24').parse, b"\x01\x02\x03", 197121, None],
     [ULInt24('int24').build, 197121, b"\x01\x02\x03", None],
-    [Struct('foo', ULInt24('int24')).parse, b"\x01\x02\x03", Container(int24=197121), None],
-    [Struct('foo', ULInt24('int24')).build, Container(int24=197121), b"\x01\x02\x03", None],
+    [Struct('struct', ULInt24('int24')).parse, b"\x01\x02\x03", Container(int24=197121), None],
+    [Struct('struct', ULInt24('int24')).build, Container(int24=197121), b"\x01\x02\x03", None],
 ]
 
 

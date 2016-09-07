@@ -1041,7 +1041,7 @@ class Peek(Subconstruct):
 
 class OnDemand(Subconstruct):
     r"""
-    Allows for on-demand (lazy) parsing. When parsing, it will return a LazyContainer that represents a pointer to the data, but does not actually parses it from stream until it's "demanded". By accessing the 'value' property of LazyContainers, you will demand the data from the stream. The data will be parsed and cached for later use. You can use the 'has_value' property to know whether the data has already been demanded.
+    Allows for on-demand (lazy) parsing. When parsing, it will return a LazyContainer that represents a pointer to the data, but does not actually parse it from the stream until it is "demanded". By accessing the 'value' property of LazyContainers, you will demand the data from the stream. The data will be parsed and cached for later use. You can use the 'has_value' property to know whether the data has already been demanded.
 
     .. seealso:: The :func:`~construct.macros.OnDemandPointer` macro.
 
@@ -1049,7 +1049,7 @@ class OnDemand(Subconstruct):
 
     :param subcon: the subcon to read/write on demand
     :param advance_stream: whether or not to advance the stream position. by default this is True, but if subcon is a pointer, this should be False.
-    :param force_build: whether or not to force build. If set to False, and the LazyContainer has not been demaned, building is a no-op.
+    :param force_build: whether or not to force build. If set to False, and the LazyContainer has not been demanded, building is a no-op.
 
     Example::
 
