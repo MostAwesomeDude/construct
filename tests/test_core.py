@@ -307,3 +307,15 @@ class TestEmbedOptional(unittest.TestCase):
         print(build_struct(embed_g=True, embed_h=False).parse(data))
         # When setting optional to False in vstring method, all three tests above work fine.
 
+
+class TestEmbeddedBitStruct(unittest.TestCase):
+
+    def test_from_issue_39(self):
+
+        s = Struct('test',
+            Byte('len'), 
+            EmbeddedBitStruct(BitField('data', lambda ctx: ctx.len)),
+        )
+        self.assertEqual(s.parse(b"\x08\xff"), Container(len=8)(data=255))
+        self.assertEqual(s.build(dict(len=8,data=255)), b"\x08\xff")
+
