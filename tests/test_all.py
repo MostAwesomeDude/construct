@@ -84,13 +84,15 @@ all_tests = [
     [Peek(UBInt8("peek")).parse, b"\x01", 1, None],
     [Peek(UBInt8("peek")).parse, b"", None, None],
     [Peek(UBInt8("peek")).build, 1, b"", None],
-    [Peek(UBInt8("peek"), perform_build=True).build, 1, b"\x01", None],
+    [Peek(UBInt8("peek"), performbuild=True).build, 1, b"\x01", None],
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).parse, b"\x01\x02", Container(a=1)(b=0x102), None],
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).build, dict(a=1,b=0x102), b"\x01\x02", None],
     [Peek(UBInt16("peek")).sizeof, None, 2, None],
     [Peek(UBInt64("peek")).sizeof, None, 8, None],
     [Peek(VarInt("peek")).sizeof, None, None, SizeofError],
-    
+    [Struct("struct",Peek(Byte("a")),Peek(UBInt16("b")),).parse, b"\x01\x02", Container(a=1)(b=258), None],
+    [Struct("struct",Peek(Byte("a")),Peek(UBInt16("b")),).build, dict(a=0,b=258), b"", None],
+
     [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
     [Computed("computed", lambda ctx: "moo").build, None, b"", None],
     [Struct("s", Computed("c", lambda ctx: None)).parse, b"", Container(c=None), None],

@@ -786,7 +786,7 @@ class Union(Construct):
     __slots__ = ["name","subcons","buildfrom"]
     def __init__(self, name, *subcons, **kw):
         super(Union, self).__init__(name)
-        args = [Peek(sc,perform_build=True) for sc in subcons]
+        args = [Peek(sc,performbuild=True) for sc in subcons]
         self.buildfrom = kw.get("buildfrom", None)
         self.subcons = args
     def _parse(self, stream, context):
@@ -1004,21 +1004,29 @@ class Pointer(Subconstruct):
 
 class Peek(Subconstruct):
     r"""
-    Peeks at the stream: parses without changing the stream position. See also Union. If the end of the stream is reached when peeking, returns None.
+    Peeks at the stream.
+
+    Parses the subcon without changing the stream position. See also Union. If the end of the stream is reached when peeking, returns None. Size is defined as size of the subcon, even tho the stream is not advanced during parsing.
 
     .. note:: Requires a seekable stream.
 
     :param subcon: the subcon to peek at
-    :param perform_build: whether or not to perform building. by default this parameter is set to False, meaning building is a no-op.
+    :param performbuild: whether to perform building, False by default meaning building is a no-op
 
     Example::
 
-        Peek(UBInt8("foo"))
+        Struct("struct",
+            Peek(Byte("a")),
+            Peek(Bytes("b", 2)),
+        )
+        .parse(b"\x01\x02") -> Container(a=1)(b=258)
+        .build(dict(a=0,b=258)) -> b"\x01\x02"
+        .build(dict(a=1,b=258)) -> b"\x01\x02"
     """
-    __slots__ = ["perform_build"]
-    def __init__(self, subcon, perform_build=False):
+    __slots__ = ["performbuild"]
+    def __init__(self, subcon, performbuild=False):
         super(Peek, self).__init__(subcon)
-        self.perform_build = perform_build
+        self.performbuild = performbuild
     def _parse(self, stream, context):
         pos = stream.tell()
         try:
@@ -1028,7 +1036,7 @@ class Peek(Subconstruct):
         finally:
             stream.seek(pos)
     def _build(self, obj, stream, context):
-        if self.perform_build:
+        if self.performbuild:
             try:
                 pos = stream.tell()
                 self.subcon._build(obj, stream, context)
@@ -1298,9 +1306,11 @@ class Computed(Construct):
     def _parse(self, stream, context):
         return self.func(context)
     def _build(self, obj, stream, context):
+        context[self.name] = self.func(context)
         pass
     def _sizeof(self, context):
         return 0
+
 
 #class Dynamic(Construct):
 #    """
@@ -1337,6 +1347,7 @@ class Computed(Construct):
 #    def _sizeof(self, context):
 #        return self.factoryfunc(context)._sizeof(context)
 
+
 class LazyBound(Construct):
     """
     Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees, etc.).
@@ -1368,6 +1379,7 @@ class LazyBound(Construct):
         if self.bound is None:
             self.bound = self.bindfunc()
         return self.bound._sizeof(context)
+
 
 class Pass(Construct):
     """
@@ -1406,6 +1418,7 @@ Example::
     .parse(b'...') -> None
     .build(None) -> None
 """
+
 
 class Terminator(Construct):
     """
