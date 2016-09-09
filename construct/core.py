@@ -173,21 +173,23 @@ class Construct(object):
         self2.__setstate__(self, self.__getstate__())
         return self2
 
-    def parse(self, data):
+    def parse(self, data, context=None):
         """
         Parse an in-memory buffer.
 
         Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
         """
-        return self.parse_stream(BytesIO(data))
+        return self.parse_stream(BytesIO(data), context)
 
-    def parse_stream(self, stream):
+    def parse_stream(self, stream, context=None):
         """
         Parse a stream.
 
         Files, pipes, sockets, and other streaming sources of data are handled by this method.
         """
-        return self._parse(stream, Container())
+        if context is None:
+            context = Container()
+        return self._parse(stream, context)
 
     def _parse(self, stream, context):
         """
@@ -195,23 +197,25 @@ class Construct(object):
         """
         raise NotImplementedError()
 
-    def build(self, obj):
+    def build(self, obj, context=None):
         """
         Build an object in memory.
 
         :returns: bytes
         """
         stream = BytesIO()
-        self.build_stream(obj, stream)
+        self.build_stream(obj, stream, context)
         return stream.getvalue()
 
-    def build_stream(self, obj, stream):
+    def build_stream(self, obj, stream, context=None):
         """
         Build an object directly into a stream.
 
         :returns: None
         """
-        self._build(obj, stream, Container())
+        if context is None:
+            context = Container()
+        self._build(obj, stream, context)
 
     def _build(self, obj, stream, context):
         """
