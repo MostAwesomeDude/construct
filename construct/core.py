@@ -3,6 +3,7 @@ from struct import error as PackerError
 from io import BytesIO, StringIO
 import sys
 import collections
+import codecs
 
 # from construct.macros import UBInt8
 from construct.lib.py3compat import int2byte, unknownstring2bytes, stringtypes
@@ -173,21 +174,23 @@ class Construct(object):
         self2.__setstate__(self, self.__getstate__())
         return self2
 
-    def parse(self, data):
+    def parse(self, data, context=None):
         """
         Parse an in-memory buffer.
 
         Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
         """
-        return self.parse_stream(BytesIO(data))
+        return self.parse_stream(BytesIO(data), context)
 
-    def parse_stream(self, stream):
+    def parse_stream(self, stream, context=None):
         """
         Parse a stream.
 
         Files, pipes, sockets, and other streaming sources of data are handled by this method.
         """
-        return self._parse(stream, Container())
+        if context is None:
+            context = Container()
+        return self._parse(stream, context)
 
     def _parse(self, stream, context):
         """
@@ -195,23 +198,25 @@ class Construct(object):
         """
         raise NotImplementedError()
 
-    def build(self, obj):
+    def build(self, obj, context=None):
         """
         Build an object in memory.
 
         :returns: bytes
         """
         stream = BytesIO()
-        self.build_stream(obj, stream)
+        self.build_stream(obj, stream, context)
         return stream.getvalue()
 
-    def build_stream(self, obj, stream):
+    def build_stream(self, obj, stream, context=None):
         """
         Build an object directly into a stream.
 
         :returns: None
         """
-        self._build(obj, stream, Container())
+        if context is None:
+            context = Container()
+        self._build(obj, stream, context)
 
     def _build(self, obj, stream, context):
         """
@@ -786,7 +791,7 @@ class Union(Construct):
     __slots__ = ["name","subcons","buildfrom"]
     def __init__(self, name, *subcons, **kw):
         super(Union, self).__init__(name)
-        args = [Peek(sc,perform_build=True) for sc in subcons]
+        args = [Peek(sc,performbuild=True) for sc in subcons]
         self.buildfrom = kw.get("buildfrom", None)
         self.subcons = args
     def _parse(self, stream, context):
@@ -1004,21 +1009,29 @@ class Pointer(Subconstruct):
 
 class Peek(Subconstruct):
     r"""
-    Peeks at the stream: parses without changing the stream position. See also Union. If the end of the stream is reached when peeking, returns None.
+    Peeks at the stream.
+
+    Parses the subcon without changing the stream position. See also Union. If the end of the stream is reached when peeking, returns None. Size is defined as size of the subcon, even tho the stream is not advanced during parsing.
 
     .. note:: Requires a seekable stream.
 
     :param subcon: the subcon to peek at
-    :param perform_build: whether or not to perform building. by default this parameter is set to False, meaning building is a no-op.
+    :param performbuild: whether to perform building, False by default meaning building is a no-op
 
     Example::
 
-        Peek(UBInt8("foo"))
+        Struct("struct",
+            Peek(Byte("a")),
+            Peek(Bytes("b", 2)),
+        )
+        .parse(b"\x01\x02") -> Container(a=1)(b=258)
+        .build(dict(a=0,b=258)) -> b"\x01\x02"
+        .build(dict(a=1,b=258)) -> b"\x01\x02"
     """
-    __slots__ = ["perform_build"]
-    def __init__(self, subcon, perform_build=False):
+    __slots__ = ["performbuild"]
+    def __init__(self, subcon, performbuild=False):
         super(Peek, self).__init__(subcon)
-        self.perform_build = perform_build
+        self.performbuild = performbuild
     def _parse(self, stream, context):
         pos = stream.tell()
         try:
@@ -1028,7 +1041,7 @@ class Peek(Subconstruct):
         finally:
             stream.seek(pos)
     def _build(self, obj, stream, context):
-        if self.perform_build:
+        if self.performbuild:
             try:
                 pos = stream.tell()
                 self.subcon._build(obj, stream, context)
@@ -1298,9 +1311,11 @@ class Computed(Construct):
     def _parse(self, stream, context):
         return self.func(context)
     def _build(self, obj, stream, context):
+        context[self.name] = self.func(context)
         pass
     def _sizeof(self, context):
         return 0
+
 
 #class Dynamic(Construct):
 #    """
@@ -1337,6 +1352,7 @@ class Computed(Construct):
 #    def _sizeof(self, context):
 #        return self.factoryfunc(context)._sizeof(context)
 
+
 class LazyBound(Construct):
     """
     Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees, etc.).
@@ -1368,6 +1384,7 @@ class LazyBound(Construct):
         if self.bound is None:
             self.bound = self.bindfunc()
         return self.bound._sizeof(context)
+
 
 class Pass(Construct):
     """
@@ -1406,6 +1423,7 @@ Example::
     .parse(b'...') -> None
     .build(None) -> None
 """
+
 
 class Terminator(Construct):
     """
@@ -1905,41 +1923,216 @@ class Checksum(Construct):
         return self.checksumfield._sizeof(context)
 
 
-# class LengthValue(Construct):
-#     r"""
-#     Adapter for length-value pairs. When parsing, it returns only the value from the pair. When building, it calculates the length based on the value. Name of subcon is used.
+class ByteSwapped(Subconstruct):
+    r"""
+    Swap the byte order within aligned boundaries of given size.
 
-#     See PrefixedArray and PascalString.
+    :param subcon: the subcon on top of byte swapped bytes
+    :param size: int of how many bytes are to be swapped, None by default meaning subcon size
 
-#     :param lengthfield: a subcon used for storing the length, can have no name
-#     :param subcon: the subcon used for storing the value
+    Example::
 
-#     Example::
+        ByteSwapped(Struct("struct",
+            Byte("a"),
+            Byte("b"),
+        ))
 
-#         LengthValue(Byte(), CString("text"))
-#         .parse(b"\x06hello\0") -> b"hello"
-#         .build(b"hello") -> b"\x06hello\0"
-#     """
-#     __slots__ = ["name", "lengthfield", "subcon"]
-#     def __init__(self, lengthfield, subcon):
-#         if not isinstance(lengthfield, Construct):
-#             raise TypeError("lengthfield should be a Construct field")
-#         if not isinstance(subcon, Construct):
-#             raise TypeError("subcon should be a Construct field")
-#         super(LengthValue, self).__init__(subcon.name)
-#         self.lengthfield = lengthfield
-#         self.subcon = subcon
-#     def _parse(self, stream, context):
-#         length = self.lengthfield._parse(stream, context)
+        .parse(b"\x01\x02") -> Container(a=2)(b=1)
+        .parse(dict(a=2,b=1)) -> b"\x01\x02"
+    """
+    def __init__(self, subcon, size=None):
+        super(ByteSwapped, self).__init__(subcon)
+        self.size = size if size else subcon._sizeof(None)
+    def _parse(self, stream, context):
+        data = _read_stream(stream, self.size)[::-1]
+        return self.subcon._parse(BytesIO(data), context)
+    def _build(self, obj, stream, context):
+        stream2 = BytesIO()
+        self.subcon._build(obj, stream2, context)
+        data = stream2.getvalue()[::-1]
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
 
-#     def _build(self, obj, stream, context):
-#         pass
-#     def _sizeof(self, context):
-#         return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
 
-    # __slots__ = []
-    # def _encode(self, obj, context):
-    #     return (len(obj), obj)
-    # def _decode(self, obj, context):
-    #     return obj[1]
+class LengthValue(Construct):
+    r"""
+    Parses the length field. Then parses the subcon using a byte range specified by the length. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes.
+
+    Name of the subcon is used for this construct.
+
+    :param lengthfield: a subcon used for storing the length, can have no name
+    :param subcon: the subcon used for storing the value
+
+    Example::
+
+        LengthValue(VarInt(None), CString("text"))
+        .parse(b"\x06hello\0") -> b"hello"
+        .build(b"hello") -> b"\x06hello\0"
+
+        LengthValue(Byte(None), Compressed(CString(None)))
+        .parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1') -> b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        .build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") ->b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1'
+    """
+    __slots__ = ["name", "lengthfield", "subcon"]
+    def __init__(self, lengthfield, subcon):
+        if not isinstance(lengthfield, Construct):
+            raise TypeError("lengthfield should be a Construct field")
+        if not isinstance(subcon, Construct):
+            raise TypeError("subcon should be a Construct field")
+        super(LengthValue, self).__init__(subcon.name)
+        self.lengthfield = lengthfield
+        self.subcon = subcon
+    def _parse(self, stream, context):
+        length = self.lengthfield._parse(stream, context)
+        data = _read_stream(stream, length)
+        return self.subcon.parse(data, context)
+    def _build(self, obj, stream, context):
+        data = self.subcon.build(obj, context)
+        self.lengthfield._build(len(data), stream, context)
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
+
+
+class Compressed(Subconstruct):
+    r"""
+    Compresses or decompresses a subcon.
+
+    When parsing, entire stream is consumed unless constrained by LengthValue. When building, puts compressed byte string without marking the end or length of compressed buffer. This construct should either be used with LengthValue or on entire stream.
+
+    Name of the subcon is used for this construct.
+
+    :param lengthfield: a subcon used for storing the length, can have no name
+    :param subcon: the subcon used for storing the value
+
+    Example::
+
+        LengthValue(VarInt(None), CString("text"))
+        .parse(b"\x06hello\0") -> b"hello"
+        .build(b"hello") -> b"\x06hello\0"
+
+        LengthValue(Byte(None), Compressed(CString(None)))
+        .parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1') -> b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        .build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") ->b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1'
+    """
+    def __init__(self, subcon, encoding="zlib"):
+        super(Compressed, self).__init__(subcon)
+        self.subcon = subcon
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        data = codecs.decode(stream.read(), self.encoding)
+        return self.subcon.parse(data, context)
+    def _build(self, obj, stream, context):
+        data = codecs.encode(self.subcon.build(obj, context), self.encoding)
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
+
+
+class LazyStruct(Construct):
+    """
+    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
+
+    If entire struct is fixed size, then all fields are parsed only when their keys are first accessed. Otherwise variable length fields are parsed immediately and fixed length fields are parsed later.
+
+    :param name: the name of the structure
+    :param subcons: a sequence of subconstructs that make up this structure.
+
+    Example::
+
+        LazyStruct("struct",
+            UBInt8("a"),
+            UBInt16("b"),
+            CString("c"),
+        )
+        .parse(b"\x01\x00\x02abcde") -> LazyContainer(a=1,b=2,c=?)
+    """
+    __slots__ = ["subcons", "nested", "allowoverwrite", "offsetmap", "totalsizeof", "subsizes"]
+    def __init__(self, name, *subcons, **kw):
+        super(LazyStruct, self).__init__(name)
+        self.subcons = subcons
+        # self.nested = kw.pop("nested", True)
+        self.allowoverwrite = kw.pop("allowoverwrite", False)
+        self._inherit_flags(*subcons)
+        self._clear_flag(self.FLAG_EMBED)
+
+        try:
+            self.offsetmap = {}
+            at = 0
+            for sc in self.subcons:
+                if sc.name is not None:
+                    self.offsetmap[sc.name] = (at, sc)
+                at += sc.sizeof()
+            self.totalsizeof = at
+        except SizeofError:
+            self.offsetmap = None
+            self.totalsizeof = None
+
+        self.subsizes = []
+        for sc in self.subcons:
+            try:
+                self.subsizes.append(sc.sizeof())
+            except SizeofError:
+                self.subsizes.append(None)
+
+    def _parse(self, stream, context):
+        if self.offsetmap is not None:
+            position = stream.tell()
+            stream.seek(self.totalsizeof, 1)
+            return LazyContainer(self.subcons, self.offsetmap, {}, stream, position, context)
+
+        offsetmap = {}
+        values = {}
+        position = stream.tell()
+        for sc,size in zip(self.subcons, self.subsizes):
+            if size is None:
+                subobj = sc._parse(stream, context)
+                if sc.name is not None:
+                    values[sc.name] = subobj
+                    context[sc.name] = subobj
+            else:
+                if sc.name is not None:
+                    offsetmap[sc.name] = (stream.tell(), sc)
+                stream.seek(size, 1)
+        return LazyContainer(self.subcons, offsetmap, values, stream, 0, context)
+
+    def _build(self, obj, stream, context):
+        for sc in self.subcons:
+            if sc.name is None:
+                subobj = None
+            elif isinstance(sc, (Computed, Anchor, AnchorRange, Checksum)):
+                subobj = None
+            else:
+                subobj = obj[sc.name]
+                context[sc.name] = subobj
+            sc._build(subobj, stream, context)
+
+    def _sizeof(self, context):
+        if self.totalsizeof is not None:
+            return self.totalsizeof
+        else:
+            raise SizeofError("cannot calculate size")
+
+
+class Numpy(Construct):
+    r"""
+    Preserves numpy arrays (both shape, dtype and values).
+
+    Example::
+
+    	Numpy("data")
+    	.parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00") -> array([1, 2, 3])
+    	.build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+    """
+    def __init__(self, name):
+        import numpy
+        super(Numpy, self).__init__(name)
+        self.lib = numpy
+    def _parse(self, stream, context):
+    	return self.lib.load(stream)
+    def _build(self, obj, stream, context):
+    	self.lib.save(stream, obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
 

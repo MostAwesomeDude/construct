@@ -3,7 +3,7 @@ import hashlib
 from hashlib import sha512
 
 from construct import *
-from construct.lib.py3compat import PY26
+from construct.lib.py3compat import PY26, PY3, PYPY
 
 
 class TestStruct(unittest.TestCase):
@@ -311,11 +311,48 @@ class TestEmbedOptional(unittest.TestCase):
 class TestTunnelZlib(unittest.TestCase):
 
     def test_from_issue_38(self):
-        s = TunnelAdapter(
-            PascalString("data", encoding="zlib"),
-            GreedyRange(UBInt16("elements")),
+        if not PY3 and not PYPY:
+            s = TunnelAdapter(
+                PascalString("data", encoding="zlib"),
+                GreedyRange(UBInt16("elements")),
+            )
+            obj = [1 for i in range(100)]
+            output = b"\rx\x9cc`d\x18\x16\x10\x00'\xd8\x00e"
+            self.assertEqual(s.parse(output), obj)
+            self.assertEqual(s.build(obj), output)
+
+
+class TestEmbeddedBitStruct(unittest.TestCase):
+
+    def test_from_issue_39(self):
+        s = Struct('test',
+            Byte('len'), 
+            EmbeddedBitStruct(BitField('data', lambda ctx: ctx.len)),
         )
-        obj = [1 for i in range(100)]
-        output = b"\rx\x9cc`d\x18\x16\x10\x00'\xd8\x00e"
-        self.assertEqual(s.parse(output), obj)
-        self.assertEqual(s.build(obj), output)
+        self.assertEqual(s.parse(b"\x08\xff"), Container(len=8)(data=255))
+        self.assertEqual(s.build(dict(len=8,data=255)), b"\x08\xff")
+
+
+class TestLazyStruct(unittest.TestCase):
+
+    def test(self):
+        s = LazyStruct("lazystruct",
+            Byte("a"),
+            CString("b"),
+        )
+        obj = s.parse(b"\x01abc\x00")
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(obj.b, b"abc")
+        self.assertEqual(obj, dict(a=1,b=b"abc"))
+        self.assertRaises(SizeofError, lambda none: s.sizeof(), None)
+
+
+class TestNumpy(unittest.TestCase):
+
+    def test(self):
+        if not PY3 and not PYPY:
+            import numpy
+            s = Numpy("numpy")
+            a = numpy.array([1,2,3], dtype=numpy.int64)
+            self.assertTrue(numpy.array_equal(s.parse(s.build(a)), a))
+

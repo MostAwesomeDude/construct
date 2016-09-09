@@ -1,7 +1,15 @@
-import sys
 from construct import *
 from construct.lib import LazyContainer
+
+import sys
 import zlib
+import codecs
+
+try:
+    codecs.lookup("zlib")
+    zlibcodecraises = None
+except LookupError:
+    zlibcodecraises = LookupError
 
 class ZlibCodec(object):
     encode = staticmethod(zlib.compress)
@@ -84,13 +92,15 @@ all_tests = [
     [Peek(UBInt8("peek")).parse, b"\x01", 1, None],
     [Peek(UBInt8("peek")).parse, b"", None, None],
     [Peek(UBInt8("peek")).build, 1, b"", None],
-    [Peek(UBInt8("peek"), perform_build=True).build, 1, b"\x01", None],
+    [Peek(UBInt8("peek"), performbuild=True).build, 1, b"\x01", None],
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).parse, b"\x01\x02", Container(a=1)(b=0x102), None],
     [Struct("peek", Peek(UBInt8("a")), UBInt16("b")).build, dict(a=1,b=0x102), b"\x01\x02", None],
     [Peek(UBInt16("peek")).sizeof, None, 2, None],
     [Peek(UBInt64("peek")).sizeof, None, 8, None],
     [Peek(VarInt("peek")).sizeof, None, None, SizeofError],
-    
+    [Struct("struct",Peek(Byte("a")),Peek(UBInt16("b")),).parse, b"\x01\x02", Container(a=1)(b=258), None],
+    [Struct("struct",Peek(Byte("a")),Peek(UBInt16("b")),).build, dict(a=0,b=258), b"", None],
+
     [Computed("computed", lambda ctx: "moo").parse, b"", "moo", None],
     [Computed("computed", lambda ctx: "moo").build, None, b"", None],
     [Struct("s", Computed("c", lambda ctx: None)).parse, b"", Container(c=None), None],
@@ -118,14 +128,14 @@ all_tests = [
     [Pointer(lambda ctx: 2, UBInt8("pointer")).parse, b"\x00\x00\x07", 7, None],
     [Pointer(lambda ctx: 2, UBInt8("pointer")).build, 7, b"\x00\x00\x07", None],
 
-    [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream=False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
+    # [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream=False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
 
-    [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7)(b=8)(c=9), b"\x07\x08\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False, advance_stream=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
+    # [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7)(b=8)(c=9), b"\x07\x08\x09", None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False, advance_stream=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
 
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).parse, b"\x01", Container(foo=1), None],
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).build, Container(foo=1), b"\x01", None],
@@ -328,6 +338,27 @@ all_tests = [
     [ULInt24('int24').build, 197121, b"\x01\x02\x03", None],
     [Struct('struct', ULInt24('int24')).parse, b"\x01\x02\x03", Container(int24=197121), None],
     [Struct('struct', ULInt24('int24')).build, Container(int24=197121), b"\x01\x02\x03", None],
+
+    [ByteSwapped(Bytes(None, 5)).parse, b"12345", b"54321", None],
+    [ByteSwapped(Bytes(None, 5)).build, b"12345", b"54321", None],
+    [ByteSwapped(Struct("struct",Byte("a"),Byte("b"))).parse, b"\x01\x02", Container(a=2)(b=1), None],
+    [ByteSwapped(Struct("struct",Byte("a"),Byte("b"))).build, Container(a=2)(b=1), b"\x01\x02", None],
+
+    # from Issue #70
+    [ByteSwapped(BitStruct("Example",
+        Bit("flag1"),                   # bit 0
+        Bit("flag2"),                   # bit 1
+        Padding(2),                     # bits 03:02
+        BitField("number", 16),         # bits 19:04
+        Padding(4)                      # bits 23:20
+        )).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
+
+    [LengthValue(Byte(None),ULInt16(None)).parse, b"\x02\xff\xff", 65535, None],
+    [LengthValue(Byte(None),ULInt16(None)).build, 65535, b"\x02\xff\xff", None],
+
+    [LengthValue(Byte(None),Compressed(CString(None))).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
+    [LengthValue(Byte(None),Compressed(CString(None))).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
+
 ]
 
 

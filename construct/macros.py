@@ -24,6 +24,7 @@ def Field(name, length):
     else:
         return StaticField(name, length)
 
+
 def BitField(name, length, swapped=False, signed=False, bytesize=8):
     r"""
     BitFields, as the name suggests, are fields that operate on raw, unaligned
@@ -277,6 +278,7 @@ class PrefixedArray(Construct):
 def OpenRange(mincount, subcon):
     return Range(mincount, maxsize, subcon)
 
+
 def GreedyRange(subcon):
     r"""
     Repeats the given unit one or more times.
@@ -305,6 +307,7 @@ def GreedyRange(subcon):
         construct.core.RangeError: expected 1..2147483647, found 0
     """
     return OpenRange(1, subcon)
+
 
 def OptionalGreedyRange(subcon):
     r"""
@@ -381,6 +384,7 @@ def SeqOfOne(name, *args, **kw):
     """
     return IndexingAdapter(Sequence(name, *args, **kw), index = 0)
 
+
 def Embedded(subcon):
     r"""
     Embeds a struct into the enclosing struct, merging fields.
@@ -388,6 +392,7 @@ def Embedded(subcon):
     :param subcon: the struct to embed
     """
     return Reconfig(subcon.name, subcon, subcon.FLAG_EMBED)
+
 
 def Rename(newname, subcon):
     r"""
@@ -397,6 +402,7 @@ def Rename(newname, subcon):
     :param subcon: the subcon to rename
     """
     return Reconfig(newname, subcon)
+
 
 def Alias(newname, oldname):
     r"""
