@@ -1956,3 +1956,35 @@ class Checksum(Construct):
     # def _decode(self, obj, context):
     #     return obj[1]
 
+
+class ByteSwapped(Subconstruct):
+    r"""
+    Swap the byte order within aligned boundaries of given size.
+
+    :param subcon: the subcon on top of byte swapped bytes
+    :param size: int of how many bytes are to be swapped, None by default meaning subcon size
+
+    Example::
+
+        ByteSwapped(Struct("struct",
+            Byte("a"),
+            Byte("b"),
+        ))
+
+        .parse(b"\x01\x02") -> Container(a=2)(b=1)
+        .parse(dict(a=2,b=1)) -> b"\x01\x02"
+    """
+    def __init__(self, subcon, size=None):
+        super(ByteSwapped, self).__init__(subcon)
+        self.size = size if size else subcon._sizeof(None)
+    def _parse(self, stream, context):
+        data = _read_stream(stream, self.size)[::-1]
+        return self.subcon._parse(BytesIO(data), context)
+    def _build(self, obj, stream, context):
+        stream2 = BytesIO()
+        self.subcon._build(obj, stream2, context)
+        data = stream2.getvalue()[::-1]
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
+

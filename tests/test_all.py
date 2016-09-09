@@ -330,6 +330,20 @@ all_tests = [
     [ULInt24('int24').build, 197121, b"\x01\x02\x03", None],
     [Struct('struct', ULInt24('int24')).parse, b"\x01\x02\x03", Container(int24=197121), None],
     [Struct('struct', ULInt24('int24')).build, Container(int24=197121), b"\x01\x02\x03", None],
+
+    [ByteSwapped(Bytes(None, 5)).parse, b"12345", b"54321", None],
+    [ByteSwapped(Bytes(None, 5)).build, b"12345", b"54321", None],
+    [ByteSwapped(Struct("struct",Byte("a"),Byte("b"))).parse, b"\x01\x02", Container(a=2)(b=1), None],
+    [ByteSwapped(Struct("struct",Byte("a"),Byte("b"))).build, Container(a=2)(b=1), b"\x01\x02", None],
+
+    # from Issue #70
+    [ByteSwapped(BitStruct("Example",
+        Bit("flag1"),                   # bit 0
+        Bit("flag2"),                   # bit 1
+        Padding(2),                     # bits 03:02
+        BitField("number", 16),         # bits 19:04
+        Padding(4)                      # bits 23:20
+        )).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
 ]
 
 
