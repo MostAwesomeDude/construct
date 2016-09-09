@@ -3,7 +3,7 @@ import hashlib
 from hashlib import sha512
 
 from construct import *
-from construct.lib.py3compat import PY26
+from construct.lib.py3compat import PY26, PY3, PYPY
 
 
 class TestStruct(unittest.TestCase):
@@ -334,14 +334,13 @@ class TestLazyStruct(unittest.TestCase):
         self.assertEqual(obj, dict(a=1,b=b"abc"))
         self.assertRaises(SizeofError, lambda none: s.sizeof(), None)
 
+
 class TestNumpy(unittest.TestCase):
 
     def test(self):
-        try:
+        if not PY3 and not PYPY:
             import numpy
             s = Numpy("numpy")
             a = numpy.array([1,2,3], dtype=numpy.int64)
             self.assertTrue(numpy.array_equal(s.parse(s.build(a)), a))
-        except ImportError:
-            pass
 
