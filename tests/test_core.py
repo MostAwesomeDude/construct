@@ -244,8 +244,11 @@ class TestChecksum(unittest.TestCase):
 class TestNumpy(unittest.TestCase):
 
     def test(self):
-        import numpy
-        s = Numpy("numpy")
-        a = numpy.array([1,2,3], dtype=numpy.int64)
-        self.assertTrue(numpy.array_equal(s.parse(s.build(a)), a))
+        try:
+            import numpy
+            s = Numpy("numpy")
+            a = numpy.array([1,2,3], dtype=numpy.int64)
+            self.assertTrue(numpy.array_equal(s.parse(s.build(a)), a))
+        except ImportError:
+            pass
 
