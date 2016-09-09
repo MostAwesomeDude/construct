@@ -344,6 +344,12 @@ all_tests = [
         BitField("number", 16),         # bits 19:04
         Padding(4)                      # bits 23:20
         )).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
+
+    [LengthValue(Byte(None),ULInt16(None)).parse, b"\x02\xff\xff", 65535, None],
+    [LengthValue(Byte(None),ULInt16(None)).build, 65535, b"\x02\xff\xff", None],
+
+    [LengthValue(Byte(None),Compressed(CString(None))).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", None],
+    [LengthValue(Byte(None),Compressed(CString(None))).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', None],
 ]
 
 

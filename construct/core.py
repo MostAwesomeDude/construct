@@ -3,6 +3,7 @@ from struct import error as PackerError
 from io import BytesIO, StringIO
 import sys
 import collections
+import codecs
 
 # from construct.macros import UBInt8
 from construct.lib.py3compat import int2byte, unknownstring2bytes, stringtypes
@@ -1922,45 +1923,6 @@ class Checksum(Construct):
         return self.checksumfield._sizeof(context)
 
 
-# class LengthValue(Construct):
-#     r"""
-#     Adapter for length-value pairs. When parsing, it returns only the value from the pair. When building, it calculates the length based on the value. Name of subcon is used.
-
-#     See PrefixedArray and PascalString.
-
-#     :param lengthfield: a subcon used for storing the length, can have no name
-#     :param subcon: the subcon used for storing the value
-
-#     Example::
-
-#         LengthValue(Byte(), CString("text"))
-#         .parse(b"\x06hello\0") -> b"hello"
-#         .build(b"hello") -> b"\x06hello\0"
-#     """
-#     __slots__ = ["name", "lengthfield", "subcon"]
-#     def __init__(self, lengthfield, subcon):
-#         if not isinstance(lengthfield, Construct):
-#             raise TypeError("lengthfield should be a Construct field")
-#         if not isinstance(subcon, Construct):
-#             raise TypeError("subcon should be a Construct field")
-#         super(LengthValue, self).__init__(subcon.name)
-#         self.lengthfield = lengthfield
-#         self.subcon = subcon
-#     def _parse(self, stream, context):
-#         length = self.lengthfield._parse(stream, context)
-
-#     def _build(self, obj, stream, context):
-#         pass
-#     def _sizeof(self, context):
-#         return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
-
-    # __slots__ = []
-    # def _encode(self, obj, context):
-    #     return (len(obj), obj)
-    # def _decode(self, obj, context):
-    #     return obj[1]
-
-
 class ByteSwapped(Subconstruct):
     r"""
     Swap the byte order within aligned boundaries of given size.
@@ -1988,6 +1950,81 @@ class ByteSwapped(Subconstruct):
         stream2 = BytesIO()
         self.subcon._build(obj, stream2, context)
         data = stream2.getvalue()[::-1]
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
+
+
+class LengthValue(Construct):
+    r"""
+    Parses the length field. Then parses the subcon using a byte range specified by the length. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes.
+
+    Name of the subcon is used for this construct.
+
+    :param lengthfield: a subcon used for storing the length, can have no name
+    :param subcon: the subcon used for storing the value
+
+    Example::
+
+        LengthValue(VarInt(None), CString("text"))
+        .parse(b"\x06hello\0") -> b"hello"
+        .build(b"hello") -> b"\x06hello\0"
+
+        LengthValue(Byte(None), Compressed(CString(None)))
+        .parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1') -> b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        .build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") ->b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1'
+    """
+    __slots__ = ["name", "lengthfield", "subcon"]
+    def __init__(self, lengthfield, subcon):
+        if not isinstance(lengthfield, Construct):
+            raise TypeError("lengthfield should be a Construct field")
+        if not isinstance(subcon, Construct):
+            raise TypeError("subcon should be a Construct field")
+        super(LengthValue, self).__init__(subcon.name)
+        self.lengthfield = lengthfield
+        self.subcon = subcon
+    def _parse(self, stream, context):
+        length = self.lengthfield._parse(stream, context)
+        data = _read_stream(stream, length)
+        return self.subcon.parse(data, context)
+    def _build(self, obj, stream, context):
+        data = self.subcon.build(obj, context)
+        self.lengthfield._build(len(data), stream, context)
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
+
+
+class Compressed(Subconstruct):
+    r"""
+    Compresses or decompresses a subcon.
+
+    When parsing, entire stream is consumed unless constrained by LengthValue. When building, puts compressed byte string without marking the end or length of compressed buffer. This construct should either be used with LengthValue or on entire stream.
+
+    Name of the subcon is used for this construct.
+
+    :param lengthfield: a subcon used for storing the length, can have no name
+    :param subcon: the subcon used for storing the value
+
+    Example::
+
+        LengthValue(VarInt(None), CString("text"))
+        .parse(b"\x06hello\0") -> b"hello"
+        .build(b"hello") -> b"\x06hello\0"
+
+        LengthValue(Byte(None), Compressed(CString(None)))
+        .parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1') -> b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        .build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") ->b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1'
+    """
+    def __init__(self, subcon, encoding="zlib"):
+        super(Compressed, self).__init__(subcon)
+        self.subcon = subcon
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        data = codecs.decode(stream.read(), self.encoding)
+        return self.subcon.parse(data, context)
+    def _build(self, obj, stream, context):
+        data = codecs.encode(self.subcon.build(obj, context), self.encoding)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
