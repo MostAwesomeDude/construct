@@ -1,6 +1,5 @@
 from construct import *
 from construct.lib import LazyContainer
-from construct.lib.py3compat import PY33
 
 import sys
 import zlib
