@@ -319,3 +319,18 @@ class TestEmbeddedBitStruct(unittest.TestCase):
         self.assertEqual(s.parse(b"\x08\xff"), Container(len=8)(data=255))
         self.assertEqual(s.build(dict(len=8,data=255)), b"\x08\xff")
 
+
+class TestLazyStruct(unittest.TestCase):
+
+    def test(self):
+
+        s = LazyStruct("lazystruct",
+            Byte("a"),
+            CString("b"),
+        )
+        obj = s.parse(b"\x01abc\x00")
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(obj.b, b"abc")
+        self.assertEqual(obj, dict(a=1,b=b"abc"))
+        self.assertRaises(SizeofError, lambda none: s.sizeof(), None)
+

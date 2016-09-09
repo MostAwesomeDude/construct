@@ -128,14 +128,14 @@ all_tests = [
     [Pointer(lambda ctx: 2, UBInt8("pointer")).parse, b"\x00\x00\x07", 7, None],
     [Pointer(lambda ctx: 2, UBInt8("pointer")).build, 7, b"\x00\x00\x07", None],
 
-    [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream=False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
+    # [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream=False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
 
-    [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7)(b=8)(c=9), b"\x07\x08\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
-    [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False, advance_stream=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
+    # [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7)(b=8)(c=9), b"\x07\x08\x09", None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
+    # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False, advance_stream=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
 
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).parse, b"\x01", Container(foo=1), None],
     [Struct("reconfig", Reconfig("foo", UBInt8("bar"))).build, Container(foo=1), b"\x01", None],
@@ -358,6 +358,7 @@ all_tests = [
 
     [LengthValue(Byte(None),Compressed(CString(None))).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
     [LengthValue(Byte(None),Compressed(CString(None))).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
+
 ]
 
 

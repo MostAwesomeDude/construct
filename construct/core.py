@@ -2029,3 +2029,88 @@ class Compressed(Subconstruct):
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 
+
+class LazyStruct(Construct):
+    """
+    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
+
+    If entire struct is fixed size, then all fields are parsed only when their keys are first accessed. Otherwise variable length fields are parsed immediately and fixed length fields are parsed later.
+
+    :param name: the name of the structure
+    :param subcons: a sequence of subconstructs that make up this structure.
+
+    Example::
+
+        LazyStruct("struct",
+            UBInt8("a"),
+            UBInt16("b"),
+            CString("c"),
+        )
+        .parse(b"\x01\x00\x02abcde") -> LazyContainer(a=1,b=2,c=?)
+    """
+    __slots__ = ["subcons", "nested", "allowoverwrite", "offsetmap", "totalsizeof", "subsizes"]
+    def __init__(self, name, *subcons, **kw):
+        super(LazyStruct, self).__init__(name)
+        self.subcons = subcons
+        # self.nested = kw.pop("nested", True)
+        self.allowoverwrite = kw.pop("allowoverwrite", False)
+        self._inherit_flags(*subcons)
+        self._clear_flag(self.FLAG_EMBED)
+
+        try:
+            self.offsetmap = {}
+            at = 0
+            for sc in self.subcons:
+                if sc.name is not None:
+                    self.offsetmap[sc.name] = (at, sc)
+                at += sc.sizeof()
+            self.totalsizeof = at
+        except SizeofError:
+            self.offsetmap = None
+            self.totalsizeof = None
+
+        self.subsizes = []
+        for sc in self.subcons:
+            try:
+                self.subsizes.append(sc.sizeof())
+            except SizeofError:
+                self.subsizes.append(None)
+
+    def _parse(self, stream, context):
+        if self.offsetmap is not None:
+            position = stream.tell()
+            stream.seek(self.totalsizeof, 1)
+            return LazyContainer(self.subcons, self.offsetmap, {}, stream, position, context)
+
+        offsetmap = {}
+        values = {}
+        position = stream.tell()
+        for sc,size in zip(self.subcons, self.subsizes):
+            if size is None:
+                subobj = sc._parse(stream, context)
+                if sc.name is not None:
+                    values[sc.name] = subobj
+                    context[sc.name] = subobj
+            else:
+                if sc.name is not None:
+                    offsetmap[sc.name] = (stream.tell(), sc)
+                stream.seek(size, 1)
+        return LazyContainer(self.subcons, offsetmap, values, stream, 0, context)
+
+    def _build(self, obj, stream, context):
+        for sc in self.subcons:
+            if sc.name is None:
+                subobj = None
+            elif isinstance(sc, (Computed, Anchor, AnchorRange, Checksum)):
+                subobj = None
+            else:
+                subobj = obj[sc.name]
+                context[sc.name] = subobj
+            sc._build(subobj, stream, context)
+
+    def _sizeof(self, context):
+        if self.totalsizeof is not None:
+            return self.totalsizeof
+        else:
+            raise SizeofError("cannot calculate size")
+

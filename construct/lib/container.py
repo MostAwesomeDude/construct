@@ -268,19 +268,38 @@ class ListContainer(list):
 
 
 class LazyContainer(object):
-    __slots__ = ["subcon", "stream", "pos", "context", "_value"]
+    __slots__ = ["subcons", "offsetmap", "values", "stream", "position", "context"]
 
-    def __init__(self, subcon, stream, pos, context):
-        self.subcon = subcon
+    def __init__(self, subcons, offsetmap, values, stream, position, context):
+        self.subcons = subcons
+        self.offsetmap = offsetmap
+        self.values = values
         self.stream = stream
-        self.pos = pos
+        self.position = position
         self.context = context
-        self._value = NotImplemented
+
+    def __getitem__(self, key):
+        if key not in self.values:
+            at, sc = self.offsetmap.pop(key)
+            self.stream.seek(at, 0)
+            val = sc._parse(self.stream, self.context)
+            self.values[key] = val
+        return self.values[key]
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
 
     def __eq__(self, other):
         try:
-            return self._value == other._value
-        except AttributeError:
+            for sc in self.subcons:
+                if sc.name is not None:
+                    if self[sc.name] != other[sc.name]:
+                        return False
+            return True
+        except KeyError:
             return False
 
     def __ne__(self, other):
