@@ -308,6 +308,22 @@ class Validator(Adapter):
         raise NotImplementedError()
 
 
+class Tunnel(Subconstruct):
+    def _parse(self, stream, context):
+        data = stream.read()  # reads entire stream
+        data = self._decode(data, context)
+        return self.subcon.parse(data, context)
+    def _build(self, obj, stream, context):
+        data = self.subcon.build(obj, context)
+        data = self._encode(data, context)
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
+    def _decode(self, data, context):
+        raise NotImplementedError()
+    def _encode(self, data, context):
+        raise NotImplementedError()
+
 
 #===============================================================================
 # Helper methods
@@ -2019,7 +2035,7 @@ class LengthValue(Construct):
         return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
 
 
-class Compressed(Subconstruct):
+class Compressed(Tunnel):
     r"""
     Compresses or decompresses a subcon.
 
@@ -2042,16 +2058,11 @@ class Compressed(Subconstruct):
     """
     def __init__(self, subcon, encoding="zlib"):
         super(Compressed, self).__init__(subcon)
-        self.subcon = subcon
         self.encoding = encoding
-    def _parse(self, stream, context):
-        data = codecs.decode(stream.read(), self.encoding)
-        return self.subcon.parse(data, context)
-    def _build(self, obj, stream, context):
-        data = codecs.encode(self.subcon.build(obj, context), self.encoding)
-        _write_stream(stream, len(data), data)
-    def _sizeof(self, context):
-        return self.subcon._sizeof(context)
+    def _decode(self, data, context):
+        return codecs.decode(data, self.encoding)
+    def _encode(self, data, context):
+        return codecs.encode(data, self.encoding)
 
 
 class LazyStruct(Construct):
