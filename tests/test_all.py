@@ -190,8 +190,8 @@ all_tests = [
     # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).parse, b"\x05abcde", b"abcde", None],
     # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build, b"abcde", b"\x05abcde", None],
 
-    [TunnelAdapter(PascalString("data", encoding=ZlibCodec), GreedyRange(UBInt16("elements"))).parse, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", [3] * 100, None],
-    [TunnelAdapter(PascalString("data", encoding=ZlibCodec), GreedyRange(UBInt16("elements"))).build, [3] * 100, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", None],
+    # [TunnelAdapter(PascalString("data", encoding=ZlibCodec), GreedyRange(UBInt16("elements"))).parse, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", [3] * 100, None],
+    # [TunnelAdapter(PascalString("data", encoding=ZlibCodec), GreedyRange(UBInt16("elements"))).build, [3] * 100, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", None],
 
     [Const(b"MZ").parse, b"MZ", b"MZ", None],
     [Const(b"MZ").parse, b"ELF", None, ConstError],

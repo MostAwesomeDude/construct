@@ -308,20 +308,6 @@ class TestEmbedOptional(unittest.TestCase):
         # When setting optional to False in vstring method, all three tests above work fine.
 
 
-class TestTunnelZlib(unittest.TestCase):
-
-    def test_from_issue_38(self):
-        if not PY3 and not PYPY:
-            s = TunnelAdapter(
-                PascalString("data", encoding="zlib"),
-                GreedyRange(UBInt16("elements")),
-            )
-            obj = [1 for i in range(100)]
-            output = b"\rx\x9cc`d\x18\x16\x10\x00'\xd8\x00e"
-            self.assertEqual(s.parse(output), obj)
-            self.assertEqual(s.build(obj), output)
-
-
 class TestEmbeddedBitStruct(unittest.TestCase):
 
     def test_from_issue_39(self):
