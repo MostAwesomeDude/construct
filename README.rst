@@ -27,7 +27,7 @@ Notes
 
 There are significant ongoing API and implementation changes. Previous branch in maintained as stable 2.5 releases. If you want to test the new 2.6 code, please be aware. Docstrings are always up-to-date, while the docs are sometimes stale.
 
-`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a rewrite of Construct2; the two are incompatible, thus ``construct3`` will be released as a *different package*. Construct 2.5 is the last release of the 2.x codebase.
+`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a rewrite of Construct2; the two are incompatible, thus ``construct3`` will be released as a *different package*.
 
 Construct 2.5 drops the experimental text parsing support that was added in Construct 2.0; it was highly inefficient and I chose to concentrate on binary data.
 
