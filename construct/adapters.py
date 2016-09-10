@@ -157,52 +157,67 @@ class HexDumpAdapter(Adapter):
     Adapter for hex-dumping strings. It returns a HexString, which is a string
     """
     __slots__ = ["linesize"]
-    def __init__(self, subcon, linesize = 16):
+    def __init__(self, subcon, linesize=16):
         super(HexDumpAdapter, self).__init__(subcon)
         self.linesize = linesize
     def _encode(self, obj, context):
         return obj
     def _decode(self, obj, context):
-        return HexString(obj, linesize = self.linesize)
+        return HexString(obj, linesize=self.linesize)
 
 
-class SlicingAdapter(Adapter):
-    """
+class Slicing(Adapter):
+    r"""
     Adapter for slicing a list (getting a slice from that list)
 
     :param subcon: the subcon to slice
-    :param start: start index
+    :param count: expected number of elements, needed during building
+    :param start: start index (or None for entire list)
     :param stop: stop index (or None for up-to-end)
-    :param step: step (or None for every element)
+    :param step: step (or 1 for every element)
+    :param empty: value to fill the list with during building
     """
-    __slots__ = ["start", "stop", "step"]
-    def __init__(self, subcon, start, stop = None):
-        super(SlicingAdapter, self).__init__(subcon)
+    __slots__ = ["count", "start", "stop", "step", "empty"]
+    def __init__(self, subcon, count, start, stop=None, step=1, empty=None):
+        super(Slicing, self).__init__(subcon)
+        self.count = count
         self.start = start
         self.stop = stop
+        self.step = step
+        self.empty = empty
     def _encode(self, obj, context):
         if self.start is None:
             return obj
-        return [None] * self.start + obj
+        elif self.stop is None:
+            output = [self.empty] * self.count
+            output[self.start::self.step] = obj
+        else:
+            output = [self.empty] * self.count
+            output[self.start:self.stop:self.step] = obj
+        return output
     def _decode(self, obj, context):
-        return obj[self.start:self.stop]
+        return obj[self.start:self.stop:self.step]
 
 
-class IndexingAdapter(Adapter):
-    """
+class Indexing(Adapter):
+    r"""
     Adapter for indexing a list (getting a single item from that list)
 
     :param subcon: the subcon to index
+    :param count: expected number of elements, needed during building
     :param index: the index of the list to get
+    :param empty: value to fill the list with during building
     """
-    __slots__ = ["index"]
-    def __init__(self, subcon, index):
-        super(IndexingAdapter, self).__init__(subcon)
-        if type(index) is not int:
-            raise TypeError("index must be an integer", type(index))
+    __slots__ = ["count", "index", "empty"]
+    def __init__(self, subcon, count, index, empty):
+        super(Indexing, self).__init__(subcon)
+        self.count = count
         self.index = index
+        self.empty = empty
     def _encode(self, obj, context):
-        return [None] * self.index + [obj]
+        output = [self.empty] * self.count
+        output[self.index] = obj
+        return output
     def _decode(self, obj, context):
         return obj[self.index]
 

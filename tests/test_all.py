@@ -174,11 +174,11 @@ all_tests = [
     [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).parse, b"\x81", FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), None],
     [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).build, FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), b"\x81", None],
 
-    [IndexingAdapter(Array(3, UBInt8("indexingadapter")), 2).parse, b"\x11\x22\x33", 0x33, None],
-    [IndexingAdapter(Array(3, UBInt8("indexingadapter")), 2)._encode, (0x33, {}), [None, None, 0x33], None],
+    [Slicing(Array(4, UBInt8("elements")), 4, 1, 3, empty=0).parse, b"\x01\x02\x03\x04", [2,3], None],
+    [Slicing(Array(4, UBInt8("elements")), 4, 1, 3, empty=0).build, [2,3], b"\x00\x02\x03\x00", None],
 
-    [SlicingAdapter(Array(3, UBInt8("indexingadapter")), 1, 3).parse, b"\x11\x22\x33", [0x22, 0x33], None],
-    [SlicingAdapter(Array(3, UBInt8("indexingadapter")), 1, 3)._encode, ([0x22, 0x33], {}), [None, 0x22, 0x33], None],
+    [Indexing(Array(4, UBInt8("elements")), 4, 2, empty=0).parse, b"\x01\x02\x03\x04", 3, None],
+    [Indexing(Array(4, UBInt8("elements")), 4, 2, empty=0).build, 3, b"\x00\x00\x03\x00", None],
 
     [Padding(4).parse, b"\x00\x00\x00\x00", None, None],
     [Padding(4, strict=True).parse, b"\x00\x00\x00\x00", None, None],

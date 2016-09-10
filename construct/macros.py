@@ -4,7 +4,7 @@ from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
 from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, ArrayError, StringError, Buffered, Restream, Reconfig, Padding, Const, Aligned
 from construct.core import _read_stream, _write_stream
-from construct.adapters import BitIntegerAdapter, IndexingAdapter, FlagsAdapter, MappingAdapter
+from construct.adapters import BitIntegerAdapter, Indexing, FlagsAdapter, MappingAdapter
 
 
 #===============================================================================
@@ -382,7 +382,7 @@ def SeqOfOne(name, *args, **kw):
     :param \*args: subconstructs
     :param \*\*kw: any keyword arguments to Sequence
     """
-    return IndexingAdapter(Sequence(name, *args, **kw), index = 0)
+    return Indexing(Sequence(name, *args, **kw), index=0)
 
 
 def Embedded(subcon):
