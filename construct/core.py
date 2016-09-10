@@ -326,8 +326,9 @@ def _write_stream(stream, length, data):
         raise ValueError("length must be >= 0", length)
     if len(data) != length:
         raise FieldError("could not write bytes, expected %d, found %d" % (length, len(data)))
-    stream.write(data)
-
+    written = stream.write(data)
+    # if written != length:
+    #     raise FieldError("could not write bytes, written %d, should %d" % (written, length))
 
 
 #===============================================================================
