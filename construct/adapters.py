@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from construct.core import Adapter, AdaptationError, Pass
+from construct.core import Adapter, AdaptationError, Pass, Validator
 from construct.lib import int_to_bin, bin_to_int, swap_bytes
 from construct.lib import FlagsContainer, HexString
 
@@ -11,8 +11,6 @@ from construct.lib import FlagsContainer, HexString
 class BitIntegerError(AdaptationError):
     pass
 class MappingError(AdaptationError):
-    pass
-class ValidationError(AdaptationError):
     pass
 
 
@@ -247,25 +245,8 @@ class IndexingAdapter(Adapter):
 #===============================================================================
 # validators
 #===============================================================================
-class Validator(Adapter):
-    """
-    Abstract class: validates a condition on the encoded/decoded object.
-    Override _validate(obj, context) in deriving classes.
-
-    :param subcon: the subcon to validate
-    """
-    __slots__ = []
-    def _decode(self, obj, context):
-        if not self._validate(obj, context):
-            raise ValidationError("invalid object", obj)
-        return obj
-    def _encode(self, obj, context):
-        return self._decode(obj, context)
-    def _validate(self, obj, context):
-        raise NotImplementedError()
-
 class OneOf(Validator):
-    """
+    r"""
     Validates that the object is one of the listed values.
 
     :param subcon: object to validate
@@ -294,8 +275,9 @@ class OneOf(Validator):
     def _validate(self, obj, context):
         return obj in self.valids
 
+
 class NoneOf(Validator):
-    """
+    r"""
     Validates that the object is none of the listed values.
 
     :param subcon: object to validate

@@ -41,6 +41,8 @@ class StringError(ConstructError):
     pass
 class ChecksumError(ConstructError):
     pass
+class ValidationError(AdaptationError):
+    pass
 
 
 
@@ -267,10 +269,10 @@ class Subconstruct(Construct):
 
 
 class Adapter(Subconstruct):
-    """
+    r"""
     Abstract adapter parent class.
 
-    Adapters should implement ``_decode()`` and ``_encode()``.
+    Needs to implement ``_decode()`` and ``_encode()``.
 
     :param subcon: the construct to wrap
     """
@@ -282,6 +284,27 @@ class Adapter(Subconstruct):
     def _decode(self, obj, context):
         raise NotImplementedError()
     def _encode(self, obj, context):
+        raise NotImplementedError()
+
+
+class Validator(Adapter):
+    r"""
+    Abstract class: validates a condition on the encoded/decoded object.
+    
+    Needs to implement ``_validate()``.
+
+    :param subcon: the subcon to validate
+    """
+    __slots__ = []
+    def _decode(self, obj, context):
+        if not self._validate(obj, context):
+            raise ValidationError("invalid object", obj)
+        return obj
+    def _encode(self, obj, context):
+        if not self._validate(obj, context):
+            raise ValidationError("invalid object", obj)
+        return obj
+    def _validate(self, obj, context):
         raise NotImplementedError()
 
 
