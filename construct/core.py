@@ -2031,7 +2031,7 @@ class Compressed(Subconstruct):
 
 
 class LazyStruct(Construct):
-    """
+    r"""
     A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
 
     If entire struct is fixed size, then all fields are parsed only when their keys are first accessed. Otherwise variable length fields are parsed immediately and fixed length fields are parsed later.
