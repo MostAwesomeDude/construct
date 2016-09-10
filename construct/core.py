@@ -289,20 +289,33 @@ class Adapter(Subconstruct):
         raise NotImplementedError()
 
 
-class Validator(Adapter):
+class SymmetricAdapter(Adapter):
+    r"""
+    Abstract adapter parent class.
+
+    Needs to implement ``_decode()`` only.
+
+    :param subcon: the construct to wrap
+    """
+    __slots__ = []
+    def _parse(self, stream, context):
+        return self._decode(self.subcon._parse(stream, context), context)
+    def _build(self, obj, stream, context):
+        self.subcon._build(self._decode(obj, context), stream, context)
+    def _decode(self, obj, context):
+        raise NotImplementedError()
+
+
+class Validator(SymmetricAdapter):
     r"""
     Abstract class: validates a condition on the encoded/decoded object.
     
-    Needs to implement ``_validate()``.
+    Needs to implement ``_validate()`` that returns bool.
 
     :param subcon: the subcon to validate
     """
     __slots__ = []
     def _decode(self, obj, context):
-        if not self._validate(obj, context):
-            raise ValidationError("invalid object", obj)
-        return obj
-    def _encode(self, obj, context):
         if not self._validate(obj, context):
             raise ValidationError("invalid object", obj)
         return obj
