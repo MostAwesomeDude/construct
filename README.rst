@@ -22,15 +22,14 @@ work easier:
 * On-demand (lazy) parsing: read only what you require
 * Pointers: jump from here to there in the data stream 
 
-.. note::
-    There are ongoing API and implementation changes. Please use either stable 2.5.x or the beta 2.6.x or wait for a stable 2.7.
+Notes
+-----
 
-    `Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a rewrite of Construct2; 
-    the two are incompatible, thus ``construct3`` will be released as a *different package*. 
-    Construct 2.5 is the last release of the 2.x codebase.
+There are significant ongoing API and implementation changes. Previous branch in maintained as stable 2.5 releases. If you want to test the new 2.6 code, please be aware. Docstrings are always up-to-date, while the docs are sometimes stale.
 
-    Construct 2.5 drops the experimental text parsing support that was added in Construct 2.0;
-    it was highly inefficient and I chose to concentrate on binary data.
+`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a rewrite of Construct2; the two are incompatible, thus ``construct3`` will be released as a *different package*. Construct 2.5 is the last release of the 2.x codebase.
+
+Construct 2.5 drops the experimental text parsing support that was added in Construct 2.0; it was highly inefficient and I chose to concentrate on binary data.
 
 Example
 -------
