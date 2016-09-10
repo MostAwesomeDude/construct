@@ -258,6 +258,8 @@ class Subconstruct(Construct):
     """
     __slots__ = ["subcon"]
     def __init__(self, subcon):
+        if not isinstance(subcon, Construct):
+            raise TypeError("subcon should be a Construct field")
         super(Subconstruct, self).__init__(subcon.name, subcon.conflags)
         self.subcon = subcon
     def _parse(self, stream, context):
@@ -1995,7 +1997,7 @@ class ByteSwapped(Subconstruct):
         return self.subcon._sizeof(context)
 
 
-class LengthValue(Construct):
+class LengthValue(Subconstruct):
     r"""
     Parses the length field. Then parses the subcon using a byte range specified by the length. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes.
 
@@ -2018,11 +2020,8 @@ class LengthValue(Construct):
     def __init__(self, lengthfield, subcon):
         if not isinstance(lengthfield, Construct):
             raise TypeError("lengthfield should be a Construct field")
-        if not isinstance(subcon, Construct):
-            raise TypeError("subcon should be a Construct field")
-        super(LengthValue, self).__init__(subcon.name)
+        super(LengthValue, self).__init__(subcon)
         self.lengthfield = lengthfield
-        self.subcon = subcon
     def _parse(self, stream, context):
         length = self.lengthfield._parse(stream, context)
         data = _read_stream(stream, length)
