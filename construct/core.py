@@ -50,7 +50,7 @@ class ValidationError(AdaptationError):
 # abstract constructs
 #===============================================================================
 class Construct(object):
-    """
+    r"""
     The mother of all constructs.
 
     This object is generally not directly instantiated, and it does not directly implement parsing and building, so it is largely only of interest to subclass implementors.
@@ -245,11 +245,11 @@ class Construct(object):
         """
         Override in your subclass.
         """
-        raise SizeofError("Constructs cannot compute size by default. ")
+        raise SizeofError("cannot calculate size")
 
 
 class Subconstruct(Construct):
-    """
+    r"""
     Abstract subconstruct (wraps an inner construct, inheriting its name and flags).
 
     Subconstructs wrap an inner Construct, inheriting its name and flags.
@@ -289,7 +289,7 @@ class Adapter(Subconstruct):
         raise NotImplementedError()
 
 
-class SymmetricAdapter(Adapter):
+class SymmetricAdapter(Subconstruct):
     r"""
     Abstract adapter parent class.
 
