@@ -230,23 +230,21 @@ class OneOf(Validator):
     Validates that the object is one of the listed values.
 
     :param subcon: object to validate
-    :param valids: a set of valid values
+    :param valids: a collection implementing `in`
 
     Example::
 
-        >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x05")
+        >>> OneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x05")
         5
-        >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
-        Traceback (most recent call last):
-            ...
+
+        >>> OneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x08")
         construct.core.ValidationError: ('invalid object', 8)
-        >>>
-        >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(5)
-        '\\x05'
-        >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(9)
-        Traceback (most recent call last):
-            ...
-        construct.core.ValidationError: ('invalid object', 9)
+
+        >>> OneOf(UBInt8("num"), [4,5,6,7]).build(5)
+        b"\x05"
+
+        >>> OneOf(UBInt8("num"), [4,5,6,7]).build(8)
+        construct.core.ValidationError: ('invalid object', 8)
     """
     __slots__ = ["valids"]
     def __init__(self, subcon, valids):
@@ -261,15 +259,20 @@ class NoneOf(Validator):
     Validates that the object is none of the listed values.
 
     :param subcon: object to validate
-    :param invalids: a set of invalid values
+    :param invalids: a collection implementing `in`
 
     Example::
 
-        >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+        >>> NoneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x08")
         8
-        >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x06")
-        Traceback (most recent call last):
-            ...
+
+        >>> NoneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x06")
+        construct.core.ValidationError: ('invalid object', 6)
+
+        >>> NoneOf(UBInt8("num"), [4,5,6,7]).build(8)
+        b"\x08"
+
+        >>> NoneOf(UBInt8("num"), [4,5,6,7]).build(6)
         construct.core.ValidationError: ('invalid object', 6)
     """
     __slots__ = ["invalids"]
