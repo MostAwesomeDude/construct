@@ -337,7 +337,7 @@ class TestLazyStruct(unittest.TestCase):
 class TestNumpy(unittest.TestCase):
 
     def test(self):
-        if not PY3 and not PYPY:
+        if not PYPY:
             import numpy
             s = Numpy("numpy")
             a = numpy.array([1,2,3], dtype=numpy.int64)
