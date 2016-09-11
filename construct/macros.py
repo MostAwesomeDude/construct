@@ -2,9 +2,10 @@ from sys import maxsize
 
 from construct.lib.py3compat import int2byte
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, ArrayError, StringError, Buffered, Restream, Reconfig, Padding, Const, Aligned
+from construct.core import Construct, Struct, MetaField, StaticField, FormatField, OnDemand, Pointer, Switch, Computed, RepeatUntil, MetaArray, Sequence, Range, Select, Pass, SizeofError, ArrayError, StringError, Buffered, Restream, Reconfig, Padding, Const, Aligned, BitIntegerError
 from construct.core import _read_stream, _write_stream
-from construct.adapters import BitIntegerAdapter, Indexing, FlagsAdapter, MappingAdapter
+from construct.adapters import Indexing, FlagsAdapter, MappingAdapter
+from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
 
 
 #===============================================================================
@@ -25,18 +26,15 @@ def Field(name, length):
         return StaticField(name, length)
 
 
-def BitField(name, length, swapped=False, signed=False, bytesize=8):
+class BitField(Construct):
     r"""
-    BitFields, as the name suggests, are fields that operate on raw, unaligned
-    bits, and therefore must be enclosed in a BitStruct. Using them is very
-    similar to all normal fields: they take a name and a length (in bits).
+    BitFields, as the name suggests, are fields that operate on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using them is very similar to all normal fields: they take a name and a length (in bits).
 
     :param name: name of the field
-    :param length: number of bits in the field, or a function that takes
-                   the context as its argument and returns the length
-    :param swapped: whether the value is byte-swapped
-    :param signed: whether the value is signed
-    :param bytesize: number of bits per byte, for byte-swapping
+    :param length: number of bits in the field, or a function that takes context returns int
+    :param swapped: whether to swap byte order (little endian), default is False (big endian)
+    :param signed: whether the value is signed (two's complement), default is False (unsigned)
+    :param bytesize: number of bits per byte, used for byte-swapping (if swapped), default is 8.
 
     Example::
 
@@ -62,12 +60,31 @@ def BitField(name, length, swapped=False, signed=False, bytesize=8):
         >>> foo.parse("\xe1\x1f")
         Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
     """
-    return BitIntegerAdapter(Field(name, length),
-        length,
-        swapped=swapped,
-        signed=signed,
-        bytesize=bytesize
-    )
+    __slots__ = ["length", "swapped", "signed", "bytesize"]
+    def __init__(self, name, length, swapped=False, signed=False, bytesize=8):
+        super(BitField, self).__init__(name)
+        self.length = length
+        self.swapped = swapped
+        self.signed = signed
+        self.bytesize = bytesize
+        self._set_flag(self.FLAG_DYNAMIC)
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        data = _read_stream(stream, length)
+        if self.swapped:
+            data = swap_bytes(data, self.bytesize)
+        return bin_to_int(data, self.signed)
+    def _build(self, obj, stream, context):
+        if obj < 0 and not self.signed:
+            raise BitIntegerError("object is negative, but field is not signed", obj)
+        length = self.length(context) if callable(self.length) else self.length
+        data = int_to_bin(obj, length)
+        if self.swapped:
+            data = swap_bytes(data, self.bytesize)
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
+
 
 def Flag(name, truth=1, falsehood=0, default=False):
     r"""
@@ -351,9 +368,9 @@ def Bitwise(subcon):
     Converts the stream to bits, and passes the bitstream to subcon.
 
     :param subcon: a bitwise construct (usually BitField)
+
+    Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
     """
-    # subcons larger than MAX_BUFFER will be wrapped by Restream instead
-    # of Buffered. implementation details, don't stick your nose in :)
     MAX_BUFFER = 1024 * 8
     def resizer(length):
         if length & 7:

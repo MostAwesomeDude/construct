@@ -8,8 +8,6 @@ from construct.lib import FlagsContainer, HexString
 #===============================================================================
 # exceptions
 #===============================================================================
-class BitIntegerError(AdaptationError):
-    pass
 class MappingError(AdaptationError):
     pass
 
@@ -17,42 +15,6 @@ class MappingError(AdaptationError):
 #===============================================================================
 # adapters
 #===============================================================================
-class BitIntegerAdapter(Adapter):
-    """
-    Adapter for bit-integers (converts bitstrings to integers, and vice versa).
-    See BitField.
-
-    :param subcon: the subcon to adapt
-    :param width: the size of the subcon, in bits
-    :param swapped: whether to swap byte order (little endian/big endian).
-                    default is False (big endian)
-    :param signed: whether the value is signed (two's complement). the default
-                   is False (unsigned)
-    :param bytesize: number of bits per byte, used for byte-swapping (if swapped).
-                     default is 8.
-    """
-    __slots__ = ["width", "swapped", "signed", "bytesize"]
-    def __init__(self, subcon, width, swapped = False, signed = False,
-                 bytesize = 8):
-        super(BitIntegerAdapter, self).__init__(subcon)
-        self.width = width
-        self.swapped = swapped
-        self.signed = signed
-        self.bytesize = bytesize
-    def _encode(self, obj, context):
-        if obj < 0 and not self.signed:
-            raise BitIntegerError("object is negative, but field is not signed",
-                obj)
-        obj2 = int_to_bin(obj, width = self.width(context) if callable(self.width) else self.width)
-        if self.swapped:
-            obj2 = swap_bytes(obj2, bytesize = self.bytesize)
-        return obj2
-    def _decode(self, obj, context):
-        if self.swapped:
-            obj = swap_bytes(obj, bytesize = self.bytesize)
-        return bin_to_int(obj, signed = self.signed)
-
-
 class MappingAdapter(Adapter):
     """
     Adapter that maps objects to other objects.

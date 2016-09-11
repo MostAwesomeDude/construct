@@ -153,14 +153,15 @@ all_tests = [
     #
     # adapters
     #
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).parse, b"\x01" * 8, 255, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, signed=True).parse, b"\x01" * 8, -1, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, swapped=True, bytesize=4).parse, b"\x01" * 4 + b"\x00" * 4, 0x0f, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).build, 255, b"\x01" * 8, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", lambda c: 8), lambda c: 8).build, 255, b"\x01" * 8, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8).build, -1, None, BitIntegerError],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, signed=True).build, -1, b"\x01" * 8, None],
-    [BitIntegerAdapter(Field("bitintegeradapter", 8), 8, swapped=True, bytesize=4).build, 0x0f, b"\x01" * 4 + b"\x00" * 4, None],
+    [BitField("bitfield", 8).parse, b"\x01" * 8, 255, None],
+    [BitField("bitfield", 8).build, 255, b"\x01" * 8, None],
+    [BitField("bitfield", 8).build, -1, None, BitIntegerError],
+    [BitField("bitfield", 8, signed=True).parse, b"\x01" * 8, -1, None],
+    [BitField("bitfield", 8, signed=True).build, -1, b"\x01" * 8, None],
+    [BitField("bitfield", 8, swapped=True, bytesize=4).parse, b"\x01" * 4 + b"\x00" * 4, 0x0f, None],
+    [BitField("bitfield", 8, swapped=True, bytesize=4).build, 0x0f, b"\x01" * 4 + b"\x00" * 4, None],
+    [BitField("bitfield", lambda c: 8).parse, b"\x01" * 8, 255, None],
+    [BitField("bitfield", lambda c: 8).build, 255, b"\x01" * 8, None],
 
     [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x03", "y", None],
     [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x04", None, MappingError],

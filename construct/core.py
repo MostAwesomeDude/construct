@@ -43,6 +43,8 @@ class ChecksumError(ConstructError):
     pass
 class ValidationError(AdaptationError):
     pass
+class BitIntegerError(AdaptationError):
+    pass
 
 
 
