@@ -331,7 +331,7 @@ class TestLazyStruct(unittest.TestCase):
         self.assertEqual(obj.a, 1)
         self.assertEqual(obj.b, b"abc")
         self.assertEqual(obj, dict(a=1,b=b"abc"))
-        self.assertRaises(SizeofError, lambda none: s.sizeof(), None)
+        self.assertRaises(SizeofError, s.sizeof)
 
 
 class TestNumpy(unittest.TestCase):
