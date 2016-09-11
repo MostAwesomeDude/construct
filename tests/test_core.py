@@ -317,6 +317,7 @@ class TestEmbeddedBitStruct(unittest.TestCase):
         )
         self.assertEqual(s.parse(b"\x08\xff"), Container(len=8)(data=255))
         self.assertEqual(s.build(dict(len=8,data=255)), b"\x08\xff")
+        # self.assertRaises(SizeofError, s.sizeof)
 
 
 class TestLazyStruct(unittest.TestCase):
