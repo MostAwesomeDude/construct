@@ -356,8 +356,11 @@ all_tests = [
     [LengthValue(Byte(None),ULInt16(None)).parse, b"\x02\xff\xff", 65535, None],
     [LengthValue(Byte(None),ULInt16(None)).build, 65535, b"\x02\xff\xff", None],
 
-    [LengthValue(Byte(None),Compressed(CString(None))).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
-    [LengthValue(Byte(None),Compressed(CString(None))).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
+    [PrefixedCompressed(Byte(None),CString(None),"zlib").parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
+    [PrefixedCompressed(Byte(None),CString(None),"zlib").build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
+
+    [GreedyBytes(None).parse, b"123", b"123", None],
+    [GreedyBytes(None).build, b"123", b"123", None],
 
 ]
 

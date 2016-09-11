@@ -368,7 +368,7 @@ def _write_stream(stream, length, data):
 
 class StaticField(Construct):
     """
-    A fixed-size byte field.
+    A fixed size byte field.
 
     :param name: field name
     :param length: number of bytes in the field
@@ -387,7 +387,7 @@ class StaticField(Construct):
 
 class FormatField(StaticField):
     """
-    A field that uses ``struct`` to pack and unpack data.
+    A field that uses ``struct`` module to pack and unpack data.
 
     See ``struct`` documentation for instructions on crafting format strings.
 
@@ -453,6 +453,19 @@ class MetaField(Construct):
     def _sizeof(self, context):
         return self.lengthfunc(context)
 
+
+class GreedyBytes(Construct):
+    """
+    A variable size byte field.
+
+    Parses the stream to the end, and builds into the stream the bytes as is.
+
+    :param name: field name, or None for anonymous
+    """
+    def _parse(self, stream, context):
+        return stream.read()
+    def _build(self, obj, stream, context):
+        stream.write(obj)
 
 
 #===============================================================================
@@ -2021,13 +2034,9 @@ class LengthValue(Subconstruct):
 
     Example::
 
-        LengthValue(VarInt(None), CString("text"))
-        .parse(b"\x06hello\0") -> b"hello"
-        .build(b"hello") -> b"\x06hello\0"
-
-        LengthValue(Byte(None), Compressed(CString(None)))
-        .parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1') -> b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        .build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") ->b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1'
+        LengthValue(VarInt(None), GreedyBytes("data"))
+        .parse(b"\x03abcdefg") -> b"abc"
+        .build(b"abc") -> b'\x03abc'
     """
     __slots__ = ["name", "lengthfield", "subcon"]
     def __init__(self, lengthfield, subcon):
@@ -2051,30 +2060,43 @@ class Compressed(Tunnel):
     r"""
     Compresses or decompresses a subcon.
 
-    When parsing, entire stream is consumed unless constrained by LengthValue. When building, puts compressed byte string without marking the end or length of compressed buffer. This construct should either be used with LengthValue or on entire stream.
+    When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should either be used with LengthValue or on entire stream.
 
     Name of the subcon is used for this construct.
 
-    :param lengthfield: a subcon used for storing the length, can have no name
     :param subcon: the subcon used for storing the value
+    :param encoding: any of codecs module bytes encodings, ie. "zlib"
 
     Example::
 
-        LengthValue(VarInt(None), CString("text"))
-        .parse(b"\x06hello\0") -> b"hello"
-        .build(b"hello") -> b"\x06hello\0"
-
-        LengthValue(Byte(None), Compressed(CString(None)))
-        .parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1') -> b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        .build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") ->b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1'
+        Compressed(CString(None), "zlib")
+        .parse(b'x\x9c30\xc0\n\x18\x008(\x04Q') -> b"00000000000000000000000"
+        .build(b"00000000000000000000000") -> b'x\x9c30\xc0\n\x18\x008(\x04Q'
     """
-    def __init__(self, subcon, encoding="zlib"):
+    def __init__(self, subcon, encoding):
         super(Compressed, self).__init__(subcon)
         self.encoding = encoding
     def _decode(self, data, context):
         return codecs.decode(data, self.encoding)
     def _encode(self, data, context):
         return codecs.encode(data, self.encoding)
+
+
+def PrefixedCompressed(lengthfield, subcon, encoding):
+    r"""
+    Macro around LengthValue and Compressed.
+
+    :param lengthfield: a subcon used for storing the length, can have no name
+    :param subcon: the subcon used for storing the value, can have no name
+    :param encoding: any of codecs module bytes encodings, ie. "zlib"
+
+    Example::
+
+        PrefixedCompressed(Byte(None), CString(None), "zlib")
+        .parse(b"\x0cx\x9c30\xc0\n\x18\x008(\x04Q") -> b"00000000000000000000000"
+        .build(b"00000000000000000000000") -> b"\x0cx\x9c30\xc0\n\x18\x008(\x04Q"
+    """
+    return LengthValue(lengthfield, Compressed(subcon, encoding))
 
 
 class LazyStruct(Construct):
@@ -2168,18 +2190,18 @@ class Numpy(Construct):
 
     Example::
 
-    	Numpy("data")
-    	.parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00") -> array([1, 2, 3])
-    	.build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+        Numpy("data")
+        .parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00") -> array([1, 2, 3])
+        .build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
     """
     def __init__(self, name):
         import numpy
         super(Numpy, self).__init__(name)
         self.lib = numpy
     def _parse(self, stream, context):
-    	return self.lib.load(stream)
+        return self.lib.load(stream)
     def _build(self, obj, stream, context):
-    	self.lib.save(stream, obj)
+        self.lib.save(stream, obj)
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
 
