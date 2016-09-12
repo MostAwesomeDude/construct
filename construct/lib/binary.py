@@ -1,7 +1,4 @@
-import sys
-PY3 = sys.version_info[0] == 3
-
-from construct.lib.py3compat import int2byte
+from construct.lib.py3compat import PY3, int2byte
 
 
 if PY3:
