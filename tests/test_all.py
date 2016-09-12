@@ -338,10 +338,15 @@ all_tests = [
     [Optional(ULInt32("int")).parse, b"?", None, None],
     [Optional(ULInt32("int")).build, None, b"", None],
 
-    [ULInt24('int24').parse, b"\x01\x02\x03", 197121, None],
-    [ULInt24('int24').build, 197121, b"\x01\x02\x03", None],
-    [Struct('struct', ULInt24('int24')).parse, b"\x01\x02\x03", Container(int24=197121), None],
-    [Struct('struct', ULInt24('int24')).build, Container(int24=197121), b"\x01\x02\x03", None],
+    [UBInt24('int24').parse, b"\x01\x02\x03", 0x010203, None],
+    [UBInt24('int24').build, 0x010203, b"\x01\x02\x03", None],
+    [Struct('struct', UBInt24('int24')).parse, b"\x01\x02\x03", Container(int24=0x010203), None],
+    [Struct('struct', UBInt24('int24')).build, Container(int24=0x010203), b"\x01\x02\x03", None],
+
+    [ULInt24('int24').parse, b"\x01\x02\x03", 0x030201, None],
+    [ULInt24('int24').build, 0x030201, b"\x01\x02\x03", None],
+    [Struct('struct', ULInt24('int24')).parse, b"\x01\x02\x03", Container(int24=0x030201), None],
+    [Struct('struct', ULInt24('int24')).build, Container(int24=0x030201), b"\x01\x02\x03", None],
 
     [ByteSwapped(Bytes(None, 5)).parse, b"12345", b"54321", None],
     [ByteSwapped(Bytes(None, 5)).build, b"12345", b"54321", None],
