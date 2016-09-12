@@ -817,82 +817,6 @@ class Sequence(Struct):
             sc._build(subobj, stream, context)
 
 
-def _subobj(sc, obj):
-    if sc.conflags & sc.FLAG_EMBED:
-        return obj
-    else:
-        return obj[sc.name]
-
-def _updcon(con, sc, obj):
-    if sc.conflags & sc.FLAG_EMBED:
-        con.update(obj)
-    else:
-        con[sc.name] = obj
-
-
-class Union(Construct):
-    r"""
-    Set of overlapping fields (like unions in C). When parsing, all fields read the same data. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name. Size is the maximum of subcon sizes.
-
-    .. note:: Requires a seekable stream.
-
-    :param name: name of the union
-    :param buildfrom: the subcon used for building and calculating the total size, can be integer index or string name or None (then tries each subcon)
-    :param subcons: subconstructs for parsing, one of them used for building
-
-    Example::
-
-        Union("union",
-            Struct("sub1", ULInt8("a"), ULInt8("b") ),
-            Struct("sub2", ULInt16("c") ),
-        )
-
-        .build(dict(sub1=dict(a=1,b=2))) -> b"\x01\x02"
-        .build(dict(sub2=dict(c=3)))     -> b"\x03\x00"
-
-        Union("union",
-            Embed(Struct("sub1", ULInt8("a"), ULInt8("b") )),
-            Embed(Struct("sub2", ULInt16("c") )),
-        )
-
-        .build(dict(a=1,b=2)) -> b"\x01\x02"
-        .build(dict(c=3)) -> b"\x03\x00"
-    """
-    __slots__ = ["name","subcons","buildfrom"]
-    def __init__(self, name, *subcons, **kw):
-        super(Union, self).__init__(name)
-        args = [Peek(sc,performbuild=True) for sc in subcons]
-        self.buildfrom = kw.get("buildfrom", None)
-        self.subcons = args
-    def _parse(self, stream, context):
-        ret = Container()
-        for sc in self.subcons:
-            _updcon(ret, sc, sc._parse(stream, context))
-        return ret
-    def _build(self, obj, stream, context):
-        if self.buildfrom is not None:
-            if isinstance(self.buildfrom, int):
-                index = self.buildfrom
-                name = self.subcons[index].name
-                self.subcons[index]._build(_subobj(self.subcons[index], obj), stream, context)
-            elif isinstance(self.buildfrom, str):
-                index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
-                name = self.subcons[index].name
-                self.subcons[index]._build(_subobj(self.subcons[index], obj), stream, context)
-            else:
-                raise TypeError("buildfrom is not int or str")
-        else:
-            for sc in self.subcons:
-                try:
-                    sc._build(_subobj(sc, obj), stream, context)
-                except Exception:
-                    pass
-                else:
-                    break
-    def _sizeof(self, context):
-        return max([sc._sizeof(context) for sc in self.subcons])
-
-
 #===============================================================================
 # conditional
 #===============================================================================
@@ -962,6 +886,84 @@ class Switch(Construct):
         return case._sizeof(context)
 
 
+def _subobj(sc, obj):
+    if sc.conflags & sc.FLAG_EMBED:
+        return obj
+    else:
+        return obj[sc.name]
+def _updcon(con, sc, obj):
+    if sc.conflags & sc.FLAG_EMBED:
+        con.update(obj)
+    else:
+        con[sc.name] = obj
+
+
+class Union(Construct):
+    r"""
+    Set of overlapping fields (like unions in C). When parsing, all fields read the same data. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name. Size is the maximum of subcon sizes.
+
+    .. note:: Requires a seekable stream.
+
+    :param name: name of the union
+    :param buildfrom: the subcon used for building and calculating the total size, can be integer index or string name or None (then tries each subcon)
+    :param subcons: subconstructs for parsing, one of them used for building
+
+    Example::
+
+        Union("union",
+            Struct("sub1", ULInt8("a"), ULInt8("b") ),
+            Struct("sub2", ULInt16("c") ),
+        )
+
+        .build(dict(sub1=dict(a=1,b=2))) -> b"\x01\x02"
+        .build(dict(sub2=dict(c=3)))     -> b"\x03\x00"
+
+        Union("union",
+            Embed(Struct("sub1", ULInt8("a"), ULInt8("b") )),
+            Embed(Struct("sub2", ULInt16("c") )),
+        )
+
+        .build(dict(a=1,b=2)) -> b"\x01\x02"
+        .build(dict(c=3)) -> b"\x03\x00"
+    """
+    __slots__ = ["name","subcons","buildfrom"]
+    def __init__(self, name, *subcons, **kw):
+        super(Union, self).__init__(name)
+        args = [Peek(sc,performbuild=True) for sc in subcons]
+        self.buildfrom = kw.get("buildfrom", None)
+        self.subcons = args
+    def _parse(self, stream, context):
+        ret = Container()
+        for sc in self.subcons:
+            _updcon(ret, sc, sc._parse(stream, context))
+        return ret
+    def _build(self, obj, stream, context):
+        if self.buildfrom is not None:
+            if isinstance(self.buildfrom, int):
+                index = self.buildfrom
+                name = self.subcons[index].name
+                self.subcons[index]._build(_subobj(self.subcons[index], obj), stream, context)
+            elif isinstance(self.buildfrom, str):
+                index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
+                name = self.subcons[index].name
+                self.subcons[index]._build(_subobj(self.subcons[index], obj), stream, context)
+            else:
+                raise TypeError("buildfrom is not int or str")
+        else:
+            for sc in self.subcons:
+                try:
+                    data = sc.build(_subobj(sc, obj), context)
+                except Exception:
+                    pass
+                else:
+                    stream.write(data)
+                    break
+            else:
+                raise SelectError("no subconstruct matched", obj)
+    def _sizeof(self, context):
+        return max([sc._sizeof(context) for sc in self.subcons])
+
+
 class Select(Construct):
     """
     Selects the first matching subconstruct. It will literally try each of the subconstructs, until one matches.
@@ -984,9 +986,6 @@ class Select(Construct):
     __slots__ = ["subcons", "include_name"]
     def __init__(self, name, *subcons, **kw):
         include_name = kw.pop("include_name", False)
-        if kw:
-            raise TypeError("the only keyword argument accepted "
-                "is 'include_name'", kw)
         super(Select, self).__init__(name)
         self.subcons = subcons
         self.include_name = include_name
@@ -994,12 +993,12 @@ class Select(Construct):
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         for sc in self.subcons:
-            pos = stream.tell()
+            fallback = stream.tell()
             context2 = context.__copy__()
             try:
                 obj = sc._parse(stream, context2)
             except ConstructError:
-                stream.seek(pos)
+                stream.seek(fallback)
             else:
                 context.__update__(context2)
                 if self.include_name:
@@ -1016,19 +1015,16 @@ class Select(Construct):
                     return
         else:
             for sc in self.subcons:
-                stream2 = BytesIO()
                 context2 = context.__copy__()
                 try:
-                    sc._build(obj, stream2, context2)
+                    data = sc.build(obj, context2)
                 except Exception:
                     pass
                 else:
                     context.__update__(context2)
-                    stream.write(stream2.getvalue())
+                    stream.write(data)
                     return
         raise SelectError("no subconstruct matched", obj)
-    def _sizeof(self, context):
-        raise SizeofError("can't calculate size")
 
 
 #===============================================================================
