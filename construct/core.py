@@ -1692,6 +1692,29 @@ class Const(Construct):
         return self.subcon._sizeof(context)
 
 
+def _encode_string(obj, encoding):
+    if encoding:
+        if isinstance(encoding, str):
+            obj = obj.encode(encoding)
+        else:
+            obj = encoding.encode(obj)
+    else:
+        if not isinstance(obj, bytes):
+            raise StringError("no encoding provided but building from unicode string?")
+    return obj
+
+def _decode_string(obj, encoding):
+    if encoding:
+        if isinstance(encoding, str):
+            obj = obj.decode(encoding)
+        else:
+            obj = encoding.decode(obj)
+    return obj
+
+
+
+
+
 class String(Construct):
     r"""
     A configurable, variable-length string field.
@@ -1762,23 +1785,12 @@ class String(Construct):
             obj = obj.lstrip(padchar)
         else:
             obj = obj.strip(padchar)
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.decode(self.encoding)
-            else:
-                obj = self.encoding.decode(obj)
+        obj = _decode_string(obj, self.encoding)
         return obj
     def _build(self, obj, stream, context):
         length = self.length(context) if callable(self.length) else self.length
         padchar = self.padchar
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.encode(self.encoding)
-            else:
-                obj = self.encoding.encode(obj)
-        else:
-            if not isinstance(obj, bytes):
-                raise StringError("no encoding provided but building from unicode string?")
+        obj = _encode_string(obj, self.encoding)
         if self.paddir == "right":
             obj = obj.ljust(length, padchar)
         elif self.paddir == "left":
@@ -1835,21 +1847,10 @@ class CString(Construct):
             if char in self.terminators:
                 break
             obj += char
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.decode(self.encoding)
-            else:
-                obj = self.encoding.decode(obj)
+        obj = _decode_string(obj, self.encoding)
         return obj
     def _build(self, obj, stream, context):
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.encode(self.encoding)
-            else:
-                obj = self.encoding.encode(obj)
-        else:
-            if not isinstance(obj, bytes):
-                raise StringError("no encoding provided but building from unicode string?")
+        obj = _encode_string(obj, self.encoding)
         obj += self.terminators[:1]
         _write_stream(stream, len(obj), obj)
     def _sizeof(self, context):
@@ -1879,21 +1880,10 @@ class GreedyString(Construct):
         self.encoding = encoding
     def _parse(self, stream, context):
         obj = stream.read()
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.decode(self.encoding)
-            else:
-                obj = self.encoding.decode(obj)
+        obj = _decode_string(obj, self.encoding)
         return obj
     def _build(self, obj, stream, context):
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.encode(self.encoding)
-            else:
-                obj = self.encoding.encode(obj)
-        else:
-            if not isinstance(obj, bytes):
-                raise StringError("no encoding provided but building from unicode string?")
+        obj = _encode_string(obj, self.encoding)
         _write_stream(stream, len(obj), obj)
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
