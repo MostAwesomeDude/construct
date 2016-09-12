@@ -133,10 +133,10 @@ all_tests = [
     [Range(3, 5, Byte).build, [1,2,3,4,5,6], None, RangeError],
     [Range(3, 5, Byte).sizeof, None, None, SizeofError],
 
-    # [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).parse, b"\x02\x03\x09", [2,3,9], None],
-    # [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).parse, b"\x02\x03\x08", None, ArrayError],
-    # [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).build, [2,3,9], b"\x02\x03\x09", None],
-    # [RepeatUntil(lambda obj, ctx: obj == 9, UBInt8("repeatuntil")).build, [2,3,8], None, ArrayError],
+    [RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse, b"\x02\x03\x09garbage", [2,3,9], None],
+    [RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse, b"\x02\x03\x08", None, ArrayError],
+    [RepeatUntil(lambda obj,ctx: obj == 9, Byte).build, [2,3,9,1,1,1], b"\x02\x03\x09", None],
+    [RepeatUntil(lambda obj,ctx: obj == 9, Byte).build, [2,3,8], None, ArrayError],
 
     # [Struct("struct", UBInt8("a"), UBInt16("b")).parse, b"\x01\x00\x02", Container(a=1)(b=2), None],
     # [Struct("struct", UBInt8("a"), UBInt16("b"), Struct("inner", UBInt8("c"), UBInt8("d"))).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(inner=Container(c=3)(d=4)), None],

@@ -2293,46 +2293,26 @@ class RepeatUntil(Subconstruct):
     def __init__(self, predicate, subcon):
         super(RepeatUntil, self).__init__(subcon)
         self.predicate = predicate
-        self._clear_flag(self.FLAG_COPY_CONTEXT)
-        self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
-        obj = []
         try:
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                while True:
-                    subobj = self.subcon._parse(stream, context.__copy__())
-                    obj.append(subobj)
-                    if self.predicate(subobj, context):
-                        break
-            else:
-                while True:
-                    subobj = self.subcon._parse(stream, context)
-                    obj.append(subobj)
-                    if self.predicate(subobj, context):
-                        break
+            obj = ListContainer()
+            while True:
+                subobj = self.subcon._parse(stream, context)
+                obj.append(subobj)
+                if self.predicate(subobj, context):
+                    break
         except ConstructError:
-            raise ArrayError("missing terminator", sys.exc_info()[1])
+            raise ArrayError("missing terminator")
         return obj
     def _build(self, obj, stream, context):
-        terminated = False
-        if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-            for subobj in obj:
-                self.subcon._build(subobj, stream, context.__copy__())
-                if self.predicate(subobj, context):
-                    terminated = True
-                    break
+        for subobj in obj:
+            self.subcon._build(subobj, stream, context)
+            if self.predicate(subobj, context):
+                break
         else:
-            for subobj in obj:
-                #subobj = bchr(subobj)  -- WTF is that for?!
-                #subobj = int2byte(subobj)  -- WTF is that for?!
-                self.subcon._build(subobj, stream, context.__copy__())
-                if self.predicate(subobj, context):
-                    terminated = True
-                    break
-        if not terminated:
             raise ArrayError("missing terminator")
     def _sizeof(self, context):
-        raise SizeofError("can't calculate size")
+        raise SizeofError("cannot calculate size")
 
 
 def OpenRange(min, subcon):
