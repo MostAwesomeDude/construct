@@ -27,22 +27,19 @@ Construct
 =========
 .. raw:: html
 
-   <div style="width:770px; margin: 1em 0 2em 0; display: block; padding: 1em; border: 1px dotted #DDD; 
+    <div style="width:770px; margin: 1em 0 2em 0; display: block; padding: 1em; border: 1px dotted #DDD; 
     background-color: rgba(255, 255, 202, 0.69); border-radius: 5px;">
-   
-   <strong>Sticky</strong><br/>
-   
-   <a class="reference external" href="https://pypi.python.org/pypi/construct">Version 2.6.2</a> 
-   was released on September 6th, 2016. Framework is undergoing significant API and implementation changes. Documentation is being updated at same time but some confusion may arise until we arrive at stable 2.7 somewhere in the future.<br/>
-   </br>
-   
-   Please use the 
-   <a class="reference external" href="https://groups.google.com/d/forum/construct3">mailing list</a> 
-   to ask questions and use 
-   <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> 
-   to report problems..
-   
-   </div>
+
+    <strong>Sticky</strong><br/>
+
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the last stable release. If you are maintaining a project that depends on this framework, you should use this version. This is also latest version on  <a class="reference external" href="https://pypi.python.org/pypi/construct">pypi</a>. </br>
+    </br>
+
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.6.4</a> was released on September 12th, 2016. Framework is undergoing significant API and implementation changes. Documentation is being updated at same time but some confusion may arise. Docstrngs are always up-to-date but readthedocs site is sometimes stale. <br/>
+    </br>
+
+    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, report issues and bugs, and to send patches. There is also the <a class="reference external" href="https://groups.google.com/d/forum/construct3">mailing list</a> but GitHub should be preffered.
+    </div>
 
 Construct is a powerful **declarative** parser (and builder) for binary data.
 
