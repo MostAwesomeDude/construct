@@ -1861,8 +1861,12 @@ class GreedyString(Construct):
     r"""
     A string that reads the rest of the stream until EOF, or writes a given string as is.
 
+    If no encoding is given, this is essentially GreedyBytes.
+
     :param name: name
     :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    seealso:: :class:`~construct.GreedyBytes` class.
 
     Example::
 
