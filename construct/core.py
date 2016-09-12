@@ -2201,18 +2201,18 @@ class PrefixedArray(Construct):
 
 class Range(Subconstruct):
     r"""
-    A range-array. The subcon will iterate between ``mincount`` to ``maxcount`` times. If less than ``mincount`` elements are found, raises RangeError.
+    A range-array. The subcon will iterate between ``min`` to ``max`` times. If less than ``min`` elements are found, raises RangeError.
 
     .. seealso::
 
         The :func:`~construct.macros.GreedyRange` and :func:`~construct.macros.OptionalGreedyRange` macros.
 
-    The general-case repeater. Repeats the given unit for at least ``mincount`` times, and up to ``maxcount`` times. If an exception occurs (EOF, validation error), the repeater exits. If less than ``mincount`` units have been successfully parsed, a RangeError is raised.
+    The general-case repeater. Repeats the given unit for at least ``min`` times, and up to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits. If less than ``min`` units have been successfully parsed, a RangeError is raised.
 
     .. note:: This object requires a seekable stream for parsing.
 
-    :param mincount: the minimal count
-    :param maxcount: the maximal count
+    :param min: the minimal count
+    :param max: the maximal count
     :param subcon: the subcon to repeat
 
     Example::
@@ -2241,59 +2241,35 @@ class Range(Subconstruct):
           ...
         construct.core.RangeError: expected 3..7, found 8
     """
-    __slots__ = ["mincount", "maxcount"]
-
-    def __init__(self, mincount, maxcount, subcon):
-        if not 0 <= mincount <= maxcount:
-            raise RangeError("unsane mincount %s and maxcount %s" % (mincount,maxcount))
+    __slots__ = ["min", "max"]
+    def __init__(self, min, max, subcon):
+        if not 0 <= min <= max <= sys.maxsize:
+            raise RangeError("unsane min %s and max %s" % (min,max))
         super(Range, self).__init__(subcon)
-        self.mincount = mincount
-        self.maxcount = maxcount
-        self._clear_flag(self.FLAG_COPY_CONTEXT)
-        self._set_flag(self.FLAG_DYNAMIC)
-
+        self.min = min
+        self.max = max
     def _parse(self, stream, context):
         obj = ListContainer()
-        c = 0
         try:
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                while c < self.maxcount:
-                    pos = stream.tell()
-                    obj.append(self.subcon._parse(stream, context.__copy__()))
-                    c += 1
-            else:
-                while c < self.maxcount:
-                    pos = stream.tell()
-                    obj.append(self.subcon._parse(stream, context))
-                    c += 1
+            while len(obj) < self.max:
+                fallback = stream.tell()
+                obj.append(self.subcon._parse(stream, context))
         except ConstructError:
-            if c < self.mincount:
-                raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcount, c))
-            stream.seek(pos)
+            if len(obj) < self.min:
+                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
+            stream.seek(fallback)
         return obj
-
     def _build(self, obj, stream, context):
         if not isinstance(obj, collections.Sequence):
             raise RangeError("expected sequence type, found %s" % type(obj))
-        if len(obj) < self.mincount or len(obj) > self.maxcount:
-            raise RangeError("expected %d to %d, found %d" %
-                (self.mincount, self.maxcount, len(obj)))
-        cnt = 0
+        if not self.min <= len(obj) <= self.max:
+            raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
         try:
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                for subobj in obj:
-                    self.subcon._build(subobj, stream, context.__copy__())
-                    cnt += 1
-            else:
-                for subobj in obj:
-                    self.subcon._build(subobj, stream, context)
-                    cnt += 1
+            for subobj in obj:
+                self.subcon._build(subobj, stream, context)
         except ConstructError:
-            if cnt < self.mincount:
-                raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcount, len(obj)), sys.exc_info()[1])
-
+            if len(obj) < self.min:
+                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
 
@@ -2359,8 +2335,8 @@ class RepeatUntil(Subconstruct):
         raise SizeofError("can't calculate size")
 
 
-def OpenRange(mincount, subcon):
-    return Range(mincount, sys.maxsize, subcon)
+def OpenRange(min, subcon):
+    return Range(min, sys.maxsize, subcon)
 
 
 def GreedyRange(subcon):
