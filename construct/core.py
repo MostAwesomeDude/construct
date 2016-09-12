@@ -499,353 +499,6 @@ class FormatField(Bytes):
 
 
 #===============================================================================
-# arrays and repeaters
-#===============================================================================
-class MetaArray(Subconstruct):
-    """
-    An array (repeater) of a meta-count. The array will iterate exactly ``countfunc()`` times. Will raise ArrayError if less elements are found.
-
-    .. seealso::
-
-        The :func:`~construct.macros.Array` macro, :func:`Range` and :func:`RepeatUntil`.
-
-    :param countfunc: a function that takes the context as a parameter and returns the number of elements of the array (count)
-    :param subcon: the subcon to repeat ``countfunc()`` times
-
-    Example::
-
-        MetaArray(lambda ctx: 5, UBInt8("foo"))
-    """
-    __slots__ = ["countfunc"]
-    def __init__(self, countfunc, subcon):
-        super(MetaArray, self).__init__(subcon)
-        self.countfunc = countfunc
-        self._clear_flag(self.FLAG_COPY_CONTEXT)
-        self._set_flag(self.FLAG_DYNAMIC)
-    def _parse(self, stream, context):
-        obj = ListContainer()
-        c = 0
-        count = self.countfunc(context)
-        try:
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                while c < count:
-                    obj.append(self.subcon._parse(stream, context.__copy__()))
-                    c += 1
-            else:
-                while c < count:
-                    obj.append(self.subcon._parse(stream, context))
-                    c += 1
-        except ConstructError:
-            raise ArrayError("expected %d, found %d" % (count, c), sys.exc_info()[1])
-        return obj
-    def _build(self, obj, stream, context):
-        count = self.countfunc(context)
-        if len(obj) != count:
-            raise ArrayError("expected %d, found %d" % (count, len(obj)))
-        if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-            for subobj in obj:
-                self.subcon._build(subobj, stream, context.__copy__())
-        else:
-            for subobj in obj:
-                self.subcon._build(subobj, stream, context)
-    def _sizeof(self, context):
-        return self.subcon._sizeof(context) * self.countfunc(context)
-
-
-class Range(Subconstruct):
-    r"""
-    A range-array. The subcon will iterate between ``mincount`` to ``maxcount`` times. If less than ``mincount`` elements are found, raises RangeError.
-
-    .. seealso::
-
-        The :func:`~construct.macros.GreedyRange` and :func:`~construct.macros.OptionalGreedyRange` macros.
-
-    The general-case repeater. Repeats the given unit for at least ``mincount`` times, and up to ``maxcount`` times. If an exception occurs (EOF, validation error), the repeater exits. If less than ``mincount`` units have been successfully parsed, a RangeError is raised.
-
-    .. note:: This object requires a seekable stream for parsing.
-
-    :param mincount: the minimal count
-    :param maxcount: the maximal count
-    :param subcon: the subcon to repeat
-
-    Example::
-
-        >>> c = Range(3, 7, UBInt8("foo"))
-        >>> c.parse("\x01\x02")
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 3..7, found 2
-        >>> c.parse("\x01\x02\x03")
-        [1, 2, 3]
-        >>> c.parse("\x01\x02\x03\x04\x05\x06")
-        [1, 2, 3, 4, 5, 6]
-        >>> c.parse("\x01\x02\x03\x04\x05\x06\x07")
-        [1, 2, 3, 4, 5, 6, 7]
-        >>> c.parse("\x01\x02\x03\x04\x05\x06\x07\x08\x09")
-        [1, 2, 3, 4, 5, 6, 7]
-        >>> c.build([1,2])
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 3..7, found 2
-        >>> c.build([1,2,3,4])
-        '\x01\x02\x03\x04'
-        >>> c.build([1,2,3,4,5,6,7,8])
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 3..7, found 8
-    """
-    __slots__ = ["mincount", "maxcount"]
-
-    def __init__(self, mincount, maxcount, subcon):
-        if not 0 <= mincount <= maxcount:
-            raise RangeError("unsane mincount %s and maxcount %s" % (mincount,maxcount))
-        super(Range, self).__init__(subcon)
-        self.mincount = mincount
-        self.maxcount = maxcount
-        self._clear_flag(self.FLAG_COPY_CONTEXT)
-        self._set_flag(self.FLAG_DYNAMIC)
-
-    def _parse(self, stream, context):
-        obj = ListContainer()
-        c = 0
-        try:
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                while c < self.maxcount:
-                    pos = stream.tell()
-                    obj.append(self.subcon._parse(stream, context.__copy__()))
-                    c += 1
-            else:
-                while c < self.maxcount:
-                    pos = stream.tell()
-                    obj.append(self.subcon._parse(stream, context))
-                    c += 1
-        except ConstructError:
-            if c < self.mincount:
-                raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcount, c))
-            stream.seek(pos)
-        return obj
-
-    def _build(self, obj, stream, context):
-        if not isinstance(obj, collections.Sequence):
-            raise RangeError("expected sequence type, found %s" % type(obj))
-        if len(obj) < self.mincount or len(obj) > self.maxcount:
-            raise RangeError("expected %d to %d, found %d" %
-                (self.mincount, self.maxcount, len(obj)))
-        cnt = 0
-        try:
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                for subobj in obj:
-                    self.subcon._build(subobj, stream, context.__copy__())
-                    cnt += 1
-            else:
-                for subobj in obj:
-                    self.subcon._build(subobj, stream, context)
-                    cnt += 1
-        except ConstructError:
-            if cnt < self.mincount:
-                raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcount, len(obj)), sys.exc_info()[1])
-
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
-
-
-
-class RepeatUntil(Subconstruct):
-    r"""
-    An array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return value.
-
-    :param predicate: a predicate function that takes (obj, context) and returns True if the stop-condition is met, or False to continue.
-    :param subcon: the subcon to repeat.
-
-    Example::
-
-        # will read chars until '\x00' (inclusive)
-        RepeatUntil(lambda obj, ctx: obj == b"\x00",
-            Field("chars", 1)
-        )
-    """
-    __slots__ = ["predicate"]
-    def __init__(self, predicate, subcon):
-        super(RepeatUntil, self).__init__(subcon)
-        self.predicate = predicate
-        self._clear_flag(self.FLAG_COPY_CONTEXT)
-        self._set_flag(self.FLAG_DYNAMIC)
-    def _parse(self, stream, context):
-        obj = []
-        try:
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                while True:
-                    subobj = self.subcon._parse(stream, context.__copy__())
-                    obj.append(subobj)
-                    if self.predicate(subobj, context):
-                        break
-            else:
-                while True:
-                    subobj = self.subcon._parse(stream, context)
-                    obj.append(subobj)
-                    if self.predicate(subobj, context):
-                        break
-        except ConstructError:
-            raise ArrayError("missing terminator", sys.exc_info()[1])
-        return obj
-    def _build(self, obj, stream, context):
-        terminated = False
-        if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-            for subobj in obj:
-                self.subcon._build(subobj, stream, context.__copy__())
-                if self.predicate(subobj, context):
-                    terminated = True
-                    break
-        else:
-            for subobj in obj:
-                #subobj = bchr(subobj)  -- WTF is that for?!
-                #subobj = int2byte(subobj)  -- WTF is that for?!
-                self.subcon._build(subobj, stream, context.__copy__())
-                if self.predicate(subobj, context):
-                    terminated = True
-                    break
-        if not terminated:
-            raise ArrayError("missing terminator")
-    def _sizeof(self, context):
-        raise SizeofError("can't calculate size")
-
-
-#===============================================================================
-# structures and sequences
-#===============================================================================
-class Struct(Construct):
-    """
-    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
-
-    .. seealso:: The :func:`~construct.macros.Embedded` macro.
-
-    :param name: the name of the structure
-    :param subcons: a sequence of subconstructs that make up this structure.
-    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
-
-    Example::
-
-        Struct("foo",
-            UBInt8("first_element"),
-            UBInt16("second_element"),
-            Padding(2),
-            UBInt8("third_element"),
-        )
-    """
-    __slots__ = ["subcons", "nested", "allow_overwrite"]
-    def __init__(self, name, *subcons, **kw):
-        self.nested = kw.pop("nested", True)
-        self.allow_overwrite = kw.pop("allow_overwrite", False)
-        if kw:
-            raise TypeError("the only keyword argument accepted is 'nested'", kw)
-        super(Struct, self).__init__(name)
-        self.subcons = subcons
-        self._inherit_flags(*subcons)
-        self._clear_flag(self.FLAG_EMBED)
-    def _parse(self, stream, context):
-        if "<obj>" in context:
-            obj = context["<obj>"]
-            del context["<obj>"]
-        else:
-            obj = Container()
-            if self.nested:
-                context = Container(_ = context)
-        for sc in self.subcons:
-            if sc.conflags & self.FLAG_EMBED:
-                context["<obj>"] = obj
-                sc._parse(stream, context)
-                if "<obj>" in context:
-                    del context["<obj>"]
-            else:
-                subobj = sc._parse(stream, context)
-                if sc.name is not None:
-                    if sc.name in obj and not self.allow_overwrite:
-                        raise OverwriteError("%r would be overwritten but allow_overwrite is False" % (sc.name,))
-                    obj[sc.name] = subobj
-                    context[sc.name] = subobj
-        return obj
-    def _build(self, obj, stream, context):
-        if "<unnested>" in context:
-            del context["<unnested>"]
-        elif self.nested:
-            context = Container(_ = context)
-        for sc in self.subcons:
-            if sc.conflags & self.FLAG_EMBED:
-                context["<unnested>"] = True
-                subobj = obj
-            elif sc.name is None:
-                subobj = None
-            elif isinstance(sc, (Computed, Anchor, AnchorRange, Checksum)):
-                subobj = None
-            else:
-                subobj = obj[sc.name]
-                context[sc.name] = subobj
-            sc._build(subobj, stream, context)
-    def _sizeof(self, context):
-        #if self.nested:
-        #    context = Container(_ = context)
-        return sum(sc._sizeof(context) for sc in self.subcons)
-
-
-class Sequence(Struct):
-    """
-    A sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
-
-    .. seealso:: The :func:`~construct.macros.Embedded` macro.
-
-    :param name: the name of the structure
-    :param subcons: a sequence of subconstructs that make up this structure.
-    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
-
-    Example::
-
-        Sequence("foo",
-            UBInt8("first_element"),
-            UBInt16("second_element"),
-            Padding(2),
-            UBInt8("third_element"),
-        )
-    """
-    __slots__ = []
-    def _parse(self, stream, context):
-        if "<obj>" in context:
-            obj = context["<obj>"]
-            del context["<obj>"]
-        else:
-            obj = ListContainer()
-            if self.nested:
-                context = Container(_ = context)
-        for sc in self.subcons:
-            if sc.conflags & self.FLAG_EMBED:
-                context["<obj>"] = obj
-                sc._parse(stream, context)
-            else:
-                subobj = sc._parse(stream, context)
-                if sc.name is not None:
-                    obj.append(subobj)
-                    context[sc.name] = subobj
-        return obj
-    def _build(self, obj, stream, context):
-        if "<unnested>" in context:
-            del context["<unnested>"]
-        elif self.nested:
-            context = Container(_ = context)
-        objiter = iter(obj)
-        for sc in self.subcons:
-            if sc.conflags & self.FLAG_EMBED:
-                context["<unnested>"] = True
-                subobj = objiter
-            elif sc.name is None:
-                subobj = None
-            else:
-                subobj = next(objiter)
-                context[sc.name] = subobj
-            sc._build(subobj, stream, context)
-
-
-#===============================================================================
 # conditional
 #===============================================================================
 class Switch(Construct):
@@ -2450,11 +2103,25 @@ def NFloat64():
     return FormatField("=", "d")
 
 
+
 #===============================================================================
-# arrays
+# arrays and repeaters
 #===============================================================================
-def Array(count, subcon):
+class Array(Subconstruct):
     r"""
+    An array (repeater) of a meta-count. The array will iterate exactly ``countfunc()`` times. Will raise ArrayError if less elements are found.
+
+    .. seealso::
+
+        The :func:`~construct.macros.Array` macro, :func:`Range` and :func:`RepeatUntil`.
+
+    :param countfunc: a function that takes the context as a parameter and returns the number of elements of the array (count)
+    :param subcon: the subcon to repeat ``countfunc()`` times
+
+    Example::
+
+        MetaArray(lambda ctx: 5, UBInt8("foo"))
+
     Repeats the given unit a fixed number of times.
 
     :param count: number of times to repeat
@@ -2474,13 +2141,43 @@ def Array(count, subcon):
           ...
         construct.core.RangeError: expected 4..4, found 5
     """
+    __slots__ = ["count"]
+    def __init__(self, count, subcon):
+        super(Array, self).__init__(subcon)
+        self.count = count
+        # self._clear_flag(self.FLAG_COPY_CONTEXT)
+        # self._set_flag(self.FLAG_DYNAMIC)
+    def _parse(self, stream, context):
+        count = self.count(context) if callable(self.count) else self.count
+        try:
+            # if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
+            #     while c < count:
+            #         obj.append(self.subcon._parse(stream, context.__copy__()))
+            #         c += 1
+            # else:
+            obj = ListContainer()
+            for i in range(count):
+                obj.append(self.subcon._parse(stream, context))
+            return obj
+        except ConstructError:
+            raise ArrayError("expected %d, found %d" % (count, c))
+    def _build(self, obj, stream, context):
+        count = self.count(context) if callable(self.count) else self.count
+        if len(obj) != count:
+            raise ArrayError("expected %d elements, found %d" % (count, len(obj)))
+        # if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
+        #     for subobj in obj:
+        #         self.subcon._build(subobj, stream, context.__copy__())
+        # else:
+        for subobj in obj:
+            self.subcon._build(subobj, stream, context)
+    def _sizeof(self, context):
+        count = self.count(context) if callable(self.count) else self.count
+        return self.subcon._sizeof(context) * count
 
-    if callable(count):
-        con = MetaArray(count, subcon)
-    else:
-        con = MetaArray(lambda ctx: count, subcon)
-        con._clear_flag(con.FLAG_DYNAMIC)
-    return con
+
+# def PrefixedArray(lengthfield, subcon):
+#     return Prefixed(lengthfield, Array(subcon))
 
 
 class PrefixedArray(Construct):
@@ -2496,12 +2193,11 @@ class PrefixedArray(Construct):
         .parse(b"\x03\x01\x01\x01") -> [1,1,1]
         .build([1,1,1]) -> b"\x03\x01\x01\x01"
     """
-
-    def __init__(self, subcon, lengthfield=UBInt8):
-        if not isinstance(lengthfield, Construct):
-            raise TypeError("lengthfield should be a Construct field")
-        if not isinstance(subcon, Construct):
-            raise TypeError("subcon should be a Construct field")
+    def __init__(self, lengthfield, subcon):
+        # if not isinstance(lengthfield, Construct):
+        #     raise TypeError("lengthfield should be a Construct field")
+        # if not isinstance(subcon, Construct):
+        #     raise TypeError("subcon should be a Construct field")
         super(PrefixedArray, self).__init__()
         self.lengthfield = lengthfield
         self.subcon = subcon
@@ -2515,9 +2211,170 @@ class PrefixedArray(Construct):
         self.lengthfield._build(len(obj), stream, context)
         for element in obj:
             self.subcon._build(element, stream, context)
+    # def _sizeof(self, context):
+    #     # return self.lengthfield._sizeof(None) + sum(self.subcon._sizeof(element) for element in context)
+    #     raise SizeofError("cannot calculate size")
+
+
+
+class Range(Subconstruct):
+    r"""
+    A range-array. The subcon will iterate between ``mincount`` to ``maxcount`` times. If less than ``mincount`` elements are found, raises RangeError.
+
+    .. seealso::
+
+        The :func:`~construct.macros.GreedyRange` and :func:`~construct.macros.OptionalGreedyRange` macros.
+
+    The general-case repeater. Repeats the given unit for at least ``mincount`` times, and up to ``maxcount`` times. If an exception occurs (EOF, validation error), the repeater exits. If less than ``mincount`` units have been successfully parsed, a RangeError is raised.
+
+    .. note:: This object requires a seekable stream for parsing.
+
+    :param mincount: the minimal count
+    :param maxcount: the maximal count
+    :param subcon: the subcon to repeat
+
+    Example::
+
+        >>> c = Range(3, 7, UBInt8("foo"))
+        >>> c.parse("\x01\x02")
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 3..7, found 2
+        >>> c.parse("\x01\x02\x03")
+        [1, 2, 3]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06")
+        [1, 2, 3, 4, 5, 6]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06\x07")
+        [1, 2, 3, 4, 5, 6, 7]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06\x07\x08\x09")
+        [1, 2, 3, 4, 5, 6, 7]
+        >>> c.build([1,2])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 3..7, found 2
+        >>> c.build([1,2,3,4])
+        '\x01\x02\x03\x04'
+        >>> c.build([1,2,3,4,5,6,7,8])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 3..7, found 8
+    """
+    __slots__ = ["mincount", "maxcount"]
+
+    def __init__(self, mincount, maxcount, subcon):
+        if not 0 <= mincount <= maxcount:
+            raise RangeError("unsane mincount %s and maxcount %s" % (mincount,maxcount))
+        super(Range, self).__init__(subcon)
+        self.mincount = mincount
+        self.maxcount = maxcount
+        self._clear_flag(self.FLAG_COPY_CONTEXT)
+        self._set_flag(self.FLAG_DYNAMIC)
+
+    def _parse(self, stream, context):
+        obj = ListContainer()
+        c = 0
+        try:
+            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
+                while c < self.maxcount:
+                    pos = stream.tell()
+                    obj.append(self.subcon._parse(stream, context.__copy__()))
+                    c += 1
+            else:
+                while c < self.maxcount:
+                    pos = stream.tell()
+                    obj.append(self.subcon._parse(stream, context))
+                    c += 1
+        except ConstructError:
+            if c < self.mincount:
+                raise RangeError("expected %d to %d, found %d" %
+                    (self.mincount, self.maxcount, c))
+            stream.seek(pos)
+        return obj
+
+    def _build(self, obj, stream, context):
+        if not isinstance(obj, collections.Sequence):
+            raise RangeError("expected sequence type, found %s" % type(obj))
+        if len(obj) < self.mincount or len(obj) > self.maxcount:
+            raise RangeError("expected %d to %d, found %d" %
+                (self.mincount, self.maxcount, len(obj)))
+        cnt = 0
+        try:
+            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
+                for subobj in obj:
+                    self.subcon._build(subobj, stream, context.__copy__())
+                    cnt += 1
+            else:
+                for subobj in obj:
+                    self.subcon._build(subobj, stream, context)
+                    cnt += 1
+        except ConstructError:
+            if cnt < self.mincount:
+                raise RangeError("expected %d to %d, found %d" %
+                    (self.mincount, self.maxcount, len(obj)), sys.exc_info()[1])
+
     def _sizeof(self, context):
-        # return self.lengthfield._sizeof(None) + sum(self.subcon._sizeof(element) for element in context)
         raise SizeofError("cannot calculate size")
+
+
+
+class RepeatUntil(Subconstruct):
+    r"""
+    An array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return value.
+
+    :param predicate: a predicate function that takes (obj, context) and returns True if the stop-condition is met, or False to continue.
+    :param subcon: the subcon to repeat.
+
+    Example::
+
+        # will read chars until '\x00' (inclusive)
+        RepeatUntil(lambda obj, ctx: obj == b"\x00",
+            Field("chars", 1)
+        )
+    """
+    __slots__ = ["predicate"]
+    def __init__(self, predicate, subcon):
+        super(RepeatUntil, self).__init__(subcon)
+        self.predicate = predicate
+        self._clear_flag(self.FLAG_COPY_CONTEXT)
+        self._set_flag(self.FLAG_DYNAMIC)
+    def _parse(self, stream, context):
+        obj = []
+        try:
+            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
+                while True:
+                    subobj = self.subcon._parse(stream, context.__copy__())
+                    obj.append(subobj)
+                    if self.predicate(subobj, context):
+                        break
+            else:
+                while True:
+                    subobj = self.subcon._parse(stream, context)
+                    obj.append(subobj)
+                    if self.predicate(subobj, context):
+                        break
+        except ConstructError:
+            raise ArrayError("missing terminator", sys.exc_info()[1])
+        return obj
+    def _build(self, obj, stream, context):
+        terminated = False
+        if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
+            for subobj in obj:
+                self.subcon._build(subobj, stream, context.__copy__())
+                if self.predicate(subobj, context):
+                    terminated = True
+                    break
+        else:
+            for subobj in obj:
+                #subobj = bchr(subobj)  -- WTF is that for?!
+                #subobj = int2byte(subobj)  -- WTF is that for?!
+                self.subcon._build(subobj, stream, context.__copy__())
+                if self.predicate(subobj, context):
+                    terminated = True
+                    break
+        if not terminated:
+            raise ArrayError("missing terminator")
+    def _sizeof(self, context):
+        raise SizeofError("can't calculate size")
 
 
 def OpenRange(mincount, subcon):
@@ -2575,6 +2432,146 @@ def OptionalGreedyRange(subcon):
         '\x01\x02'
     """
     return OpenRange(0, subcon)
+
+
+#===============================================================================
+# structures and sequences
+#===============================================================================
+class Struct(Construct):
+    """
+    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
+
+    .. seealso:: The :func:`~construct.macros.Embedded` macro.
+
+    :param name: the name of the structure
+    :param subcons: a sequence of subconstructs that make up this structure.
+    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
+
+    Example::
+
+        Struct("foo",
+            UBInt8("first_element"),
+            UBInt16("second_element"),
+            Padding(2),
+            UBInt8("third_element"),
+        )
+    """
+    __slots__ = ["subcons", "nested", "allow_overwrite"]
+    def __init__(self, name, *subcons, **kw):
+        self.nested = kw.pop("nested", True)
+        self.allow_overwrite = kw.pop("allow_overwrite", False)
+        if kw:
+            raise TypeError("the only keyword argument accepted is 'nested'", kw)
+        super(Struct, self).__init__(name)
+        self.subcons = subcons
+        self._inherit_flags(*subcons)
+        self._clear_flag(self.FLAG_EMBED)
+    def _parse(self, stream, context):
+        if "<obj>" in context:
+            obj = context["<obj>"]
+            del context["<obj>"]
+        else:
+            obj = Container()
+            if self.nested:
+                context = Container(_ = context)
+        for sc in self.subcons:
+            if sc.conflags & self.FLAG_EMBED:
+                context["<obj>"] = obj
+                sc._parse(stream, context)
+                if "<obj>" in context:
+                    del context["<obj>"]
+            else:
+                subobj = sc._parse(stream, context)
+                if sc.name is not None:
+                    if sc.name in obj and not self.allow_overwrite:
+                        raise OverwriteError("%r would be overwritten but allow_overwrite is False" % (sc.name,))
+                    obj[sc.name] = subobj
+                    context[sc.name] = subobj
+        return obj
+    def _build(self, obj, stream, context):
+        if "<unnested>" in context:
+            del context["<unnested>"]
+        elif self.nested:
+            context = Container(_ = context)
+        for sc in self.subcons:
+            if sc.conflags & self.FLAG_EMBED:
+                context["<unnested>"] = True
+                subobj = obj
+            elif sc.name is None:
+                subobj = None
+            elif isinstance(sc, (Computed, Anchor, AnchorRange, Checksum)):
+                subobj = None
+            else:
+                subobj = obj[sc.name]
+                context[sc.name] = subobj
+            sc._build(subobj, stream, context)
+    def _sizeof(self, context):
+        #if self.nested:
+        #    context = Container(_ = context)
+        return sum(sc._sizeof(context) for sc in self.subcons)
+
+
+class Sequence(Struct):
+    """
+    A sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
+
+    .. seealso:: The :func:`~construct.macros.Embedded` macro.
+
+    :param name: the name of the structure
+    :param subcons: a sequence of subconstructs that make up this structure.
+    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
+
+    Example::
+
+        Sequence("foo",
+            UBInt8("first_element"),
+            UBInt16("second_element"),
+            Padding(2),
+            UBInt8("third_element"),
+        )
+    """
+    __slots__ = []
+    def _parse(self, stream, context):
+        if "<obj>" in context:
+            obj = context["<obj>"]
+            del context["<obj>"]
+        else:
+            obj = ListContainer()
+            if self.nested:
+                context = Container(_ = context)
+        for sc in self.subcons:
+            if sc.conflags & self.FLAG_EMBED:
+                context["<obj>"] = obj
+                sc._parse(stream, context)
+            else:
+                subobj = sc._parse(stream, context)
+                if sc.name is not None:
+                    obj.append(subobj)
+                    context[sc.name] = subobj
+        return obj
+    def _build(self, obj, stream, context):
+        if "<unnested>" in context:
+            del context["<unnested>"]
+        elif self.nested:
+            context = Container(_ = context)
+        objiter = iter(obj)
+        for sc in self.subcons:
+            if sc.conflags & self.FLAG_EMBED:
+                context["<unnested>"] = True
+                subobj = objiter
+            elif sc.name is None:
+                subobj = None
+            else:
+                subobj = next(objiter)
+                context[sc.name] = subobj
+            sc._build(subobj, stream, context)
+
+
+
+#===============================================================================
+# arrays
+#===============================================================================
+
 
 
 #===============================================================================
@@ -2639,14 +2636,17 @@ def Embedded(subcon):
     return Reconfig(subcon.name, subcon, subcon.FLAG_EMBED)
 
 
-def Rename(newname, subcon):
+
+class Rename(Subconstruct):
     r"""
     Renames an existing construct.
 
     :param newname: the new name
     :param subcon: the subcon to rename
     """
-    return Reconfig(newname, subcon)
+    def __init__(self, newname, subcon):
+        super(Rename, self).__init__(subcon)
+        self.name = newname
 
 
 def Alias(newname, oldname):

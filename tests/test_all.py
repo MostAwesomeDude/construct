@@ -23,14 +23,13 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 all_tests = [
-    #
-    # constructs
-    #
-    [("string_name" / Byte).parse, b"\x00", 0, None],
-    [(u"unicode_name" / Byte).parse, b"\x00", 0, None],
-    [(b"bytes_name" / Byte).parse, b"\x00", 0, None],
+
+    [("string_name" / Byte).parse, b"\x01", 1, None],
+    [(u"unicode_name" / Byte).parse, b"\x01", 1, None],
+    [(b"bytes_name" / Byte).parse, b"\x01", 1, None],
 
     [Byte.parse, b"\x00", 0, None],
+    [Byte.sizeof, None, 1, None],
 
     [UBInt8.parse, b"\x01", 0x01, None],
     [UBInt8.build, 0x01, b"\x01", None],
@@ -64,6 +63,7 @@ all_tests = [
     [SLInt32.build, 0x04030201, b"\x01\x02\x03\x04", None],
     [SLInt64.parse, b"\x01\x02\x03\x04\x05\x06\x07\x08", 0x0807060504030201, None],
     [SLInt64.build, 0x0807060504030201, b"\x01\x02\x03\x04\x05\x06\x07\x08", None],
+    # missing sizeof testing
 
     [VarInt.parse, b"\x05", 5, None],
     [VarInt.parse, b"\x85\x05", 645, None],
@@ -71,28 +71,56 @@ all_tests = [
     [VarInt.build, 645, b"\x85\x05", None],
     [VarInt.parse, b"", None, FieldError],
     [VarInt.build, -1, None, ValueError],
+    [VarInt.sizeof, None, None, SizeofError],
 
     [Bytes(4).parse, b"12345678", b"1234", None],
     [Bytes(4).build, b"1234", b"1234", None],
+    # TODO: issue #99
     # [Bytes(4).build, 1, b"\x00\x00\x00\x01", None],
     [Bytes(4).parse, b"", None, FieldError],
     [Bytes(4).build, b"toolong", None, FieldError],
+    [Bytes(4).sizeof, None, 4, None],
+
+    # TODO: issue #100
     # TODO: should work with dict(n=4) and this.n
     [Bytes(lambda ctx: ctx.n).parse, (b"12345678",Container(n=4)), b"1234", None],
     [Bytes(lambda ctx: ctx.n).build, (b"1234",Container(n=4)), b"1234", None],
+    # TODO: issue #99
     # [Bytes(lambda ctx: ctx.n).build, (1,Container(n=4)), b"\x00\x00\x00\x01", None],
     [Bytes(lambda ctx: ctx.n).parse, (b"",Container(n=4)), None, FieldError],
     [Bytes(lambda ctx: ctx.n).build, (b"toolong",Container(n=4)), None, FieldError],
+    [Bytes(lambda ctx: ctx.n).sizeof, None, None, AttributeError],
+    [Bytes(lambda ctx: ctx.n).sizeof, Container(n=4), 4, None],
 
     [GreedyBytes.parse, b"1234", b"1234", None],
     [GreedyBytes.build, b"1234", b"1234", None],
+    [GreedyBytes.sizeof, None, None, SizeofError],
 
     # Note: FormatField is not tested because all *Int{8,16,32,64} fields use that.
 
-    # [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, b"\x01\x02\x03", [1,2,3], None],
-    # [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, b"\x01\x02", None, ArrayError],
-    # [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2,3], b"\x01\x02\x03", None],
-    # [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2], None, ArrayError],
+    [Array(3,Byte).parse, b"\x01\x02\x03", [1,2,3], None],
+    [Array(3,Byte).parse, b"\x01\x02\x03additionalgarbage", [1,2,3], None],
+    # issue #101
+    # [Array(3,Byte).parse, b"", [1,2,3], ArrayError],
+    [Array(3,Byte).build, [1,2,3], b"\x01\x02\x03", None],
+    [Array(3,Byte).build, [1,2], None, ArrayError],
+    [Array(3,Byte).build, [1,2,3,4], None, ArrayError],
+    [Array(3,Byte).sizeof, None, 3, None],
+
+    [Array(lambda ctx: 3, Byte).parse, (b"\x01\x02\x03",Container(n=3)), [1,2,3], None],
+    # issue #101
+    # [Array(lambda ctx: 3, Byte).parse, (b"",Container(n=3)), None, ArrayError],
+    [Array(lambda ctx: 3, Byte).build, ([1,2,3],Container(n=3)), b"\x01\x02\x03", None],
+    [Array(lambda ctx: 3, Byte).build, ([1,2],Container(n=3)), None, ArrayError],
+    [Array(lambda ctx: ctx.n, Byte).parse, (b"\x01\x02\x03",Container(n=3)), [1,2,3], None],
+    [Array(lambda ctx: ctx.n, Byte).build, ([1,2,3],Container(n=3)), b"\x01\x02\x03", None],
+    [Array(lambda ctx: ctx.n, Byte).sizeof, None, None, AttributeError],
+    [Array(lambda ctx: ctx.n, Byte).sizeof, Container(n=4), 4, None],
+
+    [PrefixedArray(Byte,Byte).parse, b"\x02\x0a\x0b", [10,11], None],
+    [PrefixedArray(Byte,Byte).build, [10,11], b"\x02\x0a\x0b", None],
+    [PrefixedArray(Byte,Byte).sizeof, None, None, SizeofError],
+
 
     # [Range(3, 5, UBInt8("range")).parse, b"\x01\x02\x03", [1,2,3], None],
     # [Range(3, 5, UBInt8("range")).parse, b"\x01\x02\x03\x04", [1,2,3,4], None],
