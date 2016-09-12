@@ -2145,16 +2145,9 @@ class Array(Subconstruct):
     def __init__(self, count, subcon):
         super(Array, self).__init__(subcon)
         self.count = count
-        # self._clear_flag(self.FLAG_COPY_CONTEXT)
-        # self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         count = self.count(context) if callable(self.count) else self.count
         try:
-            # if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-            #     while c < count:
-            #         obj.append(self.subcon._parse(stream, context.__copy__()))
-            #         c += 1
-            # else:
             obj = ListContainer()
             for i in range(count):
                 obj.append(self.subcon._parse(stream, context))
@@ -2165,10 +2158,6 @@ class Array(Subconstruct):
         count = self.count(context) if callable(self.count) else self.count
         if len(obj) != count:
             raise ArrayError("expected %d elements, found %d" % (count, len(obj)))
-        # if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-        #     for subobj in obj:
-        #         self.subcon._build(subobj, stream, context.__copy__())
-        # else:
         for subobj in obj:
             self.subcon._build(subobj, stream, context)
     def _sizeof(self, context):
@@ -2194,10 +2183,6 @@ class PrefixedArray(Construct):
         .build([1,1,1]) -> b"\x03\x01\x01\x01"
     """
     def __init__(self, lengthfield, subcon):
-        # if not isinstance(lengthfield, Construct):
-        #     raise TypeError("lengthfield should be a Construct field")
-        # if not isinstance(subcon, Construct):
-        #     raise TypeError("subcon should be a Construct field")
         super(PrefixedArray, self).__init__()
         self.lengthfield = lengthfield
         self.subcon = subcon
@@ -2211,9 +2196,6 @@ class PrefixedArray(Construct):
         self.lengthfield._build(len(obj), stream, context)
         for element in obj:
             self.subcon._build(element, stream, context)
-    # def _sizeof(self, context):
-    #     # return self.lengthfield._sizeof(None) + sum(self.subcon._sizeof(element) for element in context)
-    #     raise SizeofError("cannot calculate size")
 
 
 
