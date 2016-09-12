@@ -28,13 +28,10 @@ class TestBinary(unittest.TestCase):
         self.assertEqual(swap_bytes(b"00011011", 2), b"11100100")
 
     def test_encode_bin(self):
-        self.assertEqual(encode_bin(b"ab"),
-            b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00")
+        self.assertEqual(encode_bin(b"ab"), b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00")
 
     def test_decode_bin(self):
-        self.assertEqual(decode_bin(
-            b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"),
-            b"ab")
+        self.assertEqual(decode_bin(b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"), b"ab")
 
     def test_decode_bin_length(self):
         self.assertRaises(ValueError, decode_bin, b"\x00")
