@@ -112,14 +112,6 @@ class Construct(object):
 
     __slots__ = ["name", "conflags"]
     def __init__(self, flags=0):
-        # if name is not None:
-        #     if not isinstance(name, stringtypes):
-        #         raise TypeError("name must be some sort of string or None", name)
-        #     # NOTE: this tests the name that can be a byte string or unicode string
-        #     # and only the unicode has startswith method
-        #     bname = unknownstring2bytes(name)
-        #     if bname == b"_" or bname[:1] ==b"<":
-        #         raise ValueError("reserved name: either _ or starts with < ", name)
         self.name = None
         self.conflags = flags
 
@@ -270,9 +262,18 @@ class Construct(object):
     #         return Range(count, count, self)
     #     else:
     #         raise TypeError("Expected a number, a contextual expression or a slice thereof, got %r" % (count,))
+
     def __rtruediv__(self, name):
-        if name is not None and not isinstance(name, str):
-            raise TypeError("`name` must be a string or None, got %r" % (name,))
+        if name is not None:
+            if not isinstance(name, stringtypes):
+                raise TypeError("name must be b-string or u-string or None", name)
+            # NOTE: this tests the name that can be a byte string or unicode string
+            # and only the unicode has startswith method
+            # bname = unknownstring2bytes(name)
+            # if bname == b"_" or bname[:1] ==b"<":
+            #     raise ValueError("reserved name: either _ or starts with < ", name)
+        # if name is not None and not isinstance(name, str):
+        #     raise TypeError("`name` must be a string or None, got %r" % (name,))
         return Rename(name, self)
     __rdiv__ = __rtruediv__
 
@@ -2336,8 +2337,10 @@ def Octet():
     """An 8-bit BitField; must be enclosed in a BitStruct"""
     return BitField(8)
 
-UBInt8 = FormatField(">", "B")
-
+@singletonfunction
+def UBInt8():
+    """Unsigned, big endian 8-bit integer"""
+    return FormatField(">", "B")
 @singletonfunction
 def UBInt16():
     """Unsigned, big endian 16-bit integer"""
