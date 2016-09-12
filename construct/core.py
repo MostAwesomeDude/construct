@@ -13,6 +13,11 @@ from construct.lib import FlagsContainer, HexString
 from construct.lib.py3compat import int2byte, unknownstring2bytes, stringtypes
 from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
 
+def singleton(cls):
+    return cls()
+
+def singletonfunction(func):
+    return func()
 
 
 #===============================================================================
@@ -106,16 +111,16 @@ class Construct(object):
     FLAG_NESTING               = 0x0008
 
     __slots__ = ["name", "conflags"]
-    def __init__(self, name, flags=0):
-        if name is not None:
-            if not isinstance(name, stringtypes):
-                raise TypeError("name must be some sort of string or None", name)
-            # NOTE: this tests the name that can be a byte string or unicode string
-            # and only the unicode has startswith method
-            bname = unknownstring2bytes(name)
-            if bname == b"_" or bname[:1] ==b"<":
-                raise ValueError("reserved name: either _ or starts with < ", name)
-        self.name = name
+    def __init__(self, flags=0):
+        # if name is not None:
+        #     if not isinstance(name, stringtypes):
+        #         raise TypeError("name must be some sort of string or None", name)
+        #     # NOTE: this tests the name that can be a byte string or unicode string
+        #     # and only the unicode has startswith method
+        #     bname = unknownstring2bytes(name)
+        #     if bname == b"_" or bname[:1] ==b"<":
+        #         raise ValueError("reserved name: either _ or starts with < ", name)
+        self.name = None
         self.conflags = flags
 
     def __repr__(self):
@@ -284,7 +289,8 @@ class Subconstruct(Construct):
     def __init__(self, subcon):
         if not isinstance(subcon, Construct):
             raise TypeError("subcon should be a Construct field")
-        super(Subconstruct, self).__init__(subcon.name, subcon.conflags)
+        super(Subconstruct, self).__init__(subcon.conflags)
+        self.name = subcon.name
         self.subcon = subcon
     def _parse(self, stream, context):
         return self.subcon._parse(stream, context)
@@ -398,8 +404,8 @@ class StaticField(Construct):
     :param length: number of bytes in the field
     """
     __slots__ = ["length"]
-    def __init__(self, name, length):
-        super(StaticField, self).__init__(name)
+    def __init__(self, length):
+        super(StaticField, self).__init__()
         self.length = length
     def _parse(self, stream, context):
         return _read_stream(stream, self.length)
@@ -420,14 +426,14 @@ class FormatField(StaticField):
     :param format: a single format character
     """
     __slots__ = ["packer"]
-    def __init__(self, name, endianity, format):
+    def __init__(self, endianity, format):
         if endianity not in (">", "<", "="):
             raise ValueError("endianity must be be '=', '<', or '>'",
                 endianity)
         if len(format) != 1:
             raise ValueError("must specify one and only one format char")
         self.packer = Packer(endianity + format)
-        super(FormatField, self).__init__(name, self.packer.size)
+        super(FormatField, self).__init__(self.packer.size)
     def __getstate__(self):
         attrs = super(FormatField, self).__getstate__()
         attrs["packer"] = attrs["packer"].format
@@ -1922,6 +1928,7 @@ class GreedyString(Construct):
         raise SizeofError("cannot calculate size")
 
 
+@singleton
 class VarInt(Construct):
     r"""
     Varint encoded integer. Each 7 bits of the number are encoded in one byte in the stream.
@@ -1935,8 +1942,9 @@ class VarInt(Construct):
         .parse(b"\x85\x05") -> 645
         .build(645) -> b"\x85\x05"
     """
-    def __init__(self, name):
-        super(VarInt, self).__init__(name)
+    def __init__(self):
+        # super(VarInt, self).__init__()
+        Construct.__init__(self)
     def _parse(self, stream, context):
         acc = 0
         while True:
@@ -1953,8 +1961,6 @@ class VarInt(Construct):
             obj >>= 7
             _write_stream(stream, 1, int2byte(b))
         _write_stream(stream, 1, int2byte(obj))
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
 
 
 class Checksum(Construct):
@@ -2267,8 +2273,8 @@ class BitField(Construct):
         Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
     """
     __slots__ = ["length", "swapped", "signed", "bytesize"]
-    def __init__(self, name, length, swapped=False, signed=False, bytesize=8):
-        super(BitField, self).__init__(name)
+    def __init__(self, length, swapped=False, signed=False, bytesize=8):
+        super(BitField, self).__init__()
         self.length = length
         self.swapped = swapped
         self.signed = signed
@@ -2319,113 +2325,142 @@ def Flag(name, truth=1, falsehood=0, default=False):
 #===============================================================================
 # field shortcuts
 #===============================================================================
-def Bit(name):
+@singletonfunction
+def Bit():
     """A 1-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(name, 1)
-def Nibble(name):
+    return BitField(1)
+def Nibble():
     """A 4-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(name, 4)
-def Octet(name):
+    return BitField(4)
+def Octet():
     """An 8-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(name, 8)
+    return BitField(8)
 
-def UBInt8(name):
-    """Unsigned, big endian 8-bit integer"""
-    return FormatField(name, ">", "B")
-def UBInt16(name):
+UBInt8 = FormatField(">", "B")
+
+@singletonfunction
+def UBInt16():
     """Unsigned, big endian 16-bit integer"""
-    return FormatField(name, ">", "H")
-def UBInt32(name):
+    return FormatField(">", "H")
+@singletonfunction
+def UBInt32():
     """Unsigned, big endian 32-bit integer"""
-    return FormatField(name, ">", "L")
-def UBInt64(name):
+    return FormatField(">", "L")
+@singletonfunction
+def UBInt64():
     """Unsigned, big endian 64-bit integer"""
-    return FormatField(name, ">", "Q")
+    return FormatField(">", "Q")
 
-def SBInt8(name):
+@singletonfunction
+def SBInt8():
     """Signed, big endian 8-bit integer"""
-    return FormatField(name, ">", "b")
-def SBInt16(name):
+    return FormatField(">", "b")
+@singletonfunction
+def SBInt16():
     """Signed, big endian 16-bit integer"""
-    return FormatField(name, ">", "h")
-def SBInt32(name):
+    return FormatField(">", "h")
+@singletonfunction
+def SBInt32():
     """Signed, big endian 32-bit integer"""
-    return FormatField(name, ">", "l")
-def SBInt64(name):
+    return FormatField(">", "l")
+@singletonfunction
+def SBInt64():
     """Signed, big endian 64-bit integer"""
-    return FormatField(name, ">", "q")
+    return FormatField(">", "q")
 
-def ULInt8(name):
+@singletonfunction
+def ULInt8():
     """Unsigned, little endian 8-bit integer"""
-    return FormatField(name, "<", "B")
-def ULInt16(name):
+    return FormatField("<", "B")
+@singletonfunction
+def ULInt16():
     """Unsigned, little endian 16-bit integer"""
-    return FormatField(name, "<", "H")
-def ULInt32(name):
+    return FormatField("<", "H")
+@singletonfunction
+def ULInt32():
     """Unsigned, little endian 32-bit integer"""
-    return FormatField(name, "<", "L")
-def ULInt64(name):
+    return FormatField("<", "L")
+@singletonfunction
+def ULInt64():
     """Unsigned, little endian 64-bit integer"""
-    return FormatField(name, "<", "Q")
+    return FormatField("<", "Q")
 
-def SLInt8(name):
+@singletonfunction
+def SLInt8():
     """Signed, little endian 8-bit integer"""
-    return FormatField(name, "<", "b")
-def SLInt16(name):
+    return FormatField("<", "b")
+@singletonfunction
+def SLInt16():
     """Signed, little endian 16-bit integer"""
-    return FormatField(name, "<", "h")
-def SLInt32(name):
+    return FormatField("<", "h")
+@singletonfunction
+def SLInt32():
     """Signed, little endian 32-bit integer"""
-    return FormatField(name, "<", "l")
-def SLInt64(name):
+    return FormatField("<", "l")
+@singletonfunction
+def SLInt64():
     """Signed, little endian 64-bit integer"""
-    return FormatField(name, "<", "q")
+    return FormatField("<", "q")
 
-def UNInt8(name):
+@singletonfunction
+def UNInt8():
     """Unsigned, native endianity 8-bit integer"""
-    return FormatField(name, "=", "B")
-def UNInt16(name):
+    return FormatField("=", "B")
+@singletonfunction
+def UNInt16():
     """Unsigned, native endianity 16-bit integer"""
-    return FormatField(name, "=", "H")
-def UNInt32(name):
+    return FormatField("=", "H")
+@singletonfunction
+def UNInt32():
     """Unsigned, native endianity 32-bit integer"""
-    return FormatField(name, "=", "L")
-def UNInt64(name):
+    return FormatField("=", "L")
+@singletonfunction
+def UNInt64():
     """Unsigned, native endianity 64-bit integer"""
-    return FormatField(name, "=", "Q")
+    return FormatField("=", "Q")
 
-def SNInt8(name):
+@singletonfunction
+def SNInt8():
     """Signed, native endianity 8-bit integer"""
-    return FormatField(name, "=", "b")
-def SNInt16(name):
+    return FormatField("=", "b")
+@singletonfunction
+def SNInt16():
     """Signed, native endianity 16-bit integer"""
-    return FormatField(name, "=", "h")
-def SNInt32(name):
+    return FormatField("=", "h")
+@singletonfunction
+def SNInt32():
     """Signed, native endianity 32-bit integer"""
-    return FormatField(name, "=", "l")
-def SNInt64(name):
+    return FormatField("=", "l")
+@singletonfunction
+def SNInt64():
     """Signed, native endianity 64-bit integer"""
-    return FormatField(name, "=", "q")
+    return FormatField("=", "q")
 
-def BFloat32(name):
+@singletonfunction
+def BFloat32():
     """Big endian, 32-bit IEEE floating point number"""
-    return FormatField(name, ">", "f")
-def LFloat32(name):
+    return FormatField(">", "f")
+@singletonfunction
+def LFloat32():
     """Little endian, 32-bit IEEE floating point number"""
-    return FormatField(name, "<", "f")
-def NFloat32(name):
+    return FormatField("<", "f")
+@singletonfunction
+def NFloat32():
     """Native endianity, 32-bit IEEE floating point number"""
-    return FormatField(name, "=", "f")
+    return FormatField("=", "f")
 
-def BFloat64(name):
+@singletonfunction
+def BFloat64():
     """Big endian, 64-bit IEEE floating point number"""
-    return FormatField(name, ">", "d")
-def LFloat64(name):
+    return FormatField(">", "d")
+@singletonfunction
+def LFloat64():
     """Little endian, 64-bit IEEE floating point number"""
-    return FormatField(name, "<", "d")
-def NFloat64(name):
+    return FormatField("<", "d")
+@singletonfunction
+def NFloat64():
     """Native endianity, 64-bit IEEE floating point number"""
-    return FormatField(name, "=", "d")
+    return FormatField("=", "d")
 
 
 #===============================================================================
@@ -2475,12 +2510,12 @@ class PrefixedArray(Construct):
         .build([1,1,1]) -> b"\x03\x01\x01\x01"
     """
 
-    def __init__(self, subcon, lengthfield=UBInt8(None)):
+    def __init__(self, subcon, lengthfield=UBInt8):
         if not isinstance(lengthfield, Construct):
             raise TypeError("lengthfield should be a Construct field")
         if not isinstance(subcon, Construct):
             raise TypeError("subcon should be a Construct field")
-        super(PrefixedArray, self).__init__(subcon.name)
+        super(PrefixedArray, self).__init__()
         self.lengthfield = lengthfield
         self.subcon = subcon
     def _parse(self, stream, context):
@@ -2742,8 +2777,8 @@ class PascalString(Construct):
         .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
     """
     __slots__ = ["name", "lengthfield", "encoding"]
-    def __init__(self, name, lengthfield=UBInt8(None), encoding=None):
-        super(PascalString, self).__init__(name)
+    def __init__(self, lengthfield=UBInt8, encoding=None):
+        super(PascalString, self).__init__()
         self.lengthfield = lengthfield
         self.encoding = encoding
     def _parse(self, stream, context):
