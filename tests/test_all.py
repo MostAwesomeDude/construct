@@ -72,6 +72,23 @@ all_tests = [
     [VarInt.parse, b"", None, FieldError],
     [VarInt.build, -1, None, ValueError],
 
+    [Bytes(4).parse, b"12345678", b"1234", None],
+    [Bytes(4).build, b"1234", b"1234", None],
+    # [Bytes(4).build, 1, b"\x00\x00\x00\x01", None],
+    [Bytes(4).parse, b"", None, FieldError],
+    [Bytes(4).build, b"toolong", None, FieldError],
+    # TODO: should work with dict(n=4) and this.n
+    [Bytes(lambda ctx: ctx.n).parse, (b"12345678",Container(n=4)), b"1234", None],
+    [Bytes(lambda ctx: ctx.n).build, (b"1234",Container(n=4)), b"1234", None],
+    # [Bytes(lambda ctx: ctx.n).build, (1,Container(n=4)), b"\x00\x00\x00\x01", None],
+    [Bytes(lambda ctx: ctx.n).parse, (b"",Container(n=4)), None, FieldError],
+    [Bytes(lambda ctx: ctx.n).build, (b"toolong",Container(n=4)), None, FieldError],
+
+    [GreedyBytes.parse, b"1234", b"1234", None],
+    [GreedyBytes.build, b"1234", b"1234", None],
+
+    # Note: FormatField is not tested because all *Int{8,16,32,64} fields use that.
+
     # [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, b"\x01\x02\x03", [1,2,3], None],
     # [MetaArray(lambda ctx: 3, UBInt8("metaarray")).parse, b"\x01\x02", None, ArrayError],
     # [MetaArray(lambda ctx: 3, UBInt8("metaarray")).build, [1,2,3], b"\x01\x02\x03", None],
@@ -152,8 +169,8 @@ all_tests = [
     # [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
     # [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
 
-    # [Pass.parse, b"", None, None],
-    # [Pass.build, None, b"", None],
+    [Pass.parse, b"", None, None],
+    [Pass.build, None, b"", None],
 
     # [Terminator.parse, b"", None, None],
     # [Terminator.parse, b"x", None, TerminatorError],

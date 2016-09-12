@@ -397,33 +397,76 @@ def _write_stream(stream, length, data):
 # Fields
 #===============================================================================
 
-class StaticField(Construct):
-    """
-    A fixed size byte field.
+class Bytes(Construct):
+    r"""
+    A field consisting of a specified number of bytes.
+
+    :param name: the name of the field
+    :param length: the length of the field. the length can be either an integer
+      (StaticField), or a function that takes the context as an argument and
+      returns the length (MetaField)
+    A fixed size byte field. 
+
+    Can build from a byte string, or an integer.
 
     :param name: field name
     :param length: number of bytes in the field
+
+    A variable-length field. The length is obtained at runtime from a function.
+
+    :param name: name of the field
+    :param lengthfunc: callable that takes a context and returns length as an int
+
+    Example::
+
+        >>> foo = Struct("foo",
+        ...     Byte("length"),
+        ...     MetaField("data", lambda ctx: ctx["length"])
+        ... )
+        >>> foo.parse("\x03ABC")
+        Container(data = 'ABC', length = 3)
+        >>> foo.parse("\x04ABCD")
+        Container(data = 'ABCD', length = 4)
     """
     __slots__ = ["length"]
     def __init__(self, length):
-        super(StaticField, self).__init__()
+        super(Bytes, self).__init__()
         self.length = length
+        # self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
-        return _read_stream(stream, self.length)
+        length = self.length(context) if callable(self.length) else self.length
+        return _read_stream(stream, length)
     def _build(self, obj, stream, context):
-        _write_stream(stream, self.length, int2byte(obj) if isinstance(obj, int) else obj)
+        length = self.length(context) if callable(self.length) else self.length
+        data = int2byte(obj) if isinstance(obj, int) else obj
+        _write_stream(stream, length, data)
     def _sizeof(self, context):
-        return self.length
+        return self.length(context) if callable(self.length) else self.length
 
 
-class FormatField(StaticField):
+@singleton
+class GreedyBytes(Construct):
+    """
+    A variable size byte field.
+
+    Parses the stream to the end, and builds into the stream as is.
+
+    :param name: field name, or None for anonymous
+    """
+    def _parse(self, stream, context):
+        return stream.read()
+    def _build(self, obj, stream, context):
+        stream.write(obj)
+
+
+class FormatField(Bytes):
     """
     A field that uses ``struct`` module to pack and unpack data.
 
     See ``struct`` documentation for instructions on crafting format strings.
 
     :param name: name of the field
-    :param endianness: format endianness string; one of "<", ">", or "="
+    :param endianness: format endianness string, one of "<", ">", or "="
     :param format: a single format character
     """
     __slots__ = ["packer"]
@@ -432,7 +475,7 @@ class FormatField(StaticField):
             raise ValueError("endianity must be be '=', '<', or '>'",
                 endianity)
         if len(format) != 1:
-            raise ValueError("must specify one and only one format char")
+            raise ValueError("must specify one and only one format character")
         self.packer = Packer(endianity + format)
         super(FormatField, self).__init__(self.packer.size)
     def __getstate__(self):
@@ -453,50 +496,6 @@ class FormatField(StaticField):
         except Exception:
             raise FieldError("packer %r error during building, given value %s" % (self.packer.format, obj))
 
-
-class MetaField(Construct):
-    r"""
-    A variable-length field. The length is obtained at runtime from a function.
-
-    :param name: name of the field
-    :param lengthfunc: callable that takes a context and returns length as an int
-
-    Example::
-
-        >>> foo = Struct("foo",
-        ...     Byte("length"),
-        ...     MetaField("data", lambda ctx: ctx["length"])
-        ... )
-        >>> foo.parse("\x03ABC")
-        Container(data = 'ABC', length = 3)
-        >>> foo.parse("\x04ABCD")
-        Container(data = 'ABCD', length = 4)
-    """
-    __slots__ = ["lengthfunc"]
-    def __init__(self, name, lengthfunc):
-        super(MetaField, self).__init__(name)
-        self.lengthfunc = lengthfunc
-        self._set_flag(self.FLAG_DYNAMIC)
-    def _parse(self, stream, context):
-        return _read_stream(stream, self.lengthfunc(context))
-    def _build(self, obj, stream, context):
-        _write_stream(stream, self.lengthfunc(context), obj)
-    def _sizeof(self, context):
-        return self.lengthfunc(context)
-
-
-class GreedyBytes(Construct):
-    """
-    A variable size byte field.
-
-    Parses the stream to the end, and builds into the stream the bytes as is.
-
-    :param name: field name, or None for anonymous
-    """
-    def _parse(self, stream, context):
-        return stream.read()
-    def _build(self, obj, stream, context):
-        stream.write(obj)
 
 
 #===============================================================================
@@ -2224,21 +2223,6 @@ class Numpy(Construct):
 #===============================================================================
 # fields
 #===============================================================================
-def Field(name, length):
-    r"""
-    A field consisting of a specified number of bytes.
-
-    :param name: the name of the field
-    :param length: the length of the field. the length can be either an integer
-      (StaticField), or a function that takes the context as an argument and
-      returns the length (MetaField)
-    """
-    if callable(length):
-        return MetaField(name, length)
-    else:
-        return StaticField(name, length)
-
-
 class BitField(Construct):
     r"""
     BitFields, as the name suggests, are fields that operate on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using them is very similar to all normal fields: they take a name and a length (in bits).
