@@ -6,9 +6,13 @@ import sys
 import collections
 import codecs
 
-# from construct.macros import UBInt8
 from construct.lib import Container, ListContainer, LazyContainer
+from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
+from construct.lib import int_to_bin, bin_to_int, swap_bytes
+from construct.lib import FlagsContainer, HexString
 from construct.lib.py3compat import int2byte, unknownstring2bytes, stringtypes
+from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
+
 
 
 #===============================================================================
@@ -45,6 +49,8 @@ class ChecksumError(ConstructError):
 class ValidationError(ConstructError):
     pass
 class BitIntegerError(ConstructError):
+    pass
+class MappingError(AdaptationError):
     pass
 
 
@@ -249,6 +255,21 @@ class Construct(object):
         Override in your subclass.
         """
         raise SizeofError("cannot calculate size")
+
+    # def __getitem__(self, count):
+    #     if isinstance(count, slice):
+    #         if count.step:
+    #             raise ValueError("Slice must not contain as step: %r" % (count,))
+    #         return Range(count.start, count.stop, self)
+    #     elif isinstance(count, six.integer_types) or hasattr(count, "__call__"):
+    #         return Range(count, count, self)
+    #     else:
+    #         raise TypeError("Expected a number, a contextual expression or a slice thereof, got %r" % (count,))
+    def __rtruediv__(self, name):
+        if name is not None and not isinstance(name, str):
+            raise TypeError("`name` must be a string or None, got %r" % (name,))
+        return Rename(name, self)
+    __rdiv__ = __rtruediv__
 
 
 class Subconstruct(Construct):
@@ -2191,4 +2212,853 @@ class Numpy(Construct):
         self.lib.save(stream, obj)
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
+
+
+#===============================================================================
+# fields
+#===============================================================================
+def Field(name, length):
+    r"""
+    A field consisting of a specified number of bytes.
+
+    :param name: the name of the field
+    :param length: the length of the field. the length can be either an integer
+      (StaticField), or a function that takes the context as an argument and
+      returns the length (MetaField)
+    """
+    if callable(length):
+        return MetaField(name, length)
+    else:
+        return StaticField(name, length)
+
+
+class BitField(Construct):
+    r"""
+    BitFields, as the name suggests, are fields that operate on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using them is very similar to all normal fields: they take a name and a length (in bits).
+
+    :param name: name of the field
+    :param length: number of bits in the field, or a function that takes context returns int
+    :param swapped: whether to swap byte order (little endian), default is False (big endian)
+    :param signed: whether the value is signed (two's complement), default is False (unsigned)
+    :param bytesize: number of bits per byte, used for byte-swapping (if swapped), default is 8.
+
+    Example::
+
+        >>> foo = BitStruct("foo",
+        ...     BitField("a", 3),
+        ...     Flag("b"),
+        ...     Padding(3),
+        ...     Nibble("c"),
+        ...     BitField("d", 5),
+        ... )
+        >>> foo.parse("\xe1\x1f")
+        Container(a = 7, b = False, c = 8, d = 31)
+        >>> foo = BitStruct("foo",
+        ...     BitField("a", 3),
+        ...     Flag("b"),
+        ...     Padding(3),
+        ...     Nibble("c"),
+        ...     Struct("bar",
+        ...             Nibble("d"),
+        ...             Bit("e"),
+        ...     )
+        ... )
+        >>> foo.parse("\xe1\x1f")
+        Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
+    """
+    __slots__ = ["length", "swapped", "signed", "bytesize"]
+    def __init__(self, name, length, swapped=False, signed=False, bytesize=8):
+        super(BitField, self).__init__(name)
+        self.length = length
+        self.swapped = swapped
+        self.signed = signed
+        self.bytesize = bytesize
+        self._set_flag(self.FLAG_DYNAMIC)
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        data = _read_stream(stream, length)
+        if self.swapped:
+            data = swap_bytes(data, self.bytesize)
+        return bin_to_int(data, self.signed)
+    def _build(self, obj, stream, context):
+        if obj < 0 and not self.signed:
+            raise BitIntegerError("object is negative, but field is not signed", obj)
+        length = self.length(context) if callable(self.length) else self.length
+        data = int_to_bin(obj, length)
+        if self.swapped:
+            data = swap_bytes(data, self.bytesize)
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
+
+
+def Flag(name, truth=1, falsehood=0, default=False):
+    r"""
+    A flag.
+
+    Flags are usually used to signify a Boolean value, and this construct
+    maps values onto the ``bool`` type.
+
+    .. note:: This construct works with both bit and byte contexts.
+
+    .. warning:: Flags default to False, not True. This is different from the
+        C and Python way of thinking about truth, and may be subject to change
+        in the future.
+
+    :param name: field name
+    :param truth: value of truth (default 1)
+    :param falsehood: value of falsehood (default 0)
+    :param default: default value (default False)
+    """
+
+    return SymmetricMapping(Field(name, 1),
+        {True : int2byte(truth), False : int2byte(falsehood)},
+        default = default,
+    )
+
+#===============================================================================
+# field shortcuts
+#===============================================================================
+def Bit(name):
+    """A 1-bit BitField; must be enclosed in a BitStruct"""
+    return BitField(name, 1)
+def Nibble(name):
+    """A 4-bit BitField; must be enclosed in a BitStruct"""
+    return BitField(name, 4)
+def Octet(name):
+    """An 8-bit BitField; must be enclosed in a BitStruct"""
+    return BitField(name, 8)
+
+def UBInt8(name):
+    """Unsigned, big endian 8-bit integer"""
+    return FormatField(name, ">", "B")
+def UBInt16(name):
+    """Unsigned, big endian 16-bit integer"""
+    return FormatField(name, ">", "H")
+def UBInt32(name):
+    """Unsigned, big endian 32-bit integer"""
+    return FormatField(name, ">", "L")
+def UBInt64(name):
+    """Unsigned, big endian 64-bit integer"""
+    return FormatField(name, ">", "Q")
+
+def SBInt8(name):
+    """Signed, big endian 8-bit integer"""
+    return FormatField(name, ">", "b")
+def SBInt16(name):
+    """Signed, big endian 16-bit integer"""
+    return FormatField(name, ">", "h")
+def SBInt32(name):
+    """Signed, big endian 32-bit integer"""
+    return FormatField(name, ">", "l")
+def SBInt64(name):
+    """Signed, big endian 64-bit integer"""
+    return FormatField(name, ">", "q")
+
+def ULInt8(name):
+    """Unsigned, little endian 8-bit integer"""
+    return FormatField(name, "<", "B")
+def ULInt16(name):
+    """Unsigned, little endian 16-bit integer"""
+    return FormatField(name, "<", "H")
+def ULInt32(name):
+    """Unsigned, little endian 32-bit integer"""
+    return FormatField(name, "<", "L")
+def ULInt64(name):
+    """Unsigned, little endian 64-bit integer"""
+    return FormatField(name, "<", "Q")
+
+def SLInt8(name):
+    """Signed, little endian 8-bit integer"""
+    return FormatField(name, "<", "b")
+def SLInt16(name):
+    """Signed, little endian 16-bit integer"""
+    return FormatField(name, "<", "h")
+def SLInt32(name):
+    """Signed, little endian 32-bit integer"""
+    return FormatField(name, "<", "l")
+def SLInt64(name):
+    """Signed, little endian 64-bit integer"""
+    return FormatField(name, "<", "q")
+
+def UNInt8(name):
+    """Unsigned, native endianity 8-bit integer"""
+    return FormatField(name, "=", "B")
+def UNInt16(name):
+    """Unsigned, native endianity 16-bit integer"""
+    return FormatField(name, "=", "H")
+def UNInt32(name):
+    """Unsigned, native endianity 32-bit integer"""
+    return FormatField(name, "=", "L")
+def UNInt64(name):
+    """Unsigned, native endianity 64-bit integer"""
+    return FormatField(name, "=", "Q")
+
+def SNInt8(name):
+    """Signed, native endianity 8-bit integer"""
+    return FormatField(name, "=", "b")
+def SNInt16(name):
+    """Signed, native endianity 16-bit integer"""
+    return FormatField(name, "=", "h")
+def SNInt32(name):
+    """Signed, native endianity 32-bit integer"""
+    return FormatField(name, "=", "l")
+def SNInt64(name):
+    """Signed, native endianity 64-bit integer"""
+    return FormatField(name, "=", "q")
+
+def BFloat32(name):
+    """Big endian, 32-bit IEEE floating point number"""
+    return FormatField(name, ">", "f")
+def LFloat32(name):
+    """Little endian, 32-bit IEEE floating point number"""
+    return FormatField(name, "<", "f")
+def NFloat32(name):
+    """Native endianity, 32-bit IEEE floating point number"""
+    return FormatField(name, "=", "f")
+
+def BFloat64(name):
+    """Big endian, 64-bit IEEE floating point number"""
+    return FormatField(name, ">", "d")
+def LFloat64(name):
+    """Little endian, 64-bit IEEE floating point number"""
+    return FormatField(name, "<", "d")
+def NFloat64(name):
+    """Native endianity, 64-bit IEEE floating point number"""
+    return FormatField(name, "=", "d")
+
+
+#===============================================================================
+# arrays
+#===============================================================================
+def Array(count, subcon):
+    r"""
+    Repeats the given unit a fixed number of times.
+
+    :param count: number of times to repeat
+    :param subcon: construct to repeat
+
+    Example::
+
+        >>> c = Array(4, UBInt8("foo"))
+        >>> c.parse("\x01\x02\x03\x04")
+        [1, 2, 3, 4]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06")
+        [1, 2, 3, 4]
+        >>> c.build([5,6,7,8])
+        '\x05\x06\x07\x08'
+        >>> c.build([5,6,7,8,9])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 4..4, found 5
+    """
+
+    if callable(count):
+        con = MetaArray(count, subcon)
+    else:
+        con = MetaArray(lambda ctx: count, subcon)
+        con._clear_flag(con.FLAG_DYNAMIC)
+    return con
+
+
+class PrefixedArray(Construct):
+    r"""
+    An array prefixed by a length field.
+
+    :param lengthfield: a field returning an integer
+    :param subcon: the subcon to be repeated
+
+    Example::
+
+        PrefixedArray(UBInt8("array"), UBInt8(None))
+        .parse(b"\x03\x01\x01\x01") -> [1,1,1]
+        .build([1,1,1]) -> b"\x03\x01\x01\x01"
+    """
+
+    def __init__(self, subcon, lengthfield=UBInt8(None)):
+        if not isinstance(lengthfield, Construct):
+            raise TypeError("lengthfield should be a Construct field")
+        if not isinstance(subcon, Construct):
+            raise TypeError("subcon should be a Construct field")
+        super(PrefixedArray, self).__init__(subcon.name)
+        self.lengthfield = lengthfield
+        self.subcon = subcon
+    def _parse(self, stream, context):
+        try:
+            count = self.lengthfield._parse(stream, context)
+            return list(self.subcon._parse(stream, context) for i in range(count))
+        except Exception:
+            raise ArrayError("could not read prefix or enough elements, stream too short")
+    def _build(self, obj, stream, context):
+        self.lengthfield._build(len(obj), stream, context)
+        for element in obj:
+            self.subcon._build(element, stream, context)
+    def _sizeof(self, context):
+        # return self.lengthfield._sizeof(None) + sum(self.subcon._sizeof(element) for element in context)
+        raise SizeofError("cannot calculate size")
+
+
+def OpenRange(mincount, subcon):
+    return Range(mincount, sys.maxsize, subcon)
+
+
+def GreedyRange(subcon):
+    r"""
+    Repeats the given unit one or more times.
+
+    :param subcon: construct to repeat
+
+    Example::
+
+        >>> from construct import GreedyRange, UBInt8
+        >>> c = GreedyRange(UBInt8("foo"))
+        >>> c.parse("\x01")
+        [1]
+        >>> c.parse("\x01\x02\x03")
+        [1, 2, 3]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06")
+        [1, 2, 3, 4, 5, 6]
+        >>> c.parse("")
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 1..2147483647, found 0
+        >>> c.build([1,2])
+        '\x01\x02'
+        >>> c.build([])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 1..2147483647, found 0
+    """
+    return OpenRange(1, subcon)
+
+
+def OptionalGreedyRange(subcon):
+    r"""
+    Repeats the given subcon zero or more times. This repeater can't
+    fail, as it accepts lists of any length.
+
+    :param subcon: construct to repeat
+
+    Example::
+
+        >>> from construct import OptionalGreedyRange, UBInt8
+        >>> c = OptionalGreedyRange(UBInt8("foo"))
+        >>> c.parse("")
+        []
+        >>> c.parse("\x01\x02")
+        [1, 2]
+        >>> c.build([])
+        ''
+        >>> c.build([1,2])
+        '\x01\x02'
+    """
+    return OpenRange(0, subcon)
+
+
+#===============================================================================
+# subconstructs
+#===============================================================================
+def Optional(subcon):
+    r"""
+    An optional construct.
+
+    If parsing fails, returns None. If building fails, writes nothing.
+
+    :param subcon: the subcon to optionally parse or build
+    """
+    return Select(subcon.name, subcon, Pass)
+
+
+def Bitwise(subcon):
+    r"""
+    Converts the stream to bits, and passes the bitstream to subcon.
+
+    :param subcon: a bitwise construct (usually BitField)
+
+    Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
+    """
+    MAX_BUFFER = 1024 * 8
+    def resizer(length):
+        if length & 7:
+            raise SizeofError("size must be a multiple of 8", length)
+        return length >> 3
+    if not subcon._is_flag(subcon.FLAG_DYNAMIC) and subcon.sizeof() < MAX_BUFFER:
+        con = Buffered(subcon,
+            encoder = decode_bin,
+            decoder = encode_bin,
+            resizer = resizer
+        )
+    else:
+        con = Restream(subcon,
+            stream_reader = BitStreamReader,
+            stream_writer = BitStreamWriter,
+            resizer = resizer)
+    return con
+
+
+def SeqOfOne(name, *args, **kw):
+    r"""
+    A sequence of one element. Only the first element is meaningful, the
+    rest are discarded.
+
+    :param name: the name of the sequence
+    :param \*args: subconstructs
+    :param \*\*kw: any keyword arguments to Sequence
+    """
+    return Indexing(Sequence(name, *args, **kw), index=0)
+
+
+def Embedded(subcon):
+    r"""
+    Embeds a struct into the enclosing struct, merging fields.
+
+    :param subcon: the struct to embed
+    """
+    return Reconfig(subcon.name, subcon, subcon.FLAG_EMBED)
+
+
+def Rename(newname, subcon):
+    r"""
+    Renames an existing construct.
+
+    :param newname: the new name
+    :param subcon: the subcon to rename
+    """
+    return Reconfig(newname, subcon)
+
+
+def Alias(newname, oldname):
+    r"""
+    Creates an alias for an existing element in a struct.
+
+    Does not build.
+
+    :param newname: the new name
+    :param oldname: the name of an existing element
+    """
+    return Computed(newname, lambda ctx: ctx[oldname])
+
+
+#===============================================================================
+# mapping
+#===============================================================================
+def SymmetricMapping(subcon, mapping, default=NotImplemented):
+    r"""
+    Defines a symmetrical mapping: a->b, b->a.
+
+    :param subcon: the subcon to map
+    :param mapping: the encoding mapping (a dict); the decoding mapping is
+                    achieved by reversing this mapping
+    :param default: the default value to use when no mapping is found. if no
+                    default value is given, and exception is raised. setting to Pass would
+                    return the value "as is" (unmapped)
+    """
+    reversed_mapping = dict((v, k) for k, v in mapping.items())
+    return MappingAdapter(subcon,
+        encoding = mapping,
+        decoding = reversed_mapping,
+        encdefault = default,
+        decdefault = default,
+    )
+
+def Enum(subcon, **kw):
+    r"""
+    A set of named values mapping.
+
+    :param subcon: the subcon to map
+    :param \*\*kw: keyword arguments which serve as the encoding mapping
+    :param _default_: an optional, keyword-only argument that specifies the
+                      default value to use when the mapping is undefined. if not given,
+                      and exception is raised when the mapping is undefined. use `Pass` to
+                      pass the unmapped value as-is
+    """
+    return SymmetricMapping(subcon, kw, kw.pop("_default_", NotImplemented))
+
+def FlagsEnum(subcon, **kw):
+    r"""
+    A set of flag values mapping.
+
+    :param subcon: the subcon to map
+    :param \*\*kw: keyword arguments which serve as the encoding mapping
+    """
+    return FlagsAdapter(subcon, kw)
+
+
+#===============================================================================
+# structs
+#===============================================================================
+def AlignedStruct(name, *subcons, **kw):
+    r"""
+    A struct of aligned fields
+
+    :param name: the name of the struct
+    :param \*subcons: the subcons that make up this structure
+    :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
+    """
+    return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
+
+def BitStruct(name, *subcons):
+    r"""
+    A struct of bitwise fields
+
+    :param name: the name of the struct
+    :param \*subcons: the subcons that make up this structure
+    """
+    return Bitwise(Struct(name, *subcons))
+
+def EmbeddedBitStruct(*subcons):
+    r"""
+    An embedded BitStruct. no name is necessary.
+
+    :param \*subcons: the subcons that make up this structure
+    """
+    return Bitwise(Embedded(Struct(None, *subcons)))
+
+
+#===============================================================================
+# strings
+#===============================================================================
+
+class PascalString(Construct):
+    r"""
+    A length-prefixed string.
+
+    ``PascalString`` is named after the string types of Pascal, which are length-prefixed. Lisp strings also follow this convention.
+
+    The length field will not appear in the same ``Container``, when parsing. Only the string will be returned. When building, the length is taken from len(the string). The length field can be anonymous (name is None) and can be variable length (such as VarInt).
+
+    :param name: name
+    :param lengthfield: a field which will store the length of the string
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    Example::
+
+        PascalString("string", ULInt32(None))
+        .parse(b"\x05\x00\x00\x00hello") -> "hello"
+        .build("hello") -> -> b"\x05\x00\x00\x00hello"
+
+        PascalString("string", ULInt32(None), encoding="utf8")
+        .parse(b"\x05\x00\x00\x00hello") -> u"hello"
+        .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
+    """
+    __slots__ = ["name", "lengthfield", "encoding"]
+    def __init__(self, name, lengthfield=UBInt8(None), encoding=None):
+        super(PascalString, self).__init__(name)
+        self.lengthfield = lengthfield
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        length = self.lengthfield._parse(stream, context)
+        obj = _read_stream(stream, length)
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _build(self, obj, stream, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
+        self.lengthfield._build(len(obj), stream, context)
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
+
+#===============================================================================
+# conditional
+#===============================================================================
+def IfThenElse(name, predicate, then_subcon, else_subcon):
+    r"""
+    An if-then-else conditional construct: if the predicate indicates True,
+    `then_subcon` will be used; otherwise `else_subcon`
+
+    :param name: the name of the construct
+    :param predicate: a function taking the context as an argument and returning True or False
+    :param then_subcon: the subcon that will be used if the predicate returns True
+    :param else_subcon: the subcon that will be used if the predicate returns False
+    """
+    return Switch(name, lambda ctx: bool(predicate(ctx)),
+        {
+            True : then_subcon,
+            False : else_subcon,
+        }
+    )
+
+def If(predicate, subcon, elsevalue=None):
+    r"""
+    An if-then conditional construct: if the predicate indicates True,
+    subcon will be used; otherwise, `elsevalue` will be returned instead.
+
+    :param predicate: a function taking the context as an argument and returning True or False
+    :param subcon: the subcon that will be used if the predicate returns True
+    :param elsevalue: the value that will be used should the predicate return False.
+                      by default this value is None.
+    """
+    return IfThenElse(subcon.name,
+        predicate,
+        subcon,
+        Computed("elsevalue", lambda ctx: elsevalue)
+    )
+
+
+#===============================================================================
+# misc
+#===============================================================================
+def OnDemandPointer(offsetfunc, subcon, force_build=True):
+    r"""
+    An on-demand pointer.
+
+    :param offsetfunc: a function taking the context as an argument and returning
+                       the absolute stream position
+    :param subcon: the subcon that will be parsed from the `offsetfunc()` stream position on demand
+    :param force_build: see OnDemand. by default True.
+    """
+    return OnDemand(Pointer(offsetfunc, subcon),
+        advance_stream = False,
+        force_build = force_build
+    )
+
+
+
+
+
+
+#===============================================================================
+# adapters
+#===============================================================================
+class MappingAdapter(Adapter):
+    """
+    Adapter that maps objects to other objects.
+    See SymmetricMapping and Enum.
+
+    :param subcon: the subcon to map
+    :param decoding: the decoding (parsing) mapping (a dict)
+    :param encoding: the encoding (building) mapping (a dict)
+    :param decdefault: the default return value when the object is not found
+                       in the decoding mapping. if no object is given, an exception is raised.
+                       if ``Pass`` is used, the unmapped object will be passed as-is
+    :param encdefault: the default return value when the object is not found
+                       in the encoding mapping. if no object is given, an exception is raised.
+                       if ``Pass`` is used, the unmapped object will be passed as-is
+    """
+    __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
+    def __init__(self, subcon, decoding, encoding,
+                 decdefault = NotImplemented, encdefault = NotImplemented):
+        super(MappingAdapter, self).__init__(subcon)
+        self.decoding = decoding
+        self.encoding = encoding
+        self.decdefault = decdefault
+        self.encdefault = encdefault
+    def _encode(self, obj, context):
+        try:
+            return self.encoding[obj]
+        except (KeyError, TypeError):
+            if self.encdefault is NotImplemented:
+                raise MappingError("no encoding mapping for %r [%s]" % (
+                    obj, self.subcon.name))
+            if self.encdefault is Pass:
+                return obj
+            return self.encdefault
+    def _decode(self, obj, context):
+        try:
+            return self.decoding[obj]
+        except (KeyError, TypeError):
+            if self.decdefault is NotImplemented:
+                raise MappingError("no decoding mapping for %r [%s]" % (
+                    obj, self.subcon.name))
+            if self.decdefault is Pass:
+                return obj
+            return self.decdefault
+
+
+class FlagsAdapter(Adapter):
+    """
+    Adapter for flag fields. Each flag is extracted from the number, resulting
+    in a FlagsContainer object. Not intended for direct usage. See FlagsEnum.
+
+    :param subcon: the subcon to extract
+    :param flags: a dictionary mapping flag-names to their value
+    """
+    __slots__ = ["flags"]
+    def __init__(self, subcon, flags):
+        super(FlagsAdapter, self).__init__(subcon)
+        self.flags = flags
+    def _encode(self, obj, context):
+        flags = 0
+        try:
+            for name, value in obj.items():
+                if value:
+                    flags |= self.flags[name]
+        except AttributeError:
+            raise MappingError("not a mapping type: %r" % (obj,))
+        except KeyError:
+            raise MappingError("unknown flag: %s" % name)
+        return flags
+    def _decode(self, obj, context):
+        obj2 = FlagsContainer()
+        for name, value in self.flags.items():
+            obj2[name] = bool(obj & value)
+        return obj2
+
+
+class ExprAdapter(Adapter):
+    """
+    A generic adapter that accepts 'encoder' and 'decoder' as parameters. You
+    can use ExprAdapter instead of writing a full-blown class when only a
+    simple expression is needed.
+
+    :param subcon: the subcon to adapt
+    :param encoder: a function that takes (obj, context) and returns an encoded version of obj
+    :param decoder: a function that takes (obj, context) and returns an decoded version of obj
+
+    Example::
+
+        ExprAdapter(UBInt8("foo"),
+            encoder = lambda obj, ctx: obj / 4,
+            decoder = lambda obj, ctx: obj * 4,
+        )
+    """
+    __slots__ = ["_encode", "_decode"]
+    def __init__(self, subcon, encoder, decoder):
+        super(ExprAdapter, self).__init__(subcon)
+        self._encode = encoder
+        self._decode = decoder
+
+
+class HexDumpAdapter(Adapter):
+    """
+    Adapter for hex-dumping strings. It returns a HexString, which is a string
+    """
+    __slots__ = ["linesize"]
+    def __init__(self, subcon, linesize=16):
+        super(HexDumpAdapter, self).__init__(subcon)
+        self.linesize = linesize
+    def _encode(self, obj, context):
+        return obj
+    def _decode(self, obj, context):
+        return HexString(obj, linesize=self.linesize)
+
+
+class Slicing(Adapter):
+    r"""
+    Adapter for slicing a list (getting a slice from that list)
+
+    :param subcon: the subcon to slice
+    :param count: expected number of elements, needed during building
+    :param start: start index (or None for entire list)
+    :param stop: stop index (or None for up-to-end)
+    :param step: step (or 1 for every element)
+    :param empty: value to fill the list with during building
+    """
+    __slots__ = ["count", "start", "stop", "step", "empty"]
+    def __init__(self, subcon, count, start, stop=None, step=1, empty=None):
+        super(Slicing, self).__init__(subcon)
+        self.count = count
+        self.start = start
+        self.stop = stop
+        self.step = step
+        self.empty = empty
+    def _encode(self, obj, context):
+        if self.start is None:
+            return obj
+        elif self.stop is None:
+            output = [self.empty] * self.count
+            output[self.start::self.step] = obj
+        else:
+            output = [self.empty] * self.count
+            output[self.start:self.stop:self.step] = obj
+        return output
+    def _decode(self, obj, context):
+        return obj[self.start:self.stop:self.step]
+
+
+class Indexing(Adapter):
+    r"""
+    Adapter for indexing a list (getting a single item from that list)
+
+    :param subcon: the subcon to index
+    :param count: expected number of elements, needed during building
+    :param index: the index of the list to get
+    :param empty: value to fill the list with during building
+    """
+    __slots__ = ["count", "index", "empty"]
+    def __init__(self, subcon, count, index, empty):
+        super(Indexing, self).__init__(subcon)
+        self.count = count
+        self.index = index
+        self.empty = empty
+    def _encode(self, obj, context):
+        output = [self.empty] * self.count
+        output[self.index] = obj
+        return output
+    def _decode(self, obj, context):
+        return obj[self.index]
+
+
+#===============================================================================
+# validators
+#===============================================================================
+class OneOf(Validator):
+    r"""
+    Validates that the object is one of the listed values.
+
+    :param subcon: object to validate
+    :param valids: a collection implementing `in`
+
+    Example::
+
+        >>> OneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x05")
+        5
+
+        >>> OneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x08")
+        construct.core.ValidationError: ('invalid object', 8)
+
+        >>> OneOf(UBInt8("num"), [4,5,6,7]).build(5)
+        b"\x05"
+
+        >>> OneOf(UBInt8("num"), [4,5,6,7]).build(8)
+        construct.core.ValidationError: ('invalid object', 8)
+    """
+    __slots__ = ["valids"]
+    def __init__(self, subcon, valids):
+        super(OneOf, self).__init__(subcon)
+        self.valids = valids
+    def _validate(self, obj, context):
+        return obj in self.valids
+
+
+class NoneOf(Validator):
+    r"""
+    Validates that the object is none of the listed values.
+
+    :param subcon: object to validate
+    :param invalids: a collection implementing `in`
+
+    Example::
+
+        >>> NoneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x08")
+        8
+
+        >>> NoneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x06")
+        construct.core.ValidationError: ('invalid object', 6)
+
+        >>> NoneOf(UBInt8("num"), [4,5,6,7]).build(8)
+        b"\x08"
+
+        >>> NoneOf(UBInt8("num"), [4,5,6,7]).build(6)
+        construct.core.ValidationError: ('invalid object', 6)
+    """
+    __slots__ = ["invalids"]
+    def __init__(self, subcon, invalids):
+        super(NoneOf, self).__init__(subcon)
+        self.invalids = invalids
+    def _validate(self, obj, context):
+        return obj not in self.invalids
+
 
