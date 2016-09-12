@@ -152,6 +152,5 @@ class Path(ExprMixin):
         return Path(name, self)
 
 
-# where is `this` being referenced from?
 this = Path("this")
 

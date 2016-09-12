@@ -209,12 +209,12 @@ all_tests = [
 
     [ExprAdapter(UBInt8("expradapter"), 
         encoder = lambda obj, ctx: obj // 7, 
-        decoder = lambda obj, ctx: obj * 7).parse, 
-        b"\x06", 42, None],
+        decoder = lambda obj, ctx: obj * 7,
+        ).parse, b"\x06", 42, None],
     [ExprAdapter(UBInt8("expradapter"), 
         encoder = lambda obj, ctx: obj // 7, 
-        decoder = lambda obj, ctx: obj * 7).build, 
-        42, b"\x06", None],
+        decoder = lambda obj, ctx: obj * 7,
+        ).build, 42, b"\x06", None],
 
     #
     # macros
