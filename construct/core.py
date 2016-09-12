@@ -32,7 +32,7 @@ class SelectError(ConstructError):
     pass
 class TerminatorError(ConstructError):
     pass
-class OverwriteError(ValueError):
+class OverwriteError(ConstructError):
     pass
 class PaddingError(ConstructError):
     pass
@@ -42,9 +42,9 @@ class StringError(ConstructError):
     pass
 class ChecksumError(ConstructError):
     pass
-class ValidationError(AdaptationError):
+class ValidationError(ConstructError):
     pass
-class BitIntegerError(AdaptationError):
+class BitIntegerError(ConstructError):
     pass
 
 
