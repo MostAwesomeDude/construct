@@ -8,7 +8,7 @@ class TestOverwrite(unittest.TestCase):
         s = Struct("s",
             Byte("a"),
             Byte("a"),
-            allow_overwrite = True
+            allow_overwrite = True,
         )
         self.assertEqual(s.parse(b"\x01\x02").a, 2)
 
@@ -16,7 +16,7 @@ class TestOverwrite(unittest.TestCase):
             Byte("a"),
             Embedded(Struct("b",
                 Byte("a"),
-                allow_overwrite = True
+                allow_overwrite = True,
             )),
         )
         self.assertEqual(s.parse(b"\x01\x02").a, 2)
@@ -26,7 +26,7 @@ class TestOverwrite(unittest.TestCase):
                 Byte("a"),
             )),
             Byte("a"),
-            allow_overwrite = True
+            allow_overwrite = True,
         )
         self.assertEqual(s.parse(b"\x01\x02").a, 2)
 
@@ -42,14 +42,14 @@ class TestOverwrite(unittest.TestCase):
             Embedded(Struct("b",
                 Byte("a"),
             )),
-            allow_overwrite = True
+            allow_overwrite = True,
         )
         self.assertRaises(OverwriteError, s.parse, b"\x01\x02")
 
         s = Struct("s",
             Embedded(Struct("b",
                 Byte("a"),
-                allow_overwrite = True
+                allow_overwrite = True,
             )),
             Byte("a"),
         )
