@@ -824,7 +824,7 @@ class Switch(Construct):
     """
     A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
 
-    .. seealso:: :func:`Pass`.
+    .. seealso:: The :func:`Pass` singleton.
 
     :param name: the name of the construct
     :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
@@ -1034,9 +1034,7 @@ class Pointer(Subconstruct):
     """
     Changes the stream position to a given offset, where the construction should take place, and restores the stream position when finished.
 
-    .. seealso::
-        :func:`Anchor`, :func:`OnDemand` and the
-        :func:`~construct.macros.OnDemandPointer` macro.
+    .. seealso:: The :func:`~construct.core.Anchor`, :func:`~construct.core.OnDemand` and :func:`~construct.macros.OnDemandPointer` macro.
 
     .. note:: Requires a seekable stream.
 
@@ -1077,8 +1075,10 @@ class Peek(Subconstruct):
     r"""
     Peeks at the stream.
 
-    Parses the subcon without changing the stream position. See also Union. If the end of the stream is reached when peeking, returns None. Size is defined as size of the subcon, even tho the stream is not advanced during parsing.
+    Parses the subcon without changing the stream position. If the end of the stream is reached when peeking, returns None. Size is defined as size of the subcon, even tho the stream is not advanced during parsing.
 
+    .. seealso:: The :class:`~construct.core.Union` class.
+  
     .. note:: Requires a seekable stream.
 
     :param subcon: the subcon to peek at
@@ -1456,7 +1456,7 @@ class Pass(Construct):
     """
     A do-nothing construct, useful as the default case for Switch, or to indicate Enums.
 
-    .. seealso:: :func:`Switch` and the :func:`~construct.macros.Enum` macro.
+    .. seealso:: The :func:`~construct.macros.Switch` and the :func:`~construct.macros.Enum` macro.
 
     .. note:: This construct is a singleton. Do not try to instatiate it, as it  will not work.
 
@@ -1476,12 +1476,11 @@ class Pass(Construct):
 
 Pass = Pass(None)
 """
-A do-nothing construct, useful as the default case for Switch, or
-to indicate Enums.
+A do-nothing construct, useful as the default case for Switch, or to indicate Enums.
 
-.. seealso:: :func:`Switch` and the :func:`~construct.macros.Enum` macro.
+.. seealso:: :class:`~construct.core.Switch` and the :func:`~construct.macros.Enum` macro.
 
-.. note:: This construct is a singleton. Do not try to instatiate it, as it  will not work.
+.. note:: This construct is a singleton. Do not try to instatiate it, as it will not work.
 
 Example::
 
@@ -1866,7 +1865,7 @@ class GreedyString(Construct):
     :param name: name
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
-    seealso:: :class:`~construct.GreedyBytes` class.
+    .. seealso:: The :class:`~construct.core.GreedyBytes` class.
 
     Example::
 
@@ -2054,7 +2053,7 @@ class Compressed(Tunnel):
 
     Name of the subcon is used for this construct.
 
-    seealso:: :class:`~construct.Prefixed` class.
+    .. seealso:: The :class:`~construct.core.Prefixed` class.
 
     :param subcon: the subcon used for storing the value
     :param encoding: any of the codecs module bytes<->bytes encodings, ie. "zlib"
