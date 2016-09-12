@@ -2011,26 +2011,24 @@ class ByteSwapped(Subconstruct):
         return self.subcon._sizeof(context)
 
 
-class LengthValue(Subconstruct):
+class Prefixed(Subconstruct):
     r"""
-    Parses the length field. Then parses the subcon using a byte range specified by the length. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes.
+    Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, bytes are passed as is.
 
     Name of the subcon is used for this construct.
 
-    :param lengthfield: a subcon used for storing the length, can have no name
+    :param lengthfield: a subcon used for storing the length
     :param subcon: the subcon used for storing the value
 
     Example::
 
-        LengthValue(VarInt(None), GreedyBytes("data"))
-        .parse(b"\x03abcdefg") -> b"abc"
-        .build(b"abc") -> b'\x03abc'
+        Prefixed(VarInt(None), GreedyBytes(None))
+        .parse(b"\x03xyzgarbage") -> b"xyz"
+        .build(b"xyz") -> b'\x03xyz'
     """
     __slots__ = ["name", "lengthfield", "subcon"]
     def __init__(self, lengthfield, subcon):
-        if not isinstance(lengthfield, Construct):
-            raise TypeError("lengthfield should be a Construct field")
-        super(LengthValue, self).__init__(subcon)
+        super(Prefixed, self).__init__(subcon)
         self.lengthfield = lengthfield
     def _parse(self, stream, context):
         length = self.lengthfield._parse(stream, context)
@@ -2048,19 +2046,25 @@ class Compressed(Tunnel):
     r"""
     Compresses or decompresses a subcon.
 
-    When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should either be used with LengthValue or on entire stream.
+    When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should either be used with Prefixed or on entire stream.
 
     Name of the subcon is used for this construct.
 
+    seealso:: :class:`~construct.Prefixed` class.
+
     :param subcon: the subcon used for storing the value
-    :param encoding: any of codecs module bytes encodings, ie. "zlib"
+    :param encoding: any of the codecs module bytes<->bytes encodings, ie. "zlib"
 
     Example::
 
         Compressed(CString(None), "zlib")
         .parse(b'x\x9c30\xc0\n\x18\x008(\x04Q') -> b"00000000000000000000000"
         .build(b"00000000000000000000000") -> b'x\x9c30\xc0\n\x18\x008(\x04Q'
-    """
+
+        Prefixed(Byte(None), Compressed(CString(None), "zlib"))
+        .parse(b"\x0cx\x9c30\xc0\n\x18\x008(\x04Q") -> b"00000000000000000000000"
+        .build(b"00000000000000000000000") -> b"\x0cx\x9c30\xc0\n\x18\x008(\x04Q"
+   """
     def __init__(self, subcon, encoding):
         super(Compressed, self).__init__(subcon)
         self.encoding = encoding
@@ -2068,23 +2072,6 @@ class Compressed(Tunnel):
         return codecs.decode(data, self.encoding)
     def _encode(self, data, context):
         return codecs.encode(data, self.encoding)
-
-
-def PrefixedCompressed(lengthfield, subcon, encoding):
-    r"""
-    Macro around LengthValue and Compressed.
-
-    :param lengthfield: a subcon used for storing the length, can have no name
-    :param subcon: the subcon used for storing the value, can have no name
-    :param encoding: any of codecs module bytes encodings, ie. "zlib"
-
-    Example::
-
-        PrefixedCompressed(Byte(None), CString(None), "zlib")
-        .parse(b"\x0cx\x9c30\xc0\n\x18\x008(\x04Q") -> b"00000000000000000000000"
-        .build(b"00000000000000000000000") -> b"\x0cx\x9c30\xc0\n\x18\x008(\x04Q"
-    """
-    return LengthValue(lengthfield, Compressed(subcon, encoding))
 
 
 class LazyStruct(Construct):

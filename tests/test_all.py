@@ -357,11 +357,13 @@ all_tests = [
         Padding(4)                      # bits 23:20
         )).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
 
-    [LengthValue(Byte(None),ULInt16(None)).parse, b"\x02\xff\xff", 65535, None],
-    [LengthValue(Byte(None),ULInt16(None)).build, 65535, b"\x02\xff\xff", None],
+    [Prefixed(Byte(None),ULInt16(None)).parse, b"\x02\xff\xffgarbage", 65535, None],
+    [Prefixed(Byte(None),ULInt16(None)).build, 65535, b"\x02\xff\xff", None],
+    [Prefixed(VarInt(None), GreedyBytes(None)).parse, b"\x03abcgarbage", b"abc", None],
+    [Prefixed(VarInt(None), GreedyBytes(None)).build, b"abc", b'\x03abc', None],
 
-    [PrefixedCompressed(Byte(None),CString(None),"zlib").parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
-    [PrefixedCompressed(Byte(None),CString(None),"zlib").build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
+    [Prefixed(Byte(None),Compressed(CString(None),"zlib")).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
+    [Prefixed(Byte(None),Compressed(CString(None),"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
 
     [GreedyBytes(None).parse, b"123", b"123", None],
     [GreedyBytes(None).build, b"123", b"123", None],
