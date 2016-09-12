@@ -1840,12 +1840,13 @@ class CString(Construct):
         self.terminators = terminators
         self.encoding = encoding
     def _parse(self, stream, context):
-        obj = b""
+        obj = []
         while True:
             char = _read_stream(stream, 1)
             if char in self.terminators:
                 break
-            obj += char
+            obj.append(char)
+        obj = b"".join(obj)
         obj = _decode_string(obj, self.encoding)
         return obj
     def _build(self, obj, stream, context):
