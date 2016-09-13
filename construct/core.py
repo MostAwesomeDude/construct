@@ -1148,38 +1148,6 @@ class Terminator(Construct):
 # Extra
 #===============================================================================
 
-class UBInt24(Construct):
-    r"""
-    A 3-byte big-endian integer, as used in ancient file formats.
-    """
-    def __init__(self, name):
-        super(UBInt24, self).__init__(name)
-    def _parse(self, stream, context):
-        data = _read_stream(stream, 3)
-        return struct.unpack('>I', b'\x00' + data)[0]
-    def _build(self, obj, stream, context):
-        data = struct.pack('>I', obj)[1:]
-        _write_stream(stream, 3, data)
-    def _sizeof(self, context):
-        return 3
-
-
-class ULInt24(Construct):
-    r"""
-    A 3-byte little-endian integer, as used in ancient file formats.
-    """
-    def __init__(self, name):
-        super(ULInt24, self).__init__(name)
-    def _parse(self, stream, context):
-        data = _read_stream(stream, 3)
-        return struct.unpack('<I', data + b'\x00')[0]
-    def _build(self, obj, stream, context):
-        data = struct.pack('<I', obj)[:3]
-        _write_stream(stream, 3, data)
-    def _sizeof(self, context):
-        return 3
-
-
 class Padding(Construct):
     r"""
     A padding field (adds bytes when building, discards bytes when parsing).
@@ -1316,6 +1284,42 @@ class Const(Subconstruct):
 #===============================================================================
 # other fields
 #===============================================================================
+
+@singleton
+class UBInt24(Construct):
+    r"""
+    A 3-byte big-endian integer, as used in ancient file formats.
+    """
+    # def __init__(self):
+    #     Construct.__init__(self)
+    #     # super(UBInt24, self).__init__()
+    def _parse(self, stream, context):
+        data = _read_stream(stream, 3)
+        return struct.unpack('>I', b'\x00' + data)[0]
+    def _build(self, obj, stream, context):
+        data = struct.pack('>I', obj)[1:]
+        _write_stream(stream, 3, data)
+    def _sizeof(self, context):
+        return 3
+
+
+@singleton
+class ULInt24(Construct):
+    r"""
+    A 3-byte little-endian integer, as used in ancient file formats.
+    """
+    # def __init__(self):
+    #     Construct.__init__(self)
+    #     # super(ULInt24, self).__init__()
+    def _parse(self, stream, context):
+        data = _read_stream(stream, 3)
+        return struct.unpack('<I', data + b'\x00')[0]
+    def _build(self, obj, stream, context):
+        data = struct.pack('<I', obj)[:3]
+        _write_stream(stream, 3, data)
+    def _sizeof(self, context):
+        return 3
+
 
 @singleton
 class VarInt(Construct):

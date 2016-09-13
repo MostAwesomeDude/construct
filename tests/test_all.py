@@ -65,6 +65,20 @@ all_tests = [
     [SLInt64.build, 0x0807060504030201, b"\x01\x02\x03\x04\x05\x06\x07\x08", None],
     # missing sizeof testing
 
+    [UBInt24.parse, b"\x01\x02\x03", 0x010203, None],
+    [UBInt24.build, 0x010203, b"\x01\x02\x03", None],
+    [UBInt24.sizeof, None, 3, None],
+    [Struct('int24' / UBInt24).parse, b"\x01\x02\x03", Container(int24=0x010203), None],
+    [Struct('int24' / UBInt24).build, Container(int24=0x010203), b"\x01\x02\x03", None],
+    [Struct('int24' / UBInt24).sizeof, None, 3, None],
+
+    [ULInt24.parse, b"\x01\x02\x03", 0x030201, None],
+    [ULInt24.build, 0x030201, b"\x01\x02\x03", None],
+    [ULInt24.sizeof, None, 3, None],
+    [Struct('int24' / ULInt24).parse, b"\x01\x02\x03", Container(int24=0x030201), None],
+    [Struct('int24' / ULInt24).build, Container(int24=0x030201), b"\x01\x02\x03", None],
+    [Struct('int24' / ULInt24).sizeof, None, 3, None],
+
     [VarInt.parse, b"\x05", 5, None],
     [VarInt.parse, b"\x85\x05", 645, None],
     [VarInt.build, 5, b"\x05", None],
@@ -435,16 +449,6 @@ all_tests = [
     # [Optional(ULInt32("int")).parse, b"?", None, None],
     # [Optional(ULInt32("int")).build, None, b"", None],
 
-    # [UBInt24('int24').parse, b"\x01\x02\x03", 0x010203, None],
-    # [UBInt24('int24').build, 0x010203, b"\x01\x02\x03", None],
-    # [Struct('struct', UBInt24('int24')).parse, b"\x01\x02\x03", Container(int24=0x010203), None],
-    # [Struct('struct', UBInt24('int24')).build, Container(int24=0x010203), b"\x01\x02\x03", None],
-
-    # [ULInt24('int24').parse, b"\x01\x02\x03", 0x030201, None],
-    # [ULInt24('int24').build, 0x030201, b"\x01\x02\x03", None],
-    # [Struct('struct', ULInt24('int24')).parse, b"\x01\x02\x03", Container(int24=0x030201), None],
-    # [Struct('struct', ULInt24('int24')).build, Container(int24=0x030201), b"\x01\x02\x03", None],
-
     # [ByteSwapped(Bytes(None, 5)).parse, b"12345", b"54321", None],
     # [ByteSwapped(Bytes(None, 5)).build, b"12345", b"54321", None],
     # [ByteSwapped(Struct("struct",Byte("a"),Byte("b"))).parse, b"\x01\x02", Container(a=2)(b=1), None],
@@ -466,9 +470,6 @@ all_tests = [
 
     # [Prefixed(Byte(None),Compressed(CString(None),"zlib")).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
     # [Prefixed(Byte(None),Compressed(CString(None),"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
-
-    # [GreedyBytes(None).parse, b"123", b"123", None],
-    # [GreedyBytes(None).build, b"123", b"123", None],
 
 ]
 
