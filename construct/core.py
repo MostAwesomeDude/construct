@@ -2376,7 +2376,7 @@ def OptionalGreedyRange(subcon):
 # structures and sequences
 #===============================================================================
 class Struct(Construct):
-    """
+    r"""
     A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
 
     .. seealso:: The :func:`~construct.macros.Embedded` macro.
@@ -2395,12 +2395,10 @@ class Struct(Construct):
         )
     """
     __slots__ = ["subcons", "nested", "allow_overwrite"]
-    def __init__(self, name, *subcons, **kw):
+    def __init__(self, *subcons, **kw):
         self.nested = kw.pop("nested", True)
         self.allow_overwrite = kw.pop("allow_overwrite", False)
-        if kw:
-            raise TypeError("the only keyword argument accepted is 'nested'", kw)
-        super(Struct, self).__init__(name)
+        super(Struct, self).__init__()
         self.subcons = subcons
         self._inherit_flags(*subcons)
         self._clear_flag(self.FLAG_EMBED)
