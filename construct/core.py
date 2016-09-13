@@ -737,17 +737,17 @@ class Pointer(Subconstruct):
         self.offsetfunc = offsetfunc
     def _parse(self, stream, context):
         newpos = self.offsetfunc(context)
-        origpos = stream.tell()
+        fallback = stream.tell()
         stream.seek(newpos, 2 if newpos < 0 else 0)
         obj = self.subcon._parse(stream, context)
-        stream.seek(origpos)
+        stream.seek(fallback)
         return obj
     def _build(self, obj, stream, context):
         newpos = self.offsetfunc(context)
-        origpos = stream.tell()
+        fallback = stream.tell()
         stream.seek(newpos, 2 if newpos < 0 else 0)
         self.subcon._build(obj, stream, context)
-        stream.seek(origpos)
+        stream.seek(fallback)
     def _sizeof(self, context):
         return 0
 
@@ -942,7 +942,7 @@ class Reconfig(Subconstruct):
         self._clear_flag(clearflags)
 
 
-
+@singleton
 class Anchor(Construct):
     r"""
     Gets the stream position when parsing or building.
@@ -965,9 +965,9 @@ class Anchor(Construct):
         .build(dict(a=255)) -> b"\xff"
         .sizeof() -> 1
     """
-    __slots__ = ["name"]
-    def __init__(self, name):
-        super(Anchor, self).__init__(name)
+    def __init__(self):
+        Construct.__init__(self)
+        # super(Anchor, self).__init__()
     def _parse(self, stream, context):
         position = stream.tell()
         context[self.name] = position
@@ -979,6 +979,7 @@ class Anchor(Construct):
         return 0
 
 
+@singleton
 class AnchorRange(Construct):
     r"""
     Gets the stream position at two times when parsing or building.
@@ -1002,9 +1003,9 @@ class AnchorRange(Construct):
         .build(dict(a=1)) -> b"\x01"
         .sizeof() -> 1
     """
-    __slots__ = ["name"]
-    def __init__(self, name):
-        super(AnchorRange, self).__init__(name)
+    def __init__(self):
+        Construct.__init__(self)
+        # super(AnchorRange, self).__init__()
     def _parse(self, stream, context):
         position = stream.tell()
         if self.name not in context:
@@ -1051,8 +1052,8 @@ class Computed(Construct):
         .build(dict(width=4,height=5)) -> b'\x04\x05'
     """
     __slots__ = ["func"]
-    def __init__(self, name, func):
-        super(Computed, self).__init__(name)
+    def __init__(self, func):
+        super(Computed, self).__init__()
         self.func = func
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
@@ -1171,6 +1172,7 @@ Example::
 """
 
 
+@singleton
 class Terminator(Construct):
     """
     Asserts the end of the stream has been reached at the point it's placed. You can use this to ensure no more unparsed data follows.
@@ -1183,28 +1185,28 @@ class Terminator(Construct):
 
         Terminator
     """
-    __slots__ = []
     def _parse(self, stream, context):
         if stream.read(1):
             raise TerminatorError("expected end of stream")
     def _build(self, obj, stream, context):
-        assert obj is None
+        if obj is not None:
+            raise FieldError("requires None when building")
     def _sizeof(self, context):
         return 0
 
-Terminator = Terminator(None)
-"""
-Asserts the end of the stream has been reached at the point it's placed.
-You can use this to ensure no more unparsed data follows.
+# Terminator = Terminator(None)
+# """
+# Asserts the end of the stream has been reached at the point it's placed.
+# You can use this to ensure no more unparsed data follows.
 
-.. note::
-    * This construct is only meaningful for parsing. For building, it's a no-op.
-    * This construct is a singleton. Do not try to instatiate it, as it will not work.
+# .. note::
+#     * This construct is only meaningful for parsing. For building, it's a no-op.
+#     * This construct is a singleton. Do not try to instatiate it, as it will not work.
 
-Example::
+# Example::
 
-    Terminator
-"""
+#     Terminator
+# """
 
 
 #===============================================================================
@@ -2435,10 +2437,10 @@ class Struct(Construct):
                 subobj = obj
             elif sc.name is None:
                 subobj = None
-            elif isinstance(sc, (Computed, Anchor, AnchorRange, Checksum)):
+            elif isinstance(sc, (Computed, Anchor.__class__, AnchorRange.__class__, Checksum)):
                 subobj = None
             else:
-                subobj = obj[sc.name]
+                subobj = obj.get(sc.name, None)
                 context[sc.name] = subobj
             sc._build(subobj, stream, context)
     def _sizeof(self, context):
@@ -2587,7 +2589,7 @@ def Alias(newname, oldname):
     :param newname: the new name
     :param oldname: the name of an existing element
     """
-    return Computed(newname, lambda ctx: ctx[oldname])
+    return Rename(newname, Computed(lambda ctx: ctx[oldname]))
 
 
 #===============================================================================
@@ -2754,7 +2756,7 @@ def If(predicate, subcon, elsevalue=None):
     return IfThenElse(subcon.name,
         predicate,
         subcon,
-        Computed("elsevalue", lambda ctx: elsevalue)
+        "elsevalue" / Computed(lambda ctx: elsevalue),
     )
 
 
