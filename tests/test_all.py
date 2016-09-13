@@ -255,6 +255,38 @@ all_tests = [
     [If(lambda ctx: False, UBInt8).build, None, b"", None],
     [If(lambda ctx: False, UBInt8).sizeof, None, None, SizeofError],
 
+    [Padding(4).parse, b"\x00\x00\x00\x00", None, None],
+    [Padding(4, strict=True).parse, b"\x00\x00\x00\x00", None, None],
+    [Padding(4, strict=True).parse, b"????", None, PaddingError],
+    [Padding(4).build, None, b"\x00\x00\x00\x00", None],
+    [Padding(4, strict=True).build, None, b"\x00\x00\x00\x00", None],
+    [Padding(4).sizeof, None, 4, None],
+    # what does that do anyway?
+    # [lambda none: Padding(4, pattern=b"??"), None, None, PaddingError],
+
+    [Aligned(Byte, modulus=4).parse, b"\x01\x00\x00\x00", 1, None],
+    [Aligned(Byte, modulus=4).build, 1, b"\x01\x00\x00\x00", None],
+    [Aligned(Byte, modulus=4).sizeof, None, 4, None],
+    [Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).parse, b"\x01\x00\x00\x00\x02", Container(a=1)(b=2), None],
+    [Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).build, Container(a=1)(b=2), b"\x01\x00\x00\x00\x02", None],
+    [Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).sizeof, None, 5, None],
+
+    [Enum(Byte,q=3,r=4,t=5).parse, b"\x04", "r", None],
+    [Enum(Byte,q=3,r=4,t=5).parse, b"\x07", None, MappingError],
+    [Enum(Byte,q=3,r=4,t=5, _default_="spam").parse, b"\x07", "spam", None],
+    [Enum(Byte,q=3,r=4,t=5, _default_=Pass).parse, b"\x07", 7, None],
+    [Enum(Byte,q=3,r=4,t=5).build, "r", b"\x04", None],
+    [Enum(Byte,q=3,r=4,t=5).build, "spam", None, MappingError],
+    [Enum(Byte,q=3,r=4,t=5, _default_=9).build, "spam", b"\x09", None],
+    [Enum(Byte,q=3,r=4,t=5, _default_=Pass).build, 9, b"\x09", None],
+    [Enum(Byte,q=3,r=4,t=5).sizeof, None, 1, None],
+
+    [Flag.parse, b"\x00", False, None],
+    [Flag.parse, b"\x01", True, None],
+    [Flag.parse, b"\xff", True, None],
+    [Flag.build, False, b"\x00", None],
+    [Flag.build, True, b"\x01", None],
+    [Flag.sizeof, None, 1, None],
 
     # [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
     # [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
@@ -309,12 +341,6 @@ all_tests = [
     # [Indexing(Array(4, UBInt8("elements")), 4, 2, empty=0).parse, b"\x01\x02\x03\x04", 3, None],
     # [Indexing(Array(4, UBInt8("elements")), 4, 2, empty=0).build, 3, b"\x00\x00\x03\x00", None],
 
-    # [Padding(4).parse, b"\x00\x00\x00\x00", None, None],
-    # [Padding(4, strict=True).parse, b"\x00\x00\x00\x00", None, None],
-    # [Padding(4, strict=True).parse, b"????", None, PaddingError],
-    # [Padding(4).build, None, b"\x00\x00\x00\x00", None],
-    # [Padding(4, strict=True).build, None, b"\x00\x00\x00\x00", None],
-    # [lambda none: Padding(4, pattern=b"??"), None, None, PaddingError],
 
     # # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).parse, b"\x05abcde", b"abcde", None],
     # # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build, b"abcde", b"\x05abcde", None],
@@ -334,11 +360,6 @@ all_tests = [
     # #
     # # macros
     # #
-    # [Aligned(UBInt8("aligned")).parse, b"\x01\x00\x00\x00", 1, None],
-    # [Aligned(UBInt8("aligned")).build, 1, b"\x01\x00\x00\x00", None],
-    # [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).parse, b"\x01\x00\x00\x00\x02", Container(a=1)(b=2), None],
-    # [Struct("aligned", Aligned(UBInt8("a")), UBInt8("b")).build, Container(a=1)(b=2), b"\x01\x00\x00\x00\x02", None],
-
     # [Bitwise(Field("bitwise", 8)).parse, b"\xff", b"\x01" * 8, None],
     # [Bitwise(Field("bitwise", lambda ctx: 8)).parse, b"\xff", b"\x01" * 8, None],
     # [Bitwise(Field("bitwise", 8)).build, b"\x01" * 8, b"\xff", None],
@@ -425,15 +446,6 @@ all_tests = [
     #     Struct("both",ULInt8("a"),ULInt8("b")),
     #     VarInt("c"),
     #     ).sizeof, None, None, SizeofError],
-
-    # [Enum(UBInt8("enum"),q=3,r=4,t=5).parse, b"\x04", "r", None],
-    # [Enum(UBInt8("enum"),q=3,r=4,t=5).parse, b"\x07", None, MappingError],
-    # [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_="spam").parse, b"\x07", "spam", None],
-    # [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_=Pass).parse, b"\x07", 7, None],
-    # [Enum(UBInt8("enum"),q=3,r=4,t=5).build, "r", b"\x04", None],
-    # [Enum(UBInt8("enum"),q=3,r=4,t=5).build, "spam", None, MappingError],
-    # [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_=9).build, "spam", b"\x09", None],
-    # [Enum(UBInt8("enum"),q=3,r=4,t=5, _default_=Pass).build, 9, b"\x09", None],
 
     # [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x03\x01\x01\x01", [1,1,1], None],
     # [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x00", [], None],

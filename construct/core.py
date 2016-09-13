@@ -1148,8 +1148,8 @@ class Padding(Construct):
     __slots__ = ["length", "pattern", "strict"]
     def __init__(self, length, pattern=b"\x00", strict=False):
         if len(pattern) != 1:
-            raise PaddingError("expected a pattern of single byte, given %r" % pattern)
-        super(Padding, self).__init__(None)
+            raise PaddingError("pattern expected to be b-string character")
+        super(Padding, self).__init__()
         self.length = length
         self.pattern = pattern
         self.strict = strict
@@ -1166,11 +1166,10 @@ class Padding(Construct):
         padding = length * self.pattern
         _write_stream(stream, length, padding)
     def _sizeof(self, context):
-        length = self.length(context) if callable(self.length) else self.length
-        return length
+        return self.length(context) if callable(self.length) else self.length
 
 
-class Aligned(Construct):
+class Aligned(Subconstruct):
     r"""
     Aligns subcon to modulus boundary using padding pattern
 
@@ -1199,13 +1198,12 @@ class Aligned(Construct):
         .sizeof() -> 4
     """
     __slots__ = ["subcon", "modulus", "pattern"]
-    def __init__(self, subcon, modulus=4, pattern=b"\x00"):
+    def __init__(self, subcon, modulus, pattern=b"\x00"):
         if modulus < 2:
             raise ValueError("modulus must be at least 2", modulus)
         if len(pattern) != 1:
-            raise PaddingError("expected a pattern of single byte, given %r" % pattern)
-        super(Aligned, self).__init__(subcon.name)
-        self.subcon = subcon
+            raise PaddingError("pattern expected to be b-string character")
+        super(Aligned, self).__init__(subcon)
         self.modulus = modulus
         self.pattern = pattern
     def _parse(self, stream, context):
@@ -1222,7 +1220,8 @@ class Aligned(Construct):
         pad = -(position2 - position1) % self.modulus
         _write_stream(stream, pad, self.pattern * pad)
     def _sizeof(self, context):
-        return self.subcon._sizeof(context)
+        sublen = self.subcon._sizeof(context)
+        return sublen + (-sublen % self.modulus)
 
 
 class Const(Subconstruct):
@@ -1654,29 +1653,6 @@ class BitField(Construct):
         return self.length(context) if callable(self.length) else self.length
 
 
-def Flag(name, truth=1, falsehood=0, default=False):
-    r"""
-    A flag.
-
-    Flags are usually used to signify a Boolean value, and this construct
-    maps values onto the ``bool`` type.
-
-    .. note:: This construct works with both bit and byte contexts.
-
-    .. warning:: Flags default to False, not True. This is different from the
-        C and Python way of thinking about truth, and may be subject to change
-        in the future.
-
-    :param name: field name
-    :param truth: value of truth (default 1)
-    :param falsehood: value of falsehood (default 0)
-    :param default: default value (default False)
-    """
-
-    return SymmetricMapping(Field(name, 1),
-        {True : int2byte(truth), False : int2byte(falsehood)},
-        default = default,
-    )
 
 #===============================================================================
 # field shortcuts
@@ -2930,4 +2906,29 @@ class GreedyString(Construct):
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
 
+
+#===============================================================================
+# other
+#===============================================================================
+
+@singletonfunction
+def Flag():
+    r"""
+    A flag.
+
+    Flags are usually used to signify a Boolean value, and this construct
+    maps values onto the ``bool`` type.
+
+    .. note:: This construct works with both bit and byte contexts.
+
+    .. warning:: Flags default to False, not True. This is different from the
+        C and Python way of thinking about truth, and may be subject to change
+        in the future.
+
+    :param name: field name
+    :param truth: value of truth (default 1)
+    :param falsehood: value of falsehood (default 0)
+    :param default: default value (default False)
+    """
+    return SymmetricMapping(UBInt8, {False : 0}, default=True)
 
