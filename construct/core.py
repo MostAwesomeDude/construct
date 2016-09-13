@@ -1377,6 +1377,10 @@ class Const(Subconstruct):
         return self.subcon._sizeof(context)
 
 
+#===============================================================================
+# strings
+#===============================================================================
+
 def _encode_string(obj, encoding):
     if encoding:
         if isinstance(encoding, str):
@@ -1395,9 +1399,6 @@ def _decode_string(obj, encoding):
         else:
             obj = encoding.decode(obj)
     return obj
-
-
-
 
 
 class String(Construct):
