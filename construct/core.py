@@ -274,7 +274,7 @@ class Construct(object):
             #     raise ValueError("reserved name: either _ or starts with < ", name)
         # if name is not None and not isinstance(name, str):
         #     raise TypeError("`name` must be a string or None, got %r" % (name,))
-        return Rename(name, self)
+        return Renamed(name, self)
     __rdiv__ = __rtruediv__
 
 
@@ -600,8 +600,8 @@ class Union(Construct):
         .build(dict(sub2=dict(c=3)))     -> b"\x03\x00"
 
         Union("union",
-            Embed(Struct("sub1", ULInt8("a"), ULInt8("b") )),
-            Embed(Struct("sub2", ULInt16("c") )),
+            Embedded(Struct("sub1", ULInt8("a"), ULInt8("b") )),
+            Embedded(Struct("sub2", ULInt16("c") )),
         )
 
         .build(dict(a=1,b=2)) -> b"\x01\x02"
@@ -921,25 +921,25 @@ class Restream(Subconstruct):
 #===============================================================================
 # miscellaneous
 #===============================================================================
-class Reconfig(Subconstruct):
-    """
-    Reconfigures a subconstruct. Reconfig can be used to change the name and set and clear flags of the inner subcon.
+# class Reconfig(Subconstruct):
+#     """
+#     Reconfigures a subconstruct. Reconfig can be used to change the name and set and clear flags of the inner subcon.
 
-    :param name: the new name
-    :param subcon: the subcon to reconfigure
-    :param setflags: the flags to set (default is 0)
-    :param clearflags: the flags to clear (default is 0)
+#     :param name: the new name
+#     :param subcon: the subcon to reconfigure
+#     :param setflags: the flags to set (default is 0)
+#     :param clearflags: the flags to clear (default is 0)
 
-    Example::
+#     Example::
 
-        Reconfig("foo", UBInt8("bar"))
-    """
-    __slots__ = []
-    def __init__(self, name, subcon, setflags = 0, clearflags = 0):
-        subcon.name = name
-        super(Reconfig, self).__init__(subcon)
-        self._set_flag(setflags)
-        self._clear_flag(clearflags)
+#         Reconfig("foo", UBInt8("bar"))
+#     """
+#     __slots__ = []
+#     def __init__(self, name, subcon, setflags = 0, clearflags = 0):
+#         super(Reconfig, self).__init__(subcon)
+#         self.name = name
+#         self._set_flag(setflags)
+#         self._clear_flag(clearflags)
 
 
 @singleton
@@ -2441,6 +2441,7 @@ class Struct(Construct):
                 subobj = None
             else:
                 subobj = obj.get(sc.name, None)
+                # subobj = obj.get(sc.name, None)
                 context[sc.name] = subobj
             sc._build(subobj, stream, context)
     def _sizeof(self, context):
@@ -2558,17 +2559,21 @@ def SeqOfOne(name, *args, **kw):
     return Indexing(Sequence(name, *args, **kw), index=0)
 
 
-def Embedded(subcon):
+class Embedded(Subconstruct):
     r"""
     Embeds a struct into the enclosing struct, merging fields.
 
     :param subcon: the struct to embed
     """
-    return Reconfig(subcon.name, subcon, subcon.FLAG_EMBED)
+    def __init__(self, subcon):
+        super(Embedded, self).__init__(subcon)
+        # self.name = name
+        self._set_flag(subcon.FLAG_EMBED)
+        # self._clear_flag(clearflags)
+    # return Reconfig(subcon.name, subcon, subcon.FLAG_EMBED)
 
 
-
-class Rename(Subconstruct):
+class Renamed(Subconstruct):
     r"""
     Renames an existing construct.
 
@@ -2576,7 +2581,7 @@ class Rename(Subconstruct):
     :param subcon: the subcon to rename
     """
     def __init__(self, newname, subcon):
-        super(Rename, self).__init__(subcon)
+        super(Renamed, self).__init__(subcon)
         self.name = newname
 
 
