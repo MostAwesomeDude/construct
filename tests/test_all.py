@@ -284,6 +284,29 @@ all_tests = [
     [Struct(Renamed("new",Renamed("old",Byte))).parse, b"\x01", Container(new=1), None],
     [Struct(Renamed("new",Renamed("old",Byte))).build, Container(new=1), b"\x01", None],
 
+    [BitField(8).parse, b"\x01\x01\x01\x01\x01\x01\x01\x01", 255, None],
+    [BitField(8).build, 255, b"\x01\x01\x01\x01\x01\x01\x01\x01", None],
+    [BitField(8).build, -1, None, BitIntegerError],
+    [BitField(8, signed=True).parse, b"\x01\x01\x01\x01\x01\x01\x01\x01", -1, None],
+    [BitField(8, signed=True).build, -1, b"\x01\x01\x01\x01\x01\x01\x01\x01", None],
+    [BitField(8, swapped=True, bytesize=4).parse, b"\x01\x01\x01\x01\x00\x00\x00\x00", 0x0f, None],
+    [BitField(8, swapped=True, bytesize=4).build, 0x0f, b"\x01\x01\x01\x01\x00\x00\x00\x00", None],
+    [BitField(lambda ctx: 8).parse, b"\x01" * 8, 255, None],
+    [BitField(lambda ctx: 8).build, 255, b"\x01" * 8, None],
+
+    [Bitwise(Bytes(8)).parse, b"\xff", b"\x01" * 8, None],
+    [Bitwise(Bytes(8)).build, b"\x01" * 8, b"\xff", None],
+    [Bitwise(Bytes(lambda ctx: 8)).parse, b"\xff", b"\x01" * 8, None],
+    [Bitwise(Bytes(lambda ctx: 8)).build, b"\x01" * 8, b"\xff", None],
+
+    [ByteSwapped(Bytes(5)).parse, b"12345?????", b"54321", None],
+    [ByteSwapped(Bytes(5)).build, b"12345", b"54321", None],
+    [ByteSwapped(Struct("a"/Byte,"b"/Byte)).parse, b"\x01\x02", Container(a=2)(b=1), None],
+    [ByteSwapped(Struct("a"/Byte,"b"/Byte)).build, Container(a=2)(b=1), b"\x01\x02", None],
+    [ByteSwapped(Bytes(5), size=4).parse, b"54321", None, FieldError],
+    # from issue #70
+    [ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4))).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
+    [BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4)).parse, b'\xfa\xbc\xd1', Container(flag1=1)(flag2=1)(number=0xabcd), None],
 
     # [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
     # [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
@@ -306,19 +329,6 @@ all_tests = [
     # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
     # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
     # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-
-    # #
-    # # adapters
-    # #
-    # [BitField("bitfield", 8).parse, b"\x01" * 8, 255, None],
-    # [BitField("bitfield", 8).build, 255, b"\x01" * 8, None],
-    # [BitField("bitfield", 8).build, -1, None, BitIntegerError],
-    # [BitField("bitfield", 8, signed=True).parse, b"\x01" * 8, -1, None],
-    # [BitField("bitfield", 8, signed=True).build, -1, b"\x01" * 8, None],
-    # [BitField("bitfield", 8, swapped=True, bytesize=4).parse, b"\x01" * 4 + b"\x00" * 4, 0x0f, None],
-    # [BitField("bitfield", 8, swapped=True, bytesize=4).build, 0x0f, b"\x01" * 4 + b"\x00" * 4, None],
-    # [BitField("bitfield", lambda c: 8).parse, b"\x01" * 8, 255, None],
-    # [BitField("bitfield", lambda c: 8).build, 255, b"\x01" * 8, None],
 
     # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x03", "y", None],
     # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x04", None, MappingError],
@@ -354,14 +364,6 @@ all_tests = [
     #     decoder = lambda obj, ctx: obj * 7,
     #     ).build, 42, b"\x06", None],
 
-    # #
-    # # macros
-    # #
-    # [Bitwise(Field("bitwise", 8)).parse, b"\xff", b"\x01" * 8, None],
-    # [Bitwise(Field("bitwise", lambda ctx: 8)).parse, b"\xff", b"\x01" * 8, None],
-    # [Bitwise(Field("bitwise", 8)).build, b"\x01" * 8, b"\xff", None],
-    # [Bitwise(Field("bitwise", lambda ctx: 8)).build, b"\x01" * 8, b"\xff", None],
-
     # [Select("select", UBInt32("a"), UBInt16("b"), UBInt8).parse, b"\x07", 7, None],
     # [Select("select", UBInt32("a"), UBInt16("b")).parse, b"\x07", None, SelectError],
     # [Select("select", UBInt32("a"), UBInt16("b"), UBInt8, include_name=True).parse, b"\x07", ("c", 7), None],
@@ -380,6 +382,11 @@ all_tests = [
     # [Peek(VarInt("peek")).sizeof, None, None, SizeofError],
     # [Struct("struct",Peek(Byte("a")),Peek(UBInt16("b")),).parse, b"\x01\x02", Container(a=1)(b=258), None],
     # [Struct("struct",Peek(Byte("a")),Peek(UBInt16("b")),).build, dict(a=0,b=258), b"", None],
+
+    # [Optional(ULInt32("int")).parse, b"\x01\x00\x00\x00", 1, None],
+    # [Optional(ULInt32("int")).build, 1, b"\x01\x00\x00\x00", None],
+    # [Optional(ULInt32("int")).parse, b"?", None, None],
+    # [Optional(ULInt32("int")).build, None, b"", None],
 
     # [Union("union",
     #     UBInt32("a"),
@@ -470,21 +477,6 @@ all_tests = [
     # # Fixed: sizeof takes a context, not an obj.
     # [PrefixedArray(UBInt8("array"), UBInt8("count")).sizeof, [1,1,1], 4, SizeofError],
     # [PrefixedArray(UBInt8("array"), UBInt8("count")).build, [1,1,1], b"\x03\x01\x01\x01", None],
-
-    # [Optional(ULInt32("int")).parse, b"\x01\x00\x00\x00", 1, None],
-    # [Optional(ULInt32("int")).build, 1, b"\x01\x00\x00\x00", None],
-    # [Optional(ULInt32("int")).parse, b"?", None, None],
-    # [Optional(ULInt32("int")).build, None, b"", None],
-
-    [ByteSwapped(Bytes(5)).parse, b"12345?????", b"54321", None],
-    [ByteSwapped(Bytes(5)).build, b"12345", b"54321", None],
-    [ByteSwapped(Struct("a"/Byte,"b"/Byte)).parse, b"\x01\x02", Container(a=2)(b=1), None],
-    [ByteSwapped(Struct("a"/Byte,"b"/Byte)).build, Container(a=2)(b=1), b"\x01\x02", None],
-    [ByteSwapped(Bytes(5), size=4).parse, b"54321", None, FieldError],
-
-    # from issue #70
-    [ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4))).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
-    [BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4)).parse, b'\xfa\xbc\xd1', Container(flag1=1)(flag2=1)(number=0xabcd), None],
 
     # [Prefixed(Byte(None),ULInt16(None)).parse, b"\x02\xff\xffgarbage", 65535, None],
     # [Prefixed(Byte(None),ULInt16(None)).build, 65535, b"\x02\xff\xff", None],
