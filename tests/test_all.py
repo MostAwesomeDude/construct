@@ -476,19 +476,15 @@ all_tests = [
     # [Optional(ULInt32("int")).parse, b"?", None, None],
     # [Optional(ULInt32("int")).build, None, b"", None],
 
-    # [ByteSwapped(Bytes(None, 5)).parse, b"12345", b"54321", None],
-    # [ByteSwapped(Bytes(None, 5)).build, b"12345", b"54321", None],
-    # [ByteSwapped(Struct("struct",Byte("a"),Byte("b"))).parse, b"\x01\x02", Container(a=2)(b=1), None],
-    # [ByteSwapped(Struct("struct",Byte("a"),Byte("b"))).build, Container(a=2)(b=1), b"\x01\x02", None],
+    [ByteSwapped(Bytes(5)).parse, b"12345?????", b"54321", None],
+    [ByteSwapped(Bytes(5)).build, b"12345", b"54321", None],
+    [ByteSwapped(Struct("a"/Byte,"b"/Byte)).parse, b"\x01\x02", Container(a=2)(b=1), None],
+    [ByteSwapped(Struct("a"/Byte,"b"/Byte)).build, Container(a=2)(b=1), b"\x01\x02", None],
+    [ByteSwapped(Bytes(5), size=4).parse, b"54321", None, FieldError],
 
-    # # from Issue #70
-    # [ByteSwapped(BitStruct("Example",
-    #     Bit("flag1"),                   # bit 0
-    #     Bit("flag2"),                   # bit 1
-    #     Padding(2),                     # bits 03:02
-    #     BitField("number", 16),         # bits 19:04
-    #     Padding(4)                      # bits 23:20
-    #     )).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
+    # from issue #70
+    [ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4))).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
+    [BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4)).parse, b'\xfa\xbc\xd1', Container(flag1=1)(flag2=1)(number=0xabcd), None],
 
     # [Prefixed(Byte(None),ULInt16(None)).parse, b"\x02\xff\xffgarbage", 65535, None],
     # [Prefixed(Byte(None),ULInt16(None)).build, 65535, b"\x02\xff\xff", None],
