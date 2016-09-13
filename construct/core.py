@@ -1910,16 +1910,15 @@ class PrefixedArray(Construct):
             self.subcon._build(element, stream, context)
 
 
-
 class Range(Subconstruct):
     r"""
     A range-array. The subcon will iterate between ``min`` to ``max`` times. If less than ``min`` elements are found, raises RangeError.
 
     .. seealso::
 
-        The :func:`~construct.macros.GreedyRange` and :func:`~construct.macros.OptionalGreedyRange` macros.
+        The :func:`~construct.macros.GreedyRange` macro.
 
-    The general-case repeater. Repeats the given unit for at least ``min`` times, and up to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits. If less than ``min`` units have been successfully parsed, a RangeError is raised.
+    The general-case repeater. Repeats the given unit for at least ``min`` times, and up to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits cleanly. If less than ``min`` units have been successfully parsed, a RangeError is raised.
 
     .. note:: This object requires a seekable stream for parsing.
 
@@ -1986,6 +1985,9 @@ class Range(Subconstruct):
         raise SizeofError("cannot calculate size")
 
 
+def GreedyRange(subcon):
+    return Range(0, sys.maxsize, subcon)
+
 
 class RepeatUntil(Subconstruct):
     r"""
@@ -2025,63 +2027,6 @@ class RepeatUntil(Subconstruct):
             raise ArrayError("missing terminator")
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
-
-
-def OpenRange(min, subcon):
-    return Range(min, sys.maxsize, subcon)
-
-
-def GreedyRange(subcon):
-    r"""
-    Repeats the given unit one or more times.
-
-    :param subcon: construct to repeat
-
-    Example::
-
-        >>> from construct import GreedyRange, UBInt8
-        >>> c = GreedyRange(UBInt8("foo"))
-        >>> c.parse("\x01")
-        [1]
-        >>> c.parse("\x01\x02\x03")
-        [1, 2, 3]
-        >>> c.parse("\x01\x02\x03\x04\x05\x06")
-        [1, 2, 3, 4, 5, 6]
-        >>> c.parse("")
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 1..2147483647, found 0
-        >>> c.build([1,2])
-        '\x01\x02'
-        >>> c.build([])
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 1..2147483647, found 0
-    """
-    return OpenRange(1, subcon)
-
-
-def OptionalGreedyRange(subcon):
-    r"""
-    Repeats the given subcon zero or more times. This repeater can't
-    fail, as it accepts lists of any length.
-
-    :param subcon: construct to repeat
-
-    Example::
-
-        >>> from construct import OptionalGreedyRange, UBInt8
-        >>> c = OptionalGreedyRange(UBInt8("foo"))
-        >>> c.parse("")
-        []
-        >>> c.parse("\x01\x02")
-        [1, 2]
-        >>> c.build([])
-        ''
-        >>> c.build([1,2])
-        '\x01\x02'
-    """
-    return OpenRange(0, subcon)
 
 
 #===============================================================================
@@ -2257,16 +2202,16 @@ def Bitwise(subcon):
     return con
 
 
-def SeqOfOne(name, *args, **kw):
-    r"""
-    A sequence of one element. Only the first element is meaningful, the
-    rest are discarded.
+# def SeqOfOne(name, *args, **kw):
+#     r"""
+#     A sequence of one element. Only the first element is meaningful, the
+#     rest are discarded.
 
-    :param name: the name of the sequence
-    :param \*args: subconstructs
-    :param \*\*kw: any keyword arguments to Sequence
-    """
-    return Indexing(Sequence(name, *args, **kw), index=0)
+#     :param name: the name of the sequence
+#     :param \*args: subconstructs
+#     :param \*\*kw: any keyword arguments to Sequence
+#     """
+#     return Indexing(Sequence(name, *args, **kw), index=0)
 
 
 class Embedded(Subconstruct):
