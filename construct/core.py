@@ -2448,7 +2448,7 @@ class Struct(Construct):
 
 
 class Sequence(Struct):
-    """
+    r"""
     A sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
 
     .. seealso:: The :func:`~construct.macros.Embedded` macro.
@@ -2466,7 +2466,6 @@ class Sequence(Struct):
             UBInt8("third_element"),
         )
     """
-    __slots__ = []
     def _parse(self, stream, context):
         if "<obj>" in context:
             obj = context["<obj>"]
@@ -2501,12 +2500,6 @@ class Sequence(Struct):
                 subobj = next(objiter)
                 context[sc.name] = subobj
             sc._build(subobj, stream, context)
-
-
-
-#===============================================================================
-# arrays
-#===============================================================================
 
 
 
