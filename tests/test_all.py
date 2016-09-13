@@ -159,12 +159,12 @@ all_tests = [
     [Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).build, Container(a=1)(b=2)(inner=Container(c=3)(d=4)), b"\x01\x00\x02\x03\x04", None],
     [Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build, Container(a=1)(b=2)(c=3)(d=4), b"\x01\x00\x02\x03\x04", None],
 
-    # [Sequence(UBInt8, UBInt16).parse, b"\x01\x00\x02", [1,2], None],
-    # [Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).parse, b"\x01\x00\x02\x03\x04", [1,2,[3,4]], None],
-    # [Sequence(UBInt8, UBInt16, Embedded(Sequence(UBInt8, UBInt8))).parse, b"\x01\x00\x02\x03\x04", [1,2,3,4], None],
-    # [Sequence(UBInt8, UBInt16).build, [1,2], b"\x01\x00\x02", None],
-    # [Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).build, [1,2,[3,4]], b"\x01\x00\x02\x03\x04", None],
-    # [Sequence(UBInt8, UBInt16, Embedded(Sequence(UBInt8, UBInt8))).build, [1,2,3,4], b"\x01\x00\x02\x03\x04", None],
+    [Sequence(UBInt8, UBInt16).parse, b"\x01\x00\x02", [1,2], None],
+    [Sequence(UBInt8, UBInt16).build, [1,2], b"\x01\x00\x02", None],
+    [Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).parse, b"\x01\x00\x02\x03\x04", [1,2,[3,4]], None],
+    [Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).build, [1,2,[3,4]], b"\x01\x00\x02\x03\x04", None],
+    [Sequence(UBInt8, UBInt16, Embedded(Sequence(UBInt8, UBInt8))).parse, b"\x01\x00\x02\x03\x04", [1,2,3,4], None],
+    [Sequence(UBInt8, UBInt16, Embedded(Sequence(UBInt8, UBInt8))).build, [1,2,3,4], b"\x01\x00\x02\x03\x04", None],
 
     # [Select("select", UBInt32("a"), UBInt16("b"), UBInt8).parse, b"\x07", 7, None],
     # [Select("select", UBInt32("a"), UBInt16("b")).parse, b"\x07", None, SelectError],
@@ -295,6 +295,9 @@ all_tests = [
     [Byte[2:3].parse, b"\x01\x02\x03\x04", [1,2,3], None],
     [Struct("nums" / Byte[4]).parse, b"\x01\x02\x03\x04", Container(nums=[1,2,3,4]), None],
     [Struct("nums" / Byte[4]).build, Container(nums=[1,2,3,4]), b"\x01\x02\x03\x04", None],
+    [(UBInt8 >> UBInt16).parse, b"\x01\x00\x02", [1,2], None],
+    [(UBInt8 >> UBInt16 >> UBInt32).parse, b"\x01\x00\x02\x00\x00\x00\x03", [1,2,3], None],
+    [(UBInt8[2] >> UBInt16[2]).parse, b"\x01\x02\x00\x03\x00\x04", [[1,2],[3,4]], None],
 
     # testing underlying Renamed
     [Struct(Renamed("new",Renamed("old",Byte))).parse, b"\x01", Container(new=1), None],

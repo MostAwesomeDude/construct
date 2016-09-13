@@ -263,6 +263,12 @@ class Construct(object):
         else:
             raise TypeError("Expected a number, a contextual expression or a slice thereof, got %r" % (count,))
 
+    def __rshift__(self, other):
+        if isinstance(self, Sequence):
+            return Sequence(*(list(self.subcons)+[other]))
+        else:
+            return Sequence(self, other)
+
     def __rtruediv__(self, name):
         if name is not None:
             if not isinstance(name, stringtypes):
@@ -2120,8 +2126,8 @@ class Sequence(Struct):
                 sc._parse(stream, context)
             else:
                 subobj = sc._parse(stream, context)
+                obj.append(subobj)
                 if sc.name is not None:
-                    obj.append(subobj)
                     context[sc.name] = subobj
         return obj
     def _build(self, obj, stream, context):
@@ -2134,8 +2140,6 @@ class Sequence(Struct):
             if sc.conflags & self.FLAG_EMBED:
                 context["<unnested>"] = True
                 subobj = objiter
-            elif sc.name is None:
-                subobj = None
             else:
                 subobj = next(objiter)
                 context[sc.name] = subobj
