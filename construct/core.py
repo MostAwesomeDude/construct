@@ -1138,7 +1138,7 @@ class Padding(Construct):
     """
     __slots__ = ["length", "pattern", "strict"]
     def __init__(self, length, pattern=b"\x00", strict=False):
-        if len(pattern) != 1:
+        if not isinstance(pattern, bytes) or len(pattern) != 1:
             raise PaddingError("pattern expected to be b-string character")
         super(Padding, self).__init__()
         self.length = length
@@ -1156,6 +1156,41 @@ class Padding(Construct):
         length = self.length(context) if callable(self.length) else self.length
         padding = length * self.pattern
         _write_stream(stream, length, padding)
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
+
+
+class Padded(Subconstruct):
+    __slots__ = ["length", "pattern", "strict"]
+    def __init__(self, length, subcon, pattern=b"\x00", strict=False):
+        if not isinstance(pattern, bytes) or len(pattern) != 1:
+            raise PaddingError("pattern expected to be b-string character")
+        super(Padded, self).__init__(subcon)
+        self.length = length
+        self.pattern = pattern
+        self.strict = strict
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        position1 = stream.tell()
+        obj = self.subcon._parse(stream, context)
+        position2 = stream.tell()
+        padlen = length - (position2 - position1)
+        if padlen < 0:
+            raise PaddingError("subcon parsed more bytes than was allowed by length")
+        pad = _read_stream(stream, padlen)
+        if self.strict:
+            if pad != self.pattern * padlen:
+                raise PaddingError("expected %r times %r, found %r" % (self.pattern, padlen, pad))
+        return obj
+    def _build(self, obj, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        position1 = stream.tell()
+        self.subcon._build(obj, stream, context)
+        position2 = stream.tell()
+        padlen = length - (position2 - position1)
+        if padlen < 0:
+            raise PaddingError("subcon parsed more bytes than was allowed by length")
+        _write_stream(stream, padlen, self.pattern * padlen)
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
 
