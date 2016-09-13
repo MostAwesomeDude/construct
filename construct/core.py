@@ -545,9 +545,9 @@ class Union(Construct):
         .build(dict(a=1,b=2)) -> b"\x01\x02"
         .build(dict(c=3)) -> b"\x03\x00"
     """
-    __slots__ = ["name","subcons","buildfrom"]
-    def __init__(self, name, *subcons, **kw):
-        super(Union, self).__init__(name)
+    __slots__ = ["subcons","buildfrom"]
+    def __init__(self, *subcons, **kw):
+        super(Union, self).__init__()
         args = [Peek(sc,performbuild=True) for sc in subcons]
         self.buildfrom = kw.get("buildfrom", None)
         self.subcons = args
@@ -579,8 +579,8 @@ class Union(Construct):
                     break
             else:
                 raise SelectError("no subconstruct matched", obj)
-    def _sizeof(self, context):
-        return max([sc._sizeof(context) for sc in self.subcons])
+    # def _sizeof(self, context):
+    #     return max([sc._sizeof(context) for sc in self.subcons])
 
 
 class Select(Construct):
