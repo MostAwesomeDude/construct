@@ -137,6 +137,7 @@ all_tests = [
     [RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse, b"\x02\x03\x08", None, ArrayError],
     [RepeatUntil(lambda obj,ctx: obj == 9, Byte).build, [2,3,9,1,1,1], b"\x02\x03\x09", None],
     [RepeatUntil(lambda obj,ctx: obj == 9, Byte).build, [2,3,8], None, ArrayError],
+    [RepeatUntil(lambda obj,ctx: obj == 9, Byte).sizeof, None, None, SizeofError],
 
     [Struct("a" / ULInt16, "b" / Byte).parse, b"\x01\x00\x02", Container(a=1)(b=2), None],
     [Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(inner=Container(c=3)(d=4)), None],
@@ -183,6 +184,7 @@ all_tests = [
 
     [Computed(lambda ctx: "moo").parse, b"", "moo", None],
     [Computed(lambda ctx: "moo").build, None, b"", None],
+    [Computed(lambda ctx: "moo").sizeof, None, 0, None],
     [Struct("c" / Computed(lambda ctx: "moo")).parse, b"", Container(c="moo"), None],
     [Struct("c" / Computed(lambda ctx: "moo")).build, Container(c=None), b"", None],
     # issue #102
@@ -190,9 +192,11 @@ all_tests = [
 
     [Anchor.parse, b"", 0, None],
     [Anchor.build, None, b"", None],
+    [Anchor.sizeof, None, 0, None],
 
     [AnchorRange.parse, b"", 0, None],
     [AnchorRange.build, None, b"", None],
+    [AnchorRange.sizeof, None, 0, None],
     [Struct("anchorrange"/AnchorRange, "a"/Byte, "anchorrange"/AnchorRange,allow_overwrite=True).parse, b"\xff", Container(anchorrange=Container(offset1=0)(offset2=1)(length=1))(a=255), None],
     [Struct("anchorrange"/AnchorRange, "a"/Byte, "anchorrange"/AnchorRange,allow_overwrite=True).build, dict(a=255), b"\xff", None],
 
@@ -201,13 +205,16 @@ all_tests = [
 
     [Pass.parse, b"", None, None],
     [Pass.build, None, b"", None],
+    [Pass.sizeof, None, 0, None],
 
     [Terminator.parse, b"", None, None],
     [Terminator.parse, b"x", None, TerminatorError],
     [Terminator.build, None, b"", None],
+    [Terminator.sizeof, None, 0, None],
 
     [Pointer(lambda ctx: 2, "pointer" / UBInt8).parse, b"\x00\x00\x07", 7, None],
     [Pointer(lambda ctx: 2, "pointer" / UBInt8).build, 7, b"\x00\x00\x07", None],
+    [Pointer(lambda ctx: 2, "pointer" / UBInt8).sizeof, None, 0, None],
 
     # # [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
     # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
@@ -281,10 +288,12 @@ all_tests = [
     [Const(b"MZ").parse, b"ELF", None, ConstError],
     [Const(b"MZ").build, None, b"MZ", None],
     [Const(b"MZ").build, b"MZ", b"MZ", None],
+    [Const(b"MZ").sizeof, None, 2, None],
     [Const(ULInt32, 255).parse, b"\xff\x00\x00\x00", 255, None],
     [Const(ULInt32, 255).parse, b"\x00\x00\x00\x00", 255, ConstError],
     [Const(ULInt32, 255).build, None, b"\xff\x00\x00\x00", None],
     [Const(ULInt32, 255).build, 255, b"\xff\x00\x00\x00", None],
+    [Const(ULInt32, 255).sizeof, None, 4, None],
 
     # [ExprAdapter(UBInt8("expradapter"), 
     #     encoder = lambda obj, ctx: obj // 7, 
