@@ -354,21 +354,6 @@ all_tests = [
     [Indexing(Array(4,Byte), 4, 2, empty=0).build, 3, b"\x00\x00\x03\x00", None],
     [Indexing(Array(4,Byte), 4, 2, empty=0).sizeof, None, 4, None],
 
-    # # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).parse, b"\x05abcde", b"abcde", None],
-    # # [LengthValueAdapter(Sequence("lengthvalueadapter", UBInt8("length"), Field("value", lambda ctx: ctx.length))).build, b"abcde", b"\x05abcde", None],
-
-    # # [TunnelAdapter(PascalString("data", encoding=ZlibCodec), GreedyRange(UBInt16("elements"))).parse, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", [3] * 100, None],
-    # # [TunnelAdapter(PascalString("data", encoding=ZlibCodec), GreedyRange(UBInt16("elements"))).build, [3] * 100, b"\rx\x9cc`f\x18\x16\x10\x00u\xf8\x01-", None],
-
-    # [ExprAdapter(UBInt8("expradapter"), 
-    #     encoder = lambda obj, ctx: obj // 7, 
-    #     decoder = lambda obj, ctx: obj * 7,
-    #     ).parse, b"\x06", 42, None],
-    # [ExprAdapter(UBInt8("expradapter"), 
-    #     encoder = lambda obj, ctx: obj // 7, 
-    #     decoder = lambda obj, ctx: obj * 7,
-    #     ).build, 42, b"\x06", None],
-
     # [Select("select", UBInt32("a"), UBInt16("b"), UBInt8).parse, b"\x07", 7, None],
     # [Select("select", UBInt32("a"), UBInt16("b")).parse, b"\x07", None, SelectError],
     # [Select("select", UBInt32("a"), UBInt16("b"), UBInt8, include_name=True).parse, b"\x07", ("c", 7), None],
@@ -475,21 +460,34 @@ all_tests = [
     #     VarInt("c"),
     #     ).sizeof, None, None, SizeofError],
 
-    # [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x03\x01\x01\x01", [1,1,1], None],
-    # [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x00", [], None],
-    # [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"", None, ArrayError],
-    # [PrefixedArray(UBInt8("array"), UBInt8("count")).parse, b"\x03\x01\x01", None, ArrayError],
-    # # Fixed: sizeof takes a context, not an obj.
-    # [PrefixedArray(UBInt8("array"), UBInt8("count")).sizeof, [1,1,1], 4, SizeofError],
-    # [PrefixedArray(UBInt8("array"), UBInt8("count")).build, [1,1,1], b"\x03\x01\x01\x01", None],
+    [PrefixedArray(Byte,Byte).parse, b"\x03\x01\x02\x03", [1,2,3], None],
+    [PrefixedArray(Byte,Byte).parse, b"\x00", [], None],
+    [PrefixedArray(Byte,Byte).parse, b"", None, ArrayError],
+    [PrefixedArray(Byte,Byte).parse, b"\x03\x01", None, ArrayError],
+    [PrefixedArray(Byte,Byte).build, [1,2,3], b"\x03\x01\x02\x03", None],
+    [PrefixedArray(Byte,Byte).sizeof, None, None, SizeofError],
+    [PrefixedArray(Byte,Byte).sizeof, [1,1,1], 4, SizeofError],
 
-    # [Prefixed(Byte(None),ULInt16(None)).parse, b"\x02\xff\xffgarbage", 65535, None],
-    # [Prefixed(Byte(None),ULInt16(None)).build, 65535, b"\x02\xff\xff", None],
-    # [Prefixed(VarInt(None), GreedyBytes(None)).parse, b"\x03abcgarbage", b"abc", None],
-    # [Prefixed(VarInt(None), GreedyBytes(None)).build, b"abc", b'\x03abc', None],
+    [Prefixed(Byte,ULInt16).parse, b"\x02\xff\xffgarbage", 65535, None],
+    [Prefixed(Byte,ULInt16).build, 65535, b"\x02\xff\xff", None],
+    [Prefixed(Byte,ULInt16).sizeof, None, None, SizeofError],
+    [Prefixed(VarInt,GreedyBytes).parse, b"\x03abcgarbage", b"abc", None],
+    [Prefixed(VarInt,GreedyBytes).build, b"abc", b'\x03abc', None],
+    [Prefixed(VarInt,GreedyBytes).sizeof, None, None, SizeofError],
 
-    # [Prefixed(Byte(None),Compressed(CString(None),"zlib")).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
-    # [Prefixed(Byte(None),Compressed(CString(None),"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
+    [Prefixed(Byte,Compressed(GreedyBytes,"zlib")).parse, b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1???????????', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
+    [Prefixed(Byte,Compressed(GreedyBytes,"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1', zlibcodecraises],
+    [Prefixed(Byte,Compressed(CString(),"zlib")).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
+    [Prefixed(Byte,Compressed(CString(),"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
+
+    # [ExprAdapter(UBInt8("expradapter"), 
+    #     encoder = lambda obj, ctx: obj // 7, 
+    #     decoder = lambda obj, ctx: obj * 7,
+    #     ).parse, b"\x06", 42, None],
+    # [ExprAdapter(UBInt8("expradapter"), 
+    #     encoder = lambda obj, ctx: obj // 7, 
+    #     decoder = lambda obj, ctx: obj * 7,
+    #     ).build, 42, b"\x06", None],
 
 ]
 

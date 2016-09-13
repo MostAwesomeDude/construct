@@ -367,7 +367,7 @@ class Tunnel(Subconstruct):
         data = self._encode(data, context)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context):
-        return self.subcon._sizeof(context)
+        raise SizeofError("cannot calculate size")
     def _decode(self, data, context):
         raise NotImplementedError()
     def _encode(self, data, context):
@@ -1454,7 +1454,8 @@ class Prefixed(Subconstruct):
         self.lengthfield._build(len(data), stream, context)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context):
-        return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
+        # return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
+        raise SizeofError("cannot calculate size")
 
 
 class Compressed(Tunnel):
@@ -2850,11 +2851,11 @@ class CString(Construct):
         .parse(b"helloZ") -> b"hello"
         .build(b"hello") -> b"helloX"
     """
-    __slots__ = ["name", "terminators", "encoding", "charfield"]
-    def __init__(self, name, terminators=b"\x00", encoding=None):
+    __slots__ = ["terminators", "encoding", "charfield"]
+    def __init__(self, terminators=b"\x00", encoding=None):
         if len(terminators) < 1:
             raise ValueError("terminators must be a bytes string of length >= 1")
-        super(CString, self).__init__(name)
+        super(CString, self).__init__()
         self.terminators = terminators
         self.encoding = encoding
     def _parse(self, stream, context):
