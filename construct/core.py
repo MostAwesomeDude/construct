@@ -10,8 +10,9 @@ from construct.lib import Container, ListContainer, LazyContainer
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
 from construct.lib import int_to_bin, bin_to_int, swap_bytes
 from construct.lib import FlagsContainer, HexString
-from construct.lib.py3compat import int2byte, unknownstring2bytes, stringtypes
+from construct.lib.py3compat import int2byte, stringtypes
 from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
+
 
 def singleton(cls):
     return cls()
@@ -273,13 +274,6 @@ class Construct(object):
         if name is not None:
             if not isinstance(name, stringtypes):
                 raise TypeError("name must be b-string or u-string or None", name)
-            # NOTE: this tests the name that can be a byte string or unicode string
-            # and only the unicode has startswith method
-            # bname = unknownstring2bytes(name)
-            # if bname == b"_" or bname[:1] ==b"<":
-            #     raise ValueError("reserved name: either _ or starts with < ", name)
-        # if name is not None and not isinstance(name, str):
-        #     raise TypeError("`name` must be a string or None, got %r" % (name,))
         return Renamed(name, self)
     __rdiv__ = __rtruediv__
 
