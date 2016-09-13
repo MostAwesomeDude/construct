@@ -71,7 +71,6 @@ all_tests = [
     [Struct('int24' / UBInt24).parse, b"\x01\x02\x03", Container(int24=0x010203), None],
     [Struct('int24' / UBInt24).build, Container(int24=0x010203), b"\x01\x02\x03", None],
     [Struct('int24' / UBInt24).sizeof, None, 3, None],
-
     [ULInt24.parse, b"\x01\x02\x03", 0x030201, None],
     [ULInt24.build, 0x030201, b"\x01\x02\x03", None],
     [ULInt24.sizeof, None, 3, None],

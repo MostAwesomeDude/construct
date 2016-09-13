@@ -900,9 +900,9 @@ class Anchor(Construct):
         .build(dict(a=255)) -> b"\xff"
         .sizeof() -> 1
     """
-    def __init__(self):
-        Construct.__init__(self)
-        # super(Anchor, self).__init__()
+    # def __init__(self):
+    #     Construct.__init__(self)
+    #     # super(Anchor, self).__init__()
     def _parse(self, stream, context):
         position = stream.tell()
         context[self.name] = position
@@ -938,9 +938,9 @@ class AnchorRange(Construct):
         .build(dict(a=1)) -> b"\x01"
         .sizeof() -> 1
     """
-    def __init__(self):
-        Construct.__init__(self)
-        # super(AnchorRange, self).__init__()
+    # def __init__(self):
+    #     Construct.__init__(self)
+    #     # super(AnchorRange, self).__init__()
     def _parse(self, stream, context):
         position = stream.tell()
         if self.name not in context:
@@ -1069,8 +1069,9 @@ class LazyBound(Construct):
         return self.bound._sizeof(context)
 
 
+@singleton
 class Pass(Construct):
-    """
+    r"""
     A do-nothing construct, useful as the default case for Switch, or to indicate Enums.
 
     .. seealso:: The :func:`~construct.macros.Switch` and the :func:`~construct.macros.Enum` macro.
@@ -1091,25 +1092,10 @@ class Pass(Construct):
     def _sizeof(self, context):
         return 0
 
-Pass = Pass(None)
-"""
-A do-nothing construct, useful as the default case for Switch, or to indicate Enums.
-
-.. seealso:: :class:`~construct.core.Switch` and the :func:`~construct.macros.Enum` macro.
-
-.. note:: This construct is a singleton. Do not try to instatiate it, as it will not work.
-
-Example::
-
-    Pass
-    .parse(b'...') -> None
-    .build(None) -> None
-"""
-
 
 @singleton
 class Terminator(Construct):
-    """
+    r"""
     Asserts the end of the stream has been reached at the point it's placed. You can use this to ensure no more unparsed data follows.
 
     .. note::
@@ -1129,23 +1115,9 @@ class Terminator(Construct):
     def _sizeof(self, context):
         return 0
 
-# Terminator = Terminator(None)
-# """
-# Asserts the end of the stream has been reached at the point it's placed.
-# You can use this to ensure no more unparsed data follows.
-
-# .. note::
-#     * This construct is only meaningful for parsing. For building, it's a no-op.
-#     * This construct is a singleton. Do not try to instatiate it, as it will not work.
-
-# Example::
-
-#     Terminator
-# """
-
 
 #===============================================================================
-# Extra
+# extras
 #===============================================================================
 
 class Padding(Construct):
