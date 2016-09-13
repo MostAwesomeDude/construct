@@ -1312,208 +1312,10 @@ class Const(Subconstruct):
         return self.subcon._sizeof(context)
 
 
+
 #===============================================================================
-# strings
+# other fields
 #===============================================================================
-
-def _encode_string(obj, encoding):
-    if encoding:
-        if isinstance(encoding, str):
-            obj = obj.encode(encoding)
-        else:
-            obj = encoding.encode(obj)
-    else:
-        if not isinstance(obj, bytes):
-            raise StringError("no encoding provided but building from unicode string?")
-    return obj
-
-def _decode_string(obj, encoding):
-    if encoding:
-        if isinstance(encoding, str):
-            obj = obj.decode(encoding)
-        else:
-            obj = encoding.decode(obj)
-    return obj
-
-
-class String(Construct):
-    r"""
-    A configurable, variable-length string field.
-
-    When parsing, the byte string is stripped of pad character (as specified) from the direction (as specified) then decoded (as specified). Length is a constant integer or a function of the context.
-    When building, the string is encoded (as specified) then padded (as specified) from the direction (as specified) or trimmed as bytes (as specified).
-
-    The padding character and direction must be specified for padding to work. The trim direction must be specified for trimming to work.
-
-    :param name: name
-    :param length: length in bytes (not unicode characters), as int or function
-    :param encoding: encoding (e.g. "utf8") or None for bytes
-    :param padchar: optional byte or unicode character to pad out strings
-    :param paddir: direction to pad out strings (one of: right left both)
-    :param trimdir: direction to trim strings (one of: right left)
-
-    Example::
-
-        String("string", 5)
-        .parse(b"hello") -> b"hello"
-        .build(u"hello") raises StringError
-        .sizeof() -> 5
-
-        String("string", 12, encoding="utf8")
-        .parse(b"hello joh\xd4\x83n") -> u'hello joh\u0503n'
-        .build(u'abc') -> b'abc\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        .sizeof() -> 12
-
-        String("string", 10, padchar="X", paddir="right")
-        .parse(b"helloXXXXX") -> b"hello"
-        .build(u"hello") -> b"helloXXXXX"
-
-        String("string", 5, trimdir="right")
-        .build(u"hello12345") -> b"hello"
-
-        String("string", lambda ctx: ctx.somefield)
-        .sizeof() -> ?
-    """
-    __slots__ = ["length", "encoding", "padchar", "paddir", "trimdir"]
-    def __init__(self, name, length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
-        if not isinstance(padchar, bytes):
-            if encoding:
-                if isinstance(encoding, str):
-                    padchar = padchar.encode(encoding)
-                else:
-                    padchar = encoding.encode(padchar)
-            else:
-                raise TypeError("padchar must be or be encodable to a byte string")
-        if len(padchar) != 1:
-            raise ValueError("padchar must be 1 character byte string, given %r" % (padchar,))
-        if paddir not in ("right", "left", "center"):
-            raise ValueError("paddir must be one of: right left center", paddir)
-        if trimdir not in ("right", "left"):
-            raise ValueError("trimdir must be one of: right left", trimdir)
-        super(String, self).__init__(name)
-        self.length = length
-        self.encoding = encoding
-        self.padchar = padchar
-        self.paddir = paddir
-        self.trimdir = trimdir
-    def _parse(self, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        obj = _read_stream(stream, length)
-        padchar = self.padchar
-        if self.paddir == "right":
-            obj = obj.rstrip(padchar)
-        elif self.paddir == "left":
-            obj = obj.lstrip(padchar)
-        else:
-            obj = obj.strip(padchar)
-        obj = _decode_string(obj, self.encoding)
-        return obj
-    def _build(self, obj, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        padchar = self.padchar
-        obj = _encode_string(obj, self.encoding)
-        if self.paddir == "right":
-            obj = obj.ljust(length, padchar)
-        elif self.paddir == "left":
-            obj = obj.rjust(length, padchar)
-        else:
-            obj = obj.center(length, padchar)
-        if len(obj) > length:
-            if self.trimdir == "right":
-                obj = obj[:length]
-            elif self.trimdir == "left":
-                obj = obj[-length:]
-            else:
-                raise StringError("expected a string of length %s given %s (%r)" % (length,len(obj),obj))
-        _write_stream(stream, length, obj)
-    def _sizeof(self, context):
-        return self.length(context) if callable(self.length) else self.length
-
-
-class CString(Construct):
-    r"""
-    A string ending in a terminator bytes character.
-
-    ``CString`` is similar to the strings of C, C++, and other related programming languages.
-
-    By default, the terminator is the NULL byte (b'\x00'). Terminators field can be a longer bytes string, and any of the characters breaks parsing. First character is used when building.
-
-    :param name: name
-    :param terminators: sequence of valid terminators, in order of preference
-    :param encoding: encoding (e.g. "utf8") or None for bytes
-
-    Example::
-
-        CString("text")
-        .parse(b"hello\x00") -> b"hello"
-        .build(b"hello") -> b"hello\x00"
-
-        CString("text", terminators=b"XYZ")
-        .parse(b"helloX") -> b"hello"
-        .parse(b"helloY") -> b"hello"
-        .parse(b"helloZ") -> b"hello"
-        .build(b"hello") -> b"helloX"
-    """
-    __slots__ = ["name", "terminators", "encoding", "charfield"]
-    def __init__(self, name, terminators=b"\x00", encoding=None):
-        if len(terminators) < 1:
-            raise ValueError("terminators must be a bytes string of length >= 1")
-        super(CString, self).__init__(name)
-        self.terminators = terminators
-        self.encoding = encoding
-    def _parse(self, stream, context):
-        obj = []
-        while True:
-            char = _read_stream(stream, 1)
-            if char in self.terminators:
-                break
-            obj.append(char)
-        obj = b"".join(obj)
-        obj = _decode_string(obj, self.encoding)
-        return obj
-    def _build(self, obj, stream, context):
-        obj = _encode_string(obj, self.encoding)
-        obj += self.terminators[:1]
-        _write_stream(stream, len(obj), obj)
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
-
-
-class GreedyString(Construct):
-    r"""
-    A string that reads the rest of the stream until EOF, or writes a given string as is.
-
-    If no encoding is given, this is essentially GreedyBytes.
-
-    :param name: name
-    :param encoding: encoding (e.g. "utf8") or None for bytes
-
-    .. seealso:: The :class:`~construct.core.GreedyBytes` class.
-
-    Example::
-
-        GreedyString("greedy")
-        .parse(b"hello\x00") -> b"hello\x00"
-        .build(b"hello\x00") -> b"hello\x00"
-
-        GreedyString("greedy", encoding="utf8")
-        .parse(b"hello\x00") -> u"hello\x00"
-        .build(u"hello\x00") -> b"hello\x00"
-    """
-    __slots__ = ["name", "encoding"]
-    def __init__(self, name, encoding=None):
-        super(GreedyString, self).__init__(name)
-        self.encoding = encoding
-    def _parse(self, stream, context):
-        obj = stream.read()
-        obj = _decode_string(obj, self.encoding)
-        return obj
-    def _build(self, obj, stream, context):
-        obj = _encode_string(obj, self.encoding)
-        _write_stream(stream, len(obj), obj)
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
-
 
 @singleton
 class VarInt(Construct):
@@ -2605,60 +2407,6 @@ def EmbeddedBitStruct(*subcons):
     return Bitwise(Embedded(Struct(None, *subcons)))
 
 
-#===============================================================================
-# strings
-#===============================================================================
-
-class PascalString(Construct):
-    r"""
-    A length-prefixed string.
-
-    ``PascalString`` is named after the string types of Pascal, which are length-prefixed. Lisp strings also follow this convention.
-
-    The length field will not appear in the same ``Container``, when parsing. Only the string will be returned. When building, the length is taken from len(the string). The length field can be anonymous (name is None) and can be variable length (such as VarInt).
-
-    :param name: name
-    :param lengthfield: a field which will store the length of the string
-    :param encoding: encoding (e.g. "utf8") or None for bytes
-
-    Example::
-
-        PascalString("string", ULInt32(None))
-        .parse(b"\x05\x00\x00\x00hello") -> "hello"
-        .build("hello") -> -> b"\x05\x00\x00\x00hello"
-
-        PascalString("string", ULInt32(None), encoding="utf8")
-        .parse(b"\x05\x00\x00\x00hello") -> u"hello"
-        .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
-    """
-    __slots__ = ["name", "lengthfield", "encoding"]
-    def __init__(self, lengthfield=UBInt8, encoding=None):
-        super(PascalString, self).__init__()
-        self.lengthfield = lengthfield
-        self.encoding = encoding
-    def _parse(self, stream, context):
-        length = self.lengthfield._parse(stream, context)
-        obj = _read_stream(stream, length)
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.decode(self.encoding)
-            else:
-                obj = self.encoding.decode(obj)
-        return obj
-    def _build(self, obj, stream, context):
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.encode(self.encoding)
-            else:
-                obj = self.encoding.encode(obj)
-        else:
-            if not isinstance(obj, bytes):
-                raise StringError("no encoding provided but building from unicode string?")
-        self.lengthfield._build(len(obj), stream, context)
-        _write_stream(stream, len(obj), obj)
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
-
 
 #===============================================================================
 # conditional
@@ -2778,10 +2526,6 @@ def OnDemandPointer(offsetfunc, subcon, force_build=True):
         advance_stream = False,
         force_build = force_build
     )
-
-
-
-
 
 
 #===============================================================================
@@ -3015,5 +2759,259 @@ class NoneOf(Validator):
         self.invalids = invalids
     def _validate(self, obj, context):
         return obj not in self.invalids
+
+
+#===============================================================================
+# strings
+#===============================================================================
+
+def _encode_string(obj, encoding):
+    if encoding:
+        if isinstance(encoding, str):
+            obj = obj.encode(encoding)
+        else:
+            obj = encoding.encode(obj)
+    else:
+        if not isinstance(obj, bytes):
+            raise StringError("no encoding provided but building from unicode string?")
+    return obj
+
+def _decode_string(obj, encoding):
+    if encoding:
+        if isinstance(encoding, str):
+            obj = obj.decode(encoding)
+        else:
+            obj = encoding.decode(obj)
+    return obj
+
+
+class String(Construct):
+    r"""
+    A configurable, variable-length string field.
+
+    When parsing, the byte string is stripped of pad character (as specified) from the direction (as specified) then decoded (as specified). Length is a constant integer or a function of the context.
+    When building, the string is encoded (as specified) then padded (as specified) from the direction (as specified) or trimmed as bytes (as specified).
+
+    The padding character and direction must be specified for padding to work. The trim direction must be specified for trimming to work.
+
+    :param name: name
+    :param length: length in bytes (not unicode characters), as int or function
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+    :param padchar: optional byte or unicode character to pad out strings
+    :param paddir: direction to pad out strings (one of: right left both)
+    :param trimdir: direction to trim strings (one of: right left)
+
+    Example::
+
+        String("string", 5)
+        .parse(b"hello") -> b"hello"
+        .build(u"hello") raises StringError
+        .sizeof() -> 5
+
+        String("string", 12, encoding="utf8")
+        .parse(b"hello joh\xd4\x83n") -> u'hello joh\u0503n'
+        .build(u'abc') -> b'abc\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        .sizeof() -> 12
+
+        String("string", 10, padchar="X", paddir="right")
+        .parse(b"helloXXXXX") -> b"hello"
+        .build(u"hello") -> b"helloXXXXX"
+
+        String("string", 5, trimdir="right")
+        .build(u"hello12345") -> b"hello"
+
+        String("string", lambda ctx: ctx.somefield)
+        .sizeof() -> ?
+    """
+    __slots__ = ["length", "encoding", "padchar", "paddir", "trimdir"]
+    def __init__(self, name, length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
+        if not isinstance(padchar, bytes):
+            if encoding:
+                if isinstance(encoding, str):
+                    padchar = padchar.encode(encoding)
+                else:
+                    padchar = encoding.encode(padchar)
+            else:
+                raise TypeError("padchar must be or be encodable to a byte string")
+        if len(padchar) != 1:
+            raise ValueError("padchar must be 1 character byte string, given %r" % (padchar,))
+        if paddir not in ("right", "left", "center"):
+            raise ValueError("paddir must be one of: right left center", paddir)
+        if trimdir not in ("right", "left"):
+            raise ValueError("trimdir must be one of: right left", trimdir)
+        super(String, self).__init__(name)
+        self.length = length
+        self.encoding = encoding
+        self.padchar = padchar
+        self.paddir = paddir
+        self.trimdir = trimdir
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        obj = _read_stream(stream, length)
+        padchar = self.padchar
+        if self.paddir == "right":
+            obj = obj.rstrip(padchar)
+        elif self.paddir == "left":
+            obj = obj.lstrip(padchar)
+        else:
+            obj = obj.strip(padchar)
+        obj = _decode_string(obj, self.encoding)
+        return obj
+    def _build(self, obj, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        padchar = self.padchar
+        obj = _encode_string(obj, self.encoding)
+        if self.paddir == "right":
+            obj = obj.ljust(length, padchar)
+        elif self.paddir == "left":
+            obj = obj.rjust(length, padchar)
+        else:
+            obj = obj.center(length, padchar)
+        if len(obj) > length:
+            if self.trimdir == "right":
+                obj = obj[:length]
+            elif self.trimdir == "left":
+                obj = obj[-length:]
+            else:
+                raise StringError("expected a string of length %s given %s (%r)" % (length,len(obj),obj))
+        _write_stream(stream, length, obj)
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
+
+
+class PascalString(Construct):
+    r"""
+    A length-prefixed string.
+
+    ``PascalString`` is named after the string types of Pascal, which are length-prefixed. Lisp strings also follow this convention.
+
+    The length field will not appear in the same ``Container``, when parsing. Only the string will be returned. When building, the length is taken from len(the string). The length field can be anonymous (name is None) and can be variable length (such as VarInt).
+
+    :param name: name
+    :param lengthfield: a field which will store the length of the string
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    Example::
+
+        PascalString("string", ULInt32(None))
+        .parse(b"\x05\x00\x00\x00hello") -> "hello"
+        .build("hello") -> -> b"\x05\x00\x00\x00hello"
+
+        PascalString("string", ULInt32(None), encoding="utf8")
+        .parse(b"\x05\x00\x00\x00hello") -> u"hello"
+        .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
+    """
+    __slots__ = ["name", "lengthfield", "encoding"]
+    def __init__(self, lengthfield=UBInt8, encoding=None):
+        super(PascalString, self).__init__()
+        self.lengthfield = lengthfield
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        length = self.lengthfield._parse(stream, context)
+        obj = _read_stream(stream, length)
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _build(self, obj, stream, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
+        self.lengthfield._build(len(obj), stream, context)
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
+
+class CString(Construct):
+    r"""
+    A string ending in a terminator bytes character.
+
+    ``CString`` is similar to the strings of C, C++, and other related programming languages.
+
+    By default, the terminator is the NULL byte (b'\x00'). Terminators field can be a longer bytes string, and any of the characters breaks parsing. First character is used when building.
+
+    :param name: name
+    :param terminators: sequence of valid terminators, in order of preference
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    Example::
+
+        CString("text")
+        .parse(b"hello\x00") -> b"hello"
+        .build(b"hello") -> b"hello\x00"
+
+        CString("text", terminators=b"XYZ")
+        .parse(b"helloX") -> b"hello"
+        .parse(b"helloY") -> b"hello"
+        .parse(b"helloZ") -> b"hello"
+        .build(b"hello") -> b"helloX"
+    """
+    __slots__ = ["name", "terminators", "encoding", "charfield"]
+    def __init__(self, name, terminators=b"\x00", encoding=None):
+        if len(terminators) < 1:
+            raise ValueError("terminators must be a bytes string of length >= 1")
+        super(CString, self).__init__(name)
+        self.terminators = terminators
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        obj = []
+        while True:
+            char = _read_stream(stream, 1)
+            if char in self.terminators:
+                break
+            obj.append(char)
+        obj = b"".join(obj)
+        obj = _decode_string(obj, self.encoding)
+        return obj
+    def _build(self, obj, stream, context):
+        obj = _encode_string(obj, self.encoding)
+        obj += self.terminators[:1]
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
+
+class GreedyString(Construct):
+    r"""
+    A string that reads the rest of the stream until EOF, or writes a given string as is.
+
+    If no encoding is given, this is essentially GreedyBytes.
+
+    :param name: name
+    :param encoding: encoding (e.g. "utf8") or None for bytes
+
+    .. seealso:: The :class:`~construct.core.GreedyBytes` class.
+
+    Example::
+
+        GreedyString("greedy")
+        .parse(b"hello\x00") -> b"hello\x00"
+        .build(b"hello\x00") -> b"hello\x00"
+
+        GreedyString("greedy", encoding="utf8")
+        .parse(b"hello\x00") -> u"hello\x00"
+        .build(u"hello\x00") -> b"hello\x00"
+    """
+    __slots__ = ["name", "encoding"]
+    def __init__(self, name, encoding=None):
+        super(GreedyString, self).__init__(name)
+        self.encoding = encoding
+    def _parse(self, stream, context):
+        obj = stream.read()
+        obj = _decode_string(obj, self.encoding)
+        return obj
+    def _build(self, obj, stream, context):
+        obj = _encode_string(obj, self.encoding)
+        _write_stream(stream, len(obj), obj)
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
 
 
