@@ -2589,7 +2589,7 @@ def Alias(newname, oldname):
     r"""
     Creates an alias for an existing element in a struct.
 
-    Does not build.
+    When parsing, value is available under both keys. Build is no-op.
 
     :param newname: the new name
     :param oldname: the name of an existing element
