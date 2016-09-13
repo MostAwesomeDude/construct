@@ -309,7 +309,6 @@ class Adapter(Subconstruct):
 
     :param subcon: the construct to wrap
     """
-    __slots__ = []
     def _parse(self, stream, context):
         return self._decode(self.subcon._parse(stream, context), context)
     def _build(self, obj, stream, context):
@@ -328,7 +327,6 @@ class SymmetricAdapter(Subconstruct):
 
     :param subcon: the construct to wrap
     """
-    __slots__ = []
     def _parse(self, stream, context):
         return self._decode(self.subcon._parse(stream, context), context)
     def _build(self, obj, stream, context):
@@ -345,7 +343,6 @@ class Validator(SymmetricAdapter):
 
     :param subcon: the subcon to validate
     """
-    __slots__ = []
     def _decode(self, obj, context):
         if not self._validate(obj, context):
             raise ValidationError("invalid object", obj)
@@ -643,6 +640,17 @@ class Select(Construct):
         raise SelectError("no subconstruct matched", obj)
 
 
+def Optional(subcon):
+    r"""
+    An optional construct.
+
+    If parsing fails, returns None. If building fails, writes nothing.
+
+    :param subcon: the subcon to optionally parse or build
+    """
+    return Select(subcon.name, subcon, Pass)
+
+
 #===============================================================================
 # stream manipulation
 #===============================================================================
@@ -869,7 +877,6 @@ class Restream(Subconstruct):
 
 #         Reconfig("foo", UBInt8("bar"))
 #     """
-#     __slots__ = []
 #     def __init__(self, name, subcon, setflags = 0, clearflags = 0):
 #         super(Reconfig, self).__init__(subcon)
 #         self.name = name
@@ -1084,7 +1091,6 @@ class Pass(Construct):
         .parse(b'...') -> None
         .build(None) -> None
     """
-    __slots__ = []
     def _parse(self, stream, context):
         return None
     def _build(self, obj, stream, context):
@@ -2164,17 +2170,6 @@ class Sequence(Struct):
 #===============================================================================
 # subconstructs
 #===============================================================================
-def Optional(subcon):
-    r"""
-    An optional construct.
-
-    If parsing fails, returns None. If building fails, writes nothing.
-
-    :param subcon: the subcon to optionally parse or build
-    """
-    return Select(subcon.name, subcon, Pass)
-
-
 def Bitwise(subcon):
     r"""
     Converts the stream to bits, and passes the bitstream to subcon.
