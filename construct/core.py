@@ -602,12 +602,12 @@ class Select(Construct):
             UBInt8("tiny"),
         )
     """
-    __slots__ = ["subcons", "include_name"]
-    def __init__(self, name, *subcons, **kw):
-        include_name = kw.pop("include_name", False)
-        super(Select, self).__init__(name)
+    __slots__ = ["subcons", "includename"]
+    def __init__(self, *subcons, **kw):
+        includename = kw.pop("includename", False)
+        super(Select, self).__init__()
         self.subcons = subcons
-        self.include_name = include_name
+        self.includename = includename
         self._inherit_flags(*subcons)
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
@@ -620,13 +620,13 @@ class Select(Construct):
                 stream.seek(fallback)
             else:
                 context.__update__(context2)
-                if self.include_name:
+                if self.includename:
                     return sc.name, obj
                 else:
                     return obj
         raise SelectError("no subconstruct matched")
     def _build(self, obj, stream, context):
-        if self.include_name:
+        if self.includename:
             name, obj = obj
             for sc in self.subcons:
                 if sc.name == name:
@@ -654,7 +654,7 @@ def Optional(subcon):
 
     :param subcon: the subcon to optionally parse or build
     """
-    return Select(subcon.name, subcon, Pass)
+    return Select(subcon, Pass)
 
 
 #===============================================================================
@@ -745,7 +745,10 @@ class Peek(Subconstruct):
                 stream.seek(pos)
                 raise
     def _sizeof(self, context):
-        return self.subcon._sizeof(context)
+        if self.performbuild:
+            return self.subcon._sizeof(context)
+        else:
+            return 0
 
 
 class OnDemand(Subconstruct):
