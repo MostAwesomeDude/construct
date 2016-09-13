@@ -1344,7 +1344,7 @@ class Aligned(Construct):
         return self.subcon._sizeof(context)
 
 
-class Const(Construct):
+class Const(Subconstruct):
     r"""
     Constant field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
 
@@ -1356,19 +1356,15 @@ class Const(Construct):
 
         Const(b"IHDR")
 
-        Const("signature", b"IHDR")
-
-        Const(ULInt64("signature"), 123)
-
+        Const(ULInt64, 123)
     """
-    __slots__ = ["subcon", "value"]
+    __slots__ = ["value"]
     def __init__(self, subcon, value=None):
         if value is None:
-            subcon, value = StaticField(None, len(subcon)), subcon
+            subcon, value = Bytes(len(subcon)), subcon
         if isinstance(subcon, str):
-            subcon, value = StaticField(subcon, len(value)), value
-        super(Const, self).__init__(subcon.name)
-        self.subcon = subcon
+            subcon, value = Bytes(len(value)), value
+        super(Const, self).__init__(subcon)
         self.value = value
     def _parse(self, stream, context):
         obj = self.subcon._parse(stream, context)
