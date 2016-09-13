@@ -501,71 +501,6 @@ class FormatField(Bytes):
 #===============================================================================
 # conditional
 #===============================================================================
-class Switch(Construct):
-    """
-    A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
-
-    .. seealso:: The :func:`Pass` singleton.
-
-    :param name: the name of the construct
-    :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
-    :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc.
-    :param default: a default value to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for 'do-nothing'.
-    :param include_key: whether or not to include the key in the return value of parsing. defualt is False.
-
-    Example::
-
-        Struct("foo",
-            UBInt8("type"),
-            Switch("value", lambda ctx: ctx.type, {
-                    1 : UBInt8("spam"),
-                    2 : UBInt16("spam"),
-                    3 : UBInt32("spam"),
-                    4 : UBInt64("spam"),
-                }
-            ),
-        )
-    """
-
-    class NoDefault(Construct):
-        def _parse(self, stream, context):
-            raise SwitchError("no default case defined")
-        def _build(self, obj, stream, context):
-            raise SwitchError("no default case defined")
-        def _sizeof(self, context):
-            raise SwitchError("no default case defined")
-    NoDefault = NoDefault("No default value specified")
-
-    __slots__ = ["subcons", "keyfunc", "cases", "default", "include_key"]
-
-    def __init__(self, name, keyfunc, cases, default = NoDefault,
-                 include_key = False):
-        super(Switch, self).__init__(name)
-        self._inherit_flags(*cases.values())
-        self.keyfunc = keyfunc
-        self.cases = cases
-        self.default = default
-        self.include_key = include_key
-        self._inherit_flags(*cases.values())
-        self._set_flag(self.FLAG_DYNAMIC)
-    def _parse(self, stream, context):
-        key = self.keyfunc(context)
-        obj = self.cases.get(key, self.default)._parse(stream, context)
-        if self.include_key:
-            return key, obj
-        else:
-            return obj
-    def _build(self, obj, stream, context):
-        if self.include_key:
-            key, obj = obj
-        else:
-            key = self.keyfunc(context)
-        case = self.cases.get(key, self.default)
-        case._build(obj, stream, context)
-    def _sizeof(self, context):
-        case = self.cases.get(self.keyfunc(context), self.default)
-        return case._sizeof(context)
-
 
 def _subobj(sc, obj):
     if sc.conflags & sc.FLAG_EMBED:
@@ -2728,7 +2663,71 @@ class PascalString(Construct):
 #===============================================================================
 # conditional
 #===============================================================================
-def IfThenElse(name, predicate, then_subcon, else_subcon):
+class Switch(Construct):
+    """
+    A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
+
+    .. seealso:: The :func:`Pass` singleton.
+
+    :param name: the name of the construct
+    :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
+    :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc.
+    :param default: a default value to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for 'do-nothing'.
+    :param include_key: whether or not to include the key in the return value of parsing. defualt is False.
+
+    Example::
+
+        Struct("foo",
+            UBInt8("type"),
+            Switch("value", lambda ctx: ctx.type, {
+                    1 : UBInt8("spam"),
+                    2 : UBInt16("spam"),
+                    3 : UBInt32("spam"),
+                    4 : UBInt64("spam"),
+                }
+            ),
+        )
+    """
+    class NoDefault(Construct):
+        def _parse(self, stream, context):
+            raise SwitchError("no default case defined")
+        def _build(self, obj, stream, context):
+            raise SwitchError("no default case defined")
+        def _sizeof(self, context):
+            raise SwitchError("no default case defined")
+    NoDefault = NoDefault("No default value specified")
+
+    __slots__ = ["subcons", "keyfunc", "cases", "default", "include_key"]
+
+    def __init__(self, keyfunc, cases, default=NoDefault, include_key=False):
+        super(Switch, self).__init__()
+        self._inherit_flags(*cases.values())
+        self.keyfunc = keyfunc
+        self.cases = cases
+        self.default = default
+        self.include_key = include_key
+        self._inherit_flags(*cases.values())
+        self._set_flag(self.FLAG_DYNAMIC)
+    def _parse(self, stream, context):
+        key = self.keyfunc(context)
+        obj = self.cases.get(key, self.default)._parse(stream, context)
+        if self.include_key:
+            return key, obj
+        else:
+            return obj
+    def _build(self, obj, stream, context):
+        if self.include_key:
+            key, obj = obj
+        else:
+            key = self.keyfunc(context)
+        case = self.cases.get(key, self.default)
+        case._build(obj, stream, context)
+    # def _sizeof(self, context):
+    #     case = self.cases.get(self.keyfunc(context), self.default)
+    #     return case._sizeof(context)
+
+
+def IfThenElse(predicate, thensubcon, elsesubcon):
     r"""
     An if-then-else conditional construct: if the predicate indicates True,
     `then_subcon` will be used; otherwise `else_subcon`
@@ -2738,11 +2737,12 @@ def IfThenElse(name, predicate, then_subcon, else_subcon):
     :param then_subcon: the subcon that will be used if the predicate returns True
     :param else_subcon: the subcon that will be used if the predicate returns False
     """
-    return Switch(name, lambda ctx: bool(predicate(ctx)),
+    return Switch(
+        lambda ctx: bool(predicate(ctx)),
         {
-            True : then_subcon,
-            False : else_subcon,
-        }
+            True : thensubcon,
+            False : elsesubcon,
+        },
     )
 
 def If(predicate, subcon, elsevalue=None):
@@ -2755,7 +2755,7 @@ def If(predicate, subcon, elsevalue=None):
     :param elsevalue: the value that will be used should the predicate return False.
                       by default this value is None.
     """
-    return IfThenElse(subcon.name,
+    return IfThenElse(
         predicate,
         subcon,
         "elsevalue" / Computed(lambda ctx: elsevalue),
