@@ -366,14 +366,9 @@ all_tests = [
     [Peek(UBInt8).parse, b"\x01", 1, None],
     [Peek(UBInt8).parse, b"", None, None],
     [Peek(UBInt8).build, 1, b"", None],
+    [Peek(UBInt8).build, None, b"", None],
     [Peek(UBInt8).sizeof, None, 0, None],
-    [Peek(UBInt8, performbuild=True).build, 1, b"\x01", None],
-    [Peek(UBInt8, performbuild=True).sizeof, None, 1, None],
-    # since peek does not build, its reasonable to say sizeof is 0
-    # [Peek(UBInt16).sizeof, None, 2, None],
-    # [Peek(UBInt64).sizeof, None, 8, None],
-    # [Peek(VarInt).sizeof, None, None, SizeofError],
-
+    [Peek(VarInt).sizeof, None, 0, None],
     [Struct(Peek("a"/UBInt8), "b"/UBInt16).parse, b"\x01\x02", Container(a=1)(b=0x0102), None],
     [Struct(Peek("a"/UBInt8), "b"/UBInt16).build, dict(a=1,b=0x0102), b"\x01\x02", None],
     [Struct(Peek("a"/Byte), Peek("b"/UBInt16),).parse, b"\x01\x02", Container(a=1)(b=0x0102), None],

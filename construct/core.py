@@ -542,9 +542,8 @@ class Union(Construct):
     __slots__ = ["subcons","buildfrom"]
     def __init__(self, *subcons, **kw):
         super(Union, self).__init__()
-        args = [Peek(sc,performbuild=True) for sc in subcons]
+        self.subcons = [Peek(sc) for sc in subcons]
         self.buildfrom = kw.get("buildfrom", None)
-        self.subcons = args
     def _parse(self, stream, context):
         ret = Container()
         for sc in self.subcons:
@@ -555,17 +554,17 @@ class Union(Construct):
             if isinstance(self.buildfrom, int):
                 index = self.buildfrom
                 name = self.subcons[index].name
-                self.subcons[index]._build(_subobj(self.subcons[index], obj), stream, context)
+                self.subcons[index].subcon._build(_subobj(self.subcons[index], obj), stream, context)
             elif isinstance(self.buildfrom, str):
                 index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
                 name = self.subcons[index].name
-                self.subcons[index]._build(_subobj(self.subcons[index], obj), stream, context)
+                self.subcons[index].subcon._build(_subobj(self.subcons[index], obj), stream, context)
             else:
                 raise TypeError("buildfrom is not int or str")
         else:
             for sc in self.subcons:
                 try:
-                    data = sc.build(_subobj(sc, obj), context)
+                    data = sc.subcon.build(_subobj(sc, obj), context)
                 except Exception:
                     pass
                 else:
@@ -718,31 +717,20 @@ class Peek(Subconstruct):
         .build(dict(a=0,b=258)) -> b"\x01\x02"
         .build(dict(a=1,b=258)) -> b"\x01\x02"
     """
-    __slots__ = ["performbuild"]
-    def __init__(self, subcon, performbuild=False):
+    def __init__(self, subcon):
         super(Peek, self).__init__(subcon)
-        self.performbuild = performbuild
     def _parse(self, stream, context):
-        pos = stream.tell()
+        fallback = stream.tell()
         try:
             return self.subcon._parse(stream, context)
         except FieldError:
             pass
         finally:
-            stream.seek(pos)
+            stream.seek(fallback)
     def _build(self, obj, stream, context):
-        if self.performbuild:
-            try:
-                pos = stream.tell()
-                self.subcon._build(obj, stream, context)
-            except:
-                stream.seek(pos)
-                raise
+        pass
     def _sizeof(self, context):
-        if self.performbuild:
-            return self.subcon._sizeof(context)
-        else:
-            return 0
+        return 0
 
 
 class OnDemand(Subconstruct):
