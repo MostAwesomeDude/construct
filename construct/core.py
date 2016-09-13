@@ -253,15 +253,15 @@ class Construct(object):
         """
         raise SizeofError("cannot calculate size")
 
-    # def __getitem__(self, count):
-    #     if isinstance(count, slice):
-    #         if count.step:
-    #             raise ValueError("Slice must not contain as step: %r" % (count,))
-    #         return Range(count.start, count.stop, self)
-    #     elif isinstance(count, six.integer_types) or hasattr(count, "__call__"):
-    #         return Range(count, count, self)
-    #     else:
-    #         raise TypeError("Expected a number, a contextual expression or a slice thereof, got %r" % (count,))
+    def __getitem__(self, count):
+        if isinstance(count, slice):
+            if count.step:
+                raise ValueError("Slice must not contain as step: %r" % (count,))
+            return Range(count.start, count.stop, self)
+        elif isinstance(count, int) or hasattr(count, "__call__"):
+            return Range(count, count, self)
+        else:
+            raise TypeError("Expected a number, a contextual expression or a slice thereof, got %r" % (count,))
 
     def __rtruediv__(self, name):
         if name is not None:

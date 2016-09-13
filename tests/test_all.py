@@ -216,11 +216,6 @@ all_tests = [
     [Pointer(lambda ctx: 2, "pointer" / UBInt8).build, 7, b"\x00\x00\x07", None],
     [Pointer(lambda ctx: 2, "pointer" / UBInt8).sizeof, None, 0, None],
 
-    [Struct("new" / ("old" / Byte)).parse, b"\x01", Container(new=1), None],
-    [Struct("new" / ("old" / Byte)).build, Container(new=1), b"\x01", None],
-    [Struct(Renamed("new",Renamed("old",Byte))).parse, b"\x01", Container(new=1), None],
-    [Struct(Renamed("new",Renamed("old",Byte))).build, Container(new=1), b"\x01", None],
-
     [Const(b"MZ").parse, b"MZ", b"MZ", None],
     [Const(b"MZ").parse, b"ELF", None, ConstError],
     [Const(b"MZ").build, None, b"MZ", None],
@@ -287,6 +282,24 @@ all_tests = [
     [Flag.build, False, b"\x00", None],
     [Flag.build, True, b"\x01", None],
     [Flag.sizeof, None, 1, None],
+
+    # testing / >> [] operators
+    [Struct("new" / ("old" / Byte)).parse, b"\x01", Container(new=1), None],
+    [Struct("new" / ("old" / Byte)).build, Container(new=1), b"\x01", None],
+    [Byte[4].parse, b"\x01\x02\x03\x04", [1,2,3,4], None],
+    [Byte[4].build, [1,2,3,4], b"\x01\x02\x03\x04", None],
+    [Byte[2:3].parse, b"\x01", None, RangeError],
+    [Byte[2:3].parse, b"\x01\x02", [1,2], None],
+    [Byte[2:3].parse, b"\x01\x02\x03", [1,2,3], None],
+    [Byte[2:3].parse, b"\x01\x02\x03", [1,2,3], None],
+    [Byte[2:3].parse, b"\x01\x02\x03\x04", [1,2,3], None],
+    [Struct("nums" / Byte[4]).parse, b"\x01\x02\x03\x04", Container(nums=[1,2,3,4]), None],
+    [Struct("nums" / Byte[4]).build, Container(nums=[1,2,3,4]), b"\x01\x02\x03\x04", None],
+
+    # testing underlying Renamed
+    [Struct(Renamed("new",Renamed("old",Byte))).parse, b"\x01", Container(new=1), None],
+    [Struct(Renamed("new",Renamed("old",Byte))).build, Container(new=1), b"\x01", None],
+
 
     # [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
     # [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
