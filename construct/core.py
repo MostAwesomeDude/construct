@@ -1008,7 +1008,7 @@ class LazyBound(Construct):
     """
     Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees, etc.).
 
-    :param bindfunc: the function (called without arguments) returning the bound construct
+    :param subconfunc: the function (called without arguments) returning the bound construct
 
     Example::
 
@@ -1017,23 +1017,16 @@ class LazyBound(Construct):
             LazyBound("next", lambda: foo),
         )
     """
-    __slots__ = ["bindfunc", "bound"]
-    def __init__(self, name, bindfunc):
-        super(LazyBound, self).__init__(name)
-        self.bound = None
-        self.bindfunc = bindfunc
+    __slots__ = ["subconfunc", "bound"]
+    def __init__(self, subconfunc):
+        super(LazyBound, self).__init__()
+        self.subconfunc = subconfunc
     def _parse(self, stream, context):
-        if self.bound is None:
-            self.bound = self.bindfunc()
-        return self.bound._parse(stream, context)
+        return self.subconfunc(context)._parse(stream, context)
     def _build(self, obj, stream, context):
-        if self.bound is None:
-            self.bound = self.bindfunc()
-        self.bound._build(obj, stream, context)
+        self.subconfunc(context)._build(obj, stream, context)
     def _sizeof(self, context):
-        if self.bound is None:
-            self.bound = self.bindfunc()
-        return self.bound._sizeof(context)
+        return self.subconfunc(context)._sizeof(context)
 
 
 @singleton

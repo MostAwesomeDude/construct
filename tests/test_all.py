@@ -445,8 +445,6 @@ all_tests = [
     [GreedyString(encoding="utf8").build, u"", b"", None],
     [GreedyString().sizeof, None, None, SizeofError],
 
-
-
     # [ExprAdapter(UBInt8("expradapter"), 
     #     encoder = lambda obj, ctx: obj // 7, 
     #     decoder = lambda obj, ctx: obj * 7,
@@ -456,8 +454,9 @@ all_tests = [
     #     decoder = lambda obj, ctx: obj * 7,
     #     ).build, 42, b"\x06", None],
 
-    # [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
-    # [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
+    [LazyBound(lambda ctx: Byte).parse, b"\x01", 1, None],
+    [LazyBound(lambda ctx: Byte).build, 1, b"\x01", None],
+    [LazyBound(lambda ctx: Byte).sizeof, None, 1, None],
 
     # # [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
     # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
