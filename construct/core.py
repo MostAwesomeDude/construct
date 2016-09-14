@@ -14,12 +14,6 @@ from construct.lib.py3compat import int2byte, stringtypes
 from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
 
 
-def singleton(cls):
-    return cls()
-
-def singletonfunction(func):
-    return func()
-
 
 #===============================================================================
 # exceptions
@@ -59,6 +53,14 @@ class BitIntegerError(ConstructError):
 class MappingError(AdaptationError):
     pass
 
+
+#===============================================================================
+# internal code
+#===============================================================================
+def singleton(cls):
+    return cls()
+def singletonfunction(func):
+    return func()
 
 
 #===============================================================================
@@ -398,7 +400,6 @@ class Bytes(Construct):
     r"""
     A field consisting of a specified number of bytes.
 
-    :param name: the name of the field
     :param length: the length of the field. the length can be either an integer
       (StaticField), or a function that takes the context as an argument and
       returns the length (MetaField)
@@ -443,12 +444,10 @@ class Bytes(Construct):
 
 @singleton
 class GreedyBytes(Construct):
-    """
+    r"""
     A variable size byte field.
 
     Parses the stream to the end, and builds into the stream as is.
-
-    :param name: field name, or None for anonymous
     """
     def _parse(self, stream, context):
         return stream.read()
@@ -457,12 +456,11 @@ class GreedyBytes(Construct):
 
 
 class FormatField(Bytes):
-    """
+    r"""
     A field that uses ``struct`` module to pack and unpack data.
 
     See ``struct`` documentation for instructions on crafting format strings.
 
-    :param name: name of the field
     :param endianness: format endianness string, one of "<", ">", or "="
     :param format: a single format character
     """
@@ -517,7 +515,6 @@ class Union(Construct):
 
     .. note:: Requires a seekable stream.
 
-    :param name: name of the union
     :param buildfrom: the subcon used for building and calculating the total size, can be integer index or string name or None (then tries each subcon)
     :param subcons: subconstructs for parsing, one of them used for building
 
@@ -582,7 +579,6 @@ class Select(Construct):
 
     .. note:: Requires a seekable stream.
 
-    :param name: the name of the construct
     :param subcons: the subcons to try (order-sensitive)
     :param include_name: a keyword only argument, indicating whether to include the name of the selected subcon in the return value of parsing. default is false.
 
@@ -705,7 +701,6 @@ class Peek(Subconstruct):
     .. note:: Requires a seekable stream.
 
     :param subcon: the subcon to peek at
-    :param performbuild: whether to perform building, False by default meaning building is a no-op
 
     Example::
 
@@ -855,25 +850,6 @@ class Restream(Subconstruct):
 #===============================================================================
 # miscellaneous
 #===============================================================================
-# class Reconfig(Subconstruct):
-#     """
-#     Reconfigures a subconstruct. Reconfig can be used to change the name and set and clear flags of the inner subcon.
-
-#     :param name: the new name
-#     :param subcon: the subcon to reconfigure
-#     :param setflags: the flags to set (default is 0)
-#     :param clearflags: the flags to clear (default is 0)
-
-#     Example::
-
-#         Reconfig("foo", UBInt8("bar"))
-#     """
-#     def __init__(self, name, subcon, setflags = 0, clearflags = 0):
-#         super(Reconfig, self).__init__(subcon)
-#         self.name = name
-#         self._set_flag(setflags)
-#         self._clear_flag(clearflags)
-
 
 @singleton
 class Anchor(Construct):
@@ -881,8 +857,6 @@ class Anchor(Construct):
     Gets the stream position when parsing or building.
 
     Anchors are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference using a Compute.
-
-    :param name: the name of the anchor
 
     .. note:: Requires a tellable stream.
 
@@ -898,9 +872,6 @@ class Anchor(Construct):
         .build(dict(a=255)) -> b"\xff"
         .sizeof() -> 1
     """
-    # def __init__(self):
-    #     Construct.__init__(self)
-    #     # super(Anchor, self).__init__()
     def _parse(self, stream, context):
         position = stream.tell()
         context[self.name] = position
@@ -921,7 +892,7 @@ class AnchorRange(Construct):
 
     This can also be used for checksumming. Give the Checksum field the name of this AnchorRange.
 
-    :param name: the name of the anchor range (same for both instances)
+    ??the name of the anchor range (same for both instances)
 
     .. note:: Requires a tellable stream.
 
@@ -970,7 +941,6 @@ class Computed(Construct):
 
     Underlying byte stream is unaffected. When parsing `func(context)` provides the value.
 
-    :param name: the name of the value
     :param func: a function that takes the context and return the computed value
 
     Example::
@@ -1005,7 +975,6 @@ class Computed(Construct):
 #    Deprecated.
 #
 #    Parameters:
-#    * name - the name of the construct
 #    * factoryfunc - a function that takes the context and returns a new
 #      construct object which will be used for parsing and building.
 #
@@ -1038,7 +1007,6 @@ class LazyBound(Construct):
     """
     Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees, etc.).
 
-    :param name: the name of the construct
     :param bindfunc: the function (called without arguments) returning the bound construct
 
     Example::
@@ -1293,9 +1261,6 @@ class UBInt24(Construct):
     r"""
     A 3-byte big-endian integer, as used in ancient file formats.
     """
-    # def __init__(self):
-    #     Construct.__init__(self)
-    #     # super(UBInt24, self).__init__()
     def _parse(self, stream, context):
         data = _read_stream(stream, 3)
         return struct.unpack('>I', b'\x00' + data)[0]
@@ -1311,9 +1276,6 @@ class ULInt24(Construct):
     r"""
     A 3-byte little-endian integer, as used in ancient file formats.
     """
-    # def __init__(self):
-    #     Construct.__init__(self)
-    #     # super(ULInt24, self).__init__()
     def _parse(self, stream, context):
         data = _read_stream(stream, 3)
         return struct.unpack('<I', data + b'\x00')[0]
@@ -1624,7 +1586,6 @@ class BitField(Construct):
     r"""
     BitFields, as the name suggests, are fields that operate on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using them is very similar to all normal fields: they take a name and a length (in bits).
 
-    :param name: name of the field
     :param length: number of bits in the field, or a function that takes context returns int
     :param swapped: whether to swap byte order (little endian), default is False (big endian)
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
@@ -2047,7 +2008,6 @@ class Struct(Construct):
 
     .. seealso:: The :func:`~construct.macros.Embedded` macro.
 
-    :param name: the name of the structure
     :param subcons: a sequence of subconstructs that make up this structure.
     :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
 
@@ -2120,7 +2080,6 @@ class Sequence(Struct):
 
     .. seealso:: The :func:`~construct.macros.Embedded` macro.
 
-    :param name: the name of the structure
     :param subcons: a sequence of subconstructs that make up this structure.
     :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
 
@@ -2203,7 +2162,6 @@ def Bitwise(subcon):
 #     A sequence of one element. Only the first element is meaningful, the
 #     rest are discarded.
 
-#     :param name: the name of the sequence
 #     :param \*args: subconstructs
 #     :param \*\*kw: any keyword arguments to Sequence
 #     """
@@ -2300,7 +2258,6 @@ def AlignedStruct(name, *subcons, **kw):
     r"""
     A struct of aligned fields
 
-    :param name: the name of the struct
     :param \*subcons: the subcons that make up this structure
     :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
     """
@@ -2310,7 +2267,6 @@ def BitStruct(name, *subcons):
     r"""
     A struct of bitwise fields
 
-    :param name: the name of the struct
     :param \*subcons: the subcons that make up this structure
     """
     return Bitwise(Struct(name, *subcons))
@@ -2334,7 +2290,6 @@ class Switch(Construct):
 
     .. seealso:: The :func:`Pass` singleton.
 
-    :param name: the name of the construct
     :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
     :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc.
     :param default: a default value to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for 'do-nothing'.
@@ -2397,7 +2352,6 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
     An if-then-else conditional construct: if the predicate indicates True,
     `then_subcon` will be used; otherwise `else_subcon`
 
-    :param name: the name of the construct
     :param predicate: a function taking the context as an argument and returning True or False
     :param then_subcon: the subcon that will be used if the predicate returns True
     :param else_subcon: the subcon that will be used if the predicate returns False
@@ -2711,7 +2665,6 @@ class String(Construct):
 
     The padding character and direction must be specified for padding to work. The trim direction must be specified for trimming to work.
 
-    :param name: name
     :param length: length in bytes (not unicode characters), as int or function
     :param encoding: encoding (e.g. "utf8") or None for bytes
     :param padchar: optional byte or unicode character to pad out strings
@@ -2811,7 +2764,6 @@ class PascalString(Construct):
 
     The length field will not appear in the same ``Container``, when parsing. Only the string will be returned. When building, the length is taken from len(the string). The length field can be anonymous (name is None) and can be variable length (such as VarInt).
 
-    :param name: name
     :param lengthfield: a field which will store the length of the string
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
@@ -2862,7 +2814,6 @@ class CString(Construct):
 
     By default, the terminator is the NULL byte (b'\x00'). Terminators field can be a longer bytes string, and any of the characters breaks parsing. First character is used when building.
 
-    :param name: name
     :param terminators: sequence of valid terminators, in order of preference
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
@@ -2909,7 +2860,6 @@ class GreedyString(Construct):
 
     If no encoding is given, this is essentially GreedyBytes.
 
-    :param name: name
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
     .. seealso:: The :class:`~construct.core.GreedyBytes` class.
@@ -2946,21 +2896,12 @@ class GreedyString(Construct):
 @singletonfunction
 def Flag():
     r"""
-    A flag.
+    A boolean flag.
 
-    Flags are usually used to signify a Boolean value, and this construct
-    maps values onto the ``bool`` type.
+    Non-zero byte (or bit) is considered as True, zero is False.
 
     .. note:: This construct works with both bit and byte contexts.
 
-    .. warning:: Flags default to False, not True. This is different from the
-        C and Python way of thinking about truth, and may be subject to change
-        in the future.
-
-    :param name: field name
-    :param truth: value of truth (default 1)
-    :param falsehood: value of falsehood (default 0)
-    :param default: default value (default False)
     """
     return SymmetricMapping(UBInt8, {False : 0}, default=True)
 
