@@ -114,9 +114,9 @@ class Construct(object):
     FLAG_NESTING               = 0x0008
 
     __slots__ = ["name", "conflags"]
-    def __init__(self, flags=0):
+    def __init__(self):
         self.name = None
-        self.conflags = flags
+        self.conflags = 0
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.name)
@@ -292,9 +292,10 @@ class Subconstruct(Construct):
     def __init__(self, subcon):
         if not isinstance(subcon, Construct):
             raise TypeError("subcon should be a Construct field")
-        super(Subconstruct, self).__init__(subcon.conflags)
+        super(Subconstruct, self).__init__()
         self.name = subcon.name
         self.subcon = subcon
+        self._inherit_flags(subcon)
     def _parse(self, stream, context):
         return self.subcon._parse(stream, context)
     def _build(self, obj, stream, context):
@@ -2157,29 +2158,15 @@ def Bitwise(subcon):
     return con
 
 
-# def SeqOfOne(name, *args, **kw):
-#     r"""
-#     A sequence of one element. Only the first element is meaningful, the
-#     rest are discarded.
-
-#     :param \*args: subconstructs
-#     :param \*\*kw: any keyword arguments to Sequence
-#     """
-#     return Indexing(Sequence(name, *args, **kw), index=0)
-
-
 class Embedded(Subconstruct):
     r"""
-    Embeds a struct into the enclosing struct, merging fields.
+    Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences.
 
     :param subcon: the struct to embed
     """
     def __init__(self, subcon):
         super(Embedded, self).__init__(subcon)
-        # self.name = name
         self._set_flag(subcon.FLAG_EMBED)
-        # self._clear_flag(clearflags)
-    # return Reconfig(subcon.name, subcon, subcon.FLAG_EMBED)
 
 
 class Renamed(Subconstruct):
@@ -2308,6 +2295,7 @@ class Switch(Construct):
             ),
         )
     """
+    @singleton
     class NoDefault(Construct):
         def _parse(self, stream, context):
             raise SwitchError("no default case defined")
@@ -2315,7 +2303,6 @@ class Switch(Construct):
             raise SwitchError("no default case defined")
         def _sizeof(self, context):
             raise SwitchError("no default case defined")
-    NoDefault = NoDefault("No default value specified")
 
     __slots__ = ["subcons", "keyfunc", "cases", "default", "include_key"]
 
