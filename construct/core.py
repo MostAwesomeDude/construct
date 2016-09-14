@@ -1207,6 +1207,16 @@ class Aligned(Subconstruct):
         return sublen + (-sublen % self.modulus)
 
 
+def AlignedStruct(name, *subcons, **kw):
+    r"""
+    A struct of aligned fields
+
+    :param \*subcons: the subcons that make up this structure
+    :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
+    """
+    return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
+
+
 class Const(Subconstruct):
     r"""
     Constant field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
@@ -1638,9 +1648,11 @@ class BitField(Construct):
 def Bit():
     """A 1-bit BitField; must be enclosed in a BitStruct"""
     return BitField(1)
+@singletonfunction
 def Nibble():
     """A 4-bit BitField; must be enclosed in a BitStruct"""
     return BitField(4)
+@singletonfunction
 def Octet():
     """An 8-bit BitField; must be enclosed in a BitStruct"""
     return BitField(8)
@@ -2119,33 +2131,6 @@ class Sequence(Struct):
 #===============================================================================
 # subconstructs
 #===============================================================================
-def Bitwise(subcon):
-    r"""
-    Converts the stream to bits, and passes the bitstream to subcon.
-
-    :param subcon: a bitwise construct (usually BitField)
-
-    Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
-    """
-    MAX_BUFFER = 1024 * 8
-    def resizer(length):
-        if length & 7:
-            raise SizeofError("size must be a multiple of 8", length)
-        return length >> 3
-    if not subcon._is_flag(subcon.FLAG_DYNAMIC) and subcon.sizeof() < MAX_BUFFER:
-        con = Buffered(subcon,
-            encoder = decode_bin,
-            decoder = encode_bin,
-            resizer = resizer
-        )
-    else:
-        con = Restream(subcon,
-            stream_reader = BitStreamReader,
-            stream_writer = BitStreamWriter,
-            resizer = resizer)
-    return con
-
-
 class Embedded(Subconstruct):
     r"""
     Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences.
@@ -2203,6 +2188,51 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
         decdefault = default,
     )
 
+
+class MappingAdapter(Adapter):
+    """
+    Adapter that maps objects to other objects.
+    See SymmetricMapping and Enum.
+
+    :param subcon: the subcon to map
+    :param decoding: the decoding (parsing) mapping (a dict)
+    :param encoding: the encoding (building) mapping (a dict)
+    :param decdefault: the default return value when the object is not found
+                       in the decoding mapping. if no object is given, an exception is raised.
+                       if ``Pass`` is used, the unmapped object will be passed as-is
+    :param encdefault: the default return value when the object is not found
+                       in the encoding mapping. if no object is given, an exception is raised.
+                       if ``Pass`` is used, the unmapped object will be passed as-is
+    """
+    __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
+    def __init__(self, subcon, decoding, encoding, decdefault=NotImplemented, encdefault=NotImplemented):
+        super(MappingAdapter, self).__init__(subcon)
+        self.decoding = decoding
+        self.encoding = encoding
+        self.decdefault = decdefault
+        self.encdefault = encdefault
+    def _encode(self, obj, context):
+        try:
+            return self.encoding[obj]
+        except (KeyError, TypeError):
+            if self.encdefault is NotImplemented:
+                raise MappingError("no encoding mapping for %r [%s]" % (
+                    obj, self.subcon.name))
+            if self.encdefault is Pass:
+                return obj
+            return self.encdefault
+    def _decode(self, obj, context):
+        try:
+            return self.decoding[obj]
+        except (KeyError, TypeError):
+            if self.decdefault is NotImplemented:
+                raise MappingError("no decoding mapping for %r [%s]" % (
+                    obj, self.subcon.name))
+            if self.decdefault is Pass:
+                return obj
+            return self.decdefault
+
+
 def Enum(subcon, **kw):
     r"""
     A set of named values mapping.
@@ -2229,14 +2259,32 @@ def FlagsEnum(subcon, **kw):
 #===============================================================================
 # structs
 #===============================================================================
-def AlignedStruct(name, *subcons, **kw):
+def Bitwise(subcon):
     r"""
-    A struct of aligned fields
+    Converts the stream to bits, and passes the bitstream to subcon.
 
-    :param \*subcons: the subcons that make up this structure
-    :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
+    :param subcon: a bitwise construct (usually BitField)
+
+    Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
     """
-    return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
+    MAX_BUFFER = 1024 * 8
+    def resizer(length):
+        if length & 7:
+            raise SizeofError("size must be a multiple of 8", length)
+        return length >> 3
+    if not subcon._is_flag(subcon.FLAG_DYNAMIC) and subcon.sizeof() < MAX_BUFFER:
+        con = Buffered(subcon,
+            encoder = decode_bin,
+            decoder = encode_bin,
+            resizer = resizer
+        )
+    else:
+        con = Restream(subcon,
+            stream_reader = BitStreamReader,
+            stream_writer = BitStreamWriter,
+            resizer = resizer)
+    return con
+
 
 def BitStruct(name, *subcons):
     r"""
@@ -2246,6 +2294,7 @@ def BitStruct(name, *subcons):
     """
     return Bitwise(Struct(name, *subcons))
 
+
 def EmbeddedBitStruct(*subcons):
     r"""
     An embedded BitStruct. no name is necessary.
@@ -2253,7 +2302,6 @@ def EmbeddedBitStruct(*subcons):
     :param \*subcons: the subcons that make up this structure
     """
     return Bitwise(Embedded(Struct(None, *subcons)))
-
 
 
 #===============================================================================
@@ -2360,49 +2408,6 @@ def If(predicate, subcon, elsevalue=None):
 #===============================================================================
 # adapters
 #===============================================================================
-class MappingAdapter(Adapter):
-    """
-    Adapter that maps objects to other objects.
-    See SymmetricMapping and Enum.
-
-    :param subcon: the subcon to map
-    :param decoding: the decoding (parsing) mapping (a dict)
-    :param encoding: the encoding (building) mapping (a dict)
-    :param decdefault: the default return value when the object is not found
-                       in the decoding mapping. if no object is given, an exception is raised.
-                       if ``Pass`` is used, the unmapped object will be passed as-is
-    :param encdefault: the default return value when the object is not found
-                       in the encoding mapping. if no object is given, an exception is raised.
-                       if ``Pass`` is used, the unmapped object will be passed as-is
-    """
-    __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
-    def __init__(self, subcon, decoding, encoding,
-                 decdefault = NotImplemented, encdefault = NotImplemented):
-        super(MappingAdapter, self).__init__(subcon)
-        self.decoding = decoding
-        self.encoding = encoding
-        self.decdefault = decdefault
-        self.encdefault = encdefault
-    def _encode(self, obj, context):
-        try:
-            return self.encoding[obj]
-        except (KeyError, TypeError):
-            if self.encdefault is NotImplemented:
-                raise MappingError("no encoding mapping for %r [%s]" % (
-                    obj, self.subcon.name))
-            if self.encdefault is Pass:
-                return obj
-            return self.encdefault
-    def _decode(self, obj, context):
-        try:
-            return self.decoding[obj]
-        except (KeyError, TypeError):
-            if self.decdefault is NotImplemented:
-                raise MappingError("no decoding mapping for %r [%s]" % (
-                    obj, self.subcon.name))
-            if self.decdefault is Pass:
-                return obj
-            return self.decdefault
 
 
 class FlagsAdapter(Adapter):
@@ -2851,8 +2856,12 @@ class GreedyString(Construct):
 # other
 #===============================================================================
 
-@singletonfunction
-def Flag():
+# @singletonfunction
+# def Flag():
+#     return SymmetricMapping(UBInt8, {True : 1, False : 0}, default=True)
+
+@singleton
+class Flag(Construct):
     r"""
     A boolean flag.
 
@@ -2861,5 +2870,10 @@ def Flag():
     .. note:: This construct works with both bit and byte contexts.
 
     """
-    return SymmetricMapping(UBInt8, {False : 0}, default=True)
+    def _parse(self, stream, context):
+        return _read_stream(stream, 1) != b'\x00'
+    def _build(self, obj, stream, context):
+        _write_stream(stream, 1, b'\x01' if bool(obj) else b'\x00')
+    def _sizeof(self, context):
+        return 1
 

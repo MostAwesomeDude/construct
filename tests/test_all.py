@@ -183,6 +183,10 @@ class TestAll(unittest.TestCase):
         [Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).build, Container(a=1)(b=2)(inner=Container(c=3)(d=4)), b"\x01\x00\x02\x03\x04", None],
         [Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build, Container(a=1)(b=2)(c=3)(d=4), b"\x01\x00\x02\x03\x04", None],
 
+        [Struct(Padding(2)).parse, b"\x00\x00", Container(), None],
+        [Struct(Padding(2)).build, Container(), b"\x00\x00", None],
+        [Struct(Padding(2)).sizeof, None, 2, None],
+
         [Sequence(UBInt8, UBInt16).parse, b"\x01\x00\x02", [1,2], None],
         [Sequence(UBInt8, UBInt16).build, [1,2], b"\x01\x00\x02", None],
         [Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).parse, b"\x01\x00\x02\x03\x04", [1,2,[3,4]], None],
@@ -338,6 +342,22 @@ class TestAll(unittest.TestCase):
         [Bitwise(Bytes(lambda ctx: 8)).parse, b"\xff", b"\x01\x01\x01\x01\x01\x01\x01\x01", None],
         [Bitwise(Bytes(lambda ctx: 8)).build, b"\x01\x01\x01\x01\x01\x01\x01\x01", b"\xff", None],
         [Bitwise(Bytes(lambda ctx: 8)).sizeof, None, 1, None],
+
+        [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitField(5)).parse, b"\xe1\x1f", Container(a=7)(b=False)(c=8)(d=31), None],
+        [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitField(5)).sizeof, None, 2, None],
+        [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).parse, b"\xe1\x1f", Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1)), None],
+        [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof, None, 2, None],
+        # issue #113
+        # [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitField(5)).build, Container(a=7)(b=False)(c=8)(d=31), b"\xe1\x1f", None],
+        # [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build, Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1)), b"\xe1\x1f", None],
+
+        [Bitwise(Array(8,Bit)).parse, b"\xff", [1,1,1,1,1,1,1,1], None],
+        [Bitwise(Array(2,Nibble)).parse, b"\xff", [15,15], None],
+        [Bitwise(Array(1,Octet)).parse, b"\xff", [255], None],
+        # issue #113
+        # [Bitwise(Array(8,Bit)).build, [1,1,1,1,1,1,1,1], b"\xff", None],
+        # [Bitwise(Array(2,Nibble)).build, [15,15], b"\xff", None],
+        # [Bitwise(Array(1,Octet)).build, [255], b"\xff", None],
 
         [ByteSwapped(Bytes(5)).parse, b"12345?????", b"54321", None],
         [ByteSwapped(Bytes(5)).build, b"12345", b"54321", None],
