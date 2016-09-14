@@ -2741,7 +2741,7 @@ class String(Construct):
         .sizeof() -> ?
     """
     __slots__ = ["length", "encoding", "padchar", "paddir", "trimdir"]
-    def __init__(self, name, length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
+    def __init__(self, length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
         if not isinstance(padchar, bytes):
             if encoding:
                 if isinstance(encoding, str):
@@ -2756,7 +2756,7 @@ class String(Construct):
             raise ValueError("paddir must be one of: right left center", paddir)
         if trimdir not in ("right", "left"):
             raise ValueError("trimdir must be one of: right left", trimdir)
-        super(String, self).__init__(name)
+        super(String, self).__init__()
         self.length = length
         self.encoding = encoding
         self.padchar = padchar
@@ -2764,14 +2764,19 @@ class String(Construct):
         self.trimdir = trimdir
     def _parse(self, stream, context):
         length = self.length(context) if callable(self.length) else self.length
-        obj = _read_stream(stream, length)
+        try:
+            obj = _read_stream(stream, length)
+        except FieldError:
+            raise StringError("could not read enough bytes")
         padchar = self.padchar
         if self.paddir == "right":
             obj = obj.rstrip(padchar)
         elif self.paddir == "left":
             obj = obj.lstrip(padchar)
-        else:
+        elif self.paddir == "center":
             obj = obj.strip(padchar)
+        else:
+            raise StringError("paddir must be one of: right left center")
         obj = _decode_string(obj, self.encoding)
         return obj
     def _build(self, obj, stream, context):
@@ -2782,8 +2787,10 @@ class String(Construct):
             obj = obj.ljust(length, padchar)
         elif self.paddir == "left":
             obj = obj.rjust(length, padchar)
-        else:
+        elif self.paddir == "center":
             obj = obj.center(length, padchar)
+        else:
+            raise StringError("paddir must be one of: right left center")
         if len(obj) > length:
             if self.trimdir == "right":
                 obj = obj[:length]
@@ -2818,7 +2825,7 @@ class PascalString(Construct):
         .parse(b"\x05\x00\x00\x00hello") -> u"hello"
         .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
     """
-    __slots__ = ["name", "lengthfield", "encoding"]
+    __slots__ = ["lengthfield", "encoding"]
     def __init__(self, lengthfield=UBInt8, encoding=None):
         super(PascalString, self).__init__()
         self.lengthfield = lengthfield
@@ -2917,9 +2924,9 @@ class GreedyString(Construct):
         .parse(b"hello\x00") -> u"hello\x00"
         .build(u"hello\x00") -> b"hello\x00"
     """
-    __slots__ = ["name", "encoding"]
-    def __init__(self, name, encoding=None):
-        super(GreedyString, self).__init__(name)
+    __slots__ = ["encoding"]
+    def __init__(self, encoding=None):
+        super(GreedyString, self).__init__()
         self.encoding = encoding
     def _parse(self, stream, context):
         obj = stream.read()

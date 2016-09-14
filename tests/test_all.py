@@ -325,40 +325,6 @@ all_tests = [
     [ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4))).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
     [BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4)).parse, b'\xfa\xbc\xd1', Container(flag1=1)(flag2=1)(number=0xabcd), None],
 
-    # [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
-    # [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
-
-    # # [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
-    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
-    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream=False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
-
-    # # [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
-    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7)(b=8)(c=9), b"\x07\x08\x09", None],
-    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
-    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False, advance_stream=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
-
-    # [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-    # [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", None, SizeofError],
-    # [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).build, 7, b"\x07", None],
-    # [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).build, [7], None, SizeofError],
-
-    # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-    # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-    # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-    # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-
-    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x03", "y", None],
-    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x04", None, MappingError],
-    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, decdefault="foo").parse, b"\x04", "foo", None],
-    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, decdefault=Pass).parse, b"\x04", 4, None],
-    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).build, "y", b"\x03", None],
-    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).build, "z", None, MappingError],
-    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, encdefault=17).build, "foo", b"\x11", None],
-    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, encdefault=Pass).build, 4, b"\x04", None],
-        
-    # [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).parse, b"\x81", FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), None],
-    # [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).build, FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), b"\x81", None],
-
     [Slicing(Array(4,Byte), 4, 1, 3, empty=0).parse, b"\x01\x02\x03\x04", [2,3], None],
     [Slicing(Array(4,Byte), 4, 1, 3, empty=0).build, [2,3], b"\x00\x02\x03\x00", None],
     [Slicing(Array(4,Byte), 4, 1, 3, empty=0).sizeof, None, 4, None],
@@ -427,6 +393,59 @@ all_tests = [
     [Prefixed(Byte,Compressed(GreedyBytes,"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1', zlibcodecraises],
     [Prefixed(Byte,Compressed(CString(),"zlib")).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????', b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", zlibcodecraises],
     [Prefixed(Byte,Compressed(CString(),"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1', zlibcodecraises],
+    [Prefixed(Byte,Compressed(CString(),"zlib")).sizeof, None, None, SizeofError],
+
+    [String(5).parse, b"hello", b"hello", None],
+    [String(5).build, b"hello", b"hello", None],
+    [String(5).parse, b"", None, StringError],
+    [String(5).build, b"", b"\x00\x00\x00\x00\x00", None],
+    [String(12, encoding="utf8").parse, b"hello joh\xd4\x83n", u"hello joh\u0503n", None],
+    [String(12, encoding="utf8").build, u"hello joh\u0503n", b"hello joh\xd4\x83n", None],
+    [String(12, encoding="utf8").sizeof, None, 12, None],
+    [String(5).build, u"hello", None, StringError],  # missing encoding
+    [String(10, padchar=b"X", paddir="right").parse, b"helloXXXXX", b"hello", None],
+    [String(10, padchar=b"X", paddir="left").parse, b"XXXXXhello", b"hello", None],
+    [String(10, padchar=b"X", paddir="center").parse, b"XXhelloXXX", b"hello", None],
+    [String(10, padchar=b"X", paddir="right").build, b"hello", b"helloXXXXX", None],
+    [String(10, padchar=b"X", paddir="left").build, b"hello", b"XXXXXhello", None],
+    [String(10, padchar=b"X", paddir="center").build, b"hello", b"XXhelloXXX", None],
+    [String(10, padchar=u"X", paddir="right", encoding="utf8").build, b"hello", b"helloXXXXX", None],
+    [String(10, padchar=u"X", paddir="left", encoding="utf8").build, b"hello", b"XXXXXhello", None],
+    [String(10, padchar=u"X", paddir="center", encoding="utf8").build, b"hello", b"XXhelloXXX", None],
+    [String(5, trimdir="right").build, b"1234567890", b"12345", None],
+    [String(5, trimdir="left").build, b"1234567890", b"67890", None],
+    [String(5, padchar=b"X", paddir="left", encoding="utf8").sizeof, None, 5, None],
+    [String(5).sizeof, None, 5, None],
+
+    [PascalString().parse, b"\x05hello????????", b"hello", None],
+    [PascalString().build, b"hello", b"\x05hello", None],
+    [PascalString(encoding="utf8").parse, b"\x05hello", u"hello", None],
+    [PascalString(encoding="utf8").build, u"hello", b"\x05hello", None],
+    [PascalString(UBInt16).parse, b"\x00\x05hello????????", b"hello", None],
+    [PascalString(UBInt16).build, b"hello", b"\x00\x05hello", None],
+    [PascalString().sizeof, None, None, SizeofError],
+
+    [CString().parse, b"hello\x00", b"hello", None],
+    [CString(encoding="utf8").parse, b"hello\x00", u"hello", None],
+    [CString().build, b"hello", b"hello\x00", None],
+    [CString(encoding="utf8").build, u"hello", b"hello\x00", None],
+    [CString(terminators=b"XYZ", encoding="utf8").parse, b"helloX", u"hello", None],    
+    [CString(terminators=b"XYZ", encoding="utf8").parse, b"helloY", u"hello", None],    
+    [CString(terminators=b"XYZ", encoding="utf8").parse, b"helloZ", u"hello", None],    
+    [CString(terminators=b"XYZ", encoding="utf8").build, u"hello", b"helloX", None],    
+    [CString().sizeof, None, None, SizeofError],
+
+    [GreedyString().parse, b"hello\x00", b"hello\x00", None],
+    [GreedyString().parse, b"", b"", None],
+    [GreedyString().build, b"hello\x00", b"hello\x00", None],
+    [GreedyString().build, b"", b"", None],
+    [GreedyString(encoding="utf8").parse, b"hello\x00", u"hello\x00", None],
+    [GreedyString(encoding="utf8").parse, b"", u"", None],
+    [GreedyString(encoding="utf8").build, u"hello\x00", b"hello\x00", None],
+    [GreedyString(encoding="utf8").build, u"", b"", None],
+    [GreedyString().sizeof, None, None, SizeofError],
+
+
 
     # [ExprAdapter(UBInt8("expradapter"), 
     #     encoder = lambda obj, ctx: obj // 7, 
@@ -437,6 +456,39 @@ all_tests = [
     #     decoder = lambda obj, ctx: obj * 7,
     #     ).build, 42, b"\x06", None],
 
+    # [LazyBound("lazybound", lambda: UBInt8("byte")).parse, b"\x02", 2, None],
+    # [LazyBound("lazybound", lambda: UBInt8("byte")).build, 2, b"\x02", None],
+
+    # # [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
+    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
+    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), advance_stream=False), UBInt8("c")).parse, b"\x07\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],
+
+    # # [OnDemand(UBInt8("ondemand")).build, 8, b"\x08", None],
+    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).build, Container(a=7)(b=8)(c=9), b"\x07\x08\x09", None],
+    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x00\x09", None],
+    # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b"), force_build=False, advance_stream=False), UBInt8("c")).build, Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), b"\x07\x09", None],
+
+    # [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
+    # [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", None, SizeofError],
+    # [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).build, 7, b"\x07", None],
+    # [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).build, [7], None, SizeofError],
+
+    # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
+    # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
+    # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
+    # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
+
+    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x03", "y", None],
+    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x04", None, MappingError],
+    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, decdefault="foo").parse, b"\x04", "foo", None],
+    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, decdefault=Pass).parse, b"\x04", 4, None],
+    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).build, "y", b"\x03", None],
+    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).build, "z", None, MappingError],
+    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, encdefault=17).build, "foo", b"\x11", None],
+    # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, encdefault=Pass).build, 4, b"\x04", None],
+        
+    # [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).parse, b"\x81", FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), None],
+    # [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).build, FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), b"\x81", None],
 ]
 
 
