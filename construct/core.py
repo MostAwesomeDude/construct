@@ -9,7 +9,7 @@ import codecs
 from construct.lib import Container, ListContainer, LazyContainer
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
 from construct.lib import int_to_bin, bin_to_int, swap_bytes
-from construct.lib import FlagsContainer, HexString
+from construct.lib import FlagsContainer, HexString, hexdump
 from construct.lib.py3compat import int2byte, stringtypes
 from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
 
@@ -735,33 +735,28 @@ class OnDemand(Subconstruct):
 
     .. seealso:: The :func:`~construct.macros.OnDemandPointer` macro.
 
-    .. note:: Requires a seekable stream.
-
     :param subcon: the subcon to read/write on demand
-    :param advance_stream: whether or not to advance the stream position. by default this is True, but if subcon is a pointer, this should be False.
-    :param force_build: whether or not to force build. If set to False, and the LazyContainer has not been demanded, building is a no-op.
 
     Example::
 
         OnDemand(Array(10000, UBInt8("foo"))
     """
-    __slots__ = ["advance_stream", "force_build"]
-    def __init__(self, subcon, advance_stream = True, force_build = True):
+    def __init__(self, subcon):
         super(OnDemand, self).__init__(subcon)
-        self.advance_stream = advance_stream
-        self.force_build = force_build
     def _parse(self, stream, context):
-        obj = LazyContainer(self.subcon, stream, stream.tell(), context)
-        if self.advance_stream:
-            stream.seek(self.subcon._sizeof(context), 1)
-        return obj
-    def _build(self, obj, stream, context):
-        if not isinstance(obj, LazyContainer):
-            self.subcon._build(obj, stream, context)
-        elif self.force_build or obj.has_value:
-            self.subcon._build(obj.value, stream, context)
-        elif self.advance_stream:
-            stream.seek(self.subcon._sizeof(context), 1)
+        data = _read_stream(stream, self.subcon._sizeof(context))
+        return lambda ctx: self.subcon.parse(data, context)
+
+
+def OnDemandPointer(offsetfunc, subcon):
+    r"""
+    An on-demand pointer.
+
+    :param offsetfunc: a function taking the context as an argument and returning the absolute stream position
+    :param subcon: the subcon that will be parsed from the `offsetfunc()` stream position on demand
+    :param force_build: see OnDemand. by default True.
+    """
+    return OnDemand(Pointer(offsetfunc, subcon))
 
 
 class Buffered(Subconstruct):
@@ -2361,23 +2356,6 @@ def If(predicate, subcon, elsevalue=None):
     )
 
 
-#===============================================================================
-# misc
-#===============================================================================
-def OnDemandPointer(offsetfunc, subcon, force_build=True):
-    r"""
-    An on-demand pointer.
-
-    :param offsetfunc: a function taking the context as an argument and returning
-                       the absolute stream position
-    :param subcon: the subcon that will be parsed from the `offsetfunc()` stream position on demand
-    :param force_build: see OnDemand. by default True.
-    """
-    return OnDemand(Pointer(offsetfunc, subcon),
-        advance_stream = False,
-        force_build = force_build
-    )
-
 
 #===============================================================================
 # adapters
@@ -2481,18 +2459,18 @@ class ExprAdapter(Adapter):
         self._decode = decoder
 
 
-class HexDumpAdapter(Adapter):
+class HexDump(Adapter):
     """
     Adapter for hex-dumping strings. It returns a HexString, which is a string
     """
     __slots__ = ["linesize"]
     def __init__(self, subcon, linesize=16):
-        super(HexDumpAdapter, self).__init__(subcon)
+        super(HexDump, self).__init__(subcon)
         self.linesize = linesize
     def _encode(self, obj, context):
         return obj
     def _decode(self, obj, context):
-        return HexString(obj, linesize=self.linesize)
+        return hexdump(obj, linesize=self.linesize)
 
 
 class Slicing(Adapter):

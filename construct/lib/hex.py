@@ -21,15 +21,15 @@ def hexdump(data, linesize):
         hextext = " ".join('%02x' % b for b in iteratebytes(line))
         rawtext = "".join(_printable[b] for b in iteratebytes(line))
         prettylines.append(fmt % (i, str(hextext), str(rawtext)))
-    return prettylines
+    prettylines.append("")
+    return "\n".join(prettylines)
 
 
 class HexString(bytes):
+    r"""
+    Represents bytes that will be hex-dumped to a string when its string representation is requested.
     """
-    Represents bytes that will be hex-dumped to a string when its string
-    representation is requested.
-    """
-    def __init__(self, data, linesize = 16):
+    def __init__(self, data, linesize=16):
         self.linesize = linesize
     def __new__(cls, data, *args, **kwargs):
         return bytes.__new__(cls, data)
