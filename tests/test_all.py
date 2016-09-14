@@ -117,10 +117,11 @@ all_tests = [
     # [Array(3,Byte).parse, b"", [1,2,3], ArrayError],
     [Array(3,Byte).build, [1,2,3], b"\x01\x02\x03", None],
     [Array(3,Byte).build, [1,2], None, ArrayError],
-    [Array(3,Byte).build, [1,2,3,4], None, ArrayError],
+    [Array(3,Byte).build, [1,2,3,4,5,6,7,8], None, ArrayError],
     [Array(3,Byte).sizeof, None, 3, None],
 
     [Array(lambda ctx: 3, Byte).parse, (b"\x01\x02\x03",Container(n=3)), [1,2,3], None],
+    [Array(lambda ctx: 3, Byte).parse, (b"\x01\x02\x03additionalgarbage",Container(n=3)), [1,2,3], None],
     # issue #101
     # [Array(lambda ctx: 3, Byte).parse, (b"",Container(n=3)), None, ArrayError],
     [Array(lambda ctx: 3, Byte).build, ([1,2,3],Container(n=3)), b"\x01\x02\x03", None],
@@ -144,7 +145,22 @@ all_tests = [
     [Range(3, 5, Byte).build, [1,2,3,4,5], b"\x01\x02\x03\x04\x05", None],
     [Range(3, 5, Byte).build, [1,2], None, RangeError],
     [Range(3, 5, Byte).build, [1,2,3,4,5,6], None, RangeError],
+    [Range(3, 5, Byte).build, 0, None, RangeError],
     [Range(3, 5, Byte).sizeof, None, None, SizeofError],
+
+    [Range(0,100,Struct("id"/Byte)).parse, b'\x01\x02', [Container(id=1),Container(id=2)], None],
+    [Range(0,100,Struct("id"/Byte)).build, [dict(id=i) for i in range(5)], b'\x00\x01\x02\x03\x04', None],
+    [Range(0,100,Struct("id"/Byte)).build, dict(id=1), None, RangeError],
+    [Range(0,100,Struct("id"/Byte)).sizeof, None, None, SizeofError],
+    [lambda none: Range(-2,+7,Byte), None, None, RangeError],
+    [lambda none: Range(-2,-7,Byte), None, None, RangeError],
+    [lambda none: Range(+2,-7,Byte), None, None, RangeError],
+
+    [GreedyRange(Byte).parse, b"", [], None],
+    [GreedyRange(Byte).build, [], b"", None],
+    [GreedyRange(Byte).parse, b"\x01\x02", [1,2], None],
+    [GreedyRange(Byte).build, [1,2], b"\x01\x02", None],
+    [GreedyRange(Byte).sizeof, None, None, SizeofError],
 
     [RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse, b"\x02\x03\x09garbage", [2,3,9], None],
     [RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse, b"\x02\x03\x08", None, ArrayError],
@@ -457,6 +473,20 @@ all_tests = [
     [LazyBound(lambda ctx: Byte).parse, b"\x01", 1, None],
     [LazyBound(lambda ctx: Byte).build, 1, b"\x01", None],
     [LazyBound(lambda ctx: Byte).sizeof, None, 1, None],
+
+    # did this one come from some issue?
+    [Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).parse, b"\x03\x02helloXXX", Container(length=3)(inner=Container(inner_length=2)(data=b"hello")), None],
+    [Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).sizeof, Container(inner_length=2)(_=Container(length=3)), 7, None],
+
+    [NoneOf(Byte,[4,5,6,7]).parse, b"\x08", 8, None],
+    [NoneOf(Byte,[4,5,6,7]).parse, b"\x06", 8, ValidationError],
+
+    [OneOf(Byte,[4,5,6,7]).parse, b"\x05", 5, None],
+    [OneOf(Byte,[4,5,6,7]).parse, b"\x08", 5, ValidationError],
+    [OneOf(Byte,[4,5,6,7]).build, 5, b"\x05", None],
+    [OneOf(Byte,[4,5,6,7]).build, 8, None, ValidationError],
+
+
 
     # # [OnDemand(UBInt8("ondemand")).parse(b"\x08").read, (), 8, None],
     # # [Struct("ondemand", UBInt8("a"), OnDemand(UBInt8("b")), UBInt8("c")).parse, b"\x07\x08\x09", Container(a=7)(b=LazyContainer(None, None, None, None))(c=9), None],

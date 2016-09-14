@@ -51,42 +51,6 @@
 #         self.assertEqual(ascii, "abcdef")
 
 
-# class TestNoneOf(unittest.TestCase):
-
-#     def setUp(self):
-#         self.n = NoneOf(UBInt8("foo"), [4, 5, 6, 7])
-
-#     def test_trivial(self):
-#         pass
-
-#     def test_parse(self):
-#         self.assertEqual(self.n.parse(b"\x08"), 8)
-
-#     def test_parse_invalid(self):
-#         self.assertRaises(ValidationError, self.n.parse, b"\x06")
-
-
-# class TestOneOf(unittest.TestCase):
-
-#     def setUp(self):
-#         self.o = OneOf(UBInt8("foo"), [4, 5, 6, 7])
-
-#     def test_trivial(self):
-#         pass
-
-#     def test_parse(self):
-#         self.assertEqual(self.o.parse(b"\x05"), 5)
-
-#     def test_parse_invalid(self):
-#         self.assertRaises(ValidationError, self.o.parse, b"\x08")
-
-#     def test_build(self):
-#         self.assertEqual(self.o.build(5), b"\x05")
-
-#     def test_build_invalid(self):
-#         self.assertRaises(ValidationError, self.o.build, 9)
-
-
 # class TestIpAddress(unittest.TestCase):
 
 #     def setUp(self):
