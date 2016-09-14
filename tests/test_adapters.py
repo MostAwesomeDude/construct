@@ -1,9 +1,6 @@
 # import unittest
 
-# from construct import FlagsAdapter, Byte, FlagsContainer, MappingError
-# from construct import Field, UBInt8
-# from construct import OneOf, NoneOf, HexDumpAdapter
-# from construct import ValidationError
+# from construct import *
 # from construct.protocols.layer3.ipv4 import IpAddress
 
 
@@ -49,6 +46,13 @@
 #         self.assertEqual(offset, "0000")
 #         self.assertEqual(digits, "61 62 63 64 65 66")
 #         self.assertEqual(ascii, "abcdef")
+
+
+# class IpAddress(Adapter):
+#     def _encode(self, obj, context):
+#         return map(int, obj.split("."))
+#     def _decode(self, obj, context):
+#         return "{0}.{1}.{2}.{3}".format(*obj)
 
 
 # class TestIpAddress(unittest.TestCase):
