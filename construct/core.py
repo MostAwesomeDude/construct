@@ -1342,13 +1342,13 @@ class Checksum(Construct):
         .parse(b"\xff<hash>") -> Container(range=Container(offset1=0)(ofsset2=1)(length=1))(a=255)(checksum=?)
         .build(dict(a=255)) -> b"\xff<hash>"
     """
-    __slots__ = ["name", "checksumfield", "hashfunc", "anchors"]
+    __slots__ = ["checksumfield", "hashfunc", "anchors"]
     def __init__(self, checksumfield, hashfunc, anchors):
         if not isinstance(checksumfield, Construct):
             raise TypeError("checksumfield should be a Construct field")
         if not callable(hashfunc):
             raise TypeError("hashfunc should be a function(bytes) -> bytes")
-        super(Checksum, self).__init__(checksumfield.name)
+        super(Checksum, self).__init__()
         self.checksumfield = checksumfield
         self.hashfunc = hashfunc
         self.anchors = anchors

@@ -5,6 +5,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from construct import *
 from construct.lib import LazyContainer
+from construct.lib.py3compat import *
 
 import sys
 import zlib
@@ -37,6 +38,9 @@ class TestAll(unittest.TestCase):
         [(b"bytes_name" / Byte).parse, b"\x01", 1, None],
 
         [Byte.parse, b"\x00", 0, None],
+        [Byte.build, 0, b"\x00", None],
+        [Byte.parse, b"\xff", 255, None],
+        [Byte.build, 255, b"\xff", None],
         [Byte.sizeof, None, 1, None],
 
         [UBInt8.parse, b"\x01", 0x01, None],
@@ -117,7 +121,19 @@ class TestAll(unittest.TestCase):
         [GreedyBytes.build, b"1234", b"1234", None],
         [GreedyBytes.sizeof, None, None, SizeofError],
 
-        # Note: FormatField is not tested because all *Int{8,16,32,64} fields use that.
+        [FormatField("<","L").parse, b"\x12\x34\x56\x78", 0x78563412, None],
+        [FormatField("<","L").build, 0x78563412, b"\x12\x34\x56\x78", None],
+        [FormatField("<","L").parse, b"\x12\x34\x56", None, FieldError],
+        # issue #115
+        # [FormatField("<","L").build, 2**100, None, FieldError if PY26 else None],
+        [FormatField("<","L").build, 9e9999, None, FieldError],
+        [FormatField("<","L").build, "string not int", None, FieldError],
+        [FormatField("<","L").sizeof, None, 4, None],
+
+
+
+
+
 
         [Array(3,Byte).parse, b"\x01\x02\x03", [1,2,3], None],
         [Array(3,Byte).parse, b"\x01\x02\x03additionalgarbage", [1,2,3], None],
@@ -177,11 +193,16 @@ class TestAll(unittest.TestCase):
         [RepeatUntil(lambda obj,ctx: obj == 9, Byte).sizeof, None, None, SizeofError],
 
         [Struct("a" / ULInt16, "b" / Byte).parse, b"\x01\x00\x02", Container(a=1)(b=2), None],
-        [Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(inner=Container(c=3)(d=4)), None],
-        [Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(c=3)(d=4), None],
         [Struct("a" / ULInt16, "b" / Byte).build, Container(a=1)(b=2), b"\x01\x00\x02", None],
+        [Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(inner=Container(c=3)(d=4)), None],
         [Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).build, Container(a=1)(b=2)(inner=Container(c=3)(d=4)), b"\x01\x00\x02\x03\x04", None],
+        [Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse, b"\x01\x00\x02\x03\x04", Container(a=1)(b=2)(c=3)(d=4), None],
         [Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build, Container(a=1)(b=2)(c=3)(d=4), b"\x01\x00\x02\x03\x04", None],
+        [Struct("a"/Struct("b"/Byte)).parse, b"\x01", Container(a=Container(b=1)), None],
+        [Struct("a"/Struct("b"/Byte)).build, Container(a=Container(b=1)), b"\x01", None],
+        [Struct("a"/Struct("b"/Byte)).sizeof, None, 1, None],
+        # issue #114
+        # [Struct("key"/Byte).build, dict(), None, KeyError],
 
         [Struct(Padding(2)).parse, b"\x00\x00", Container(), None],
         [Struct(Padding(2)).build, Container(), b"\x00\x00", None],
@@ -201,10 +222,15 @@ class TestAll(unittest.TestCase):
         [Struct("c" / Computed(lambda ctx: "moo")).build, Container(c=None), b"", None],
         # issue #102
         # [Struct("c" / Computed(lambda ctx: "moo")).build, Container(), b"", None],
+        [Computed(lambda ctx: ctx.missing).parse, None, None, AttributeError],
+        [Computed(lambda ctx: ctx["missing"]).parse, None, None, KeyError],
 
         [Anchor.parse, b"", 0, None],
         [Anchor.build, None, b"", None],
         [Anchor.sizeof, None, 0, None],
+        [Struct("a"/Anchor, "b"/Byte, "c"/Anchor).parse, b"\xff", Container(a=0)(b=255)(c=1), None],
+        [Struct("a"/Anchor, "b"/Byte, "c"/Anchor).build, Container(a=0)(b=255)(c=1), b"\xff", None],
+        [Struct("a"/Anchor, "b"/Byte, "c"/Anchor).build, dict(b=255), b"\xff", None],
 
         [AnchorRange.parse, b"", 0, None],
         [AnchorRange.build, None, b"", None],
@@ -365,7 +391,7 @@ class TestAll(unittest.TestCase):
         [ByteSwapped(Struct("a"/Byte,"b"/Byte)).parse, b"\x01\x02", Container(a=2)(b=1), None],
         [ByteSwapped(Struct("a"/Byte,"b"/Byte)).build, Container(a=2)(b=1), b"\x01\x02", None],
         [ByteSwapped(Bytes(5), size=4).parse, b"54321", None, FieldError],
-        # from issue #70
+        # closed issue #70
         [ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4))).parse, b'\xd0\xbc\xfa', Container(flag1=1)(flag2=1)(number=0xabcd), None],
         [BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitField(16), Padding(4)).parse, b'\xfa\xbc\xd1', Container(flag1=1)(flag2=1)(number=0xabcd), None],
 
@@ -533,6 +559,9 @@ class TestAll(unittest.TestCase):
         # [IpAddress.build, "300.1.2.3", None, FieldError],
         [IpAddress.sizeof, None, 4, None],
 
+        # closed issue #76
+        [Aligned(Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)), modulus=4).parse, b"\x02\xab\xcd\x00", Container(a=2)(f=b"\xab\xcd"), None],
+        [Aligned(Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)), modulus=4).build, Container(a=2)(f=b"\xab\xcd"), b"\x02\xab\xcd\x00", None],
 
 
 
