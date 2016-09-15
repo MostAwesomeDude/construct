@@ -809,29 +809,24 @@ class Restream(Subconstruct):
 
 class RawCopy(Subconstruct):
     def __init__(self, subcon):
-        Subconstruct.__init__(self, subcon)
-        # super(RawCopy, self).__init__(subcon)
+        super(RawCopy, self).__init__(subcon)
     def _parse(self, stream, context):
         offset1 = stream.tell()
         obj = self.subcon._parse(stream, context)
         offset2 = stream.tell()
         stream.seek(offset1)
         data = _read_stream(stream, offset2-offset1)
-        d = dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
-        context[self.name] = d
-        return d
+        return dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
     def _build(self, obj, stream, context):
         if 'data' in obj:
             data = obj['data']
-            # context[self.name] = dict(data=data)
             _write_stream(stream, len(data), data)
-            return dict(data=data)
+            return dict(data=data, length=len(data))
         elif 'value' in obj:
             value = obj['value']
             data = self.subcon.build(value, context)
-            # context[self.name] = dict(data=data)
             _write_stream(stream, len(data), data)
-            return dict(data=data, value=value)
+            return dict(data=data, value=value, length=len(data))
         else:
             raise ConstructError('both data and value keys are missing')
 
@@ -862,66 +857,67 @@ class Anchor(Construct):
         # super(Anchor, self).__init__()
         self.flagbuildnone = True
     def _parse(self, stream, context):
-        position = stream.tell()
-        context[self.name] = position
-        return position
+        return stream.tell()
     def _build(self, obj, stream, context):
-        position = stream.tell()
-        context[self.name] = position
+        return stream.tell()
     def _sizeof(self, context):
         return 0
 
 
-@singleton
-class AnchorRange(Construct):
-    r"""
-    Gets the stream position at two times when parsing or building.
+AnchorRange = None
 
-    Anchors are useful to measure sizes of Constructs. Place two AnchorRanges with same name, and the second one will return a container with both offsets and length. 
+# @singleton
+# class AnchorRange(Construct):
+#     r"""
+#     Gets the stream position at two times when parsing or building.
 
-    This can also be used for checksumming. Give the Checksum field the name of this AnchorRange.
+#     Anchors are useful to measure sizes of Constructs. Place two AnchorRanges with same name, and the second one will return a container with both offsets and length. 
 
-    ??the name of the anchor range (same for both instances)
+#     This can also be used for checksumming. Give the Checksum field the name of this AnchorRange.
 
-    .. note:: Requires a tellable stream.
+#     ??the name of the anchor range (same for both instances)
 
-    Example::
+#     .. note:: Requires a tellable stream.
 
-        Struct("struct",
-            AnchorRange("range"),
-            Byte("a"),
-            AnchorRange("range"),
-        )
-        .parse(b"\xff") -> Container(range=Container(offset1=0)(ofsset2=1)(length=1))(a=255)
-        .build(dict(a=1)) -> b"\x01"
-        .sizeof() -> 1
-    """
-    def __init__(self):
-        Construct.__init__(self)
-        # super(AnchorRange, self).__init__()
-        self.flagbuildnone = True
-    def _parse(self, stream, context):
-        position = stream.tell()
-        if self.name not in context:
-            context[self.name] = position
-            return position
-        else:
-            offset1 = context[self.name]
-            offset2 = position
-            obj = Container(offset1=offset1)(offset2=offset2)(length=offset2-offset1)
-            context[self.name] = obj
-            return obj
-    def _build(self, obj, stream, context):
-        position = stream.tell()
-        if self.name not in context:
-            context[self.name] = position
-        else:
-            offset1 = context[self.name]
-            offset2 = position
-            obj = Container(offset1=offset1)(offset2=offset2)(length=offset2-offset1)
-            context[self.name] = obj
-    def _sizeof(self, context):
-        return 0
+#     Example::
+
+#         Struct("struct",
+#             AnchorRange("range"),
+#             Byte("a"),
+#             AnchorRange("range"),
+#         )
+#         .parse(b"\xff") -> Container(range=Container(offset1=0)(ofsset2=1)(length=1))(a=255)
+#         .build(dict(a=1)) -> b"\x01"
+#         .sizeof() -> 1
+#     """
+#     def __init__(self):
+#         Construct.__init__(self)
+#         # super(AnchorRange, self).__init__()
+#         self.flagbuildnone = True
+#     def _parse(self, stream, context):
+#         print(context)
+#         position = stream.tell()
+#         if self.name not in context:
+#             context[self.name] = position
+#             return position
+#         else:
+#             offset1 = context[self.name]
+#             offset2 = position
+#             obj = Container(offset1=offset1)(offset2=offset2)(length=offset2-offset1)
+#             context[self.name] = obj
+#             return obj
+#     def _build(self, obj, stream, context):
+#         print(obj, context)
+#         position = stream.tell()
+#         if self.name not in context:
+#             context[self.name] = position
+#         else:
+#             offset1 = context[self.name]
+#             offset2 = position
+#             obj = Container(offset1=offset1)(offset2=offset2)(length=offset2-offset1)
+#             context[self.name] = obj
+#     def _sizeof(self, context):
+#         return 0
 
 
 
@@ -952,8 +948,7 @@ class Computed(Construct):
     def _parse(self, stream, context):
         return self.func(context)
     def _build(self, obj, stream, context):
-        context[self.name] = self.func(context)
-        pass
+        return self.func(context)
     def _sizeof(self, context):
         return 0
 

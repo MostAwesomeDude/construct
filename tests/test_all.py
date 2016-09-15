@@ -228,11 +228,11 @@ class TestAll(declarativeunittest.TestCase):
         [Struct("a"/Anchor, "b"/Byte, "c"/Anchor).build, Container(a=0)(b=255)(c=1), b"\xff", None],
         [Struct("a"/Anchor, "b"/Byte, "c"/Anchor).build, dict(b=255), b"\xff", None],
 
-        [AnchorRange.parse, b"", 0, None],
-        [AnchorRange.build, None, b"", None],
-        [AnchorRange.sizeof, None, 0, None],
-        [Struct("anchorrange"/AnchorRange, "a"/Byte, "anchorrange"/AnchorRange,allow_overwrite=True).parse, b"\xff", Container(anchorrange=Container(offset1=0)(offset2=1)(length=1))(a=255), None],
-        [Struct("anchorrange"/AnchorRange, "a"/Byte, "anchorrange"/AnchorRange,allow_overwrite=True).build, dict(a=255), b"\xff", None],
+        # [AnchorRange.parse, b"", 0, None],
+        # [AnchorRange.build, None, b"", None],
+        # [AnchorRange.sizeof, None, 0, None],
+        # [Struct("anchorrange"/AnchorRange, "a"/Byte, "anchorrange"/AnchorRange).parse, b"\xff", Container(anchorrange=Container(offset1=0)(offset2=1)(length=1))(a=255), None],
+        # [Struct("anchorrange"/AnchorRange, "a"/Byte, "anchorrange"/AnchorRange).build, dict(a=255), b"\xff", None],
 
         [Pass.parse, b"", None, None],
         [Pass.build, None, b"", None],
