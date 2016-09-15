@@ -268,22 +268,21 @@ class ListContainer(list):
 
 
 class LazyContainer(object):
-    __slots__ = ["subcons", "offsetmap", "values", "stream", "position", "context"]
+    __slots__ = ["subcons", "offsetmap", "values", "stream", "addoffset", "context"]
 
-    def __init__(self, subcons, offsetmap, values, stream, position, context):
+    def __init__(self, subcons, offsetmap, values, stream, addoffset, context):
         self.subcons = subcons
         self.offsetmap = offsetmap
         self.values = values
         self.stream = stream
-        self.position = position
+        self.addoffset = addoffset
         self.context = context
 
     def __getitem__(self, key):
         if key not in self.values:
             at, sc = self.offsetmap.pop(key)
-            self.stream.seek(at, 0)
-            val = sc._parse(self.stream, self.context)
-            self.values[key] = val
+            self.stream.seek(self.addoffset + at)
+            self.values[key] = sc._parse(self.stream, self.context)
         return self.values[key]
 
     def __getattr__(self, name):

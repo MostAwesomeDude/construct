@@ -537,6 +537,19 @@ class TestAll(declarativeunittest.TestCase):
         [OnDemand(Byte).build, 1, b"\x01", None],
         [OnDemand(Byte).sizeof, None, 1, None],
 
+        [LazyStruct("a"/Byte,"b"/CString()).parse, b"\x01abc\x00", dict(a=1,b=b"abc"), None],
+        [LazyStruct("a"/Byte,"b"/CString()).build, dict(a=1,b=b"abc"), b"\x01abc\x00", None],
+        [LazyStruct("a"/Byte,"b"/CString()).sizeof, None, None, SizeofError],
+        [LazyStruct("a"/Byte).parse, b"\x01", dict(a=1), None],
+        [LazyStruct("a"/Byte).build, dict(a=1), b"\x01", None],
+        [LazyStruct("a"/Byte).sizeof, None, 1, None],
+        [LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).parse, b"", dict(), None],
+        [LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).build, dict(), b"", None],
+        [LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).sizeof, None, 0, None],
+        [LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).parse, b"\x01\x02", dict(a=1,b=dict(c=2)), None],
+        [LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).build, dict(a=1,b=dict(c=2)), b"\x01\x02", None],
+
+
         # issue #109
         # [OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03\x04"), None, 3, None],
         [OnDemandPointer(lambda ctx: 2, Byte).build, 1, b"\x00\x00\x01", None],

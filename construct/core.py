@@ -1424,7 +1424,6 @@ class LazyStruct(Construct):
 
     If entire struct is fixed size, then all fields are parsed only when their keys are first accessed. Otherwise variable length fields are parsed immediately and fixed length fields are parsed later.
 
-    :param name: the name of the structure
     :param subcons: a sequence of subconstructs that make up this structure.
 
     Example::
@@ -1436,12 +1435,10 @@ class LazyStruct(Construct):
         )
         .parse(b"\x01\x00\x02abcde") -> LazyContainer(a=1,b=2,c=?)
     """
-    __slots__ = ["subcons", "nested", "allowoverwrite", "offsetmap", "totalsizeof", "subsizes"]
-    def __init__(self, name, *subcons, **kw):
-        super(LazyStruct, self).__init__(name)
+    __slots__ = ["subcons", "offsetmap", "totalsizeof", "subsizes"]
+    def __init__(self, *subcons, **kw):
+        super(LazyStruct, self).__init__()
         self.subcons = subcons
-        # self.nested = kw.pop("nested", True)
-        self.allowoverwrite = kw.pop("allowoverwrite", False)
         self._inherit_flags(*subcons)
         self.flagembedded = False
 
@@ -1469,7 +1466,6 @@ class LazyStruct(Construct):
             position = stream.tell()
             stream.seek(self.totalsizeof, 1)
             return LazyContainer(self.subcons, self.offsetmap, {}, stream, position, context)
-
         offsetmap = {}
         values = {}
         position = stream.tell()
@@ -1487,14 +1483,16 @@ class LazyStruct(Construct):
 
     def _build(self, obj, stream, context):
         for sc in self.subcons:
-            if sc.name is None:
-                subobj = None
-            elif isinstance(sc, (Computed, Anchor, AnchorRange, Checksum)):
+            if sc.flagembedded:
+                subobj = obj
+            elif sc.name is None or sc.flagbuildnone:
                 subobj = None
             else:
                 subobj = obj[sc.name]
                 context[sc.name] = subobj
-            sc._build(subobj, stream, context)
+            buildsubobj = sc._build(subobj, stream, context)
+            if buildsubobj is not None and sc.name is not None:
+                context[sc.name] = buildsubobj
 
     def _sizeof(self, context):
         if self.totalsizeof is not None:
@@ -1992,15 +1990,11 @@ class Struct(Construct):
             else:
                 subobj = sc._parse(stream, context)
                 if sc.name is not None:
-                    # if sc.name in obj and not self.allow_overwrite:
-                    #     raise OverwriteError("%r would be overwritten but allow_overwrite is False" % (sc.name,))
                     obj[sc.name] = subobj
                     context[sc.name] = subobj
             context[i] = subobj
         return obj
     def _build(self, obj, stream, context):
-        # context = Container(_ = context)
-        # print('in Struct ',obj,context)
         for sc in self.subcons:
             if sc.flagembedded:
                 subobj = obj
@@ -2009,13 +2003,11 @@ class Struct(Construct):
             else:
                 subobj = obj[sc.name]
                 context[sc.name] = subobj
-            # print('member ',sc.name, subobj, obj, context)
             buildsubobj = sc._build(subobj, stream, context)
             if buildsubobj is not None and sc.name is not None:
                 context[sc.name] = buildsubobj
 
     def _sizeof(self, context):
-        # context = Container(_ = context)
         return sum(sc._sizeof(context) for sc in self.subcons)
 
 
