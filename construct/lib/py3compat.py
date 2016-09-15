@@ -41,8 +41,13 @@ if PY3:
         return unicode2str(s) if isinstance(s,str) else s
 
     def iteratebytes(s):
-        """Itarates though b'...' string yielding characters as ints. On PY3 iter is the same."""
+        """Iterates though b'...' string yielding characters as b'...' characters. On PY2 iter is the same."""
+        return map(int2byte, s)
+
+    def iterateints(s):
+        """Iterates though b'...' string yielding characters as ints. On PY3 iter is the same."""
         return s
+
 
 else:
     stringtypes = (str, unicode, )
@@ -75,7 +80,10 @@ else:
         return unicode2str(s) if isinstance(s,unicode) else s
 
     def iteratebytes(s):
-        """Itarates though b'...' string yielding characters as ints. On PY3 iter is the same."""
-        for c in s:
-            yield byte2int(c)
+        """Iterates though b'...' string yielding characters as b'...' characters. On PY2 iter is the same."""
+        return s
+
+    def iterateints(s):
+        """Iterates though b'...' string yielding characters as ints. On PY3 iter is the same."""
+        return map(byte2int, s)
 

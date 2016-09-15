@@ -21,7 +21,7 @@ class TestAll(unittest.TestCase):
         self.assertEqual(unicode2str(str2unicode("abc123\n")), "abc123\n")
         self.assertEqual(str2unicode(unicode2str(u"abc123\n")), "abc123\n")
 
-        self.assertEqual(list(iteratebytes(b"abc")), [97,98,99])
+        self.assertEqual(list(iterateints(b"abc")), [97,98,99])
         for i in range(256):
-            self.assertEqual(list(iteratebytes(int2byte(i))), [i])
+            self.assertEqual(list(iterateints(int2byte(i))), [i])
 

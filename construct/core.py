@@ -10,7 +10,7 @@ from construct.lib import Container, ListContainer, LazyContainer
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
 from construct.lib import int_to_bin, bin_to_int, swap_bytes
 from construct.lib import FlagsContainer, HexString, hexdump
-from construct.lib.py3compat import int2byte, stringtypes, int2byte, iteratebytes
+from construct.lib.py3compat import int2byte, stringtypes, int2byte, iteratebytes, iterateints
 from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
 
 
@@ -2775,14 +2775,14 @@ def CString(terminators=b"\x00", encoding=None):
     return StringEncoded(
         ExprAdapter(
             RepeatUntil(lambda obj,ctx: int2byte(obj) in terminators, UBInt8),
-            encoder = lambda obj,ctx: iteratebytes(obj+terminators),
+            encoder = lambda obj,ctx: iterateints(obj+terminators),
             decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1])),
         encoding)
 
     # return StringEncoded(
     #     ExprAdapter(
     #         RepeatUntil(lambda obj,ctx: obj in terminators, Bytes(1)),
-    #         encoder = lambda obj,ctx: [int2byte(c) for c in iteratebytes(obj+terminators)],
+    #         encoder = lambda obj,ctx: iteratebytes(obj+terminators),
     #         decoder = lambda obj,ctx: b''.join(obj[:-1])),
     #     encoding)
 
