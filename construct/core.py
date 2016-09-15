@@ -2574,6 +2574,8 @@ class StringEncoded(Adapter):
 class StringPaddedTrimmed(Adapter):
     __slots__ = ["length", "padchar", "paddir", "trimdir"]
     def __init__(self, length, subcon, padchar=b"\x00", paddir="right", trimdir="right"):
+        if not isinstance(padchar, bytes):
+            raise StringError("padchar must be b-string character")
         super(StringPaddedTrimmed, self).__init__(subcon)
         self.length = length
         self.padchar = padchar
