@@ -216,6 +216,11 @@ class TestAll(declarativeunittest.TestCase):
         [Computed(lambda ctx: ctx.missing).parse, None, None, AttributeError],
         [Computed(lambda ctx: ctx["missing"]).parse, None, None, KeyError],
 
+        [RawCopy(Byte).parse, b"\xff", dict(data=b"\xff", value=255, offset1=0, offset2=1, length=1), None],
+        [RawCopy(Byte).build, dict(data=b"\xff"), b"\xff", None],
+        [RawCopy(Byte).build, dict(value=255), b"\xff", None],
+        [RawCopy(Byte).sizeof, None, 1, None],
+
         [Anchor.parse, b"", 0, None],
         [Anchor.build, None, b"", None],
         [Anchor.sizeof, None, 0, None],

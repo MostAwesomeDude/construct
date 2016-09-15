@@ -804,6 +804,26 @@ class Restream(Subconstruct):
 # miscellaneous
 #===============================================================================
 
+class RawCopy(Subconstruct):
+    def __init__(self, subcon):
+        Subconstruct.__init__(self, subcon)
+        # super(RawCopy, self).__init__(subcon)
+    def _parse(self, stream, context):
+        offset1 = stream.tell()
+        obj = self.subcon._parse(stream, context)
+        offset2 = stream.tell()
+        stream.seek(offset1)
+        data = _read_stream(stream, offset2-offset1)
+        return dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+    def _build(self, obj, stream, context):
+        if 'data' in obj:
+            _write_stream(stream, len(obj['data']), obj['data'])
+        elif 'value' in obj:
+            self.subcon._build(obj['value'], stream, context)
+        else:
+            raise ConstructError('both data and value keys are missing')
+
+
 @singleton
 class Anchor(Construct):
     r"""
