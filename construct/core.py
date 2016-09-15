@@ -2163,7 +2163,7 @@ def Alias(newname, oldname):
     :param newname: the new name
     :param oldname: the name of an existing element
     """
-    return Rename(newname, Computed(lambda ctx: ctx[oldname]))
+    return Renamed(newname, Computed(lambda ctx: ctx[oldname]))
 
 
 #===============================================================================
@@ -2409,7 +2409,6 @@ def If(predicate, subcon, elsevalue=None):
 # adapters
 #===============================================================================
 
-
 class FlagsAdapter(Adapter):
     """
     Adapter for flag fields. Each flag is extracted from the number, resulting
@@ -2598,25 +2597,6 @@ class NoneOf(Validator):
 #===============================================================================
 # strings
 #===============================================================================
-
-def _encode_string(obj, encoding):
-    if encoding:
-        if isinstance(encoding, str):
-            obj = obj.encode(encoding)
-        else:
-            obj = encoding.encode(obj)
-    else:
-        if not isinstance(obj, bytes):
-            raise StringError("no encoding provided but building from unicode string?")
-    return obj
-
-def _decode_string(obj, encoding):
-    if encoding:
-        if isinstance(encoding, str):
-            obj = obj.decode(encoding)
-        else:
-            obj = encoding.decode(obj)
-    return obj
 
 class StringEncoded(Adapter):
     __slots__ = ["encoding"]

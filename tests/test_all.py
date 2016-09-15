@@ -33,10 +33,6 @@ IpAddress = IpAddress(Array(4,Byte))
 class TestAll(unittest.TestCase):
     alltests = [
 
-        [("string_name" / Byte).parse, b"\x01", 1, None],
-        [(u"unicode_name" / Byte).parse, b"\x01", 1, None],
-        [(b"bytes_name" / Byte).parse, b"\x01", 1, None],
-
         [Byte.parse, b"\x00", 0, None],
         [Byte.build, 0, b"\x00", None],
         [Byte.parse, b"\xff", 255, None],
@@ -75,7 +71,7 @@ class TestAll(unittest.TestCase):
         [SLInt32.build, 0x04030201, b"\x01\x02\x03\x04", None],
         [SLInt64.parse, b"\x01\x02\x03\x04\x05\x06\x07\x08", 0x0807060504030201, None],
         [SLInt64.build, 0x0807060504030201, b"\x01\x02\x03\x04\x05\x06\x07\x08", None],
-        # missing sizeof testing
+        # issue #119, missing sizeof testing
 
         [UBInt24.parse, b"\x01\x02\x03", 0x010203, None],
         [UBInt24.build, 0x010203, b"\x01\x02\x03", None],
@@ -100,17 +96,16 @@ class TestAll(unittest.TestCase):
 
         [Bytes(4).parse, b"12345678", b"1234", None],
         [Bytes(4).build, b"1234", b"1234", None],
-        # TODO: issue #99
+        # issue #99
         # [Bytes(4).build, 1, b"\x00\x00\x00\x01", None],
         [Bytes(4).parse, b"", None, FieldError],
         [Bytes(4).build, b"toolong", None, FieldError],
         [Bytes(4).sizeof, None, 4, None],
 
-        # TODO: issue #100
-        # TODO: should work with dict(n=4) and this.n
+        # issue #100, should work with dict(n=4) and this.n
         [Bytes(lambda ctx: ctx.n).parse, (b"12345678",Container(n=4)), b"1234", None],
         [Bytes(lambda ctx: ctx.n).build, (b"1234",Container(n=4)), b"1234", None],
-        # TODO: issue #99
+        # issue #99
         # [Bytes(lambda ctx: ctx.n).build, (1,Container(n=4)), b"\x00\x00\x00\x01", None],
         [Bytes(lambda ctx: ctx.n).parse, (b"",Container(n=4)), None, FieldError],
         [Bytes(lambda ctx: ctx.n).build, (b"toolong",Container(n=4)), None, FieldError],
@@ -129,11 +124,6 @@ class TestAll(unittest.TestCase):
         [FormatField("<","L").build, 9e9999, None, FieldError],
         [FormatField("<","L").build, "string not int", None, FieldError],
         [FormatField("<","L").sizeof, None, 4, None],
-
-
-
-
-
 
         [Array(3,Byte).parse, b"\x01\x02\x03", [1,2,3], None],
         [Array(3,Byte).parse, b"\x01\x02\x03additionalgarbage", [1,2,3], None],
@@ -331,6 +321,12 @@ class TestAll(unittest.TestCase):
         [Flag.build, True, b"\x01", None],
         [Flag.sizeof, None, 1, None],
 
+        # closed issue #87, both b-string and u-string names
+        [("string_name" / Byte).parse, b"\x01", 1, None],
+        [(u"unicode_name" / Byte).parse, b"\x01", 1, None],
+        [(b"bytes_name" / Byte).parse, b"\x01", 1, None],
+        [(None / Byte).parse, b"\x01", 1, None],
+
         # testing / >> [] operators
         [Struct("new" / ("old" / Byte)).parse, b"\x01", Container(new=1), None],
         [Struct("new" / ("old" / Byte)).build, Container(new=1), b"\x01", None],
@@ -350,6 +346,13 @@ class TestAll(unittest.TestCase):
         # testing underlying Renamed
         [Struct(Renamed("new",Renamed("old",Byte))).parse, b"\x01", Container(new=1), None],
         [Struct(Renamed("new",Renamed("old",Byte))).build, Container(new=1), b"\x01", None],
+
+        [Alias("b","a").parse, (b"",Container(a=1)), 1, None],
+        [Alias("b","a").build, (None,Container(a=1)), b"", None],
+        [Alias("b","a").sizeof, None, 0, None],
+        [Struct("a"/Byte, Alias("b","a")).parse, b"\x01", Container(a=1)(b=1), None],
+        [Struct("a"/Byte, Alias("b","a")).build, dict(a=1), b"\x01", None],
+        [Struct("a"/Byte, Alias("b","a")).sizeof, None, 1, None],
 
         [BitField(8).parse, b"\x01\x01\x01\x01\x01\x01\x01\x01", 255, None],
         [BitField(8).build, 255, b"\x01\x01\x01\x01\x01\x01\x01\x01", None],
@@ -517,20 +520,10 @@ class TestAll(unittest.TestCase):
         [GreedyString(encoding="utf8").build, u"", b"", None],
         [GreedyString().sizeof, None, None, SizeofError],
 
-        # [ExprAdapter(UBInt8("expradapter"), 
-        #     encoder = lambda obj, ctx: obj // 7, 
-        #     decoder = lambda obj, ctx: obj * 7,
-        #     ).parse, b"\x06", 42, None],
-        # [ExprAdapter(UBInt8("expradapter"), 
-        #     encoder = lambda obj, ctx: obj // 7, 
-        #     decoder = lambda obj, ctx: obj * 7,
-        #     ).build, 42, b"\x06", None],
-
         [LazyBound(lambda ctx: Byte).parse, b"\x01", 1, None],
         [LazyBound(lambda ctx: Byte).build, 1, b"\x01", None],
         [LazyBound(lambda ctx: Byte).sizeof, None, 1, None],
 
-        # did this one come from some issue?
         [Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).parse, b"\x03\x02helloXXX", Container(length=3)(inner=Container(inner_length=2)(data=b"hello")), None],
         [Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).sizeof, Container(inner_length=2)(_=Container(length=3)), 7, None],
 
@@ -575,6 +568,15 @@ class TestAll(unittest.TestCase):
         # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
         # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
         # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
+
+        [ExprAdapter(Byte,
+            encoder = lambda obj, ctx: obj // 7,
+            decoder = lambda obj, ctx: obj * 7,
+            ).parse, b"\x06", 42, None],
+        [ExprAdapter(Byte,
+            encoder = lambda obj, ctx: obj // 7,
+            decoder = lambda obj, ctx: obj * 7,
+            ).build, 42, b"\x06", None],
 
         # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x03", "y", None],
         # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x04", None, MappingError],
