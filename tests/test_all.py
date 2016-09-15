@@ -237,11 +237,13 @@ class TestAll(declarativeunittest.TestCase):
         [Pass.parse, b"", None, None],
         [Pass.build, None, b"", None],
         [Pass.sizeof, None, 0, None],
+        [Struct("pass"/Pass).build, dict(), b"", None],
 
         [Terminator.parse, b"", None, None],
         [Terminator.parse, b"x", None, TerminatorError],
         [Terminator.build, None, b"", None],
         [Terminator.sizeof, None, 0, None],
+        [Struct("end"/Terminator).build, dict(), b"", None],
 
         [Pointer(lambda ctx: 2, "pointer" / UBInt8).parse, b"\x00\x00\x07", 7, None],
         [Pointer(lambda ctx: 2, "pointer" / UBInt8).build, 7, b"\x00\x00\x07", None],

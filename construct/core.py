@@ -988,10 +988,13 @@ class Pass(Construct):
         .parse(b'...') -> None
         .build(None) -> None
     """
+    def __init__(self):
+        Construct.__init__(self)
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         return None
     def _build(self, obj, stream, context):
-        assert obj is None
+        pass
     def _sizeof(self, context):
         return 0
 
@@ -1009,12 +1012,14 @@ class Terminator(Construct):
 
         Terminator
     """
+    def __init__(self):
+        Construct.__init__(self)
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         if stream.read(1):
             raise TerminatorError("expected end of stream")
     def _build(self, obj, stream, context):
-        if obj is not None:
-            raise FieldError("requires None when building")
+        pass
     def _sizeof(self, context):
         return 0
 
