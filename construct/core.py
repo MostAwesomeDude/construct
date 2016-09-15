@@ -2127,28 +2127,9 @@ def Alias(newname, oldname):
 #===============================================================================
 # mapping
 #===============================================================================
-def SymmetricMapping(subcon, mapping, default=NotImplemented):
+
+class Mapping(Adapter):
     r"""
-    Defines a symmetrical mapping: a->b, b->a.
-
-    :param subcon: the subcon to map
-    :param mapping: the encoding mapping (a dict); the decoding mapping is
-                    achieved by reversing this mapping
-    :param default: the default value to use when no mapping is found. if no
-                    default value is given, and exception is raised. setting to Pass would
-                    return the value "as is" (unmapped)
-    """
-    reversed_mapping = dict((v, k) for k, v in mapping.items())
-    return MappingAdapter(subcon,
-        encoding = mapping,
-        decoding = reversed_mapping,
-        encdefault = default,
-        decdefault = default,
-    )
-
-
-class MappingAdapter(Adapter):
-    """
     Adapter that maps objects to other objects.
     See SymmetricMapping and Enum.
 
@@ -2164,7 +2145,7 @@ class MappingAdapter(Adapter):
     """
     __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
     def __init__(self, subcon, decoding, encoding, decdefault=NotImplemented, encdefault=NotImplemented):
-        super(MappingAdapter, self).__init__(subcon)
+        super(Mapping, self).__init__(subcon)
         self.decoding = decoding
         self.encoding = encoding
         self.decdefault = decdefault
@@ -2191,7 +2172,48 @@ class MappingAdapter(Adapter):
             return self.decdefault
 
 
-def Enum(subcon, **kw):
+def SymmetricMapping(subcon, mapping, default=NotImplemented):
+    r"""
+    Defines a symmetrical mapping: a->b, b->a.
+
+    :param subcon: the subcon to map
+    :param mapping: the encoding mapping (a dict); the decoding mapping is
+                    achieved by reversing this mapping
+    :param default: the default value to use when no mapping is found. if no
+                    default value is given, and exception is raised. setting to Pass would
+                    return the value "as is" (unmapped)
+    """
+    return Mapping(subcon,
+        encoding = mapping,
+        decoding = dict((v, k) for k, v in mapping.items()),
+        encdefault = default,
+        decdefault = default,
+    )
+
+
+@singletonfunction
+def Flag():
+    return SymmetricMapping(UBInt8, {True : 1, False : 0}, default=True)
+
+# @singleton
+# class Flag(Construct):
+#     r"""
+#     A boolean flag.
+
+#     Non-zero byte (or bit) is considered as True, zero is False.
+
+#     .. note:: This construct works with both bit and byte contexts.
+
+#     """
+#     def _parse(self, stream, context):
+#         return _read_stream(stream, 1) != b'\x00'
+#     def _build(self, obj, stream, context):
+#         _write_stream(stream, 1, b'\x01' if bool(obj) else b'\x00')
+#     def _sizeof(self, context):
+#         return 1
+
+
+def Enum(subcon, mapping, default=NotImplemented):
     r"""
     A set of named values mapping.
 
@@ -2202,16 +2224,40 @@ def Enum(subcon, **kw):
                       and exception is raised when the mapping is undefined. use `Pass` to
                       pass the unmapped value as-is
     """
-    return SymmetricMapping(subcon, kw, kw.pop("_default_", NotImplemented))
+    return SymmetricMapping(subcon, mapping, default)
 
-def FlagsEnum(subcon, **kw):
+
+class FlagsEnum(Adapter):
     r"""
     A set of flag values mapping.
 
-    :param subcon: the subcon to map
+    Adapter for flag fields. Each flag is extracted from the number, resulting
+    in a FlagsContainer object. Not intended for direct usage. See FlagsEnum.
+
+    :param subcon: the subcon to extract
+    :param flags: a dictionary mapping flag-names to their value
     :param \*\*kw: keyword arguments which serve as the encoding mapping
     """
-    return FlagsAdapter(subcon, kw)
+    __slots__ = ["flags"]
+    def __init__(self, subcon, flags):
+        super(FlagsEnum, self).__init__(subcon)
+        self.flags = flags
+    def _encode(self, obj, context):
+        flags = 0
+        try:
+            for name, value in obj.items():
+                if value:
+                    flags |= self.flags[name]
+        except AttributeError:
+            raise MappingError("not a mapping type: %r" % (obj,))
+        except KeyError:
+            raise MappingError("unknown flag: %s" % name)
+        return flags
+    def _decode(self, obj, context):
+        obj2 = FlagsContainer()
+        for name, value in self.flags.items():
+            obj2[name] = bool(obj & value)
+        return obj2
 
 
 #===============================================================================
@@ -2363,35 +2409,6 @@ def If(predicate, subcon, elsevalue=None):
 #===============================================================================
 # adapters
 #===============================================================================
-
-class FlagsAdapter(Adapter):
-    """
-    Adapter for flag fields. Each flag is extracted from the number, resulting
-    in a FlagsContainer object. Not intended for direct usage. See FlagsEnum.
-
-    :param subcon: the subcon to extract
-    :param flags: a dictionary mapping flag-names to their value
-    """
-    __slots__ = ["flags"]
-    def __init__(self, subcon, flags):
-        super(FlagsAdapter, self).__init__(subcon)
-        self.flags = flags
-    def _encode(self, obj, context):
-        flags = 0
-        try:
-            for name, value in obj.items():
-                if value:
-                    flags |= self.flags[name]
-        except AttributeError:
-            raise MappingError("not a mapping type: %r" % (obj,))
-        except KeyError:
-            raise MappingError("unknown flag: %s" % name)
-        return flags
-    def _decode(self, obj, context):
-        obj2 = FlagsContainer()
-        for name, value in self.flags.items():
-            obj2[name] = bool(obj & value)
-        return obj2
 
 
 class ExprAdapter(Adapter):
@@ -2749,25 +2766,4 @@ def GreedyString(encoding=None):
 #===============================================================================
 # other
 #===============================================================================
-
-# @singletonfunction
-# def Flag():
-#     return SymmetricMapping(UBInt8, {True : 1, False : 0}, default=True)
-
-@singleton
-class Flag(Construct):
-    r"""
-    A boolean flag.
-
-    Non-zero byte (or bit) is considered as True, zero is False.
-
-    .. note:: This construct works with both bit and byte contexts.
-
-    """
-    def _parse(self, stream, context):
-        return _read_stream(stream, 1) != b'\x00'
-    def _build(self, obj, stream, context):
-        _write_stream(stream, 1, b'\x01' if bool(obj) else b'\x00')
-    def _sizeof(self, context):
-        return 1
 

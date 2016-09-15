@@ -317,23 +317,6 @@ class TestAll(unittest.TestCase):
         [Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).build, Container(a=1)(b=2), b"\x01\x00\x00\x00\x02", None],
         [Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).sizeof, None, 5, None],
 
-        [Enum(Byte,q=3,r=4,t=5).parse, b"\x04", "r", None],
-        [Enum(Byte,q=3,r=4,t=5).parse, b"\x07", None, MappingError],
-        [Enum(Byte,q=3,r=4,t=5, _default_="spam").parse, b"\x07", "spam", None],
-        [Enum(Byte,q=3,r=4,t=5, _default_=Pass).parse, b"\x07", 7, None],
-        [Enum(Byte,q=3,r=4,t=5).build, "r", b"\x04", None],
-        [Enum(Byte,q=3,r=4,t=5).build, "spam", None, MappingError],
-        [Enum(Byte,q=3,r=4,t=5, _default_=9).build, "spam", b"\x09", None],
-        [Enum(Byte,q=3,r=4,t=5, _default_=Pass).build, 9, b"\x09", None],
-        [Enum(Byte,q=3,r=4,t=5).sizeof, None, 1, None],
-
-        [Flag.parse, b"\x00", False, None],
-        [Flag.parse, b"\x01", True, None],
-        [Flag.parse, b"\xff", True, None],
-        [Flag.build, False, b"\x00", None],
-        [Flag.build, True, b"\x01", None],
-        [Flag.sizeof, None, 1, None],
-
         # closed issue #87, both b-string and u-string names
         [("string_name" / Byte).parse, b"\x01", 1, None],
         [(u"unicode_name" / Byte).parse, b"\x01", 1, None],
@@ -591,18 +574,34 @@ class TestAll(unittest.TestCase):
             decoder = lambda obj, ctx: obj * 7,
             ).build, 42, b"\x06", None],
 
-        # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x03", "y", None],
-        # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).parse, b"\x04", None, MappingError],
-        # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, decdefault="foo").parse, b"\x04", "foo", None],
-        # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, decdefault=Pass).parse, b"\x04", 4, None],
-        # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).build, "y", b"\x03", None],
-        # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}).build, "z", None, MappingError],
-        # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, encdefault=17).build, "foo", b"\x11", None],
-        # [MappingAdapter(UBInt8("mappingadapter"), {2:"x",3:"y"}, {"x":2,"y":3}, encdefault=Pass).build, 4, b"\x04", None],
+        [Flag.parse, b"\x00", False, None],
+        [Flag.parse, b"\x01", True, None],
+        [Flag.parse, b"\xff", True, None],
+        [Flag.build, False, b"\x00", None],
+        [Flag.build, True, b"\x01", None],
+        [Flag.sizeof, None, 1, None],
 
-        # [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).parse, b"\x81", FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), None],
-        # [FlagsAdapter(UBInt8("flagsadapter"), {"a":1,"b":2,"c":4,"d":8,"e":16,"f":32,"g":64,"h":128}).build, FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), b"\x81", None],
+        [Enum(Byte,dict(q=3,r=4,t=5)).parse, b"\x04", "r", None],
+        [Enum(Byte,dict(q=3,r=4,t=5)).build, "r", b"\x04", None],
+        [Enum(Byte,dict(q=3,r=4,t=5)).parse, b"\x07", None, MappingError],
+        [Enum(Byte,dict(q=3,r=4,t=5)).build, "spam", None, MappingError],
+        [Enum(Byte,dict(q=3,r=4,t=5), default="spam").parse, b"\x07", "spam", None],
+        [Enum(Byte,dict(q=3,r=4,t=5), default=9).build, "spam", b"\x09", None],
+        [Enum(Byte,dict(q=3,r=4,t=5), default=Pass).parse, b"\x07", 7, None],
+        [Enum(Byte,dict(q=3,r=4,t=5), default=Pass).build, 9, b"\x09", None],
+        [Enum(Byte,dict(q=3,r=4,t=5)).sizeof, None, 1, None],
+
+        [FlagsEnum(Byte, dict(a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128)).parse, b'\x81', FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), None],
+        [FlagsEnum(Byte, dict(a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128)).build, FlagsContainer(a=True, b=False,c=False,d=False,e=False,f=False,g=False,h=True), b'\x81', None],
+        [FlagsEnum(Byte, dict(feature=4,output=2,input=1)).parse, b'\x04', FlagsContainer(output=False,feature=True,input=False), None],
+        [FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build, dict(feature=True, output=True, input=False), b'\x06', None],
+        [FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build, dict(feature=True), b'\x04', None],
+        [FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build, dict(), b'\x00', None],
+        [FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build, dict(unknown=True), None, MappingError],
+
     ]
+
+
 
     def test_suite(self):
         errors = []
