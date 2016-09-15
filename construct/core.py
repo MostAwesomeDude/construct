@@ -5,6 +5,7 @@ from io import BytesIO, StringIO
 import sys
 import collections
 import codecs
+from binascii import hexlify
 
 from construct.lib import Container, ListContainer, LazyContainer
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
@@ -814,12 +815,18 @@ class RawCopy(Subconstruct):
         offset2 = stream.tell()
         stream.seek(offset1)
         data = _read_stream(stream, offset2-offset1)
-        return dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+        d = dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+        context[self.name] = d
+        return d
     def _build(self, obj, stream, context):
         if 'data' in obj:
-            _write_stream(stream, len(obj['data']), obj['data'])
+            data = obj['data']
+            context[self.name] = dict(data=data)
+            _write_stream(stream, len(data), data)
         elif 'value' in obj:
-            self.subcon._build(obj['value'], stream, context)
+            data = self.subcon.build(obj['value'], context)
+            context[self.name] = dict(data=data)
+            _write_stream(stream, len(data), data)
         else:
             raise ConstructError('both data and value keys are missing')
 
@@ -1323,35 +1330,23 @@ class Checksum(Construct):
         .parse(b"\xff<hash>") -> Container(range=Container(offset1=0)(ofsset2=1)(length=1))(a=255)(checksum=?)
         .build(dict(a=255)) -> b"\xff<hash>"
     """
-    __slots__ = ["checksumfield", "hashfunc", "anchors"]
-    def __init__(self, checksumfield, hashfunc, anchors):
-        if not isinstance(checksumfield, Construct):
-            raise TypeError("checksumfield should be a Construct field")
-        if not callable(hashfunc):
-            raise TypeError("hashfunc should be a function(bytes) -> bytes")
+    __slots__ = ["checksumfield", "hashfunc", "rawcopy"]
+    def __init__(self, checksumfield, hashfunc, rawcopy):
         super(Checksum, self).__init__()
         self.checksumfield = checksumfield
         self.hashfunc = hashfunc
-        self.anchors = anchors
+        self.rawcopy = rawcopy
         self.flagbuildnone = True
     def _parse(self, stream, context):
         hash1 = self.checksumfield._parse(stream, context)
-        current = stream.tell()
-        startsat = context[self.anchors]["offset1"]
-        endsat = context[self.anchors]["offset2"]
-        stream.seek(startsat, 0)
-        hash2 = self.hashfunc(_read_stream(stream, endsat-startsat))
-        stream.seek(current, 0)
+        hash2 = self.hashfunc(context[self.rawcopy]["data"])
         if hash1 != hash2:
-            raise ChecksumError("wrong checksum, read %r, computed %r" % (hash1, hash2))
+            raise ChecksumError("wrong checksum, read %r, computed %r" % (hexlify(hash1), hexlify(hash2)))
         return hash1
     def _build(self, obj, stream, context):
-        current = stream.tell()
-        startsat = context[self.anchors]["offset1"]
-        endsat = context[self.anchors]["offset2"]
-        stream.seek(startsat, 0)
-        hash2 = self.hashfunc(_read_stream(stream, endsat-startsat))
-        stream.seek(current, 0)
+        # print(obj)
+        # print(context)
+        hash2 = self.hashfunc(context[self.rawcopy]["data"])
         self.checksumfield._build(hash2, stream, context)
     def _sizeof(self, context):
         return self.checksumfield._sizeof(context)

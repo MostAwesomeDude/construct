@@ -77,23 +77,24 @@ class TestAnchor(unittest.TestCase):
     #     Outer.build(dict(name=b"unknown", occupation=b"worker", raw_payload=payload, payload_len=payload_len, checksum=checksum, serial=12345, struct_type=9001))
 
 
-# class TestChecksum(unittest.TestCase):
+class TestChecksum(unittest.TestCase):
 
-#     def test(self):
-#         def sha512(b):
-#             return hashlib.sha512(b).digest()
-#         struct = Struct(
-#             "a" / Byte,
-#             "range" / AnchorRange,
-#             "b" / Byte,
-#             "range" / AnchorRange,
-#             "checksum" / Checksum(Bytes(64), sha512, "range"),
-#             allow_overwrite=True,
-#         )
-#         c = b"\xfa\xb8H\xc9\xb6W\xa8S\xee7\xc0\x9c\xbf\xdd\x14\x9d\x0b8\x07\xb1\x91\xdd\xe9\xb6#\xcc\xd9R\x81\xdd\x18p[H\xc8\x9b\x15\x03\x908E\xbb\xa5u9E5\x1f\xe6\xb4T\x85'`\xf75)\xcf\x01\xca\x8fi\xdc\xca"
-#         self.assertEqual(sha512(b"\x02"), c)
-#         self.assertEqual(struct.parse(b"\x01\x02"+c), Container(a=1)(range=Container(offset1=1)(offset2=2)(length=1))(b=2)(checksum=c))
-#         self.assertEqual(struct.build(dict(a=1,b=2)), b"\x01\x02"+c)
+    def test(self):
+        def sha512(b):
+            return hashlib.sha512(b).digest()
+        struct = Struct(
+            "fields" / RawCopy(Struct(
+                "a" / Byte,
+                "b" / Byte,
+            )),
+            "checksum" / Checksum(Bytes(64), sha512, "fields"),
+        )
+
+        c = sha512(b"\x01\x02")
+        self.assertEqual(struct.parse(b"\x01\x02"+c), Container(fields=dict(data=b"\x01\x02", value=Container(a=1)(b=2), offset1=0, offset2=2, length=2))(checksum=c))
+        self.assertEqual(struct.build(dict(fields=dict(data=b"\x01\x02"))), b"\x01\x02"+c)
+        # issue #124
+        # self.assertEqual(struct.build(dict(fields=dict(value=dict(a=1,b=2)))), b"\x01\x02"+c)
 
 
 # class TestEmbedOptional(unittest.TestCase):
