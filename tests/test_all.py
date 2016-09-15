@@ -13,9 +13,6 @@ try:
 except LookupError:
     zlibcodecraises = LookupError
 
-class ZlibCodec(object):
-    encode = staticmethod(zlib.compress)
-    decode = staticmethod(zlib.decompress)
 
 
 class TestAll(declarativeunittest.TestCase):
@@ -99,10 +96,11 @@ class TestAll(declarativeunittest.TestCase):
 
         [Bytes(4).parse, b"12345678", b"1234", None],
         [Bytes(4).build, b"1234", b"1234", None],
-        # issue #99
-        # [Bytes(4).build, 1, b"\x00\x00\x00\x01", None],
         [Bytes(4).parse, b"", None, FieldError],
         [Bytes(4).build, b"toolong", None, FieldError],
+        # issue #99
+        # [Bytes(4).build, 1, None, FieldError],
+        # [Bytes(4).build, 0x01020304, None, FieldError],
         [Bytes(4).sizeof, None, 4, None],
 
         # issue #100, should work with dict(n=4) and this.n
@@ -121,9 +119,11 @@ class TestAll(declarativeunittest.TestCase):
 
         [FormatField("<","L").parse, b"\x12\x34\x56\x78", 0x78563412, None],
         [FormatField("<","L").build, 0x78563412, b"\x12\x34\x56\x78", None],
+        # issue #115
+        # [FormatField("<","L").parse, b"\x12\x34\x56", '\x00\x00\x00\x00', FieldError if not PY26 else None],
         [FormatField("<","L").parse, b"\x12\x34\x56", None, FieldError],
         # issue #115
-        # [FormatField("<","L").build, 2**100, None, FieldError if PY26 else None],
+        # [FormatField("<","L").build, 2**100, None, FieldError if not PY26 else None],
         [FormatField("<","L").build, 9e9999, None, FieldError],
         [FormatField("<","L").build, "string not int", None, FieldError],
         [FormatField("<","L").sizeof, None, 4, None],
@@ -590,7 +590,7 @@ class TestAll2(declarativeunittest.TestCase):
         [IpAddress.parse, b"\x7f\x80\x81\x82", "127.128.129.130", None],
         [IpAddress.build, "127.1.2.3", b"\x7f\x01\x02\x03", None],
         # issue #107
-        # [IpAddress.build, "300.1.2.3", None, FieldError],
+        # [IpAddress.build, "300.1.2.3", None, FieldError if not PY26 else None],
         [IpAddress.sizeof, None, 4, None],
     ]
 
