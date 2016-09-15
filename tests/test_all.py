@@ -257,6 +257,10 @@ class TestAll(declarativeunittest.TestCase):
         [Const(ULInt32, 255).build, None, b"\xff\x00\x00\x00", None],
         [Const(ULInt32, 255).build, 255, b"\xff\x00\x00\x00", None],
         [Const(ULInt32, 255).sizeof, None, 4, None],
+        [Struct("sig" / Const(b"MZ")).parse, b"MZ", Container(sig=b"MZ"), None],
+        [Struct("sig" / Const(b"MZ")).build, Container(sig=b"MZ"), b"MZ", None],
+        [Struct("sig" / Const(b"MZ")).build, Container(), b"MZ", None],
+        [Struct("sig" / Const(b"MZ")).sizeof, None, 2, None],
 
         [Switch(lambda ctx: 5, {1:Byte, 5:UBInt16}).parse, b"\x00\x02", 2, None],
         [Switch(lambda ctx: 6, {1:Byte, 5:UBInt16}).parse, b"\x00\x02", None, SwitchError],

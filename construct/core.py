@@ -1234,6 +1234,7 @@ class Const(Subconstruct):
             subcon, value = Bytes(len(value)), value
         super(Const, self).__init__(subcon)
         self.value = value
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         obj = self.subcon._parse(stream, context)
         if obj != self.value:
