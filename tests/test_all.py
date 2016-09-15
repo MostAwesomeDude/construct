@@ -17,14 +17,6 @@ class ZlibCodec(object):
     encode = staticmethod(zlib.compress)
     decode = staticmethod(zlib.decompress)
 
-class IpAddress(Adapter):
-    def _encode(self, obj, context):
-        return list(map(int, obj.split(".")))
-    def _decode(self, obj, context):
-        return "{0}.{1}.{2}.{3}".format(*obj)
-IpAddress = IpAddress(Array(4,Byte))
-
-
 
 class TestAll(declarativeunittest.TestCase):
     alltests = [
@@ -539,17 +531,9 @@ class TestAll(declarativeunittest.TestCase):
         [OnDemandPointer(lambda ctx: 2, Byte).build, 1, b"\x00\x00\x01", None],
         [OnDemandPointer(lambda ctx: 2, Byte).sizeof, None, 0, None],
 
-        [IpAddress.parse, b"\x7f\x80\x81\x82", "127.128.129.130", None],
-        [IpAddress.build, "127.1.2.3", b"\x7f\x01\x02\x03", None],
-        # issue #107
-        # [IpAddress.build, "300.1.2.3", None, FieldError],
-        [IpAddress.sizeof, None, 4, None],
-
         # closed issue #76
         [Aligned(Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)), modulus=4).parse, b"\x02\xab\xcd\x00", Container(a=2)(f=b"\xab\xcd"), None],
         [Aligned(Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)), modulus=4).build, Container(a=2)(f=b"\xab\xcd"), b"\x02\xab\xcd\x00", None],
-
-
 
         # [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
         # [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", None, SizeofError],
@@ -560,15 +544,6 @@ class TestAll(declarativeunittest.TestCase):
         # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
         # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
         # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-
-        [ExprAdapter(Byte,
-            encoder = lambda obj, ctx: obj // 7,
-            decoder = lambda obj, ctx: obj * 7,
-            ).parse, b"\x06", 42, None],
-        [ExprAdapter(Byte,
-            encoder = lambda obj, ctx: obj // 7,
-            decoder = lambda obj, ctx: obj * 7,
-            ).build, 42, b"\x06", None],
 
         [Flag.parse, b"\x00", False, None],
         [Flag.parse, b"\x01", True, None],
@@ -597,5 +572,25 @@ class TestAll(declarativeunittest.TestCase):
 
     ]
 
+MulDiv = ExprAdapter(Byte,
+    encoder = lambda obj,ctx: obj // 7,
+    decoder = lambda obj,ctx: obj * 7, )
 
+IpAddress = ExprAdapter(Array(4,Byte), 
+    encoder = lambda obj,ctx: list(map(int, obj.split("."))),
+    decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj), )
+
+class TestAll2(declarativeunittest.TestCase):
+    alltests = [
+
+        [MulDiv.parse, b"\x06", 42, None],
+        [MulDiv.build, 42, b"\x06", None],
+        [MulDiv.sizeof, None, 1, None],
+
+        [IpAddress.parse, b"\x7f\x80\x81\x82", "127.128.129.130", None],
+        [IpAddress.build, "127.1.2.3", b"\x7f\x01\x02\x03", None],
+        # issue #107
+        # [IpAddress.build, "300.1.2.3", None, FieldError],
+        [IpAddress.sizeof, None, 4, None],
+    ]
 
