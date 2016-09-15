@@ -206,8 +206,7 @@ class TestAll(unittest.TestCase):
         [Struct("a"/Struct("b"/Byte)).parse, b"\x01", Container(a=Container(b=1)), None],
         [Struct("a"/Struct("b"/Byte)).build, Container(a=Container(b=1)), b"\x01", None],
         [Struct("a"/Struct("b"/Byte)).sizeof, None, 1, None],
-        # issue #114
-        # [Struct("key"/Byte).build, dict(), None, KeyError],
+        [Struct("key"/Byte).build, dict(), None, KeyError],
 
         [Struct(Padding(2)).parse, b"\x00\x00", Container(), None],
         [Struct(Padding(2)).build, Container(), b"\x00\x00", None],
