@@ -581,6 +581,7 @@ class TestAll(declarativeunittest.TestCase):
 
     ]
 
+
 MulDiv = ExprAdapter(Byte,
     encoder = lambda obj,ctx: obj // 7,
     decoder = lambda obj,ctx: obj * 7, )
@@ -602,4 +603,17 @@ class TestAll2(declarativeunittest.TestCase):
         # [IpAddress.build, "300.1.2.3", None, FieldError if not PY26 else None],
         [IpAddress.sizeof, None, 4, None],
     ]
+
+
+Node = Struct(
+    "value" / UBInt8,
+    "next" / LazyBound(lambda ctx: Node), )
+
+# issue #127
+# class TestAll3(declarativeunittest.TestCase):
+#     alltests = [
+
+#         [Node.parse, b"\x01", None, FieldError],
+#     ]
+
 

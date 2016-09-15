@@ -953,61 +953,22 @@ class Computed(Construct):
         return 0
 
 
-#class Dynamic(Construct):
-#    """
-#    Dynamically creates a construct and uses it for parsing and building.
-#    This allows you to create change the construction tree on the fly.
-#    Deprecated.
-#
-#    Parameters:
-#    * factoryfunc - a function that takes the context and returns a new
-#      construct object which will be used for parsing and building.
-#
-#    Example:
-#    def factory(ctx):
-#        if ctx.bar == 8:
-#            return UBInt8("spam")
-#        if ctx.bar == 9:
-#            return String("spam", 9)
-#
-#    Struct("foo",
-#        UBInt8("bar"),
-#        Dynamic("spam", factory),
-#    )
-#    """
-#    __slots__ = ["factoryfunc"]
-#    def __init__(self, name, factoryfunc):
-#        super(Dynamic, self).__init__()
-#        self.factoryfunc = factoryfunc
-#    def _parse(self, stream, context):
-#        return self.factoryfunc(context)._parse(stream, context)
-#    def _build(self, obj, stream, context):
-#        return self.factoryfunc(context)._build(obj, stream, context)
-#    def _sizeof(self, context):
-#        return self.factoryfunc(context)._sizeof(context)
-
-
 class LazyBound(Construct):
+    r"""
+    Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees).
+
+    :param subconfunc: function taking context and returning a new construct
+
+    ??? look at test suite ???
     """
-    Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees, etc.).
-
-    :param subconfunc: the function (called without arguments) returning the bound construct
-
-    Example::
-
-        foo = Struct("foo",
-            UBInt8("bar"),
-            LazyBound("next", lambda: foo),
-        )
-    """
-    __slots__ = ["subconfunc", "bound"]
+    __slots__ = ["subconfunc"]
     def __init__(self, subconfunc):
         super(LazyBound, self).__init__()
         self.subconfunc = subconfunc
     def _parse(self, stream, context):
         return self.subconfunc(context)._parse(stream, context)
     def _build(self, obj, stream, context):
-        self.subconfunc(context)._build(obj, stream, context)
+        return self.subconfunc(context)._build(obj, stream, context)
     def _sizeof(self, context):
         return self.subconfunc(context)._sizeof(context)
 
