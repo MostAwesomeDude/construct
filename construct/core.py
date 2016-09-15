@@ -10,7 +10,7 @@ from construct.lib import Container, ListContainer, LazyContainer
 from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
 from construct.lib import int_to_bin, bin_to_int, swap_bytes
 from construct.lib import FlagsContainer, HexString, hexdump
-from construct.lib.py3compat import int2byte, stringtypes
+from construct.lib.py3compat import int2byte, stringtypes, int2byte, iteratebytes
 from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
 
 
@@ -2618,8 +2618,70 @@ def _decode_string(obj, encoding):
             obj = encoding.decode(obj)
     return obj
 
+class StringEncoded(Adapter):
+    __slots__ = ["encoding"]
+    def __init__(self, subcon, encoding):
+        super(StringEncoded, self).__init__(subcon)
+        self.encoding = encoding
+    def _decode(self, obj, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.decode(self.encoding)
+            else:
+                obj = self.encoding.decode(obj)
+        return obj
+    def _encode(self, obj, context):
+        if self.encoding:
+            if isinstance(self.encoding, str):
+                obj = obj.encode(self.encoding)
+            else:
+                obj = self.encoding.encode(obj)
+        else:
+            if not isinstance(obj, bytes):
+                raise StringError("no encoding provided but building from unicode string?")
+        return obj
 
-class String(Construct):
+class StringPaddedTrimmed(Adapter):
+    __slots__ = ["length", "padchar", "paddir", "trimdir"]
+    def __init__(self, length, subcon, padchar=b"\x00", paddir="right", trimdir="right"):
+        super(StringPaddedTrimmed, self).__init__(subcon)
+        self.length = length
+        self.padchar = padchar
+        self.paddir = paddir
+        self.trimdir = trimdir
+    def _decode(self, obj, context):
+        length = self.length(context) if callable(self.length) else self.length
+        if self.paddir == "right":
+            obj = obj.rstrip(self.padchar)
+        elif self.paddir == "left":
+            obj = obj.lstrip(self.padchar)
+        elif self.paddir == "center":
+            obj = obj.strip(self.padchar)
+        else:
+            raise StringError("paddir must be one of: right left center")
+        return obj
+    def _encode(self, obj, context):
+        length = self.length(context) if callable(self.length) else self.length
+        if self.paddir == "right":
+            obj = obj.ljust(length, self.padchar)
+        elif self.paddir == "left":
+            obj = obj.rjust(length, self.padchar)
+        elif self.paddir == "center":
+            obj = obj.center(length, self.padchar)
+        else:
+            raise StringError("paddir must be one of: right left center")
+        if len(obj) > length:
+            if self.trimdir == "right":
+                obj = obj[:length]
+            elif self.trimdir == "left":
+                obj = obj[-length:]
+            else:
+                raise StringError("expected a string of length %s given %s (%r)" % (length,len(obj),obj))
+        return obj
+
+
+
+def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
     r"""
     A configurable, variable-length string field.
 
@@ -2656,70 +2718,14 @@ class String(Construct):
         String("string", lambda ctx: ctx.somefield)
         .sizeof() -> ?
     """
-    __slots__ = ["length", "encoding", "padchar", "paddir", "trimdir"]
-    def __init__(self, length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
-        if not isinstance(padchar, bytes):
-            if encoding:
-                if isinstance(encoding, str):
-                    padchar = padchar.encode(encoding)
-                else:
-                    padchar = encoding.encode(padchar)
-            else:
-                raise TypeError("padchar must be or be encodable to a byte string")
-        if len(padchar) != 1:
-            raise ValueError("padchar must be 1 character byte string, given %r" % (padchar,))
-        if paddir not in ("right", "left", "center"):
-            raise ValueError("paddir must be one of: right left center", paddir)
-        if trimdir not in ("right", "left"):
-            raise ValueError("trimdir must be one of: right left", trimdir)
-        super(String, self).__init__()
-        self.length = length
-        self.encoding = encoding
-        self.padchar = padchar
-        self.paddir = paddir
-        self.trimdir = trimdir
-    def _parse(self, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        try:
-            obj = _read_stream(stream, length)
-        except FieldError:
-            raise StringError("could not read enough bytes")
-        padchar = self.padchar
-        if self.paddir == "right":
-            obj = obj.rstrip(padchar)
-        elif self.paddir == "left":
-            obj = obj.lstrip(padchar)
-        elif self.paddir == "center":
-            obj = obj.strip(padchar)
-        else:
-            raise StringError("paddir must be one of: right left center")
-        obj = _decode_string(obj, self.encoding)
-        return obj
-    def _build(self, obj, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        padchar = self.padchar
-        obj = _encode_string(obj, self.encoding)
-        if self.paddir == "right":
-            obj = obj.ljust(length, padchar)
-        elif self.paddir == "left":
-            obj = obj.rjust(length, padchar)
-        elif self.paddir == "center":
-            obj = obj.center(length, padchar)
-        else:
-            raise StringError("paddir must be one of: right left center")
-        if len(obj) > length:
-            if self.trimdir == "right":
-                obj = obj[:length]
-            elif self.trimdir == "left":
-                obj = obj[-length:]
-            else:
-                raise StringError("expected a string of length %s given %s (%r)" % (length,len(obj),obj))
-        _write_stream(stream, length, obj)
-    def _sizeof(self, context):
-        return self.length(context) if callable(self.length) else self.length
+    return StringEncoded(
+        StringPaddedTrimmed(
+            length, Bytes(length),
+            padchar, paddir, trimdir),
+        encoding)
 
 
-class PascalString(Construct):
+def PascalString(lengthfield, encoding=None):
     r"""
     A length-prefixed string.
 
@@ -2740,36 +2746,10 @@ class PascalString(Construct):
         .parse(b"\x05\x00\x00\x00hello") -> u"hello"
         .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
     """
-    __slots__ = ["lengthfield", "encoding"]
-    def __init__(self, lengthfield=UBInt8, encoding=None):
-        super(PascalString, self).__init__()
-        self.lengthfield = lengthfield
-        self.encoding = encoding
-    def _parse(self, stream, context):
-        length = self.lengthfield._parse(stream, context)
-        obj = _read_stream(stream, length)
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.decode(self.encoding)
-            else:
-                obj = self.encoding.decode(obj)
-        return obj
-    def _build(self, obj, stream, context):
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.encode(self.encoding)
-            else:
-                obj = self.encoding.encode(obj)
-        else:
-            if not isinstance(obj, bytes):
-                raise StringError("no encoding provided but building from unicode string?")
-        self.lengthfield._build(len(obj), stream, context)
-        _write_stream(stream, len(obj), obj)
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
+    return StringEncoded(Prefixed(lengthfield, GreedyBytes), encoding)
 
 
-class CString(Construct):
+def CString(terminators=b"\x00", encoding=None):
     r"""
     A string ending in a terminator bytes character.
 
@@ -2792,32 +2772,23 @@ class CString(Construct):
         .parse(b"helloZ") -> b"hello"
         .build(b"hello") -> b"helloX"
     """
-    __slots__ = ["terminators", "encoding", "charfield"]
-    def __init__(self, terminators=b"\x00", encoding=None):
-        if len(terminators) < 1:
-            raise ValueError("terminators must be a bytes string of length >= 1")
-        super(CString, self).__init__()
-        self.terminators = terminators
-        self.encoding = encoding
-    def _parse(self, stream, context):
-        obj = []
-        while True:
-            char = _read_stream(stream, 1)
-            if char in self.terminators:
-                break
-            obj.append(char)
-        obj = b"".join(obj)
-        obj = _decode_string(obj, self.encoding)
-        return obj
-    def _build(self, obj, stream, context):
-        obj = _encode_string(obj, self.encoding)
-        obj += self.terminators[:1]
-        _write_stream(stream, len(obj), obj)
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
+    return StringEncoded(
+        ExprAdapter(
+            RepeatUntil(lambda obj,ctx: int2byte(obj) in terminators, UBInt8),
+            encoder = lambda obj,ctx: iteratebytes(obj+terminators),
+            decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1])),
+        encoding)
+
+    # return StringEncoded(
+    #     ExprAdapter(
+    #         RepeatUntil(lambda obj,ctx: obj in terminators, Bytes(1)),
+    #         encoder = lambda obj,ctx: [int2byte(c) for c in iteratebytes(obj+terminators)],
+    #         decoder = lambda obj,ctx: b''.join(obj[:-1])),
+    #     encoding)
 
 
-class GreedyString(Construct):
+
+def GreedyString(encoding=None):
     r"""
     A string that reads the rest of the stream until EOF, or writes a given string as is.
 
@@ -2837,19 +2808,7 @@ class GreedyString(Construct):
         .parse(b"hello\x00") -> u"hello\x00"
         .build(u"hello\x00") -> b"hello\x00"
     """
-    __slots__ = ["encoding"]
-    def __init__(self, encoding=None):
-        super(GreedyString, self).__init__()
-        self.encoding = encoding
-    def _parse(self, stream, context):
-        obj = stream.read()
-        obj = _decode_string(obj, self.encoding)
-        return obj
-    def _build(self, obj, stream, context):
-        obj = _encode_string(obj, self.encoding)
-        _write_stream(stream, len(obj), obj)
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
+    return StringEncoded(GreedyBytes, encoding)
 
 
 #===============================================================================

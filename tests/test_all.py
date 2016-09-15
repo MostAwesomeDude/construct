@@ -467,7 +467,7 @@ class TestAll(unittest.TestCase):
 
         [String(5).parse, b"hello", b"hello", None],
         [String(5).build, b"hello", b"hello", None],
-        [String(5).parse, b"", None, StringError],
+        [String(5).parse, b"", None, FieldError],
         [String(5).build, b"", b"\x00\x00\x00\x00\x00", None],
         [String(12, encoding="utf8").parse, b"hello joh\xd4\x83n", u"hello joh\u0503n", None],
         [String(12, encoding="utf8").build, u"hello joh\u0503n", b"hello joh\xd4\x83n", None],
@@ -488,13 +488,14 @@ class TestAll(unittest.TestCase):
         [String(5, padchar=b"X", paddir="left", encoding="utf8").sizeof, None, 5, None],
         [String(5).sizeof, None, 5, None],
 
-        [PascalString().parse, b"\x05hello????????", b"hello", None],
-        [PascalString().build, b"hello", b"\x05hello", None],
-        [PascalString(encoding="utf8").parse, b"\x05hello", u"hello", None],
-        [PascalString(encoding="utf8").build, u"hello", b"\x05hello", None],
+        [PascalString(Byte).parse, b"\x05hello????????", b"hello", None],
+        [PascalString(Byte).build, b"hello", b"\x05hello", None],
+        [PascalString(Byte, encoding="utf8").parse, b"\x05hello", u"hello", None],
+        [PascalString(Byte, encoding="utf8").build, u"hello", b"\x05hello", None],
         [PascalString(UBInt16).parse, b"\x00\x05hello????????", b"hello", None],
         [PascalString(UBInt16).build, b"hello", b"\x00\x05hello", None],
-        [PascalString().sizeof, None, None, SizeofError],
+        [PascalString(Byte).sizeof, None, None, SizeofError],
+        [PascalString(VarInt).sizeof, None, None, SizeofError],
 
         [CString().parse, b"hello\x00", b"hello", None],
         [CString(encoding="utf8").parse, b"hello\x00", u"hello", None],
