@@ -88,10 +88,7 @@ class Construct(object):
 
     There is also a flag API:
 
-     * ``_set_flag()``
-     * ``_clear_flag()``
      * ``_inherit_flags()``
-     * ``_is_flag()``
 
     And stateful copying:
 
@@ -104,58 +101,24 @@ class Construct(object):
     All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can either be a string, or None if the name is not needed. A single underscore ("_") is a reserved name, and so are names starting with a less-than character ("<"). The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced.
 
     The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are inherited by default, from inner subconstructs to outer constructs. The enclosing construct may set new flags or clear existing ones, as necessary.
-
-    For example, if ``FLAG_COPY_CONTEXT`` is set, repeaters will pass a copy of the context for each iteration, which is necessary for OnDemand parsing.
     """
 
-    FLAG_COPY_CONTEXT          = 0x0001
-    FLAG_DYNAMIC               = 0x0002
-    FLAG_EMBED                 = 0x0004
-    FLAG_NESTING               = 0x0008
-
-    __slots__ = ["name", "conflags"]
+    __slots__ = ["name", "flagbuildnone", "flagembedded"]
     def __init__(self):
         self.name = None
-        self.conflags = 0
+        self.flagbuildnone = False
+        self.flagembedded = False
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.name)
 
-    def _set_flag(self, flag):
-        """
-        Set the given flag or flags.
-
-        :param int flag: flag to set; may be OR'd combination of flags
-        """
-        self.conflags |= flag
-
-    def _clear_flag(self, flag):
-        """
-        Clear the given flag or flags.
-
-        :param int flag: flag to clear; may be OR'd combination of flags
-        """
-        self.conflags &= ~flag
-
     def _inherit_flags(self, *subcons):
-        """
-        Pull flags from subconstructs.
-        """
         for sc in subcons:
-            self._set_flag(sc.conflags)
-
-    def _is_flag(self, flag):
-        """
-        Check whether a given flag is set.
-
-        :param int flag: flag to check
-        """
-        return bool(self.conflags & flag)
+            self.flagbuildnone |= sc.flagbuildnone
+            self.flagembedded |= sc.flagembedded
 
     def __getstate__(self):
-        """
-        Obtain a dictionary representing this construct's state.
-        """
+        # Obtain a dictionary representing this construct's state.
         attrs = {}
         if hasattr(self, "__dict__"):
             attrs.update(self.__dict__)
@@ -171,16 +134,12 @@ class Construct(object):
         return attrs
 
     def __setstate__(self, attrs):
-        """
-        Set this construct's state to a given state.
-        """
+        # Set this construct's state to a given state.
         for name, value in attrs.items():
             setattr(self, name, value)
 
     def __copy__(self):
-        """
-        Returns a copy of this construct.
-        """
+        # Returns a copy of this construct.
         self2 = object.__new__(self.__class__)
         self2.__setstate__(self, self.__getstate__())
         return self2
@@ -296,6 +255,7 @@ class Subconstruct(Construct):
         self.name = subcon.name
         self.subcon = subcon
         self._inherit_flags(subcon)
+        self.flagbuildnone = subcon.flagbuildnone
     def _parse(self, stream, context):
         return self.subcon._parse(stream, context)
     def _build(self, obj, stream, context):
@@ -431,7 +391,6 @@ class Bytes(Construct):
     def __init__(self, length):
         super(Bytes, self).__init__()
         self.length = length
-        # self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         length = self.length(context) if callable(self.length) else self.length
         return _read_stream(stream, length)
@@ -499,12 +458,11 @@ class FormatField(Bytes):
 #===============================================================================
 
 def _subobj(sc, obj):
-    if sc.conflags & sc.FLAG_EMBED:
-        return obj
-    else:
-        return obj[sc.name]
+    return obj if sc.flagembedded else obj[sc.name]
 def _updcon(con, sc, obj):
-    if sc.conflags & sc.FLAG_EMBED:
+    # con.update(obj) if sc.flagembedded else con.set(sc.name)
+
+    if sc.flagembedded:
         con.update(obj)
     else:
         con[sc.name] = obj
@@ -599,7 +557,6 @@ class Select(Construct):
         self.subcons = subcons
         self.includename = includename
         self._inherit_flags(*subcons)
-        self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         for sc in self.subcons:
             fallback = stream.tell()
@@ -868,6 +825,10 @@ class Anchor(Construct):
         .build(dict(a=255)) -> b"\xff"
         .sizeof() -> 1
     """
+    def __init__(self):
+        Construct.__init__(self)
+        # super(Anchor, self).__init__()
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         position = stream.tell()
         context[self.name] = position
@@ -903,9 +864,10 @@ class AnchorRange(Construct):
         .build(dict(a=1)) -> b"\x01"
         .sizeof() -> 1
     """
-    # def __init__(self):
-    #     Construct.__init__(self)
-    #     # super(AnchorRange, self).__init__()
+    def __init__(self):
+        Construct.__init__(self)
+        # super(AnchorRange, self).__init__()
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         position = stream.tell()
         if self.name not in context:
@@ -954,7 +916,7 @@ class Computed(Construct):
     def __init__(self, func):
         super(Computed, self).__init__()
         self.func = func
-        self._set_flag(self.FLAG_DYNAMIC)
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         return self.func(context)
     def _build(self, obj, stream, context):
@@ -988,9 +950,8 @@ class Computed(Construct):
 #    """
 #    __slots__ = ["factoryfunc"]
 #    def __init__(self, name, factoryfunc):
-#        super(Dynamic, self).__init__(name, self.FLAG_COPY_CONTEXT)
+#        super(Dynamic, self).__init__()
 #        self.factoryfunc = factoryfunc
-#        self._set_flag(self.FLAG_DYNAMIC)
 #    def _parse(self, stream, context):
 #        return self.factoryfunc(context)._parse(stream, context)
 #    def _build(self, obj, stream, context):
@@ -1101,6 +1062,7 @@ class Padding(Construct):
         self.length = length
         self.pattern = pattern
         self.strict = strict
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         length = self.length(context) if callable(self.length) else self.length
         read = _read_stream(stream, length)
@@ -1108,7 +1070,6 @@ class Padding(Construct):
             expected = length * self.pattern
             if read != expected:
                 raise PaddingError("expected %r, found %r" % (expected, read))
-        return None
     def _build(self, obj, stream, context):
         length = self.length(context) if callable(self.length) else self.length
         padding = length * self.pattern
@@ -1299,9 +1260,9 @@ class VarInt(Construct):
         .parse(b"\x85\x05") -> 645
         .build(645) -> b"\x85\x05"
     """
-    def __init__(self):
-        # super(VarInt, self).__init__()
-        Construct.__init__(self)
+    # def __init__(self):
+    #     # super(VarInt, self).__init__()
+    #     Construct.__init__(self)
     def _parse(self, stream, context):
         acc = 0
         while True:
@@ -1352,6 +1313,7 @@ class Checksum(Construct):
         self.checksumfield = checksumfield
         self.hashfunc = hashfunc
         self.anchors = anchors
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         hash1 = self.checksumfield._parse(stream, context)
         current = stream.tell()
@@ -1496,7 +1458,7 @@ class LazyStruct(Construct):
         # self.nested = kw.pop("nested", True)
         self.allowoverwrite = kw.pop("allowoverwrite", False)
         self._inherit_flags(*subcons)
-        self._clear_flag(self.FLAG_EMBED)
+        self.flagembedded = False
 
         try:
             self.offsetmap = {}
@@ -1621,7 +1583,6 @@ class BitField(Construct):
         self.swapped = swapped
         self.signed = signed
         self.bytesize = bytesize
-        self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         length = self.length(context) if callable(self.length) else self.length
         data = _read_stream(stream, length)
@@ -2028,7 +1989,7 @@ class Struct(Construct):
         super(Struct, self).__init__()
         self.subcons = subcons
         self._inherit_flags(*subcons)
-        self._clear_flag(self.FLAG_EMBED)
+        self.flagembedded = False
     def _parse(self, stream, context):
         if "<obj>" in context:
             obj = context["<obj>"]
@@ -2038,7 +1999,7 @@ class Struct(Construct):
             if self.nested:
                 context = Container(_ = context)
         for sc in self.subcons:
-            if sc.conflags & self.FLAG_EMBED:
+            if sc.flagembedded:
                 context["<obj>"] = obj
                 sc._parse(stream, context)
                 if "<obj>" in context:
@@ -2057,16 +2018,13 @@ class Struct(Construct):
         elif self.nested:
             context = Container(_ = context)
         for sc in self.subcons:
-            if sc.conflags & self.FLAG_EMBED:
+            if sc.flagembedded:
                 context["<unnested>"] = True
                 subobj = obj
-            elif sc.name is None:
-                subobj = None
-            elif isinstance(sc, (Computed, Anchor.__class__, AnchorRange.__class__, Checksum)):
+            elif sc.name is None or sc.flagbuildnone:
                 subobj = None
             else:
-                subobj = obj.get(sc.name, None)
-                # subobj = obj.get(sc.name, None)
+                subobj = obj[sc.name]
                 context[sc.name] = subobj
             sc._build(subobj, stream, context)
     def _sizeof(self, context):
@@ -2102,7 +2060,7 @@ class Sequence(Struct):
             if self.nested:
                 context = Container(_ = context)
         for sc in self.subcons:
-            if sc.conflags & self.FLAG_EMBED:
+            if sc.flagembedded:
                 context["<obj>"] = obj
                 sc._parse(stream, context)
             else:
@@ -2118,7 +2076,7 @@ class Sequence(Struct):
             context = Container(_ = context)
         objiter = iter(obj)
         for sc in self.subcons:
-            if sc.conflags & self.FLAG_EMBED:
+            if sc.flagembedded:
                 context["<unnested>"] = True
                 subobj = objiter
             else:
@@ -2139,7 +2097,7 @@ class Embedded(Subconstruct):
     """
     def __init__(self, subcon):
         super(Embedded, self).__init__(subcon)
-        self._set_flag(subcon.FLAG_EMBED)
+        self.flagembedded = True
 
 
 class Renamed(Subconstruct):
@@ -2267,23 +2225,21 @@ def Bitwise(subcon):
 
     Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
     """
-    MAX_BUFFER = 1024 * 8
     def resizer(length):
         if length & 7:
             raise SizeofError("size must be a multiple of 8", length)
         return length >> 3
-    if not subcon._is_flag(subcon.FLAG_DYNAMIC) and subcon.sizeof() < MAX_BUFFER:
-        con = Buffered(subcon,
+    # if subcon.sizeof() < 1024 * 8:
+    if True:
+        return Buffered(subcon,
             encoder = decode_bin,
             decoder = encode_bin,
-            resizer = resizer
-        )
+            resizer = resizer)
     else:
-        con = Restream(subcon,
+        return Restream(subcon,
             stream_reader = BitStreamReader,
             stream_writer = BitStreamWriter,
             resizer = resizer)
-    return con
 
 
 def BitStruct(name, *subcons):
@@ -2350,7 +2306,6 @@ class Switch(Construct):
         self.default = default
         self.include_key = include_key
         self._inherit_flags(*cases.values())
-        self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         key = self.keyfunc(context)
         obj = self.cases.get(key, self.default)._parse(stream, context)
