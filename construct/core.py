@@ -260,7 +260,7 @@ class Subconstruct(Construct):
     def _parse(self, stream, context):
         return self.subcon._parse(stream, context)
     def _build(self, obj, stream, context):
-        self.subcon._build(obj, stream, context)
+        return self.subcon._build(obj, stream, context)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 
@@ -276,7 +276,7 @@ class Adapter(Subconstruct):
     def _parse(self, stream, context):
         return self._decode(self.subcon._parse(stream, context), context)
     def _build(self, obj, stream, context):
-        self.subcon._build(self._encode(obj, context), stream, context)
+        return self.subcon._build(self._encode(obj, context), stream, context)
     def _decode(self, obj, context):
         raise NotImplementedError()
     def _encode(self, obj, context):
@@ -294,7 +294,7 @@ class SymmetricAdapter(Subconstruct):
     def _parse(self, stream, context):
         return self._decode(self.subcon._parse(stream, context), context)
     def _build(self, obj, stream, context):
-        self.subcon._build(self._decode(obj, context), stream, context)
+        return self.subcon._build(self._decode(obj, context), stream, context)
     def _decode(self, obj, context):
         raise NotImplementedError()
 
@@ -324,6 +324,7 @@ class Tunnel(Subconstruct):
         data = self.subcon.build(obj, context)
         data = self._encode(data, context)
         _write_stream(stream, len(data), data)
+        return data
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
     def _decode(self, data, context):
@@ -643,8 +644,9 @@ class Pointer(Subconstruct):
         newpos = self.offsetfunc(context)
         fallback = stream.tell()
         stream.seek(newpos, 2 if newpos < 0 else 0)
-        self.subcon._build(obj, stream, context)
+        subobj = self.subcon._build(obj, stream, context)
         stream.seek(fallback)
+        return subobj
     def _sizeof(self, context):
         return 0
 
@@ -821,12 +823,15 @@ class RawCopy(Subconstruct):
     def _build(self, obj, stream, context):
         if 'data' in obj:
             data = obj['data']
-            context[self.name] = dict(data=data)
+            # context[self.name] = dict(data=data)
             _write_stream(stream, len(data), data)
+            return dict(data=data)
         elif 'value' in obj:
-            data = self.subcon.build(obj['value'], context)
-            context[self.name] = dict(data=data)
+            value = obj['value']
+            data = self.subcon.build(value, context)
+            # context[self.name] = dict(data=data)
             _write_stream(stream, len(data), data)
+            return dict(data=data, value=value)
         else:
             raise ConstructError('both data and value keys are missing')
 
@@ -1130,12 +1135,13 @@ class Padded(Subconstruct):
     def _build(self, obj, stream, context):
         length = self.length(context) if callable(self.length) else self.length
         position1 = stream.tell()
-        self.subcon._build(obj, stream, context)
+        subobj = self.subcon._build(obj, stream, context)
         position2 = stream.tell()
         padlen = length - (position2 - position1)
         if padlen < 0:
             raise PaddingError("subcon parsed more bytes than was allowed by length")
         _write_stream(stream, padlen, self.pattern * padlen)
+        return subobj
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
 
@@ -1186,10 +1192,11 @@ class Aligned(Subconstruct):
         return obj
     def _build(self, obj, stream, context):
         position1 = stream.tell()
-        self.subcon._build(obj, stream, context)
+        subobj = self.subcon._build(obj, stream, context)
         position2 = stream.tell()
         pad = -(position2 - position1) % self.modulus
         _write_stream(stream, pad, self.pattern * pad)
+        return subobj
     def _sizeof(self, context):
         sublen = self.subcon._sizeof(context)
         return sublen + (-sublen % self.modulus)
@@ -1233,7 +1240,7 @@ class Const(Subconstruct):
             raise ConstError("expected %r but parsed %r" % (self.value,obj))
         return obj
     def _build(self, obj, stream, context):
-        self.subcon._build(self.value, stream, context)
+        return self.subcon._build(self.value, stream, context)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 
@@ -1344,8 +1351,7 @@ class Checksum(Construct):
             raise ChecksumError("wrong checksum, read %r, computed %r" % (hexlify(hash1), hexlify(hash2)))
         return hash1
     def _build(self, obj, stream, context):
-        # print(obj)
-        # print(context)
+        # print('in Checksum ',obj,context)
         hash2 = self.hashfunc(context[self.rawcopy]["data"])
         self.checksumfield._build(hash2, stream, context)
     def _sizeof(self, context):
@@ -1377,9 +1383,10 @@ class ByteSwapped(Subconstruct):
         return self.subcon._parse(BytesIO(data), context)
     def _build(self, obj, stream, context):
         stream2 = BytesIO()
-        self.subcon._build(obj, stream2, context)
+        subobj = self.subcon._build(obj, stream2, context)
         data = stream2.getvalue()[::-1]
         _write_stream(stream, len(data), data)
+        return subobj
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 
@@ -1409,8 +1416,9 @@ class Prefixed(Subconstruct):
         return self.subcon.parse(data, context)
     def _build(self, obj, stream, context):
         data = self.subcon.build(obj, context)
-        self.lengthfield._build(len(data), stream, context)
+        subobj = self.lengthfield._build(len(data), stream, context)
         _write_stream(stream, len(data), data)
+        return subobj
     def _sizeof(self, context):
         # return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
         raise SizeofError("cannot calculate size")
@@ -1988,6 +1996,8 @@ class Struct(Construct):
     :param subcons: a sequence of subconstructs that make up this structure.
     :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
 
+    ONE OF TWO EMBEDDABLE CLASSES
+
     Example::
 
         Struct("foo",
@@ -2006,45 +2016,39 @@ class Struct(Construct):
         self._inherit_flags(*subcons)
         self.flagembedded = False
     def _parse(self, stream, context):
-        if "<obj>" in context:
-            obj = context["<obj>"]
-            del context["<obj>"]
-        else:
-            obj = Container()
-            if self.nested:
-                context = Container(_ = context)
-        for sc in self.subcons:
+        obj = Container()
+        context = Container(_ = context)
+        for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
-                context["<obj>"] = obj
-                sc._parse(stream, context)
-                if "<obj>" in context:
-                    del context["<obj>"]
+                subobj = sc._parse(stream, context)
+                obj.update(subobj)
             else:
                 subobj = sc._parse(stream, context)
                 if sc.name is not None:
-                    if sc.name in obj and not self.allow_overwrite:
-                        raise OverwriteError("%r would be overwritten but allow_overwrite is False" % (sc.name,))
+                    # if sc.name in obj and not self.allow_overwrite:
+                    #     raise OverwriteError("%r would be overwritten but allow_overwrite is False" % (sc.name,))
                     obj[sc.name] = subobj
                     context[sc.name] = subobj
+            context[i] = subobj
         return obj
     def _build(self, obj, stream, context):
-        if "<unnested>" in context:
-            del context["<unnested>"]
-        elif self.nested:
-            context = Container(_ = context)
+        # context = Container(_ = context)
+        # print('in Struct ',obj,context)
         for sc in self.subcons:
             if sc.flagembedded:
-                context["<unnested>"] = True
                 subobj = obj
             elif sc.name is None or sc.flagbuildnone:
                 subobj = None
             else:
                 subobj = obj[sc.name]
                 context[sc.name] = subobj
-            sc._build(subobj, stream, context)
+            # print('member ',sc.name, subobj, obj, context)
+            buildsubobj = sc._build(subobj, stream, context)
+            if buildsubobj is not None and sc.name is not None:
+                context[sc.name] = buildsubobj
+
     def _sizeof(self, context):
-        #if self.nested:
-        #    context = Container(_ = context)
+        # context = Container(_ = context)
         return sum(sc._sizeof(context) for sc in self.subcons)
 
 

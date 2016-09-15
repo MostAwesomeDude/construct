@@ -93,8 +93,7 @@ class TestChecksum(unittest.TestCase):
         c = sha512(b"\x01\x02")
         self.assertEqual(struct.parse(b"\x01\x02"+c), Container(fields=dict(data=b"\x01\x02", value=Container(a=1)(b=2), offset1=0, offset2=2, length=2))(checksum=c))
         self.assertEqual(struct.build(dict(fields=dict(data=b"\x01\x02"))), b"\x01\x02"+c)
-        # issue #124
-        # self.assertEqual(struct.build(dict(fields=dict(value=dict(a=1,b=2)))), b"\x01\x02"+c)
+        self.assertEqual(struct.build(dict(fields=dict(value=dict(a=1,b=2)))), b"\x01\x02"+c)
 
 
 # class TestEmbedOptional(unittest.TestCase):
