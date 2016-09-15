@@ -501,6 +501,8 @@ class TestAll(declarativeunittest.TestCase):
         [CString(terminators=b"XYZ", encoding="utf8").parse, b"helloZ", u"hello", None],
         [CString(terminators=b"XYZ", encoding="utf8").build, u"hello", b"helloX", None],
         [CString().sizeof, None, None, SizeofError],
+        # issue #111
+        # assert CString(encoding="utf16").parse(CString(encoding="utf16").build(u"hello")) == u"hello"
 
         [GreedyString().parse, b"hello\x00", b"hello\x00", None],
         [GreedyString().parse, b"", b"", None],
