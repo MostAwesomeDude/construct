@@ -225,8 +225,7 @@ class TestAll(unittest.TestCase):
         [Computed(lambda ctx: "moo").sizeof, None, 0, None],
         [Struct("c" / Computed(lambda ctx: "moo")).parse, b"", Container(c="moo"), None],
         [Struct("c" / Computed(lambda ctx: "moo")).build, Container(c=None), b"", None],
-        # issue #102
-        # [Struct("c" / Computed(lambda ctx: "moo")).build, Container(), b"", None],
+        [Struct("c" / Computed(lambda ctx: "moo")).build, Container(), b"", None],
         [Computed(lambda ctx: ctx.missing).parse, None, None, AttributeError],
         [Computed(lambda ctx: ctx["missing"]).parse, None, None, KeyError],
 
