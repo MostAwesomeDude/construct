@@ -268,22 +268,23 @@ class ListContainer(list):
 
 
 class LazyContainer(object):
-    __slots__ = ["subcons", "offsetmap", "values", "stream", "addoffset", "context"]
+    __slots__ = ["subcons", "offsetmap", "cached", "stream", "addoffset", "context", "count"]
 
-    def __init__(self, subcons, offsetmap, values, stream, addoffset, context):
+    def __init__(self, subcons, offsetmap, cached, stream, addoffset, context):
         self.subcons = subcons
         self.offsetmap = offsetmap
-        self.values = values
+        self.cached = cached
         self.stream = stream
         self.addoffset = addoffset
         self.context = context
+        self.count = len(self.keys())
 
     def __getitem__(self, key):
-        if key not in self.values:
+        if key not in self.cached:
             at, sc = self.offsetmap.pop(key)
             self.stream.seek(self.addoffset + at)
-            self.values[key] = sc._parse(self.stream, self.context)
-        return self.values[key]
+            self.cached[key] = sc._parse(self.stream, self.context)
+        return self.cached[key]
 
     def __getattr__(self, name):
         try:
@@ -291,12 +292,20 @@ class LazyContainer(object):
         except KeyError:
             raise AttributeError(name)
 
+    def __len__(self):
+        return self.count
+
+    def keys(self):
+        return list(sc.name for sc in self.subcons if sc.name is not None)
+
     def __eq__(self, other):
         try:
-            for sc in self.subcons:
-                if sc.name is not None:
-                    if self[sc.name] != other[sc.name]:
-                        return False
+            for name in self.keys():
+                if self[name] != other[name]:
+                    return False
+            for name in other.keys():
+                if self[name] != other[name]:
+                    return False
             return True
         except KeyError:
             return False
@@ -333,7 +342,7 @@ class LazyContainer(object):
 
 
 class LazyListContainer(ListContainer):
-    __slots__ = ["subcons", "offsetmap", "values", "stream", "addoffset", "context"]
+    __slots__ = ["subcon", "subsize", "count", "stream", "addoffset", "context", "cached"]
 
     def __init__(self, subcon, subsize, count, stream, addoffset, context):
         self.subcon = subcon

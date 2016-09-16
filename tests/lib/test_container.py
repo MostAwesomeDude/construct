@@ -93,6 +93,8 @@ class TestContainer(unittest.TestCase):
         c = Container(a=1)(b=2)(c=3)(d=4)(e=5)
         d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
         self.assertEqual(c, d)
+        # test for subsets which is non equality
+        # test len
 
     def test_ne_wrong_order(self):
         print("WARNING: dict randomizes key order so this test may fail unexpectedly if the order is correct by chance.")
