@@ -354,7 +354,7 @@ class LazyListContainer(ListContainer):
         self.cached = {}
 
     def __getitem__(self, index):
-        if not 0 <= index < count:
+        if not 0 <= index < self.count:
             raise ValueError("index %d out of range 0-%d" % (index,self.count-1))
         if index not in self.cached:
             self.stream.seek(self.addoffset + index * self.subsize)

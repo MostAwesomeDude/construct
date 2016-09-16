@@ -7,10 +7,10 @@ import collections
 import codecs
 from binascii import hexlify
 
-from construct.lib import Container, ListContainer, LazyContainer
+from construct.lib import Container, FlagsContainer, ListContainer, LazyContainer, LazyListContainer
 from construct.lib import BitStreamReader, BitStreamWriter, bytes2bits, bits2bytes
 from construct.lib import integer2bits, bits2integer, swapbitslines
-from construct.lib import FlagsContainer, HexString, hexdump
+from construct.lib import HexString, hexdump
 from construct.lib.py3compat import int2byte, stringtypes, int2byte, iteratebytes, iterateints
 from construct.lib.binary import integer2bits, bits2integer, swapbitslines
 
@@ -1481,7 +1481,7 @@ class LazyStruct(Construct):
         for sc in self.subcons:
             if sc.flagembedded:
                 subobj = obj
-            elif sc.name is None or sc.flagbuildnone:
+            elif sc.flagbuildnone:
                 subobj = None
             else:
                 subobj = obj[sc.name]
@@ -1531,7 +1531,7 @@ class LazyRange(Construct):
         objcount = min(max(remaining//self.subsize, self.min), self.max)
         if objcount < self.min:
             raise RangeError("not enough bytes %d to read the min %d of %d bytes each" % (remaining,self.min,self.subsize))
-        stream.seek(starts + objcount*self.subcon, 0)
+        stream.seek(starts + objcount*self.subsize, 0)
         return LazyListContainer(self.subcon, self.subsize, objcount, stream, starts, context)
 
     def _build(self, obj, stream, context):
@@ -1954,7 +1954,10 @@ class Range(Subconstruct):
             if len(obj) < self.min:
                 raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
     def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
+        if self.min == self.max:
+            return self.min * self.subcon._sizeof(context)
+        else:
+            raise SizeofError("cannot calculate size")
 
 
 def GreedyRange(subcon):
@@ -2048,7 +2051,7 @@ class Struct(Construct):
         for sc in self.subcons:
             if sc.flagembedded:
                 subobj = obj
-            elif sc.name is None or sc.flagbuildnone:
+            elif sc.flagbuildnone:
                 subobj = None
             else:
                 subobj = obj[sc.name]

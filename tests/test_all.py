@@ -170,6 +170,8 @@ class TestAll(declarativeunittest.TestCase):
         [lambda none: Range(-2,+7,Byte), None, None, RangeError],
         [lambda none: Range(-2,-7,Byte), None, None, RangeError],
         [lambda none: Range(+2,-7,Byte), None, None, RangeError],
+        [Range(1,1,Byte).sizeof, None, 1, None],
+        [Range(1,1,VarInt).sizeof, None, None, SizeofError],
 
         [GreedyRange(Byte).parse, b"", [], None],
         [GreedyRange(Byte).build, [], b"", None],
@@ -194,7 +196,8 @@ class TestAll(declarativeunittest.TestCase):
         [Struct("a"/Struct("b"/Byte)).sizeof, None, 1, None],
         [Struct("missingkey"/Byte).build, dict(), None, KeyError],
         [Struct("a"/Byte, "a"/VarInt, "a"/Pass).build, dict(a=1), b"\x01\x01", None],
-
+        [Struct().parse, b"", Container(), None],
+        [Struct().build, dict(), b"", None],
         [Struct(Padding(2)).parse, b"\x00\x00", Container(), None],
         [Struct(Padding(2)).build, Container(), b"\x00\x00", None],
         [Struct(Padding(2)).sizeof, None, 2, None],
@@ -546,6 +549,11 @@ class TestAll(declarativeunittest.TestCase):
         [LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).sizeof, None, 0, None],
         [LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).parse, b"\x01\x02", dict(a=1,b=dict(c=2)), None],
         [LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).build, dict(a=1,b=dict(c=2)), b"\x01\x02", None],
+        [LazyStruct().parse, b"", dict(), None],
+        [LazyStruct().build, dict(), b"", None],
+
+        [LazyStruct("a"/Byte,"b"/CString()).parse(b"\x01abc\x00") == Struct("a"/Byte,"b"/CString()).parse(b"\x01abc\x00")],
+        [LazyStruct("a"/Byte,"b"/CString()).build(dict(a=1,b=b"abc")) == Struct("a"/Byte,"b"/CString()).build(dict(a=1,b=b"abc"))],
 
         [LazyRange(3, 5, Byte).parse, b"\x01\x02\x03", [1,2,3], None],
         [LazyRange(3, 5, Byte).parse, b"\x01\x02\x03\x04", [1,2,3,4], None],
@@ -566,6 +574,10 @@ class TestAll(declarativeunittest.TestCase):
         [lambda none: LazyRange(-2,+7,Byte), None, None, RangeError],
         [lambda none: LazyRange(-2,-7,Byte), None, None, RangeError],
         [lambda none: LazyRange(+2,-7,Byte), None, None, RangeError],
+        [LazyRange(1,1,Byte).sizeof, None, 1, None],
+        [lambda none: LazyRange(1,1,VarInt), None, None, SizeofError],
+
+        [LazyRange(1,9,Byte).parse(b"12345") == Range(1,9,Byte).parse(b"12345")],
 
         [OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03\x04"), None, 3, None],
         [OnDemandPointer(lambda ctx: 2, Byte).build, 1, b"\x00\x00\x01", None],
