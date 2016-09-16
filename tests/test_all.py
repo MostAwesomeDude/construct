@@ -1,13 +1,11 @@
 import declarativeunittest
 
 from construct import *
-from construct.lib import LazyContainer
+from construct.lib import *
 from construct.lib.py3compat import *
 
-import zlib
-import codecs
-
 try:
+    import codecs
     codecs.lookup("zlib")
     zlibcodecraises = None
 except LookupError:
