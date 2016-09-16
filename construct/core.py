@@ -7,7 +7,7 @@ import collections
 import codecs
 from binascii import hexlify
 
-from construct.lib import Container, FlagsContainer, ListContainer, LazyContainer, LazyListContainer
+from construct.lib import Container, FlagsContainer, ListContainer, LazyContainer, LazyListContainer, LazySequenceContainer
 from construct.lib import BitStreamReader, BitStreamWriter, bytes2bits, bits2bytes
 from construct.lib import integer2bits, bits2integer, swapbitslines
 from construct.lib import HexString, hexdump
@@ -1431,7 +1431,7 @@ class LazyStruct(Construct):
         )
         .parse(b"\x01\x00\x02abcde") -> LazyContainer(a=1,b=2,c=?)
     """
-    __slots__ = ["subcons", "offsetmap", "totalsizeof", "subsizes"]
+    __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes"]
     def __init__(self, *subcons, **kw):
         super(LazyStruct, self).__init__()
         self.subcons = subcons
@@ -1445,10 +1445,10 @@ class LazyStruct(Construct):
                 if sc.name is not None:
                     self.offsetmap[sc.name] = (at, sc)
                 at += sc.sizeof()
-            self.totalsizeof = at
+            self.totalsize = at
         except SizeofError:
             self.offsetmap = None
-            self.totalsizeof = None
+            self.totalsize = None
 
         self.subsizes = []
         for sc in self.subcons:
@@ -1460,7 +1460,7 @@ class LazyStruct(Construct):
     def _parse(self, stream, context):
         if self.offsetmap is not None:
             position = stream.tell()
-            stream.seek(self.totalsizeof, 1)
+            stream.seek(self.totalsize, 1)
             return LazyContainer(self.subcons, self.offsetmap, {}, stream, position, context)
         offsetmap = {}
         values = {}
@@ -1491,8 +1491,8 @@ class LazyStruct(Construct):
                 context[sc.name] = buildsubobj
 
     def _sizeof(self, context):
-        if self.totalsizeof is not None:
-            return self.totalsizeof
+        if self.totalsize is not None:
+            return self.totalsize
         else:
             raise SizeofError("cannot calculate size")
 
@@ -1551,6 +1551,73 @@ class LazyRange(Construct):
             return self.min * self.subsize
         else:
             raise SizeofError("cannot calculate size")
+
+
+class LazySequence(Construct):
+    __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes"]
+    def __init__(self, *subcons, **kw):
+        super(LazySequence, self).__init__()
+        self.subcons = subcons
+        self._inherit_flags(*subcons)
+        self.flagembedded = False
+
+        try:
+            self.offsetmap = {}
+            at = 0
+            for i,sc in enumerate(self.subcons):
+                self.offsetmap[i] = at
+                at += sc.sizeof()
+            self.totalsize = at
+        except SizeofError:
+            self.offsetmap = None
+            self.totalsize = None
+
+        self.subsizes = []
+        for sc in self.subcons:
+            try:
+                self.subsizes.append(sc.sizeof())
+            except SizeofError:
+                self.subsizes.append(None)
+
+    def _parse(self, stream, context):
+        if self.totalsize is not None:
+            position = stream.tell()
+            stream.seek(self.totalsize, 1)
+            return LazySequenceContainer(self.subcons, self.offsetmap, {}, stream, position, context)
+        offsetmap = {}
+        values = {}
+        for i,(sc,size) in enumerate(zip(self.subcons, self.subsizes)):
+            if size is None:
+                subobj = sc._parse(stream, context)
+                values[i] = subobj
+                context[i] = subobj
+            else:
+                offsetmap[i] = stream.tell()
+                stream.seek(size, 1)
+        return LazySequenceContainer(self.subcons, offsetmap, values, stream, 0, context)
+
+    def _build(self, obj, stream, context):
+        objiter = iter(obj)
+        for i,sc in enumerate(self.subcons):
+            if sc.flagembedded:
+                subobj = objiter
+            else:
+                subobj = next(objiter)
+                if sc.name is not None:
+                    context[sc.name] = subobj
+                context[i] = subobj
+            buildret = sc._build(subobj, stream, context)
+            if buildret is not None:
+                if sc.name is not None:
+                    context[sc.name] = buildret
+                context[i] = buildret
+
+    def _sizeof(self, context):
+        if self.totalsize is not None:
+            return self.totalsize
+        else:
+            raise SizeofError("cannot calculate size")
+
 
 
 @singleton
@@ -2103,10 +2170,12 @@ class Sequence(Struct):
                 subobj = next(objiter)
                 if sc.name is not None:
                     context[sc.name] = subobj
-            buildsubobj = sc._build(subobj, stream, context)
-            if buildsubobj is not None and sc.name is not None:
-                context[sc.name] = buildsubobj
-            context[i] = subobj
+                context[i] = subobj
+            buildret = sc._build(subobj, stream, context)
+            if buildret is not None:
+                if sc.name is not None:
+                    context[sc.name] = buildret
+                context[i] = buildret
 
 
 #===============================================================================

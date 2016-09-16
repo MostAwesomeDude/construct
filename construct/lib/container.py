@@ -354,8 +354,8 @@ class LazyListContainer(ListContainer):
         self.cached = {}
 
     def __getitem__(self, index):
-        if not 0 <= index < self.count:
-            raise ValueError("index %d out of range 0-%d" % (index,self.count-1))
+        if not 0 <= index < len(self):
+            raise ValueError("index %d out of range 0-%d" % (index,len(self)-1))
         if index not in self.cached:
             self.stream.seek(self.addoffset + index * self.subsize)
             self.cached[index] = self.subcon._parse(self.stream, self.context)
@@ -367,9 +367,31 @@ class LazyListContainer(ListContainer):
     def __eq__(self, other):
         if len(self) != len(other):
             return False
-        for i in range(self.count):
+        for i in range(len(self)):
             if self[i] != other[i]:
                 return False
         return True
 
+
+class LazySequenceContainer(LazyListContainer):
+    __slots__ = ["subcons", "offsetmap", "cached", "stream", "addoffset", "context"]
+
+    def __init__(self, subcons, offsetmap, cached, stream, addoffset, context):
+        self.subcons = subcons
+        self.offsetmap = offsetmap
+        self.cached = cached
+        self.stream = stream
+        self.addoffset = addoffset
+        self.context = context
+
+    def __getitem__(self, index):
+        if not 0 <= index < len(self):
+            raise ValueError("index %d out of range 0-%d" % (index,len(self)-1))
+        if index not in self.cached:
+            self.stream.seek(self.addoffset + self.offsetmap[index])
+            self.cached[index] = self.subcons[index]._parse(self.stream, self.context)
+        return self.cached[index]
+
+    def __len__(self):
+        return len(self.subcons)
 
