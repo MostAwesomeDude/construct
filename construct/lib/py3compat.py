@@ -37,9 +37,6 @@ if PY3:
         """Converts u'...' string into '...' str. On PY3 they are equivalent."""
         return s
 
-    def unknownstring2bytes(s):
-        return unicode2str(s) if isinstance(s,str) else s
-
     def iteratebytes(s):
         """Iterates though b'...' string yielding characters as b'...' characters. On PY2 iter is the same."""
         return map(int2byte, s)
@@ -75,9 +72,6 @@ else:
     def unicode2str(s):
         """Converts u'...' string into '...' str. On PY3 they are equivalent."""
         return s.decode("utf8")
-
-    def unknownstring2bytes(s):
-        return unicode2str(s) if isinstance(s,unicode) else s
 
     def iteratebytes(s):
         """Iterates though b'...' string yielding characters as b'...' characters. On PY2 iter is the same."""
