@@ -25,51 +25,20 @@ work easier:
 Notes
 -----
 
-There are significant ongoing API and implementation changes. Previous branch in maintained as stable 2.5 releases. If you want to test the new 2.6 code, please be aware. Docstrings are always up-to-date, while the docs are sometimes stale.
+**There are significant ongoing API and implementation changes. Previous branch in maintained as stable 2.5 releases. If you want to test the new 2.7 code, please be aware. Currently both docstrings and webpages are stale.**
 
-`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a rewrite of Construct2; the two are incompatible, thus ``construct3`` will be released as a *different package*.
+`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a rewrite from scratch and diverged from this project.
 
-Construct 2.5 drops the experimental text parsing support that was added in Construct 2.0; it was highly inefficient and I chose to concentrate on binary data.
+Construct 2.5 drops the experimental text parsing support that was added in Construct 2.0; it was highly inefficient.
 
 Example
 -------
 
-A ``PascalString`` is a string prefixed by its length::
-
-    >>> from construct import *
-    >>>
-    >>> PascalString = Struct("PascalString",
-    ...     UBInt8("length"),
-    ...     Bytes("data", lambda ctx: ctx.length),
-    ... )
-    >>>
-    >>> PascalString.parse("\x05helloXXX")
-    Container({'length': 5, 'data': 'hello'})
-    >>> PascalString.build(Container(length = 6, data = "foobar"))
-    '\x06foobar'
-
-Instead of specifying the length manually, let's use an adapter::
-
-    >>> PascalString2 = ExprAdapter(PascalString, 
-    ...     encoder = lambda obj, ctx: Container(length = len(obj), data = obj), 
-    ...     decoder = lambda obj, ctx: obj.data
-    ... )
-    >>> PascalString2.parse("\x05hello")
-    'hello'
-    >>> PascalString2.build("i'm a long string")
-    "\x11i'm a long string"
-
-See more examples of `file formats <https://github.com/construct/construct/tree/master/construct/formats>`_
-and `network protocols <https://github.com/construct/construct/tree/master/construct/protocols>`_ 
-in the repository.
+(removed pending update)
 
 Resources
 ---------
-Construct's homepage is `<http://construct.readthedocs.org>`_, where you can find all kinds
-of docs and resources. The library itself is developed on `github <https://github.com/construct/construct>`_;
-please use `github issues <https://github.com/construct/construct/issues>`_ to report bugs, and
-github pull-requests to send in patches. For general discussion or questions, please use the 
-`new discussion group <https://groups.google.com/d/forum/construct3>`_.
+Construct's homepage is `<http://construct.readthedocs.org>`_, where you can find all kinds of docs and resources. The library itself is developed on `github <https://github.com/construct/construct>`_; please use `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, report issues and bugs, and to send patches. There is also the `mailing list <https://groups.google.com/d/forum/construct3>`_ but GitHub should be preffered.
 
 Requirements
 ------------
