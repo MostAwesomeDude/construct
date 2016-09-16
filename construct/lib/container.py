@@ -299,6 +299,8 @@ class LazyContainer(object):
         return list(sc.name for sc in self.subcons if sc.name is not None)
 
     def __eq__(self, other):
+        # should this class derive from Container?
+        # Container.__eq__(self, other)
         try:
             for name in self.keys():
                 if self[name] != other[name]:
@@ -310,39 +312,20 @@ class LazyContainer(object):
         except KeyError:
             return False
 
-    def __ne__(self, other):
-        return not (self == other)
+    def readall(self):
+        obj = Container()
+        for name in self:
+            obj[name] = self[name]
+        self.offsetmap = None
+        self.stream = None
+        return obj
 
     def __str__(self):
-        if self._value is NotImplemented:
-            text = "<unread>"
-        else:
-            text = str(self._value)
-        return "%s: %s" % (self.__class__.__name__, text)
-
-    def read(self):
-        self.stream.seek(self.pos)
-        return self.subcon._parse(self.stream, self.context)
-
-    def dispose(self):
-        self.subcon = None
-        self.stream = None
-        self.context = None
-        self.pos = None
-
-    def _get_value(self):
-        if self._value is NotImplemented:
-            self._value = self.read()
-        return self._value
-
-    value = property(_get_value)
-
-    has_value = property(lambda self: self._value is not NotImplemented)
-
+        return "<LazyContainer: %d possible items, %d cached>" % (len(self),len(self.cached))
 
 
 class LazyListContainer(ListContainer):
-    __slots__ = ["subcon", "subsize", "count", "stream", "addoffset", "context", "cached"]
+    __slots__ = ["subcon", "subsize", "count", "stream", "addoffset", "context", "cached", "offsetmap"]
 
     def __init__(self, subcon, subsize, count, stream, addoffset, context):
         self.subcon = subcon
@@ -371,6 +354,17 @@ class LazyListContainer(ListContainer):
             if self[i] != other[i]:
                 return False
         return True
+
+    def readall(self):
+        obj = ListContainer()
+        for index in range(len(self)):
+            obj[index] = self[index]
+        self.offsetmap = None   # derived
+        self.stream = None
+        return obj
+
+    def __str__(self):
+        return "<LazyListContainer: %d possible items, %d cached>" % (len(self),len(self.cached))
 
 
 class LazySequenceContainer(LazyListContainer):

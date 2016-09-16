@@ -89,8 +89,8 @@ class TestAll(declarativeunittest.TestCase):
 
         c = Container(a=1)(b=2)(c=3)(d=4)(e=5)
         d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
-        yield [c, c]
-        yield [c, d]
+        yield [c == c]
+        yield [c == d]
 
         c = Container(a=1)(b=2)(c=3)
         d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
