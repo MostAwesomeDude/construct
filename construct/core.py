@@ -705,7 +705,7 @@ class OnDemand(Subconstruct):
         super(OnDemand, self).__init__(subcon)
     def _parse(self, stream, context):
         data = _read_stream(stream, self.subcon._sizeof(context))
-        return lambda ctx: self.subcon.parse(data, context)
+        return lambda: self.subcon.parse(data, context)
 
 
 def OnDemandPointer(offsetfunc, subcon):

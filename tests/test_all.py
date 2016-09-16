@@ -548,9 +548,7 @@ class TestAll(declarativeunittest.TestCase):
         [LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).parse, b"\x01\x02", dict(a=1,b=dict(c=2)), None],
         [LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).build, dict(a=1,b=dict(c=2)), b"\x01\x02", None],
 
-
-        # issue #109
-        # [OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03\x04"), None, 3, None],
+        [OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03\x04"), None, 3, None],
         [OnDemandPointer(lambda ctx: 2, Byte).build, 1, b"\x00\x00\x01", None],
         [OnDemandPointer(lambda ctx: 2, Byte).sizeof, None, 0, None],
 
