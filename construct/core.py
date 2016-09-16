@@ -1972,10 +1972,8 @@ class Struct(Construct):
             UBInt8("third_element"),
         )
     """
-    __slots__ = ["subcons", "nested", "allow_overwrite"]
+    __slots__ = ["subcons"]
     def __init__(self, *subcons, **kw):
-        self.nested = kw.pop("nested", True)
-        self.allow_overwrite = kw.pop("allow_overwrite", False)
         super(Struct, self).__init__()
         self.subcons = subcons
         self._inherit_flags(*subcons)
@@ -2006,7 +2004,6 @@ class Struct(Construct):
             buildsubobj = sc._build(subobj, stream, context)
             if buildsubobj is not None and sc.name is not None:
                 context[sc.name] = buildsubobj
-
     def _sizeof(self, context):
         return sum(sc._sizeof(context) for sc in self.subcons)
 
@@ -2030,38 +2027,31 @@ class Sequence(Struct):
         )
     """
     def _parse(self, stream, context):
-        if "<obj>" in context:
-            obj = context["<obj>"]
-            del context["<obj>"]
-        else:
-            obj = ListContainer()
-            if self.nested:
-                context = Container(_ = context)
-        for sc in self.subcons:
+        obj = ListContainer()
+        context = Container(_ = context)
+        for i,sc in enumerate(self.subcons):
+            subobj = sc._parse(stream, context)
             if sc.flagembedded:
-                context["<obj>"] = obj
-                sc._parse(stream, context)
+                obj.extend(subobj)
             else:
-                subobj = sc._parse(stream, context)
                 obj.append(subobj)
                 if sc.name is not None:
                     context[sc.name] = subobj
+            context[i] = subobj
         return obj
     def _build(self, obj, stream, context):
-        if "<unnested>" in context:
-            del context["<unnested>"]
-        elif self.nested:
-            context = Container(_ = context)
         objiter = iter(obj)
-        for sc in self.subcons:
+        for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
-                context["<unnested>"] = True
                 subobj = objiter
             else:
                 subobj = next(objiter)
-                context[sc.name] = subobj
-            sc._build(subobj, stream, context)
-
+                if sc.name is not None:
+                    context[sc.name] = subobj
+            buildsubobj = sc._build(subobj, stream, context)
+            if buildsubobj is not None and sc.name is not None:
+                context[sc.name] = buildsubobj
+            context[i] = subobj
 
 
 #===============================================================================
