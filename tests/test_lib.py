@@ -45,11 +45,3 @@ class TestBinary(unittest.TestCase):
         self.assertRaises(ValueError, bits2bytes, b"\x00")
         self.assertRaises(ValueError, bits2bytes, b"\x00\x00\x00\x00\x00\x00\x00")
 
-
-# class TestExpr(unittest.TestCase):
-#     def test(self):
-#         path = Path("path")
-#         x = ~((path.foo * 2 + 3 << 2) % 11)
-#         self.assertEqual(x, 'not ((((this.foo * 2) + 3) >> 2) % 11)')
-#         self.assertFalse(x(dict(foo=7)))
-

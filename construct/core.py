@@ -60,8 +60,26 @@ class MappingError(AdaptationError):
 #===============================================================================
 def singleton(cls):
     return cls()
+
 def singletonfunction(func):
     return func()
+
+def _read_stream(stream, length):
+    if length < 0:
+        raise ValueError("length must be >= 0", length)
+    data = stream.read(length)
+    if len(data) != length:
+        raise FieldError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
+    return data
+
+def _write_stream(stream, length, data):
+    if length < 0:
+        raise ValueError("length must be >= 0", length)
+    if len(data) != length:
+        raise FieldError("could not write bytes, expected %d, found %d" % (length, len(data)))
+    written = stream.write(data)
+    if written != length:
+        raise FieldError("could not write bytes, written %d, should %d" % (written, length))
 
 
 #===============================================================================
@@ -331,28 +349,6 @@ class Tunnel(Subconstruct):
         raise NotImplementedError()
     def _encode(self, data, context):
         raise NotImplementedError()
-
-
-#===============================================================================
-# Helper methods
-#===============================================================================
-
-def _read_stream(stream, length):
-    if length < 0:
-        raise ValueError("length must be >= 0", length)
-    data = stream.read(length)
-    if len(data) != length:
-        raise FieldError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
-    return data
-
-def _write_stream(stream, length, data):
-    if length < 0:
-        raise ValueError("length must be >= 0", length)
-    if len(data) != length:
-        raise FieldError("could not write bytes, expected %d, found %d" % (length, len(data)))
-    written = stream.write(data)
-    if written != length:
-        raise FieldError("could not write bytes, written %d, should %d" % (written, length))
 
 
 #===============================================================================
