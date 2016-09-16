@@ -30,14 +30,14 @@ class Container(dict):
 
     Example::
 
-        Container([("name","anonymous"),("age",21)])
+        Container([ ("name","anonymous"), ("age",21) ])
         
         Container(name="anonymous")(age=21)
 
         # This is NOT correct because keyword arguments order is not preserved.
-        Container(name="anonymous",age=21)
+        Container(name="anonymous", age=21)
 
-        Container(container2tocopy)
+        Container(container2)
     """
     __slots__ = ["__keys_order__","__recursion_lock__"]
 
