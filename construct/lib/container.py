@@ -330,3 +330,37 @@ class LazyContainer(object):
 
     has_value = property(lambda self: self._value is not NotImplemented)
 
+
+
+class LazyListContainer(ListContainer):
+    __slots__ = ["subcons", "offsetmap", "values", "stream", "addoffset", "context"]
+
+    def __init__(self, subcon, subsize, count, stream, addoffset, context):
+        self.subcon = subcon
+        self.subsize = subsize
+        self.count = count
+        self.stream = stream
+        self.addoffset = addoffset
+        self.context = context
+        self.cached = {}
+
+    def __getitem__(self, index):
+        if not 0 <= index < count:
+            raise ValueError("index %d out of range 0-%d" % (index,self.count-1))
+        if index not in self.cached:
+            self.stream.seek(self.addoffset + index * self.subsize)
+            self.cached[index] = self.subcon._parse(self.stream, self.context)
+        return self.cached[index]
+
+    def __len__(self):
+        return self.count
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for i in range(self.count):
+            if self[i] != other[i]:
+                return False
+        return True
+
+

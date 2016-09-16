@@ -1497,6 +1497,62 @@ class LazyStruct(Construct):
             raise SizeofError("cannot calculate size")
 
 
+class LazyRange(Construct):
+    r"""
+    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
+
+    If entire struct is fixed size, then all fields are parsed only when their keys are first accessed. Otherwise variable length fields are parsed immediately and fixed length fields are parsed later.
+
+    :param subcons: a sequence of subconstructs that make up this structure.
+
+    Example::
+
+        LazyStruct("struct",
+            UBInt8("a"),
+            UBInt16("b"),
+            CString("c"),
+        )
+        .parse(b"\x01\x00\x02abcde") -> LazyContainer(a=1,b=2,c=?)
+    """
+    __slots__ = ["subcon", "min", "max", "subsize"]
+    def __init__(self, min, max, subcon):
+        if not 0 <= min <= max <= sys.maxsize:
+            raise RangeError("unsane min %s and max %s" % (min,max))
+        super(LazyRange, self).__init__()
+        self.subcon = subcon
+        self.min = min
+        self.max = max
+        self.subsize = subcon.sizeof()
+
+    def _parse(self, stream, context):
+        starts = stream.tell()
+        ends = stream.seek(0,2)
+        remaining = ends - starts
+        objcount = min(max(remaining//self.subsize, self.min), self.max)
+        if objcount < self.min:
+            raise RangeError("not enough bytes %d to read the min %d of %d bytes each" % (remaining,self.min,self.subsize))
+        stream.seek(starts + objcount*self.subcon, 0)
+        return LazyListContainer(self.subcon, self.subsize, objcount, stream, starts, context)
+
+    def _build(self, obj, stream, context):
+        if not isinstance(obj, collections.Sequence):
+            raise RangeError("expected sequence type, found %s" % type(obj))
+        if not self.min <= len(obj) <= self.max:
+            raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
+        try:
+            for subobj in obj:
+                self.subcon._build(subobj, stream, context)
+        except ConstructError:
+            if len(obj) < self.min:
+                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
+
+    def _sizeof(self, context):
+        if self.min == self.max:
+            return self.min * self.subsize
+        else:
+            raise SizeofError("cannot calculate size")
+
+
 @singleton
 class Numpy(Construct):
     r"""
@@ -1890,7 +1946,7 @@ class Range(Subconstruct):
         if not isinstance(obj, collections.Sequence):
             raise RangeError("expected sequence type, found %s" % type(obj))
         if not self.min <= len(obj) <= self.max:
-            raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
+            raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
         try:
             for subobj in obj:
                 self.subcon._build(subobj, stream, context)
