@@ -1,187 +1,93 @@
-from construct.lib.py3compat import PY3, int2byte
+from construct.lib.py3compat import *
 
 
-if PY3:
-    def int_to_bin(number, width = 32):
-        r"""
-        Convert an integer into its binary representation in a bytes object.
-        Width is the amount of bits to generate. If width is larger than the actual
-        amount of bits required to represent number in binary, sign-extension is
-        used. If it's smaller, the representation is trimmed to width bits.
-        Each "bit" is either '\x00' or '\x01'. The MSBit is first.
-    
-        Examples:
-    
-            >>> int_to_bin(19, 5)
-            b'\x01\x00\x00\x01\x01'
-            >>> int_to_bin(19, 8)
-            b'\x00\x00\x00\x01\x00\x00\x01\x01'
-        """
-        number = int(number)
-        if number < 0:
-            number += 1 << width
-        i = width - 1
-        bits = bytearray(width)
-        while number and i >= 0:
-            bits[i] = number & 1
-            number >>= 1
-            i -= 1
-        return bytes(bits)
+def integer2bits(number, width):
+    r"""
+    Convert an integer into its binary representation in a bytes object. Width is the amount of bits to generate. If width is larger than the actual amount of bits required to represent number in binary, sign-extension is used. If it's smaller, the representation is trimmed to width bits. Each "bit" is either b'\x00' or b'\x01'. The most significant is first.
 
-    # heavily optimized for performance
-    def bin_to_int(bits, signed = False):
-        r"""
-        Logical opposite of int_to_bin. Both '0' and '\x00' are considered zero,
-        and both '1' and '\x01' are considered one. Set sign to True to interpret
-        the number as a 2-s complement signed integer.
-        """
-        bits = "".join("01"[b & 1] for b in bits)
-        if signed and bits[0] == "1":
-            bits = bits[1:]
-            bias = 1 << len(bits)
-        else:
-            bias = 0
+    Examples:
+
+        >>> integer2bits(19, 8)
+        b'\x00\x00\x00\x01\x00\x00\x01\x01'
+    """
+    if width < 1:
+        raise ValueError("width must be positive")
+    number = int(number)
+    if number < 0:
+        number += 1 << width
+    i = width - 1
+    bits = [b"\x00"] * width
+    while number and i >= 0:
+        bits[i] = b"\x01" if number & 1 else b"\x00"
+        # bits[i] = (b"\x00\x01")[number & 1]
+        number >>= 1
+        i -= 1
+    return b"".join(bits)
+
+
+def bits2integer(bits, signed=False):
+    r"""
+    Logical opposite of integer2bits. Both b'0' and b'\x00' are considered zero, and both b'1' and b'\x01' are considered one. Set sign to interpret the number as a 2-s complement signed integer.
+
+    HEAVILY OPTIMIZED FOR PERFORMANCE
+
+    Examples:
+
+        >>> bits2integer(b"\x01\x00\x00\x01\x01")
+        19
+        >>> bits2integer(b"10011")
+        19
+    """
+    bits = "".join("01"[b & 1] for b in iterateints(bits))
+    if signed and bits[0] == "1":
+        # return -int(bits[1:], 2)
+        bits = bits[1:]
+        bias = 1 << len(bits)
         return int(bits, 2) - bias
+    else:
+        return int(bits, 2)
 
-    _char_to_bin = [0] * 256
-    _bin_to_char = {}
-    for i in range(256):
-        ch = int2byte(i)
-        bin = int_to_bin(i, 8)
-        # Populate with for both keys i and ch, to support Python 2 & 3
-        _char_to_bin[i] = bin
-        _bin_to_char[bin] = ord(ch)
 
-    def encode_bin(data):
-        """ 
-        Create a binary representation of the given b'' object. Assume 8-bit
-        ASCII. Example:
-    
-            >>> encode_bin('ab')
-            b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
-        """
-        return b"".join(_char_to_bin[int(ch)] for ch in data)
+def bytes2bits(data):
+    r""" 
+    Create a binary representation of a b-string.
 
-    def decode_bin(data):
-        if len(data) & 7:
-            raise ValueError("Data length must be a multiple of 8")
-        i = 0
-        j = 0
-        l = len(data) // 8
-        arr = bytearray(l)
-        while j < l:
-            arr[j] = _bin_to_char[data[i:i+8]]
-            i += 8
-            j += 1
-        return arr
-    
-    def swap_bytes(bits, bytesize=8):
-        r"""
-        Bits is a b'' object containing a binary representation. Assuming each
-        bytesize bits constitute a bytes, perform a endianness byte swap. Example:
-    
-            >>> swap_bytes(b'00011011', 2)
-            b'11100100'
-        """
-        i = 0
-        l = len(bits)
-        output = [b""] * ((l // bytesize) + 1)
-        j = len(output) - 1
-        while i < l:
-            output[j] = bits[i : i + bytesize]
-            i += bytesize
-            j -= 1
-        return b"".join(output)
+    Example:
 
-else:
+        >>> bytes2bits(b'ab')
+        b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
+    """
+    return b"".join(integer2bits(c,8) for c in iterateints(data))
 
-    def int_to_bin(number, width = 32):
-        r"""
-        Convert an integer into its binary representation in a bytes object.
-        Width is the amount of bits to generate. If width is larger than the actual
-        amount of bits required to represent number in binary, sign-extension is
-        used. If it's smaller, the representation is trimmed to width bits.
-        Each "bit" is either '\x00' or '\x01'. The MSBit is first.
-    
-        Examples:
-    
-            >>> int_to_bin(19, 5)
-            '\x01\x00\x00\x01\x01'
-            >>> int_to_bin(19, 8)
-            '\x00\x00\x00\x01\x00\x00\x01\x01'
-        """
-        if number < 0:
-            number += 1 << width
-        i = width - 1
-        bits = ["\x00"] * width
-        while number and i >= 0:
-            bits[i] = "\x00\x01"[number & 1]
-            number >>= 1
-            i -= 1
-        return "".join(bits)
 
-    # heavily optimized for performance
-    def bin_to_int(bits, signed = False):
-        r"""
-        Logical opposite of int_to_bin. Both '0' and '\x00' are considered zero,
-        and both '1' and '\x01' are considered one. Set sign to True to interpret
-        the number as a 2-s complement signed integer.
-        """
-        bits = "".join("01"[ord(b) & 1] for b in bits)
-        if signed and bits[0] == "1":
-            bits = bits[1:]
-            bias = 1 << len(bits)
-        else:
-            bias = 0
-        return int(bits, 2) - bias
+def bits2bytes(data):
+    r""" 
+    Create a binary representation of a b-string.
 
-    _char_to_bin = [0] * 256
-    _bin_to_char = {}
-    for i in range(256):
-        ch = int2byte(i)
-        bin = int_to_bin(i, 8)
-        # Populate with for both keys i and ch, to support Python 2 & 3
-        _char_to_bin[i] = bin
-        _bin_to_char[bin] = ch
+    Example:
 
-    def encode_bin(data):
-        """ 
-        Create a binary representation of the given b'' object. Assume 8-bit
-        ASCII. Example:
-    
-            >>> encode_bin('ab')
-            b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
-        """
-        return "".join(_char_to_bin[ord(ch)] for ch in data)
+        >>> bits2bytes(b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00")
+        b'ab'
+    """
+    if len(data) & 7:
+        raise ValueError("data length must be a multiple of 8")
+    return b"".join(int2byte(bits2integer(data[i:i+8])) for i in range(0,len(data),8))
 
-    def decode_bin(data):
-        if len(data) & 7:
-            raise ValueError("Data length must be a multiple of 8")
-        i = 0
-        j = 0
-        l = len(data) // 8
-        chars = [""] * l
-        while j < l:
-            chars[j] = _bin_to_char[data[i:i+8]]
-            i += 8
-            j += 1
-        return "".join(chars)
 
-    def swap_bytes(bits, bytesize=8):
-        r"""
-        Bits is a b'' object containing a binary representation. Assuming each
-        bytesize bits constitute a bytes, perform a endianness byte swap. Example:
-    
-            >>> swap_bytes(b'00011011', 2)
-            b'11100100'
-        """
-        i = 0
-        l = len(bits)
-        output = [""] * ((l // bytesize) + 1)
-        j = len(output) - 1
-        while i < l:
-            output[j] = bits[i : i + bytesize]
-            i += bytesize
-            j -= 1
-        return "".join(output)
+def swapbitslines(data, linesize=8):
+    r"""
+    Bits is a b-string containing a binary representation. Assuming each linesize bits constitute a byte, perform an endianness byte swap.
+
+    Example:
+
+        >>> swapbitslines(b'00011011', 2)
+        b'11100100'
+        >>> swapbitslines(b'0000000011111111', 8)
+        b'1111111100000000'
+    """
+    if len(data) % linesize:
+        raise ValueError("data length must be multiple of linesize")
+    if linesize < 1:
+        raise ValueError("linesize must be a positive number")
+    return b"".join(data[i:i+linesize] for i in reversed(range(0,len(data),linesize)))
 

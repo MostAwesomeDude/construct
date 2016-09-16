@@ -8,11 +8,11 @@ import codecs
 from binascii import hexlify
 
 from construct.lib import Container, ListContainer, LazyContainer
-from construct.lib import BitStreamReader, BitStreamWriter, encode_bin, decode_bin
-from construct.lib import int_to_bin, bin_to_int, swap_bytes
+from construct.lib import BitStreamReader, BitStreamWriter, bytes2bits, bits2bytes
+from construct.lib import integer2bits, bits2integer, swapbitslines
 from construct.lib import FlagsContainer, HexString, hexdump
 from construct.lib.py3compat import int2byte, stringtypes, int2byte, iteratebytes, iterateints
-from construct.lib.binary import bin_to_int, int_to_bin, swap_bytes
+from construct.lib.binary import integer2bits, bits2integer, swapbitslines
 
 
 
@@ -735,8 +735,8 @@ class Buffered(Subconstruct):
     Example::
 
         Buffered(BitField("foo", 16),
-            encoder = decode_bin,
-            decoder = encode_bin,
+            encoder = bits2bytes,
+            decoder = bytes2bits,
             resizer = lambda size: size / 8,
         )
     """
@@ -1575,15 +1575,15 @@ class BitField(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = _read_stream(stream, length)
         if self.swapped:
-            data = swap_bytes(data, self.bytesize)
-        return bin_to_int(data, self.signed)
+            data = swapbitslines(data, self.bytesize)
+        return bits2integer(data, self.signed)
     def _build(self, obj, stream, context):
         if obj < 0 and not self.signed:
             raise BitIntegerError("object is negative, but field is not signed", obj)
         length = self.length(context) if callable(self.length) else self.length
-        data = int_to_bin(obj, length)
+        data = integer2bits(obj, length)
         if self.swapped:
-            data = swap_bytes(data, self.bytesize)
+            data = swapbitslines(data, self.bytesize)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
@@ -2246,8 +2246,8 @@ def Bitwise(subcon):
     # if subcon.sizeof() < 1024 * 8:
     if True:
         return Buffered(subcon,
-            encoder = decode_bin,
-            decoder = encode_bin,
+            encoder = bits2bytes,
+            decoder = bytes2bits,
             resizer = resizer)
     else:
         return Restream(subcon,

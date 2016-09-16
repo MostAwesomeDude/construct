@@ -1,4 +1,4 @@
-from construct.lib.binary import encode_bin, decode_bin
+from construct.lib.binary import bytes2bits, bits2bytes
 
 
 class BitStreamReader(object):
@@ -38,11 +38,12 @@ class BitStreamReader(object):
             count_bytes = count // 8
             if count & 7:
                 count_bytes += 1
-            buf = encode_bin(self.substream.read(count_bytes))
+            buf = bytes2bits(self.substream.read(count_bytes))
             data += buf[:count]
             self.buffer = buf[count:]
         self.total_size += len(data)
         return data
+
 
 class BitStreamWriter(object):
     __slots__ = ["substream", "buffer", "pos"]
@@ -56,7 +57,7 @@ class BitStreamWriter(object):
         self.flush()
 
     def flush(self):
-        raw = decode_bin(b"".join(self.buffer))
+        raw = bits2bytes(b"".join(self.buffer))
         self.substream.write(raw)
         self.buffer = []
         self.pos = 0
@@ -74,3 +75,4 @@ class BitStreamWriter(object):
         if not isinstance(data, bytes):
             raise TypeError("data must be a string, not %r" % (type(data),))
         self.buffer.append(data)
+
