@@ -103,7 +103,6 @@ class TestAll(declarativeunittest.TestCase):
         # [Bytes(4).build, 0x01020304, None, FieldError],
         [Bytes(4).sizeof, None, 4, None],
 
-        # issue #100, should work with dict(n=4) and this.n
         [Bytes(lambda ctx: ctx.n).parse, (b"12345678",Container(n=4)), b"1234", None],
         [Bytes(lambda ctx: ctx.n).build, (b"1234",Container(n=4)), b"1234", None],
         # issue #99
@@ -194,7 +193,8 @@ class TestAll(declarativeunittest.TestCase):
         [Struct("a"/Struct("b"/Byte)).parse, b"\x01", Container(a=Container(b=1)), None],
         [Struct("a"/Struct("b"/Byte)).build, Container(a=Container(b=1)), b"\x01", None],
         [Struct("a"/Struct("b"/Byte)).sizeof, None, 1, None],
-        [Struct("key"/Byte).build, dict(), None, KeyError],
+        [Struct("missingkey"/Byte).build, dict(), None, KeyError],
+        [Struct("a"/Byte, "a"/VarInt, "a"/Pass).build, dict(a=1), b"\x01\x01", None],
 
         [Struct(Padding(2)).parse, b"\x00\x00", Container(), None],
         [Struct(Padding(2)).build, Container(), b"\x00\x00", None],
