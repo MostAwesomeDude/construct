@@ -476,20 +476,17 @@ def Bitwise(subcon):
     Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
     """
     def resizer(length):
-        if length & 7:
+        if length % 8 != 0:
             raise SizeofError("size must be a multiple of 8", length)
         return length >> 3
-    # if subcon.sizeof() < 1024 * 8:
-    if True:
-        return Buffered(subcon,
-            encoder = bits2bytes,
-            decoder = bytes2bits,
-            resizer = resizer)
-    else:
-        return Restream(subcon,
-            stream_reader = BitStreamReader,
-            stream_writer = BitStreamWriter,
-            resizer = resizer)
+    return Buffered(subcon,
+        encoder = bits2bytes,
+        decoder = bytes2bits,
+        resizer = resizer)
+    # return Restream(subcon,
+    #     stream_reader = BitStreamReader,
+    #     stream_writer = BitStreamWriter,
+    #     resizer = resizer)
 
 
 class BytesInteger(Construct):
@@ -1301,8 +1298,6 @@ class Union(Construct):
                     break
             else:
                 raise SelectError("no subconstruct matched", obj)
-    # def _sizeof(self, context):
-    #     return max([sc._sizeof(context) for sc in self.subcons])
 
 
 class Select(Construct):
@@ -1372,7 +1367,7 @@ def Optional(subcon):
 
     If parsing fails, returns None. If building fails, writes nothing.
 
-    Note: sizeof returns subcon size, even tho 0 bytes can be consumed or produced. Just something to consider.
+    Note: sizeof returns subcon size, although no bytes could be consumed or produced. Just something to consider.
 
     :param subcon: the subcon to optionally parse or build
     """
@@ -1387,21 +1382,19 @@ class Switch(Construct):
 
     :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
     :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc.
-    :param default: a default value to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for 'do-nothing'.
-    :param include_key: whether or not to include the key in the return value of parsing. defualt is False.
+    :param default: a default field to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for do-nothing.
+    :param includekey: whether or not to include the key in the return value of parsing. defualt is False.
 
     Example::
 
-        Struct("foo",
-            UBInt8("type"),
-            Switch("value", lambda ctx: ctx.type, {
-                    1 : UBInt8("spam"),
-                    2 : UBInt16("spam"),
-                    3 : UBInt32("spam"),
-                    4 : UBInt64("spam"),
-                }
-            ),
-        )
+        Struct(
+            "type" / UBInt8,
+            "value" / Switch(lambda ctx: ctx.type, {
+                1 : UBInt8,
+                2 : UBInt16,
+                3 : UBInt32,
+                4 : UBInt64,
+            }))
     """
     @singleton
     class NoDefault(Construct):
@@ -1412,25 +1405,24 @@ class Switch(Construct):
         def _sizeof(self, context):
             raise SwitchError("no default case defined")
 
-    __slots__ = ["subcons", "keyfunc", "cases", "default", "include_key"]
-
-    def __init__(self, keyfunc, cases, default=NoDefault, include_key=False):
+    __slots__ = ["subcons", "keyfunc", "cases", "default", "includekey"]
+    def __init__(self, keyfunc, cases, default=NoDefault, includekey=False):
         super(Switch, self).__init__()
         self._inherit_flags(*cases.values())
         self.keyfunc = keyfunc
         self.cases = cases
         self.default = default
-        self.include_key = include_key
+        self.includekey = includekey
         self._inherit_flags(*cases.values())
     def _parse(self, stream, context):
         key = self.keyfunc(context)
         obj = self.cases.get(key, self.default)._parse(stream, context)
-        if self.include_key:
+        if self.includekey:
             return key, obj
         else:
             return obj
     def _build(self, obj, stream, context):
-        if self.include_key:
+        if self.includekey:
             key, obj = obj
         else:
             key = self.keyfunc(context)
@@ -1969,8 +1961,8 @@ class Prefixed(Subconstruct):
         _write_stream(stream, len(data), data)
         return subobj
     def _sizeof(self, context):
-        # return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
-        raise SizeofError("cannot calculate size")
+        return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
+        # raise SizeofError("cannot calculate size")
 
 
 class Compressed(Tunnel):
