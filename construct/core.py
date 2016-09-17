@@ -1465,12 +1465,13 @@ class LazyStruct(Construct):
         offsetmap = {}
         values = {}
         position = stream.tell()
-        for sc,size in zip(self.subcons, self.subsizes):
+        for i,(sc,size) in enumerate(zip(self.subcons, self.subsizes)):
             if size is None:
                 subobj = sc._parse(stream, context)
                 if sc.name is not None:
                     values[sc.name] = subobj
                     context[sc.name] = subobj
+                context[i] = subobj
             else:
                 if sc.name is not None:
                     offsetmap[sc.name] = (stream.tell(), sc)
@@ -1478,7 +1479,7 @@ class LazyStruct(Construct):
         return LazyContainer(self.subcons, offsetmap, values, stream, 0, context)
 
     def _build(self, obj, stream, context):
-        for sc in self.subcons:
+        for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
                 subobj = obj
             elif sc.flagbuildnone:
@@ -1486,9 +1487,12 @@ class LazyStruct(Construct):
             else:
                 subobj = obj[sc.name]
                 context[sc.name] = subobj
-            buildsubobj = sc._build(subobj, stream, context)
-            if buildsubobj is not None and sc.name is not None:
-                context[sc.name] = buildsubobj
+            context[i] = subobj
+            buildret = sc._build(subobj, stream, context)
+            if buildret is not None:
+                if sc.name is not None:
+                    context[sc.name] = buildret
+                context[i] = buildret
 
     def _sizeof(self, context):
         if self.totalsize is not None:
@@ -1540,7 +1544,8 @@ class LazyRange(Construct):
         if not self.min <= len(obj) <= self.max:
             raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
         try:
-            for subobj in obj:
+            for i,subobj in enumerate(obj):
+                context[i] = subobj
                 self.subcon._build(subobj, stream, context)
         except ConstructError:
             if len(obj) < self.min:
@@ -1605,7 +1610,7 @@ class LazySequence(Construct):
                 subobj = next(objiter)
                 if sc.name is not None:
                     context[sc.name] = subobj
-                context[i] = subobj
+            context[i] = subobj
             buildret = sc._build(subobj, stream, context)
             if buildret is not None:
                 if sc.name is not None:
@@ -2004,6 +2009,7 @@ class Range(Subconstruct):
             while len(obj) < self.max:
                 fallback = stream.tell()
                 obj.append(self.subcon._parse(stream, context))
+                context[len(obj)-1] = obj[-1]
         except ConstructError:
             if len(obj) < self.min:
                 raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
@@ -2015,7 +2021,8 @@ class Range(Subconstruct):
         if not self.min <= len(obj) <= self.max:
             raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
         try:
-            for subobj in obj:
+            for i,subobj in enumerate(obj):
+                context[i] = subobj
                 self.subcon._build(subobj, stream, context)
         except ConstructError:
             if len(obj) < self.min:
@@ -2115,7 +2122,7 @@ class Struct(Construct):
             context[i] = subobj
         return obj
     def _build(self, obj, stream, context):
-        for sc in self.subcons:
+        for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
                 subobj = obj
             elif sc.flagbuildnone:
@@ -2123,9 +2130,12 @@ class Struct(Construct):
             else:
                 subobj = obj[sc.name]
                 context[sc.name] = subobj
-            buildsubobj = sc._build(subobj, stream, context)
-            if buildsubobj is not None and sc.name is not None:
-                context[sc.name] = buildsubobj
+            context[i] = subobj
+            buildret = sc._build(subobj, stream, context)
+            if buildret is not None:
+                if sc.name is not None:
+                    context[sc.name] = buildret
+                context[i] = buildret
     def _sizeof(self, context):
         return sum(sc._sizeof(context) for sc in self.subcons)
 
@@ -2170,7 +2180,7 @@ class Sequence(Struct):
                 subobj = next(objiter)
                 if sc.name is not None:
                     context[sc.name] = subobj
-                context[i] = subobj
+            context[i] = subobj
             buildret = sc._build(subobj, stream, context)
             if buildret is not None:
                 if sc.name is not None:
