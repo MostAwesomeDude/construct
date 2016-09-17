@@ -48,6 +48,7 @@ class TestBinary(declarativeunittest.TestCase):
         yield [swapbytes(b"aaaabbbbcccc", 4), b"ccccbbbbaaaa"]
         yield [swapbytes(b"abcdefgh", 2), b"ghefcdab"]
         yield [swapbytes(b"00011011", 2), b"11100100"]
+        yield [swapbytes(b"", 2), b""]
         self.assertRaises(ValueError, swapbytes, b"12345678", 7)
         self.assertRaises(ValueError, swapbytes, b"12345678", -4)
 
