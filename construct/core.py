@@ -1913,18 +1913,15 @@ class ByteSwapped(Subconstruct):
         .parse(b"\x01\x02") -> Container(a=2)(b=1)
         .parse(dict(a=2,b=1)) -> b"\x01\x02"
     """
-    def __init__(self, subcon, size=None):
+    def __init__(self, subcon):
         super(ByteSwapped, self).__init__(subcon)
-        self.size = size if size else subcon._sizeof(None)
     def _parse(self, stream, context):
-        data = _read_stream(stream, self.size)[::-1]
+        size = self.subcon._sizeof(context)
+        data = _read_stream(stream, size)[::-1]
         return self.subcon._parse(BytesIO(data), context)
     def _build(self, obj, stream, context):
-        stream2 = BytesIO()
-        subobj = self.subcon._build(obj, stream2, context)
-        data = stream2.getvalue()[::-1]
+        data = self.subcon.build(obj, context)[::-1]
         _write_stream(stream, len(data), data)
-        return subobj
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
 
