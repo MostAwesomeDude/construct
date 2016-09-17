@@ -416,6 +416,13 @@ class GreedyBytes(Construct):
     A variable size byte field.
 
     Parses the stream to the end, and builds into the stream as is.
+
+    Example::
+
+        GreedyBytes
+
+        .parse(b'hello') -> b'hello
+        .build(b'hello') -> b'hello'
     """
     def _parse(self, stream, context):
         return stream.read()
@@ -1780,17 +1787,15 @@ class Computed(Construct):
 @singleton
 class Pass(Construct):
     r"""
-    A do-nothing construct, useful as the default case for Switch, or to indicate Enums.
-
-    .. seealso:: The :func:`~construct.macros.Switch` and the :func:`~construct.macros.Enum` macro.
-
-    .. note:: This construct is a singleton. Do not try to instatiate it, as it  will not work.
+    A do-nothing construct, useful as the default case for Switch. Returns None on parsing, puts nothing on building.
 
     Example::
 
         Pass
-        .parse(b'...') -> None
-        .build(None) -> None
+
+        .parse(b'') -> None
+        .build(None) -> b''
+        .sizeof() -> 0
     """
     def __init__(self):
         Construct.__init__(self)
@@ -1806,15 +1811,17 @@ class Pass(Construct):
 @singleton
 class Terminator(Construct):
     r"""
-    Asserts the end of the stream has been reached at the point it's placed. You can use this to ensure no more unparsed data follows.
+    Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows.
 
-    .. note::
-        * This construct is only meaningful for parsing. For building, it's a no-op.
-        * This construct is a singleton. Do not try to instatiate it, as it will not work.
+    This construct is only meaningful for parsing. For building, it's a no-op.
 
     Example::
 
         Terminator
+
+        .parse(b'') -> None
+        .parse(b'remaining') -> TerminatorError
+        .sizeof() -> 0
     """
     def __init__(self):
         Construct.__init__(self)
@@ -1835,7 +1842,8 @@ class Numpy(Construct):
 
     Example::
 
-        Numpy("data")
+        Numpy
+
         .parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00") -> array([1, 2, 3])
         .build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
     """
@@ -1851,8 +1859,6 @@ class Numpy(Construct):
         return self.lib.load(stream)
     def _build(self, obj, stream, context):
         self.lib.save(stream, obj)
-    # def _sizeof(self, context):
-    #     raise SizeofError("cannot calculate size")
 
 
 #===============================================================================
