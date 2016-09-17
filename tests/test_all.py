@@ -365,17 +365,15 @@ class TestAll(declarativeunittest.TestCase):
         [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitField(5)).sizeof, None, 2, None],
         [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).parse, b"\xe1\x1f", Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1)), None],
         [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof, None, 2, None],
-        # issue #113
-        # [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitField(5)).build, Container(a=7)(b=False)(c=8)(d=31), b"\xe1\x1f", None],
-        # [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build, Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1)), b"\xe1\x1f", None],
+        [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitField(5)).build, Container(a=7)(b=False)(c=8)(d=31), b"\xe1\x1f", None],
+        [BitStruct("a"/BitField(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build, Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1)), b"\xe1\x1f", None],
 
         [Bitwise(Array(8,Bit)).parse, b"\xff", [1,1,1,1,1,1,1,1], None],
         [Bitwise(Array(2,Nibble)).parse, b"\xff", [15,15], None],
         [Bitwise(Array(1,Octet)).parse, b"\xff", [255], None],
-        # issue #113
-        # [Bitwise(Array(8,Bit)).build, [1,1,1,1,1,1,1,1], b"\xff", None],
-        # [Bitwise(Array(2,Nibble)).build, [15,15], b"\xff", None],
-        # [Bitwise(Array(1,Octet)).build, [255], b"\xff", None],
+        [Bitwise(Array(8,Bit)).build, [1,1,1,1,1,1,1,1], b"\xff", None],
+        [Bitwise(Array(2,Nibble)).build, [15,15], b"\xff", None],
+        [Bitwise(Array(1,Octet)).build, [255], b"\xff", None],
 
         [ByteSwapped(Bytes(5)).parse, b"12345?????", b"54321", None],
         [ByteSwapped(Bytes(5)).build, b"12345", b"54321", None],
