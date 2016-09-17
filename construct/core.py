@@ -714,34 +714,18 @@ def NFloat64():
     return FormatField("=", "d")
 
 
-@singleton
-class UBInt24(Construct):
+@singletonfunction
+def UBInt24():
     r"""
     A 3-byte big-endian integer, as used in ancient file formats.
     """
-    def _parse(self, stream, context):
-        data = _read_stream(stream, 3)
-        return struct.unpack('>I', b'\x00' + data)[0]
-    def _build(self, obj, stream, context):
-        data = struct.pack('>I', obj)[1:]
-        _write_stream(stream, 3, data)
-    def _sizeof(self, context):
-        return 3
-
-
-@singleton
-class ULInt24(Construct):
+    return BytesInteger(3)
+@singletonfunction
+def ULInt24():
     r"""
     A 3-byte little-endian integer, as used in ancient file formats.
     """
-    def _parse(self, stream, context):
-        data = _read_stream(stream, 3)
-        return struct.unpack('<I', data + b'\x00')[0]
-    def _build(self, obj, stream, context):
-        data = struct.pack('<I', obj)[:3]
-        _write_stream(stream, 3, data)
-    def _sizeof(self, context):
-        return 3
+    return BytesInteger(3, swapped=True)
 
 
 @singleton
