@@ -116,13 +116,11 @@ class TestAll(declarativeunittest.TestCase):
 
         [FormatField("<","L").parse, b"\x12\x34\x56\x78", 0x78563412, None],
         [FormatField("<","L").build, 0x78563412, b"\x12\x34\x56\x78", None],
-        # issue #115
-        # [FormatField("<","L").parse, b"\x12\x34\x56", '\x00\x00\x00\x00', FieldError if not PY26 else None],
+        [FormatField("<","L").parse, b"", None, FieldError],
         [FormatField("<","L").parse, b"\x12\x34\x56", None, FieldError],
-        # issue #115
-        # [FormatField("<","L").build, 2**100, None, FieldError if not PY26 else None],
-        [FormatField("<","L").build, 9e9999, None, FieldError],
-        [FormatField("<","L").build, "string not int", None, FieldError],
+        [FormatField("<","L").build, 2**100, None, None],  # overflow
+        [FormatField("<","L").build, 9e9999, None, FieldError],             # wrong type
+        [FormatField("<","L").build, "string not int", None, FieldError],   # wrong type
         [FormatField("<","L").sizeof, None, 4, None],
 
         [Array(3,Byte).parse, b"\x01\x02\x03", [1,2,3], None],
