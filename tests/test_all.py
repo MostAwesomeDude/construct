@@ -420,8 +420,7 @@ class TestAll(declarativeunittest.TestCase):
         [Optional(ULInt32).build, 1, b"\x01\x00\x00\x00", None],
         [Optional(ULInt32).parse, b"?", None, None],
         [Optional(ULInt32).build, None, b"", None],
-        # issue #104
-        # [Optional(ULInt32).sizeof, None, 0, None],
+        [Optional(ULInt32).sizeof, None, 4, None],
 
         [Union("a"/UBInt16, "b"/Struct("b1"/UBInt8, "b2"/UBInt8)).parse, b"\x01\x02", Container(a=0x0102)(b=Container(b1=1)(b2=2)), None],
         [Union("a"/UBInt16, "b"/Struct("b1"/UBInt8, "b2"/UBInt8)).build, dict(a=0x0102,b=dict(b1=1,b2=2)), b"\x01\x02", None],

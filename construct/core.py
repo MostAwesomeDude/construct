@@ -597,6 +597,8 @@ def Optional(subcon):
 
     If parsing fails, returns None. If building fails, writes nothing.
 
+    Note: sizeof returns subcon size, even tho 0 bytes can be consumed or produced. Just something to consider.
+
     :param subcon: the subcon to optionally parse or build
     """
     return Select(subcon, Pass)
