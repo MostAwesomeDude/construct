@@ -643,38 +643,32 @@ class TestAll(declarativeunittest.TestCase):
     ]
 
 
-MulDiv = ExprAdapter(Byte,
-    encoder = lambda obj,ctx: obj // 7,
-    decoder = lambda obj,ctx: obj * 7, )
-
-IpAddress = ExprAdapter(Array(4,Byte), 
-    encoder = lambda obj,ctx: list(map(int, obj.split("."))),
-    decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj), )
-
 class TestAll2(declarativeunittest.TestCase):
-    alltests = [
+    def alltestsinteractive(self):
 
-        [MulDiv.parse, b"\x06", 42, None],
-        [MulDiv.build, 42, b"\x06", None],
-        [MulDiv.sizeof, None, 1, None],
+        MulDiv = ExprAdapter(Byte,
+            encoder = lambda obj,ctx: obj // 7,
+            decoder = lambda obj,ctx: obj * 7, )
 
-        [IpAddress.parse, b"\x7f\x80\x81\x82", "127.128.129.130", None],
-        [IpAddress.build, "127.1.2.3", b"\x7f\x01\x02\x03", None],
+        yield [MulDiv.parse, b"\x06", 42, None]
+        yield [MulDiv.build, 42, b"\x06", None]
+        yield [MulDiv.sizeof, None, 1, None]
+
+        IpAddress = ExprAdapter(Array(4,Byte), 
+            encoder = lambda obj,ctx: list(map(int, obj.split("."))),
+            decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj), )
+
+        yield [IpAddress.parse, b"\x7f\x80\x81\x82", "127.128.129.130", None]
+        yield [IpAddress.build, "127.1.2.3", b"\x7f\x01\x02\x03", None]
         # issue #107
-        # [IpAddress.build, "300.1.2.3", None, FieldError if not PY26 else None],
-        [IpAddress.sizeof, None, 4, None],
-    ]
+        # yield [IpAddress.build, "300.1.2.3", None, FieldError if not PY26 else None]
+        yield [IpAddress.sizeof, None, 4, None]
 
+        Node = Struct(
+            "value" / UBInt8,
+            "next" / LazyBound(lambda ctx: Node), )
 
-Node = Struct(
-    "value" / UBInt8,
-    "next" / LazyBound(lambda ctx: Node), )
-
-# issue #127
-# class TestAll3(declarativeunittest.TestCase):
-#     alltests = [
-
-#         [Node.parse, b"\x01", None, FieldError],
-#     ]
-
+        # closed issue #127
+        yield [Node.parse, b"\x01", Container(value=1)(next=Node), None]
+        yield [Node.parse, b"\x01", None, None]
 
