@@ -15,7 +15,6 @@ from construct.lib.py3compat import int2byte, stringtypes, int2byte, iteratebyte
 from construct.lib.binary import integer2bits, bits2integer, swapbitslines
 
 
-
 #===============================================================================
 # exceptions
 #===============================================================================
@@ -80,6 +79,15 @@ def _write_stream(stream, length, data):
     written = stream.write(data)
     if written != length:
         raise FieldError("could not write bytes, written %d, should %d" % (written, length))
+
+def _subobj(sc, obj):
+    return obj if sc.flagembedded else obj[sc.name]
+
+def _updcon(con, sc, obj):
+    if sc.flagembedded:
+        con.update(obj)
+    else:
+        con[sc.name] = obj
 
 
 #===============================================================================
@@ -352,9 +360,8 @@ class Tunnel(Subconstruct):
 
 
 #===============================================================================
-# Fields
+# bytes and bits
 #===============================================================================
-
 class Bytes(Construct):
     r"""
     A field consisting of a specified number of bytes.
@@ -450,22 +457,774 @@ class FormatField(Bytes):
             raise FieldError("packer %r error during building, given value %s" % (self.packer.format, obj))
 
 
+def Bitwise(subcon):
+    r"""
+    Converts the stream to bits, and passes the bitstream to subcon.
+
+    :param subcon: a bitwise construct (usually BitField)
+
+    Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
+    """
+    def resizer(length):
+        if length & 7:
+            raise SizeofError("size must be a multiple of 8", length)
+        return length >> 3
+    # if subcon.sizeof() < 1024 * 8:
+    if True:
+        return Buffered(subcon,
+            encoder = bits2bytes,
+            decoder = bytes2bits,
+            resizer = resizer)
+    else:
+        return Restream(subcon,
+            stream_reader = BitStreamReader,
+            stream_writer = BitStreamWriter,
+            resizer = resizer)
+
+
+class BitField(Construct):
+    r"""
+    BitFields, as the name suggests, are fields that operate on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using them is very similar to all normal fields: they take a name and a length (in bits).
+
+    :param length: number of bits in the field, or a function that takes context returns int
+    :param swapped: whether to swap byte order (little endian), default is False (big endian)
+    :param signed: whether the value is signed (two's complement), default is False (unsigned)
+    :param bytesize: number of bits per byte, used for byte-swapping (if swapped), default is 8.
+
+    Example::
+
+        >>> foo = BitStruct("foo",
+        ...     BitField("a", 3),
+        ...     Flag("b"),
+        ...     Padding(3),
+        ...     Nibble("c"),
+        ...     BitField("d", 5),
+        ... )
+        >>> foo.parse("\xe1\x1f")
+        Container(a = 7, b = False, c = 8, d = 31)
+        >>> foo = BitStruct("foo",
+        ...     BitField("a", 3),
+        ...     Flag("b"),
+        ...     Padding(3),
+        ...     Nibble("c"),
+        ...     Struct("bar",
+        ...             Nibble("d"),
+        ...             Bit("e"),
+        ...     )
+        ... )
+        >>> foo.parse("\xe1\x1f")
+        Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
+    """
+    __slots__ = ["length", "swapped", "signed", "bytesize"]
+    def __init__(self, length, swapped=False, signed=False, bytesize=8):
+        super(BitField, self).__init__()
+        self.length = length
+        self.swapped = swapped
+        self.signed = signed
+        self.bytesize = bytesize
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        data = _read_stream(stream, length)
+        if self.swapped:
+            data = swapbitslines(data, self.bytesize)
+        return bits2integer(data, self.signed)
+    def _build(self, obj, stream, context):
+        if obj < 0 and not self.signed:
+            raise BitIntegerError("object is negative, but field is not signed", obj)
+        length = self.length(context) if callable(self.length) else self.length
+        data = integer2bits(obj, length)
+        if self.swapped:
+            data = swapbitslines(data, self.bytesize)
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
+
+
+
+#===============================================================================
+# integers and floats
+#===============================================================================
+@singletonfunction
+def Bit():
+    """A 1-bit BitField; must be enclosed in a BitStruct"""
+    return BitField(1)
+@singletonfunction
+def Nibble():
+    """A 4-bit BitField; must be enclosed in a BitStruct"""
+    return BitField(4)
+@singletonfunction
+def Octet():
+    """An 8-bit BitField; must be enclosed in a BitStruct"""
+    return BitField(8)
+
+@singletonfunction
+def UBInt8():
+    """Unsigned, big endian 8-bit integer"""
+    return FormatField(">", "B")
+@singletonfunction
+def UBInt16():
+    """Unsigned, big endian 16-bit integer"""
+    return FormatField(">", "H")
+@singletonfunction
+def UBInt32():
+    """Unsigned, big endian 32-bit integer"""
+    return FormatField(">", "L")
+@singletonfunction
+def UBInt64():
+    """Unsigned, big endian 64-bit integer"""
+    return FormatField(">", "Q")
+
+@singletonfunction
+def SBInt8():
+    """Signed, big endian 8-bit integer"""
+    return FormatField(">", "b")
+@singletonfunction
+def SBInt16():
+    """Signed, big endian 16-bit integer"""
+    return FormatField(">", "h")
+@singletonfunction
+def SBInt32():
+    """Signed, big endian 32-bit integer"""
+    return FormatField(">", "l")
+@singletonfunction
+def SBInt64():
+    """Signed, big endian 64-bit integer"""
+    return FormatField(">", "q")
+
+@singletonfunction
+def ULInt8():
+    """Unsigned, little endian 8-bit integer"""
+    return FormatField("<", "B")
+@singletonfunction
+def ULInt16():
+    """Unsigned, little endian 16-bit integer"""
+    return FormatField("<", "H")
+@singletonfunction
+def ULInt32():
+    """Unsigned, little endian 32-bit integer"""
+    return FormatField("<", "L")
+@singletonfunction
+def ULInt64():
+    """Unsigned, little endian 64-bit integer"""
+    return FormatField("<", "Q")
+
+@singletonfunction
+def SLInt8():
+    """Signed, little endian 8-bit integer"""
+    return FormatField("<", "b")
+@singletonfunction
+def SLInt16():
+    """Signed, little endian 16-bit integer"""
+    return FormatField("<", "h")
+@singletonfunction
+def SLInt32():
+    """Signed, little endian 32-bit integer"""
+    return FormatField("<", "l")
+@singletonfunction
+def SLInt64():
+    """Signed, little endian 64-bit integer"""
+    return FormatField("<", "q")
+
+@singletonfunction
+def UNInt8():
+    """Unsigned, native endianity 8-bit integer"""
+    return FormatField("=", "B")
+@singletonfunction
+def UNInt16():
+    """Unsigned, native endianity 16-bit integer"""
+    return FormatField("=", "H")
+@singletonfunction
+def UNInt32():
+    """Unsigned, native endianity 32-bit integer"""
+    return FormatField("=", "L")
+@singletonfunction
+def UNInt64():
+    """Unsigned, native endianity 64-bit integer"""
+    return FormatField("=", "Q")
+
+@singletonfunction
+def SNInt8():
+    """Signed, native endianity 8-bit integer"""
+    return FormatField("=", "b")
+@singletonfunction
+def SNInt16():
+    """Signed, native endianity 16-bit integer"""
+    return FormatField("=", "h")
+@singletonfunction
+def SNInt32():
+    """Signed, native endianity 32-bit integer"""
+    return FormatField("=", "l")
+@singletonfunction
+def SNInt64():
+    """Signed, native endianity 64-bit integer"""
+    return FormatField("=", "q")
+
+@singletonfunction
+def BFloat32():
+    """Big endian, 32-bit IEEE floating point number"""
+    return FormatField(">", "f")
+@singletonfunction
+def LFloat32():
+    """Little endian, 32-bit IEEE floating point number"""
+    return FormatField("<", "f")
+@singletonfunction
+def NFloat32():
+    """Native endianity, 32-bit IEEE floating point number"""
+    return FormatField("=", "f")
+
+@singletonfunction
+def BFloat64():
+    """Big endian, 64-bit IEEE floating point number"""
+    return FormatField(">", "d")
+@singletonfunction
+def LFloat64():
+    """Little endian, 64-bit IEEE floating point number"""
+    return FormatField("<", "d")
+@singletonfunction
+def NFloat64():
+    """Native endianity, 64-bit IEEE floating point number"""
+    return FormatField("=", "d")
+
+
+@singleton
+class UBInt24(Construct):
+    r"""
+    A 3-byte big-endian integer, as used in ancient file formats.
+    """
+    def _parse(self, stream, context):
+        data = _read_stream(stream, 3)
+        return struct.unpack('>I', b'\x00' + data)[0]
+    def _build(self, obj, stream, context):
+        data = struct.pack('>I', obj)[1:]
+        _write_stream(stream, 3, data)
+    def _sizeof(self, context):
+        return 3
+
+
+@singleton
+class ULInt24(Construct):
+    r"""
+    A 3-byte little-endian integer, as used in ancient file formats.
+    """
+    def _parse(self, stream, context):
+        data = _read_stream(stream, 3)
+        return struct.unpack('<I', data + b'\x00')[0]
+    def _build(self, obj, stream, context):
+        data = struct.pack('<I', obj)[:3]
+        _write_stream(stream, 3, data)
+    def _sizeof(self, context):
+        return 3
+
+
+@singleton
+class VarInt(Construct):
+    r"""
+    Varint encoded integer. Each 7 bits of the number are encoded in one byte in the stream.
+
+    Scheme defined at Google's site:
+    https://developers.google.com/protocol-buffers/docs/encoding
+
+    Example::
+
+        VarInt("number")
+        .parse(b"\x85\x05") -> 645
+        .build(645) -> b"\x85\x05"
+    """
+    # def __init__(self):
+    #     # super(VarInt, self).__init__()
+    #     Construct.__init__(self)
+    def _parse(self, stream, context):
+        acc = 0
+        while True:
+            b = ord(_read_stream(stream, 1))
+            acc = (acc << 7) | (b & 127)
+            if not b & 128:
+                break
+        return acc
+    def _build(self, obj, stream, context):
+        if obj < 0:
+            raise ValueError("varint cannot build from negative number")
+        while obj > 127:
+            b = 128 | (obj & 127)
+            obj >>= 7
+            _write_stream(stream, 1, int2byte(b))
+        _write_stream(stream, 1, int2byte(obj))
+
+
+#===============================================================================
+# structures and sequences
+#===============================================================================
+class Struct(Construct):
+    r"""
+    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
+
+    .. seealso:: The :func:`~construct.macros.Embedded` macro.
+
+    :param subcons: a sequence of subconstructs that make up this structure.
+    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
+
+    ONE OF TWO EMBEDDABLE CLASSES
+
+    Example::
+
+        Struct("foo",
+            UBInt8("first_element"),
+            UBInt16("second_element"),
+            Padding(2),
+            UBInt8("third_element"),
+        )
+    """
+    __slots__ = ["subcons"]
+    def __init__(self, *subcons, **kw):
+        super(Struct, self).__init__()
+        self.subcons = subcons
+        self._inherit_flags(*subcons)
+        self.flagembedded = False
+    def _parse(self, stream, context):
+        obj = Container()
+        context = Container(_ = context)
+        for i,sc in enumerate(self.subcons):
+            if sc.flagembedded:
+                subobj = sc._parse(stream, context)
+                obj.update(subobj)
+            else:
+                subobj = sc._parse(stream, context)
+                if sc.name is not None:
+                    obj[sc.name] = subobj
+                    context[sc.name] = subobj
+            context[i] = subobj
+        return obj
+    def _build(self, obj, stream, context):
+        for i,sc in enumerate(self.subcons):
+            if sc.flagembedded:
+                subobj = obj
+            elif sc.flagbuildnone:
+                subobj = None
+            else:
+                subobj = obj[sc.name]
+                context[sc.name] = subobj
+            context[i] = subobj
+            buildret = sc._build(subobj, stream, context)
+            if buildret is not None:
+                if sc.name is not None:
+                    context[sc.name] = buildret
+                context[i] = buildret
+    def _sizeof(self, context):
+        return sum(sc._sizeof(context) for sc in self.subcons)
+
+
+class Sequence(Struct):
+    r"""
+    A sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
+
+    .. seealso:: The :func:`~construct.macros.Embedded` macro.
+
+    :param subcons: a sequence of subconstructs that make up this structure.
+    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
+
+    Example::
+
+        Sequence("foo",
+            UBInt8("first_element"),
+            UBInt16("second_element"),
+            Padding(2),
+            UBInt8("third_element"),
+        )
+    """
+    def _parse(self, stream, context):
+        obj = ListContainer()
+        context = Container(_ = context)
+        for i,sc in enumerate(self.subcons):
+            subobj = sc._parse(stream, context)
+            if sc.flagembedded:
+                obj.extend(subobj)
+            else:
+                obj.append(subobj)
+                if sc.name is not None:
+                    context[sc.name] = subobj
+            context[i] = subobj
+        return obj
+    def _build(self, obj, stream, context):
+        objiter = iter(obj)
+        for i,sc in enumerate(self.subcons):
+            if sc.flagembedded:
+                subobj = objiter
+            else:
+                subobj = next(objiter)
+                if sc.name is not None:
+                    context[sc.name] = subobj
+            context[i] = subobj
+            buildret = sc._build(subobj, stream, context)
+            if buildret is not None:
+                if sc.name is not None:
+                    context[sc.name] = buildret
+                context[i] = buildret
+
+
+#===============================================================================
+# arrays and repeaters
+#===============================================================================
+class Array(Subconstruct):
+    r"""
+    An array (repeater) of a meta-count. The array will iterate exactly ``countfunc()`` times. Will raise ArrayError if less elements are found.
+
+    .. seealso::
+
+        The :func:`~construct.macros.Array` macro, :func:`Range` and :func:`RepeatUntil`.
+
+    :param countfunc: a function that takes the context as a parameter and returns the number of elements of the array (count)
+    :param subcon: the subcon to repeat ``countfunc()`` times
+
+    Example::
+
+        MetaArray(lambda ctx: 5, UBInt8("foo"))
+
+    Repeats the given unit a fixed number of times.
+
+    :param count: number of times to repeat
+    :param subcon: construct to repeat
+
+    Example::
+
+        >>> c = Array(4, UBInt8("foo"))
+        >>> c.parse("\x01\x02\x03\x04")
+        [1, 2, 3, 4]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06")
+        [1, 2, 3, 4]
+        >>> c.build([5,6,7,8])
+        '\x05\x06\x07\x08'
+        >>> c.build([5,6,7,8,9])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 4..4, found 5
+    """
+    __slots__ = ["count"]
+    def __init__(self, count, subcon):
+        super(Array, self).__init__(subcon)
+        self.count = count
+    def _parse(self, stream, context):
+        count = self.count(context) if callable(self.count) else self.count
+        try:
+            obj = ListContainer()
+            for i in range(count):
+                obj.append(self.subcon._parse(stream, context))
+            return obj
+        except ConstructError:
+            raise ArrayError("expected %d, found %d" % (count, c))
+    def _build(self, obj, stream, context):
+        count = self.count(context) if callable(self.count) else self.count
+        if len(obj) != count:
+            raise ArrayError("expected %d elements, found %d" % (count, len(obj)))
+        for subobj in obj:
+            self.subcon._build(subobj, stream, context)
+    def _sizeof(self, context):
+        count = self.count(context) if callable(self.count) else self.count
+        return self.subcon._sizeof(context) * count
+
+
+class PrefixedArray(Construct):
+    r"""
+    An array prefixed by a length field.
+
+    :param lengthfield: a field returning an integer
+    :param subcon: the subcon to be repeated
+
+    Example::
+
+        PrefixedArray(UBInt8("array"), UBInt8(None))
+        .parse(b"\x03\x01\x01\x01") -> [1,1,1]
+        .build([1,1,1]) -> b"\x03\x01\x01\x01"
+    """
+    def __init__(self, lengthfield, subcon):
+        super(PrefixedArray, self).__init__()
+        self.lengthfield = lengthfield
+        self.subcon = subcon
+    def _parse(self, stream, context):
+        try:
+            count = self.lengthfield._parse(stream, context)
+            return list(self.subcon._parse(stream, context) for i in range(count))
+        except Exception:
+            raise ArrayError("could not read prefix or enough elements, stream too short")
+    def _build(self, obj, stream, context):
+        self.lengthfield._build(len(obj), stream, context)
+        for element in obj:
+            self.subcon._build(element, stream, context)
+
+
+class Range(Subconstruct):
+    r"""
+    A range-array. The subcon will iterate between ``min`` to ``max`` times. If less than ``min`` elements are found, raises RangeError.
+
+    .. seealso::
+
+        The :func:`~construct.macros.GreedyRange` macro.
+
+    The general-case repeater. Repeats the given unit for at least ``min`` times, and up to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits cleanly. If less than ``min`` units have been successfully parsed, a RangeError is raised.
+
+    .. note:: This object requires a seekable stream for parsing.
+
+    :param min: the minimal count
+    :param max: the maximal count
+    :param subcon: the subcon to repeat
+
+    Example::
+
+        >>> c = Range(3, 7, UBInt8("foo"))
+        >>> c.parse("\x01\x02")
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 3..7, found 2
+        >>> c.parse("\x01\x02\x03")
+        [1, 2, 3]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06")
+        [1, 2, 3, 4, 5, 6]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06\x07")
+        [1, 2, 3, 4, 5, 6, 7]
+        >>> c.parse("\x01\x02\x03\x04\x05\x06\x07\x08\x09")
+        [1, 2, 3, 4, 5, 6, 7]
+        >>> c.build([1,2])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 3..7, found 2
+        >>> c.build([1,2,3,4])
+        '\x01\x02\x03\x04'
+        >>> c.build([1,2,3,4,5,6,7,8])
+        Traceback (most recent call last):
+          ...
+        construct.core.RangeError: expected 3..7, found 8
+    """
+    __slots__ = ["min", "max"]
+    def __init__(self, min, max, subcon):
+        if not 0 <= min <= max <= sys.maxsize:
+            raise RangeError("unsane min %s and max %s" % (min,max))
+        super(Range, self).__init__(subcon)
+        self.min = min
+        self.max = max
+    def _parse(self, stream, context):
+        obj = ListContainer()
+        try:
+            while len(obj) < self.max:
+                fallback = stream.tell()
+                obj.append(self.subcon._parse(stream, context))
+                context[len(obj)-1] = obj[-1]
+        except ConstructError:
+            if len(obj) < self.min:
+                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
+            stream.seek(fallback)
+        return obj
+    def _build(self, obj, stream, context):
+        if not isinstance(obj, collections.Sequence):
+            raise RangeError("expected sequence type, found %s" % type(obj))
+        if not self.min <= len(obj) <= self.max:
+            raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
+        try:
+            for i,subobj in enumerate(obj):
+                context[i] = subobj
+                self.subcon._build(subobj, stream, context)
+        except ConstructError:
+            if len(obj) < self.min:
+                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
+    def _sizeof(self, context):
+        if self.min == self.max:
+            return self.min * self.subcon._sizeof(context)
+        else:
+            raise SizeofError("cannot calculate size")
+
+
+def GreedyRange(subcon):
+    return Range(0, sys.maxsize, subcon)
+
+
+class RepeatUntil(Subconstruct):
+    r"""
+    An array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return value.
+
+    :param predicate: a predicate function that takes (obj, context) and returns True if the stop-condition is met, or False to continue.
+    :param subcon: the subcon to repeat.
+
+    Example::
+
+        # will read chars until '\x00' (inclusive)
+        RepeatUntil(lambda obj, ctx: obj == b"\x00",
+            Field("chars", 1)
+        )
+    """
+    __slots__ = ["predicate"]
+    def __init__(self, predicate, subcon):
+        super(RepeatUntil, self).__init__(subcon)
+        self.predicate = predicate
+    def _parse(self, stream, context):
+        try:
+            obj = ListContainer()
+            while True:
+                subobj = self.subcon._parse(stream, context)
+                obj.append(subobj)
+                if self.predicate(subobj, context):
+                    break
+        except ConstructError:
+            raise ArrayError("missing terminator")
+        return obj
+    def _build(self, obj, stream, context):
+        for subobj in obj:
+            self.subcon._build(subobj, stream, context)
+            if self.predicate(subobj, context):
+                break
+        else:
+            raise ArrayError("missing terminator")
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
+
+
+#===============================================================================
+# subconstructs
+#===============================================================================
+class RawCopy(Subconstruct):
+    def __init__(self, subcon):
+        super(RawCopy, self).__init__(subcon)
+    def _parse(self, stream, context):
+        offset1 = stream.tell()
+        obj = self.subcon._parse(stream, context)
+        offset2 = stream.tell()
+        stream.seek(offset1)
+        data = _read_stream(stream, offset2-offset1)
+        return dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+    def _build(self, obj, stream, context):
+        if 'data' in obj:
+            data = obj['data']
+            _write_stream(stream, len(data), data)
+            return dict(data=data, length=len(data))
+        elif 'value' in obj:
+            value = obj['value']
+            data = self.subcon.build(value, context)
+            _write_stream(stream, len(data), data)
+            return dict(data=data, value=value, length=len(data))
+        else:
+            raise ConstructError('both data and value keys are missing')
+
+
+class Padded(Subconstruct):
+    __slots__ = ["length", "pattern", "strict"]
+    def __init__(self, length, subcon, pattern=b"\x00", strict=False):
+        if not isinstance(pattern, bytes) or len(pattern) != 1:
+            raise PaddingError("pattern expected to be b-string character")
+        super(Padded, self).__init__(subcon)
+        self.length = length
+        self.pattern = pattern
+        self.strict = strict
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        position1 = stream.tell()
+        obj = self.subcon._parse(stream, context)
+        position2 = stream.tell()
+        padlen = length - (position2 - position1)
+        if padlen < 0:
+            raise PaddingError("subcon parsed more bytes than was allowed by length")
+        pad = _read_stream(stream, padlen)
+        if self.strict:
+            if pad != self.pattern * padlen:
+                raise PaddingError("expected %r times %r, found %r" % (self.pattern, padlen, pad))
+        return obj
+    def _build(self, obj, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        position1 = stream.tell()
+        subobj = self.subcon._build(obj, stream, context)
+        position2 = stream.tell()
+        padlen = length - (position2 - position1)
+        if padlen < 0:
+            raise PaddingError("subcon parsed more bytes than was allowed by length")
+        _write_stream(stream, padlen, self.pattern * padlen)
+        return subobj
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
+
+
+class Aligned(Subconstruct):
+    r"""
+    Aligns subcon to modulus boundary using padding pattern
+
+    :param subcon: the subcon to align
+    :param modulus: the modulus boundary (default is 4)
+    :param pattern: the padding pattern (default is \x00)
+
+    Example::
+
+        Aligned(
+            Byte("num"),
+            modulus=4,
+        )
+
+        .parse(b"\xff\x00\x00\x00") -> Container(num=255)
+        .build(Container(num=255)) -> b"\xff\x00\x00\x00"
+        .sizeof() -> 4
+
+        Aligned(
+            ULInt16("num"),
+            modulus=4,
+        )
+
+        .parse(b"\xff\x00\x00\x00") -> Container(num=255)
+        .build(Container(num=255)) -> b"\xff\x00\x00\x00"
+        .sizeof() -> 4
+    """
+    __slots__ = ["subcon", "modulus", "pattern"]
+    def __init__(self, subcon, modulus, pattern=b"\x00"):
+        if modulus < 2:
+            raise ValueError("modulus must be at least 2", modulus)
+        if len(pattern) != 1:
+            raise PaddingError("pattern expected to be b-string character")
+        super(Aligned, self).__init__(subcon)
+        self.modulus = modulus
+        self.pattern = pattern
+    def _parse(self, stream, context):
+        position1 = stream.tell()
+        obj = self.subcon._parse(stream, context)
+        position2 = stream.tell()
+        pad = -(position2 - position1) % self.modulus
+        _read_stream(stream, pad)
+        return obj
+    def _build(self, obj, stream, context):
+        position1 = stream.tell()
+        subobj = self.subcon._build(obj, stream, context)
+        position2 = stream.tell()
+        pad = -(position2 - position1) % self.modulus
+        _write_stream(stream, pad, self.pattern * pad)
+        return subobj
+    def _sizeof(self, context):
+        sublen = self.subcon._sizeof(context)
+        return sublen + (-sublen % self.modulus)
+
+
+def AlignedStruct(name, *subcons, **kw):
+    r"""
+    A struct of aligned fields
+
+    :param \*subcons: the subcons that make up this structure
+    :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
+    """
+    return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
+
+
+def BitStruct(name, *subcons):
+    r"""
+    A struct of bitwise fields
+
+    :param \*subcons: the subcons that make up this structure
+    """
+    return Bitwise(Struct(name, *subcons))
+
+
+def EmbeddedBitStruct(*subcons):
+    r"""
+    An embedded BitStruct. no name is necessary.
+
+    :param \*subcons: the subcons that make up this structure
+    """
+    return Bitwise(Embedded(Struct(None, *subcons)))
+
 
 #===============================================================================
 # conditional
 #===============================================================================
-
-def _subobj(sc, obj):
-    return obj if sc.flagembedded else obj[sc.name]
-def _updcon(con, sc, obj):
-    # con.update(obj) if sc.flagembedded else con.set(sc.name)
-
-    if sc.flagembedded:
-        con.update(obj)
-    else:
-        con[sc.name] = obj
-
-
 class Union(Construct):
     r"""
     Set of overlapping fields (like unions in C). When parsing, all fields read the same data. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name. Size is the maximum of subcon sizes.
@@ -604,6 +1363,103 @@ def Optional(subcon):
     return Select(subcon, Pass)
 
 
+class Switch(Construct):
+    """
+    A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
+
+    .. seealso:: The :func:`Pass` singleton.
+
+    :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
+    :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc.
+    :param default: a default value to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for 'do-nothing'.
+    :param include_key: whether or not to include the key in the return value of parsing. defualt is False.
+
+    Example::
+
+        Struct("foo",
+            UBInt8("type"),
+            Switch("value", lambda ctx: ctx.type, {
+                    1 : UBInt8("spam"),
+                    2 : UBInt16("spam"),
+                    3 : UBInt32("spam"),
+                    4 : UBInt64("spam"),
+                }
+            ),
+        )
+    """
+    @singleton
+    class NoDefault(Construct):
+        def _parse(self, stream, context):
+            raise SwitchError("no default case defined")
+        def _build(self, obj, stream, context):
+            raise SwitchError("no default case defined")
+        def _sizeof(self, context):
+            raise SwitchError("no default case defined")
+
+    __slots__ = ["subcons", "keyfunc", "cases", "default", "include_key"]
+
+    def __init__(self, keyfunc, cases, default=NoDefault, include_key=False):
+        super(Switch, self).__init__()
+        self._inherit_flags(*cases.values())
+        self.keyfunc = keyfunc
+        self.cases = cases
+        self.default = default
+        self.include_key = include_key
+        self._inherit_flags(*cases.values())
+    def _parse(self, stream, context):
+        key = self.keyfunc(context)
+        obj = self.cases.get(key, self.default)._parse(stream, context)
+        if self.include_key:
+            return key, obj
+        else:
+            return obj
+    def _build(self, obj, stream, context):
+        if self.include_key:
+            key, obj = obj
+        else:
+            key = self.keyfunc(context)
+        case = self.cases.get(key, self.default)
+        case._build(obj, stream, context)
+    # def _sizeof(self, context):
+    #     case = self.cases.get(self.keyfunc(context), self.default)
+    #     return case._sizeof(context)
+
+
+def IfThenElse(predicate, thensubcon, elsesubcon):
+    r"""
+    An if-then-else conditional construct: if the predicate indicates True,
+    `then_subcon` will be used; otherwise `else_subcon`
+
+    :param predicate: a function taking the context as an argument and returning True or False
+    :param then_subcon: the subcon that will be used if the predicate returns True
+    :param else_subcon: the subcon that will be used if the predicate returns False
+    """
+    return Switch(
+        lambda ctx: bool(predicate(ctx)),
+        {
+            True : thensubcon,
+            False : elsesubcon,
+        },
+    )
+
+
+def If(predicate, subcon, elsevalue=None):
+    r"""
+    An if-then conditional construct: if the predicate indicates True,
+    subcon will be used; otherwise, `elsevalue` will be returned instead.
+
+    :param predicate: a function taking the context as an argument and returning True or False
+    :param subcon: the subcon that will be used if the predicate returns True
+    :param elsevalue: the value that will be used should the predicate return False.
+                      by default this value is None.
+    """
+    return IfThenElse(
+        predicate,
+        subcon,
+        "elsevalue" / Computed(lambda ctx: elsevalue),
+    )
+
+
 #===============================================================================
 # stream manipulation
 #===============================================================================
@@ -685,36 +1541,6 @@ class Peek(Subconstruct):
         pass
     def _sizeof(self, context):
         return 0
-
-
-class OnDemand(Subconstruct):
-    r"""
-    Allows for on-demand (lazy) parsing. When parsing, it will return a LazyContainer that represents a pointer to the data, but does not actually parse it from the stream until it is "demanded". By accessing the 'value' property of LazyContainers, you will demand the data from the stream. The data will be parsed and cached for later use. You can use the 'has_value' property to know whether the data has already been demanded.
-
-    .. seealso:: The :func:`~construct.macros.OnDemandPointer` macro.
-
-    :param subcon: the subcon to read/write on demand
-
-    Example::
-
-        OnDemand(Array(10000, UBInt8("foo"))
-    """
-    def __init__(self, subcon):
-        super(OnDemand, self).__init__(subcon)
-    def _parse(self, stream, context):
-        data = _read_stream(stream, self.subcon._sizeof(context))
-        return lambda: self.subcon.parse(data, context)
-
-
-def OnDemandPointer(offsetfunc, subcon):
-    r"""
-    An on-demand pointer.
-
-    :param offsetfunc: a function taking the context as an argument and returning the absolute stream position
-    :param subcon: the subcon that will be parsed from the `offsetfunc()` stream position on demand
-    :param force_build: see OnDemand. by default True.
-    """
-    return OnDemand(Pointer(offsetfunc, subcon))
 
 
 class Buffered(Subconstruct):
@@ -804,29 +1630,81 @@ class Restream(Subconstruct):
 #===============================================================================
 # miscellaneous
 #===============================================================================
+class Padding(Construct):
+    r"""
+    A padding field (adds bytes when building, discards bytes when parsing).
 
-class RawCopy(Subconstruct):
-    def __init__(self, subcon):
-        super(RawCopy, self).__init__(subcon)
+    :param length: length of the field. can be either an integer or a function that takes the context as an argument and returns the length
+    :param pattern: the padding pattern (b-string character). default is b"\x00"
+    :param strict: whether to verify during parsing that the stream contains the pattern. raises an exception if actual padding differs from the pattern. default is False.
+
+    Example::
+
+        Struct("struct",
+            Byte("num"),
+            Padding(4),
+        )
+
+        .parse(b"\xff\x00\x00\x00\x00") -> Container(num=255)
+        .build(Container(num=255)) -> b"\xff\x00\x00\x00\x00"
+        .sizeof() -> 5
+    """
+    __slots__ = ["length", "pattern", "strict"]
+    def __init__(self, length, pattern=b"\x00", strict=False):
+        if not isinstance(pattern, bytes) or len(pattern) != 1:
+            raise PaddingError("pattern expected to be b-string character")
+        super(Padding, self).__init__()
+        self.length = length
+        self.pattern = pattern
+        self.strict = strict
+        self.flagbuildnone = True
     def _parse(self, stream, context):
-        offset1 = stream.tell()
-        obj = self.subcon._parse(stream, context)
-        offset2 = stream.tell()
-        stream.seek(offset1)
-        data = _read_stream(stream, offset2-offset1)
-        return dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+        length = self.length(context) if callable(self.length) else self.length
+        read = _read_stream(stream, length)
+        if self.strict:
+            expected = length * self.pattern
+            if read != expected:
+                raise PaddingError("expected %r, found %r" % (expected, read))
     def _build(self, obj, stream, context):
-        if 'data' in obj:
-            data = obj['data']
-            _write_stream(stream, len(data), data)
-            return dict(data=data, length=len(data))
-        elif 'value' in obj:
-            value = obj['value']
-            data = self.subcon.build(value, context)
-            _write_stream(stream, len(data), data)
-            return dict(data=data, value=value, length=len(data))
-        else:
-            raise ConstructError('both data and value keys are missing')
+        length = self.length(context) if callable(self.length) else self.length
+        padding = length * self.pattern
+        _write_stream(stream, length, padding)
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
+
+
+class Const(Subconstruct):
+    r"""
+    Constant field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
+
+    :param data: a bytes object
+    :param subcon: the subcon to validate
+    :param value: the expected value
+
+    Example::
+
+        Const(b"IHDR")
+
+        Const(ULInt64, 123)
+    """
+    __slots__ = ["value"]
+    def __init__(self, subcon, value=None):
+        if value is None:
+            subcon, value = Bytes(len(subcon)), subcon
+        if isinstance(subcon, str):
+            subcon, value = Bytes(len(value)), value
+        super(Const, self).__init__(subcon)
+        self.value = value
+        self.flagbuildnone = True
+    def _parse(self, stream, context):
+        obj = self.subcon._parse(stream, context)
+        if obj != self.value:
+            raise ConstError("expected %r but parsed %r" % (self.value,obj))
+        return obj
+    def _build(self, obj, stream, context):
+        return self.subcon._build(self.value, stream, context)
+    def _sizeof(self, context):
+        return self.subcon._sizeof(context)
 
 
 @singleton
@@ -894,26 +1772,6 @@ class Computed(Construct):
         return 0
 
 
-class LazyBound(Construct):
-    r"""
-    Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees).
-
-    :param subconfunc: function taking context and returning a new construct
-
-    ??? look at test suite ???
-    """
-    __slots__ = ["subconfunc"]
-    def __init__(self, subconfunc):
-        super(LazyBound, self).__init__()
-        self.subconfunc = subconfunc
-    def _parse(self, stream, context):
-        return self.subconfunc(context)._parse(stream, context)
-    def _build(self, obj, stream, context):
-        return self.subconfunc(context)._build(obj, stream, context)
-    def _sizeof(self, context):
-        return self.subconfunc(context)._sizeof(context)
-
-
 @singleton
 class Pass(Construct):
     r"""
@@ -965,258 +1823,36 @@ class Terminator(Construct):
         return 0
 
 
-#===============================================================================
-# extras
-#===============================================================================
-
-class Padding(Construct):
-    r"""
-    A padding field (adds bytes when building, discards bytes when parsing).
-
-    :param length: length of the field. can be either an integer or a function that takes the context as an argument and returns the length
-    :param pattern: the padding pattern (b-string character). default is b"\x00"
-    :param strict: whether to verify during parsing that the stream contains the pattern. raises an exception if actual padding differs from the pattern. default is False.
-
-    Example::
-
-        Struct("struct",
-            Byte("num"),
-            Padding(4),
-        )
-
-        .parse(b"\xff\x00\x00\x00\x00") -> Container(num=255)
-        .build(Container(num=255)) -> b"\xff\x00\x00\x00\x00"
-        .sizeof() -> 5
-    """
-    __slots__ = ["length", "pattern", "strict"]
-    def __init__(self, length, pattern=b"\x00", strict=False):
-        if not isinstance(pattern, bytes) or len(pattern) != 1:
-            raise PaddingError("pattern expected to be b-string character")
-        super(Padding, self).__init__()
-        self.length = length
-        self.pattern = pattern
-        self.strict = strict
-        self.flagbuildnone = True
-    def _parse(self, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        read = _read_stream(stream, length)
-        if self.strict:
-            expected = length * self.pattern
-            if read != expected:
-                raise PaddingError("expected %r, found %r" % (expected, read))
-    def _build(self, obj, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        padding = length * self.pattern
-        _write_stream(stream, length, padding)
-    def _sizeof(self, context):
-        return self.length(context) if callable(self.length) else self.length
-
-
-class Padded(Subconstruct):
-    __slots__ = ["length", "pattern", "strict"]
-    def __init__(self, length, subcon, pattern=b"\x00", strict=False):
-        if not isinstance(pattern, bytes) or len(pattern) != 1:
-            raise PaddingError("pattern expected to be b-string character")
-        super(Padded, self).__init__(subcon)
-        self.length = length
-        self.pattern = pattern
-        self.strict = strict
-    def _parse(self, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        position1 = stream.tell()
-        obj = self.subcon._parse(stream, context)
-        position2 = stream.tell()
-        padlen = length - (position2 - position1)
-        if padlen < 0:
-            raise PaddingError("subcon parsed more bytes than was allowed by length")
-        pad = _read_stream(stream, padlen)
-        if self.strict:
-            if pad != self.pattern * padlen:
-                raise PaddingError("expected %r times %r, found %r" % (self.pattern, padlen, pad))
-        return obj
-    def _build(self, obj, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        position1 = stream.tell()
-        subobj = self.subcon._build(obj, stream, context)
-        position2 = stream.tell()
-        padlen = length - (position2 - position1)
-        if padlen < 0:
-            raise PaddingError("subcon parsed more bytes than was allowed by length")
-        _write_stream(stream, padlen, self.pattern * padlen)
-        return subobj
-    def _sizeof(self, context):
-        return self.length(context) if callable(self.length) else self.length
-
-
-class Aligned(Subconstruct):
-    r"""
-    Aligns subcon to modulus boundary using padding pattern
-
-    :param subcon: the subcon to align
-    :param modulus: the modulus boundary (default is 4)
-    :param pattern: the padding pattern (default is \x00)
-
-    Example::
-
-        Aligned(
-            Byte("num"),
-            modulus=4,
-        )
-
-        .parse(b"\xff\x00\x00\x00") -> Container(num=255)
-        .build(Container(num=255)) -> b"\xff\x00\x00\x00"
-        .sizeof() -> 4
-
-        Aligned(
-            ULInt16("num"),
-            modulus=4,
-        )
-
-        .parse(b"\xff\x00\x00\x00") -> Container(num=255)
-        .build(Container(num=255)) -> b"\xff\x00\x00\x00"
-        .sizeof() -> 4
-    """
-    __slots__ = ["subcon", "modulus", "pattern"]
-    def __init__(self, subcon, modulus, pattern=b"\x00"):
-        if modulus < 2:
-            raise ValueError("modulus must be at least 2", modulus)
-        if len(pattern) != 1:
-            raise PaddingError("pattern expected to be b-string character")
-        super(Aligned, self).__init__(subcon)
-        self.modulus = modulus
-        self.pattern = pattern
-    def _parse(self, stream, context):
-        position1 = stream.tell()
-        obj = self.subcon._parse(stream, context)
-        position2 = stream.tell()
-        pad = -(position2 - position1) % self.modulus
-        _read_stream(stream, pad)
-        return obj
-    def _build(self, obj, stream, context):
-        position1 = stream.tell()
-        subobj = self.subcon._build(obj, stream, context)
-        position2 = stream.tell()
-        pad = -(position2 - position1) % self.modulus
-        _write_stream(stream, pad, self.pattern * pad)
-        return subobj
-    def _sizeof(self, context):
-        sublen = self.subcon._sizeof(context)
-        return sublen + (-sublen % self.modulus)
-
-
-def AlignedStruct(name, *subcons, **kw):
-    r"""
-    A struct of aligned fields
-
-    :param \*subcons: the subcons that make up this structure
-    :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
-    """
-    return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
-
-
-class Const(Subconstruct):
-    r"""
-    Constant field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
-
-    :param data: a bytes object
-    :param subcon: the subcon to validate
-    :param value: the expected value
-
-    Example::
-
-        Const(b"IHDR")
-
-        Const(ULInt64, 123)
-    """
-    __slots__ = ["value"]
-    def __init__(self, subcon, value=None):
-        if value is None:
-            subcon, value = Bytes(len(subcon)), subcon
-        if isinstance(subcon, str):
-            subcon, value = Bytes(len(value)), value
-        super(Const, self).__init__(subcon)
-        self.value = value
-        self.flagbuildnone = True
-    def _parse(self, stream, context):
-        obj = self.subcon._parse(stream, context)
-        if obj != self.value:
-            raise ConstError("expected %r but parsed %r" % (self.value,obj))
-        return obj
-    def _build(self, obj, stream, context):
-        return self.subcon._build(self.value, stream, context)
-    def _sizeof(self, context):
-        return self.subcon._sizeof(context)
-
-
-
-#===============================================================================
-# other fields
-#===============================================================================
-
 @singleton
-class UBInt24(Construct):
+class Numpy(Construct):
     r"""
-    A 3-byte big-endian integer, as used in ancient file formats.
-    """
-    def _parse(self, stream, context):
-        data = _read_stream(stream, 3)
-        return struct.unpack('>I', b'\x00' + data)[0]
-    def _build(self, obj, stream, context):
-        data = struct.pack('>I', obj)[1:]
-        _write_stream(stream, 3, data)
-    def _sizeof(self, context):
-        return 3
-
-
-@singleton
-class ULInt24(Construct):
-    r"""
-    A 3-byte little-endian integer, as used in ancient file formats.
-    """
-    def _parse(self, stream, context):
-        data = _read_stream(stream, 3)
-        return struct.unpack('<I', data + b'\x00')[0]
-    def _build(self, obj, stream, context):
-        data = struct.pack('<I', obj)[:3]
-        _write_stream(stream, 3, data)
-    def _sizeof(self, context):
-        return 3
-
-
-@singleton
-class VarInt(Construct):
-    r"""
-    Varint encoded integer. Each 7 bits of the number are encoded in one byte in the stream.
-
-    Scheme defined at Google's site:
-    https://developers.google.com/protocol-buffers/docs/encoding
+    Preserves numpy arrays (both shape, dtype and values).
 
     Example::
 
-        VarInt("number")
-        .parse(b"\x85\x05") -> 645
-        .build(645) -> b"\x85\x05"
+        Numpy("data")
+        .parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00") -> array([1, 2, 3])
+        .build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
     """
-    # def __init__(self):
-    #     # super(VarInt, self).__init__()
-    #     Construct.__init__(self)
+    def __init__(self):
+        Construct.__init__(self)
+        # super(Numpy, self).__init__()
+        try:
+            import numpy
+            self.lib = numpy
+        except ImportError:
+            pass
     def _parse(self, stream, context):
-        acc = 0
-        while True:
-            b = ord(_read_stream(stream, 1))
-            acc = (acc << 7) | (b & 127)
-            if not b & 128:
-                break
-        return acc
+        return self.lib.load(stream)
     def _build(self, obj, stream, context):
-        if obj < 0:
-            raise ValueError("varint cannot build from negative number")
-        while obj > 127:
-            b = 128 | (obj & 127)
-            obj >>= 7
-            _write_stream(stream, 1, int2byte(b))
-        _write_stream(stream, 1, int2byte(obj))
+        self.lib.save(stream, obj)
+    # def _sizeof(self, context):
+    #     raise SizeofError("cannot calculate size")
 
+
+#===============================================================================
+# tunneling and other
+#===============================================================================
 
 class Checksum(Construct):
     r"""
@@ -1359,6 +1995,9 @@ class Compressed(Tunnel):
         return codecs.encode(data, self.encoding)
 
 
+#===============================================================================
+# lazy equivalents
+#===============================================================================
 class LazyStruct(Construct):
     r"""
     A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
@@ -1569,572 +2208,58 @@ class LazySequence(Construct):
             raise SizeofError("cannot calculate size")
 
 
-
-@singleton
-class Numpy(Construct):
+class OnDemand(Subconstruct):
     r"""
-    Preserves numpy arrays (both shape, dtype and values).
+    Allows for on-demand (lazy) parsing. When parsing, it will return a LazyContainer that represents a pointer to the data, but does not actually parse it from the stream until it is "demanded". By accessing the 'value' property of LazyContainers, you will demand the data from the stream. The data will be parsed and cached for later use. You can use the 'has_value' property to know whether the data has already been demanded.
+
+    .. seealso:: The :func:`~construct.macros.OnDemandPointer` macro.
+
+    :param subcon: the subcon to read/write on demand
 
     Example::
 
-        Numpy("data")
-        .parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00") -> array([1, 2, 3])
-        .build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+        OnDemand(Array(10000, UBInt8("foo"))
     """
-    def __init__(self):
-        Construct.__init__(self)
-        # super(Numpy, self).__init__()
-        try:
-            import numpy
-            self.lib = numpy
-        except ImportError:
-            pass
+    def __init__(self, subcon):
+        super(OnDemand, self).__init__(subcon)
     def _parse(self, stream, context):
-        return self.lib.load(stream)
-    def _build(self, obj, stream, context):
-        self.lib.save(stream, obj)
-    # def _sizeof(self, context):
-    #     raise SizeofError("cannot calculate size")
+        data = _read_stream(stream, self.subcon._sizeof(context))
+        return lambda: self.subcon.parse(data, context)
 
 
-#===============================================================================
-# fields
-#===============================================================================
-class BitField(Construct):
+def OnDemandPointer(offsetfunc, subcon):
     r"""
-    BitFields, as the name suggests, are fields that operate on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using them is very similar to all normal fields: they take a name and a length (in bits).
+    An on-demand pointer.
 
-    :param length: number of bits in the field, or a function that takes context returns int
-    :param swapped: whether to swap byte order (little endian), default is False (big endian)
-    :param signed: whether the value is signed (two's complement), default is False (unsigned)
-    :param bytesize: number of bits per byte, used for byte-swapping (if swapped), default is 8.
-
-    Example::
-
-        >>> foo = BitStruct("foo",
-        ...     BitField("a", 3),
-        ...     Flag("b"),
-        ...     Padding(3),
-        ...     Nibble("c"),
-        ...     BitField("d", 5),
-        ... )
-        >>> foo.parse("\xe1\x1f")
-        Container(a = 7, b = False, c = 8, d = 31)
-        >>> foo = BitStruct("foo",
-        ...     BitField("a", 3),
-        ...     Flag("b"),
-        ...     Padding(3),
-        ...     Nibble("c"),
-        ...     Struct("bar",
-        ...             Nibble("d"),
-        ...             Bit("e"),
-        ...     )
-        ... )
-        >>> foo.parse("\xe1\x1f")
-        Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
+    :param offsetfunc: a function taking the context as an argument and returning the absolute stream position
+    :param subcon: the subcon that will be parsed from the `offsetfunc()` stream position on demand
+    :param force_build: see OnDemand. by default True.
     """
-    __slots__ = ["length", "swapped", "signed", "bytesize"]
-    def __init__(self, length, swapped=False, signed=False, bytesize=8):
-        super(BitField, self).__init__()
-        self.length = length
-        self.swapped = swapped
-        self.signed = signed
-        self.bytesize = bytesize
+    return OnDemand(Pointer(offsetfunc, subcon))
+
+
+class LazyBound(Construct):
+    r"""
+    Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees).
+
+    :param subconfunc: function taking context and returning a new construct
+
+    ??? look at test suite ???
+    """
+    __slots__ = ["subconfunc"]
+    def __init__(self, subconfunc):
+        super(LazyBound, self).__init__()
+        self.subconfunc = subconfunc
     def _parse(self, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        data = _read_stream(stream, length)
-        if self.swapped:
-            data = swapbitslines(data, self.bytesize)
-        return bits2integer(data, self.signed)
+        return self.subconfunc(context)._parse(stream, context)
     def _build(self, obj, stream, context):
-        if obj < 0 and not self.signed:
-            raise BitIntegerError("object is negative, but field is not signed", obj)
-        length = self.length(context) if callable(self.length) else self.length
-        data = integer2bits(obj, length)
-        if self.swapped:
-            data = swapbitslines(data, self.bytesize)
-        _write_stream(stream, len(data), data)
+        return self.subconfunc(context)._build(obj, stream, context)
     def _sizeof(self, context):
-        return self.length(context) if callable(self.length) else self.length
-
-
-
-#===============================================================================
-# field shortcuts
-#===============================================================================
-@singletonfunction
-def Bit():
-    """A 1-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(1)
-@singletonfunction
-def Nibble():
-    """A 4-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(4)
-@singletonfunction
-def Octet():
-    """An 8-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(8)
-
-@singletonfunction
-def UBInt8():
-    """Unsigned, big endian 8-bit integer"""
-    return FormatField(">", "B")
-@singletonfunction
-def UBInt16():
-    """Unsigned, big endian 16-bit integer"""
-    return FormatField(">", "H")
-@singletonfunction
-def UBInt32():
-    """Unsigned, big endian 32-bit integer"""
-    return FormatField(">", "L")
-@singletonfunction
-def UBInt64():
-    """Unsigned, big endian 64-bit integer"""
-    return FormatField(">", "Q")
-
-@singletonfunction
-def SBInt8():
-    """Signed, big endian 8-bit integer"""
-    return FormatField(">", "b")
-@singletonfunction
-def SBInt16():
-    """Signed, big endian 16-bit integer"""
-    return FormatField(">", "h")
-@singletonfunction
-def SBInt32():
-    """Signed, big endian 32-bit integer"""
-    return FormatField(">", "l")
-@singletonfunction
-def SBInt64():
-    """Signed, big endian 64-bit integer"""
-    return FormatField(">", "q")
-
-@singletonfunction
-def ULInt8():
-    """Unsigned, little endian 8-bit integer"""
-    return FormatField("<", "B")
-@singletonfunction
-def ULInt16():
-    """Unsigned, little endian 16-bit integer"""
-    return FormatField("<", "H")
-@singletonfunction
-def ULInt32():
-    """Unsigned, little endian 32-bit integer"""
-    return FormatField("<", "L")
-@singletonfunction
-def ULInt64():
-    """Unsigned, little endian 64-bit integer"""
-    return FormatField("<", "Q")
-
-@singletonfunction
-def SLInt8():
-    """Signed, little endian 8-bit integer"""
-    return FormatField("<", "b")
-@singletonfunction
-def SLInt16():
-    """Signed, little endian 16-bit integer"""
-    return FormatField("<", "h")
-@singletonfunction
-def SLInt32():
-    """Signed, little endian 32-bit integer"""
-    return FormatField("<", "l")
-@singletonfunction
-def SLInt64():
-    """Signed, little endian 64-bit integer"""
-    return FormatField("<", "q")
-
-@singletonfunction
-def UNInt8():
-    """Unsigned, native endianity 8-bit integer"""
-    return FormatField("=", "B")
-@singletonfunction
-def UNInt16():
-    """Unsigned, native endianity 16-bit integer"""
-    return FormatField("=", "H")
-@singletonfunction
-def UNInt32():
-    """Unsigned, native endianity 32-bit integer"""
-    return FormatField("=", "L")
-@singletonfunction
-def UNInt64():
-    """Unsigned, native endianity 64-bit integer"""
-    return FormatField("=", "Q")
-
-@singletonfunction
-def SNInt8():
-    """Signed, native endianity 8-bit integer"""
-    return FormatField("=", "b")
-@singletonfunction
-def SNInt16():
-    """Signed, native endianity 16-bit integer"""
-    return FormatField("=", "h")
-@singletonfunction
-def SNInt32():
-    """Signed, native endianity 32-bit integer"""
-    return FormatField("=", "l")
-@singletonfunction
-def SNInt64():
-    """Signed, native endianity 64-bit integer"""
-    return FormatField("=", "q")
-
-@singletonfunction
-def BFloat32():
-    """Big endian, 32-bit IEEE floating point number"""
-    return FormatField(">", "f")
-@singletonfunction
-def LFloat32():
-    """Little endian, 32-bit IEEE floating point number"""
-    return FormatField("<", "f")
-@singletonfunction
-def NFloat32():
-    """Native endianity, 32-bit IEEE floating point number"""
-    return FormatField("=", "f")
-
-@singletonfunction
-def BFloat64():
-    """Big endian, 64-bit IEEE floating point number"""
-    return FormatField(">", "d")
-@singletonfunction
-def LFloat64():
-    """Little endian, 64-bit IEEE floating point number"""
-    return FormatField("<", "d")
-@singletonfunction
-def NFloat64():
-    """Native endianity, 64-bit IEEE floating point number"""
-    return FormatField("=", "d")
-
+        return self.subconfunc(context)._sizeof(context)
 
 
 #===============================================================================
-# arrays and repeaters
-#===============================================================================
-class Array(Subconstruct):
-    r"""
-    An array (repeater) of a meta-count. The array will iterate exactly ``countfunc()`` times. Will raise ArrayError if less elements are found.
-
-    .. seealso::
-
-        The :func:`~construct.macros.Array` macro, :func:`Range` and :func:`RepeatUntil`.
-
-    :param countfunc: a function that takes the context as a parameter and returns the number of elements of the array (count)
-    :param subcon: the subcon to repeat ``countfunc()`` times
-
-    Example::
-
-        MetaArray(lambda ctx: 5, UBInt8("foo"))
-
-    Repeats the given unit a fixed number of times.
-
-    :param count: number of times to repeat
-    :param subcon: construct to repeat
-
-    Example::
-
-        >>> c = Array(4, UBInt8("foo"))
-        >>> c.parse("\x01\x02\x03\x04")
-        [1, 2, 3, 4]
-        >>> c.parse("\x01\x02\x03\x04\x05\x06")
-        [1, 2, 3, 4]
-        >>> c.build([5,6,7,8])
-        '\x05\x06\x07\x08'
-        >>> c.build([5,6,7,8,9])
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 4..4, found 5
-    """
-    __slots__ = ["count"]
-    def __init__(self, count, subcon):
-        super(Array, self).__init__(subcon)
-        self.count = count
-    def _parse(self, stream, context):
-        count = self.count(context) if callable(self.count) else self.count
-        try:
-            obj = ListContainer()
-            for i in range(count):
-                obj.append(self.subcon._parse(stream, context))
-            return obj
-        except ConstructError:
-            raise ArrayError("expected %d, found %d" % (count, c))
-    def _build(self, obj, stream, context):
-        count = self.count(context) if callable(self.count) else self.count
-        if len(obj) != count:
-            raise ArrayError("expected %d elements, found %d" % (count, len(obj)))
-        for subobj in obj:
-            self.subcon._build(subobj, stream, context)
-    def _sizeof(self, context):
-        count = self.count(context) if callable(self.count) else self.count
-        return self.subcon._sizeof(context) * count
-
-
-# def PrefixedArray(lengthfield, subcon):
-#     return Prefixed(lengthfield, Array(subcon))
-
-
-class PrefixedArray(Construct):
-    r"""
-    An array prefixed by a length field.
-
-    :param lengthfield: a field returning an integer
-    :param subcon: the subcon to be repeated
-
-    Example::
-
-        PrefixedArray(UBInt8("array"), UBInt8(None))
-        .parse(b"\x03\x01\x01\x01") -> [1,1,1]
-        .build([1,1,1]) -> b"\x03\x01\x01\x01"
-    """
-    def __init__(self, lengthfield, subcon):
-        super(PrefixedArray, self).__init__()
-        self.lengthfield = lengthfield
-        self.subcon = subcon
-    def _parse(self, stream, context):
-        try:
-            count = self.lengthfield._parse(stream, context)
-            return list(self.subcon._parse(stream, context) for i in range(count))
-        except Exception:
-            raise ArrayError("could not read prefix or enough elements, stream too short")
-    def _build(self, obj, stream, context):
-        self.lengthfield._build(len(obj), stream, context)
-        for element in obj:
-            self.subcon._build(element, stream, context)
-
-
-class Range(Subconstruct):
-    r"""
-    A range-array. The subcon will iterate between ``min`` to ``max`` times. If less than ``min`` elements are found, raises RangeError.
-
-    .. seealso::
-
-        The :func:`~construct.macros.GreedyRange` macro.
-
-    The general-case repeater. Repeats the given unit for at least ``min`` times, and up to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits cleanly. If less than ``min`` units have been successfully parsed, a RangeError is raised.
-
-    .. note:: This object requires a seekable stream for parsing.
-
-    :param min: the minimal count
-    :param max: the maximal count
-    :param subcon: the subcon to repeat
-
-    Example::
-
-        >>> c = Range(3, 7, UBInt8("foo"))
-        >>> c.parse("\x01\x02")
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 3..7, found 2
-        >>> c.parse("\x01\x02\x03")
-        [1, 2, 3]
-        >>> c.parse("\x01\x02\x03\x04\x05\x06")
-        [1, 2, 3, 4, 5, 6]
-        >>> c.parse("\x01\x02\x03\x04\x05\x06\x07")
-        [1, 2, 3, 4, 5, 6, 7]
-        >>> c.parse("\x01\x02\x03\x04\x05\x06\x07\x08\x09")
-        [1, 2, 3, 4, 5, 6, 7]
-        >>> c.build([1,2])
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 3..7, found 2
-        >>> c.build([1,2,3,4])
-        '\x01\x02\x03\x04'
-        >>> c.build([1,2,3,4,5,6,7,8])
-        Traceback (most recent call last):
-          ...
-        construct.core.RangeError: expected 3..7, found 8
-    """
-    __slots__ = ["min", "max"]
-    def __init__(self, min, max, subcon):
-        if not 0 <= min <= max <= sys.maxsize:
-            raise RangeError("unsane min %s and max %s" % (min,max))
-        super(Range, self).__init__(subcon)
-        self.min = min
-        self.max = max
-    def _parse(self, stream, context):
-        obj = ListContainer()
-        try:
-            while len(obj) < self.max:
-                fallback = stream.tell()
-                obj.append(self.subcon._parse(stream, context))
-                context[len(obj)-1] = obj[-1]
-        except ConstructError:
-            if len(obj) < self.min:
-                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
-            stream.seek(fallback)
-        return obj
-    def _build(self, obj, stream, context):
-        if not isinstance(obj, collections.Sequence):
-            raise RangeError("expected sequence type, found %s" % type(obj))
-        if not self.min <= len(obj) <= self.max:
-            raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
-        try:
-            for i,subobj in enumerate(obj):
-                context[i] = subobj
-                self.subcon._build(subobj, stream, context)
-        except ConstructError:
-            if len(obj) < self.min:
-                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
-    def _sizeof(self, context):
-        if self.min == self.max:
-            return self.min * self.subcon._sizeof(context)
-        else:
-            raise SizeofError("cannot calculate size")
-
-
-def GreedyRange(subcon):
-    return Range(0, sys.maxsize, subcon)
-
-
-class RepeatUntil(Subconstruct):
-    r"""
-    An array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return value.
-
-    :param predicate: a predicate function that takes (obj, context) and returns True if the stop-condition is met, or False to continue.
-    :param subcon: the subcon to repeat.
-
-    Example::
-
-        # will read chars until '\x00' (inclusive)
-        RepeatUntil(lambda obj, ctx: obj == b"\x00",
-            Field("chars", 1)
-        )
-    """
-    __slots__ = ["predicate"]
-    def __init__(self, predicate, subcon):
-        super(RepeatUntil, self).__init__(subcon)
-        self.predicate = predicate
-    def _parse(self, stream, context):
-        try:
-            obj = ListContainer()
-            while True:
-                subobj = self.subcon._parse(stream, context)
-                obj.append(subobj)
-                if self.predicate(subobj, context):
-                    break
-        except ConstructError:
-            raise ArrayError("missing terminator")
-        return obj
-    def _build(self, obj, stream, context):
-        for subobj in obj:
-            self.subcon._build(subobj, stream, context)
-            if self.predicate(subobj, context):
-                break
-        else:
-            raise ArrayError("missing terminator")
-    def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
-
-
-#===============================================================================
-# structures and sequences
-#===============================================================================
-class Struct(Construct):
-    r"""
-    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
-
-    .. seealso:: The :func:`~construct.macros.Embedded` macro.
-
-    :param subcons: a sequence of subconstructs that make up this structure.
-    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
-
-    ONE OF TWO EMBEDDABLE CLASSES
-
-    Example::
-
-        Struct("foo",
-            UBInt8("first_element"),
-            UBInt16("second_element"),
-            Padding(2),
-            UBInt8("third_element"),
-        )
-    """
-    __slots__ = ["subcons"]
-    def __init__(self, *subcons, **kw):
-        super(Struct, self).__init__()
-        self.subcons = subcons
-        self._inherit_flags(*subcons)
-        self.flagembedded = False
-    def _parse(self, stream, context):
-        obj = Container()
-        context = Container(_ = context)
-        for i,sc in enumerate(self.subcons):
-            if sc.flagembedded:
-                subobj = sc._parse(stream, context)
-                obj.update(subobj)
-            else:
-                subobj = sc._parse(stream, context)
-                if sc.name is not None:
-                    obj[sc.name] = subobj
-                    context[sc.name] = subobj
-            context[i] = subobj
-        return obj
-    def _build(self, obj, stream, context):
-        for i,sc in enumerate(self.subcons):
-            if sc.flagembedded:
-                subobj = obj
-            elif sc.flagbuildnone:
-                subobj = None
-            else:
-                subobj = obj[sc.name]
-                context[sc.name] = subobj
-            context[i] = subobj
-            buildret = sc._build(subobj, stream, context)
-            if buildret is not None:
-                if sc.name is not None:
-                    context[sc.name] = buildret
-                context[i] = buildret
-    def _sizeof(self, context):
-        return sum(sc._sizeof(context) for sc in self.subcons)
-
-
-class Sequence(Struct):
-    r"""
-    A sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
-
-    .. seealso:: The :func:`~construct.macros.Embedded` macro.
-
-    :param subcons: a sequence of subconstructs that make up this structure.
-    :param nested: a keyword-only argument that indicates whether this struct creates a nested context. The default is True. This parameter is considered "advanced usage", and may be removed in the future.
-
-    Example::
-
-        Sequence("foo",
-            UBInt8("first_element"),
-            UBInt16("second_element"),
-            Padding(2),
-            UBInt8("third_element"),
-        )
-    """
-    def _parse(self, stream, context):
-        obj = ListContainer()
-        context = Container(_ = context)
-        for i,sc in enumerate(self.subcons):
-            subobj = sc._parse(stream, context)
-            if sc.flagembedded:
-                obj.extend(subobj)
-            else:
-                obj.append(subobj)
-                if sc.name is not None:
-                    context[sc.name] = subobj
-            context[i] = subobj
-        return obj
-    def _build(self, obj, stream, context):
-        objiter = iter(obj)
-        for i,sc in enumerate(self.subcons):
-            if sc.flagembedded:
-                subobj = objiter
-            else:
-                subobj = next(objiter)
-                if sc.name is not None:
-                    context[sc.name] = subobj
-            context[i] = subobj
-            buildret = sc._build(subobj, stream, context)
-            if buildret is not None:
-                if sc.name is not None:
-                    context[sc.name] = buildret
-                context[i] = buildret
-
-
-#===============================================================================
-# subconstructs
+# special
 #===============================================================================
 class Embedded(Subconstruct):
     r"""
@@ -2172,9 +2297,8 @@ def Alias(newname, oldname):
 
 
 #===============================================================================
-# mapping
+# mappings
 #===============================================================================
-
 class Mapping(Adapter):
     r"""
     Adapter that maps objects to other objects.
@@ -2242,23 +2366,6 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
 def Flag():
     return SymmetricMapping(UBInt8, {True : 1, False : 0}, default=True)
 
-# @singleton
-# class Flag(Construct):
-#     r"""
-#     A boolean flag.
-
-#     Non-zero byte (or bit) is considered as True, zero is False.
-
-#     .. note:: This construct works with both bit and byte contexts.
-
-#     """
-#     def _parse(self, stream, context):
-#         return _read_stream(stream, 1) != b'\x00'
-#     def _build(self, obj, stream, context):
-#         _write_stream(stream, 1, b'\x01' if bool(obj) else b'\x00')
-#     def _sizeof(self, context):
-#         return 1
-
 
 def Enum(subcon, mapping, default=NotImplemented):
     r"""
@@ -2308,156 +2415,8 @@ class FlagsEnum(Adapter):
 
 
 #===============================================================================
-# structs
-#===============================================================================
-def Bitwise(subcon):
-    r"""
-    Converts the stream to bits, and passes the bitstream to subcon.
-
-    :param subcon: a bitwise construct (usually BitField)
-
-    Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
-    """
-    def resizer(length):
-        if length & 7:
-            raise SizeofError("size must be a multiple of 8", length)
-        return length >> 3
-    # if subcon.sizeof() < 1024 * 8:
-    if True:
-        return Buffered(subcon,
-            encoder = bits2bytes,
-            decoder = bytes2bits,
-            resizer = resizer)
-    else:
-        return Restream(subcon,
-            stream_reader = BitStreamReader,
-            stream_writer = BitStreamWriter,
-            resizer = resizer)
-
-
-def BitStruct(name, *subcons):
-    r"""
-    A struct of bitwise fields
-
-    :param \*subcons: the subcons that make up this structure
-    """
-    return Bitwise(Struct(name, *subcons))
-
-
-def EmbeddedBitStruct(*subcons):
-    r"""
-    An embedded BitStruct. no name is necessary.
-
-    :param \*subcons: the subcons that make up this structure
-    """
-    return Bitwise(Embedded(Struct(None, *subcons)))
-
-
-#===============================================================================
-# conditional
-#===============================================================================
-class Switch(Construct):
-    """
-    A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
-
-    .. seealso:: The :func:`Pass` singleton.
-
-    :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
-    :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc.
-    :param default: a default value to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for 'do-nothing'.
-    :param include_key: whether or not to include the key in the return value of parsing. defualt is False.
-
-    Example::
-
-        Struct("foo",
-            UBInt8("type"),
-            Switch("value", lambda ctx: ctx.type, {
-                    1 : UBInt8("spam"),
-                    2 : UBInt16("spam"),
-                    3 : UBInt32("spam"),
-                    4 : UBInt64("spam"),
-                }
-            ),
-        )
-    """
-    @singleton
-    class NoDefault(Construct):
-        def _parse(self, stream, context):
-            raise SwitchError("no default case defined")
-        def _build(self, obj, stream, context):
-            raise SwitchError("no default case defined")
-        def _sizeof(self, context):
-            raise SwitchError("no default case defined")
-
-    __slots__ = ["subcons", "keyfunc", "cases", "default", "include_key"]
-
-    def __init__(self, keyfunc, cases, default=NoDefault, include_key=False):
-        super(Switch, self).__init__()
-        self._inherit_flags(*cases.values())
-        self.keyfunc = keyfunc
-        self.cases = cases
-        self.default = default
-        self.include_key = include_key
-        self._inherit_flags(*cases.values())
-    def _parse(self, stream, context):
-        key = self.keyfunc(context)
-        obj = self.cases.get(key, self.default)._parse(stream, context)
-        if self.include_key:
-            return key, obj
-        else:
-            return obj
-    def _build(self, obj, stream, context):
-        if self.include_key:
-            key, obj = obj
-        else:
-            key = self.keyfunc(context)
-        case = self.cases.get(key, self.default)
-        case._build(obj, stream, context)
-    # def _sizeof(self, context):
-    #     case = self.cases.get(self.keyfunc(context), self.default)
-    #     return case._sizeof(context)
-
-
-def IfThenElse(predicate, thensubcon, elsesubcon):
-    r"""
-    An if-then-else conditional construct: if the predicate indicates True,
-    `then_subcon` will be used; otherwise `else_subcon`
-
-    :param predicate: a function taking the context as an argument and returning True or False
-    :param then_subcon: the subcon that will be used if the predicate returns True
-    :param else_subcon: the subcon that will be used if the predicate returns False
-    """
-    return Switch(
-        lambda ctx: bool(predicate(ctx)),
-        {
-            True : thensubcon,
-            False : elsesubcon,
-        },
-    )
-
-def If(predicate, subcon, elsevalue=None):
-    r"""
-    An if-then conditional construct: if the predicate indicates True,
-    subcon will be used; otherwise, `elsevalue` will be returned instead.
-
-    :param predicate: a function taking the context as an argument and returning True or False
-    :param subcon: the subcon that will be used if the predicate returns True
-    :param elsevalue: the value that will be used should the predicate return False.
-                      by default this value is None.
-    """
-    return IfThenElse(
-        predicate,
-        subcon,
-        "elsevalue" / Computed(lambda ctx: elsevalue),
-    )
-
-
-
-#===============================================================================
 # adapters
 #===============================================================================
-
-
 class ExprAdapter(Adapter):
     """
     A generic adapter that accepts 'encoder' and 'decoder' as parameters. You
@@ -2616,7 +2575,6 @@ class NoneOf(Validator):
 #===============================================================================
 # strings
 #===============================================================================
-
 class StringEncoded(Adapter):
     __slots__ = ["encoding"]
     def __init__(self, subcon, encoding):
@@ -2639,6 +2597,7 @@ class StringEncoded(Adapter):
             if not isinstance(obj, bytes):
                 raise StringError("no encoding provided but building from unicode string?")
         return obj
+
 
 class StringPaddedTrimmed(Adapter):
     __slots__ = ["length", "padchar", "paddir", "trimdir"]
@@ -2679,7 +2638,6 @@ class StringPaddedTrimmed(Adapter):
             else:
                 raise StringError("expected a string of length %s given %s (%r)" % (length,len(obj),obj))
         return obj
-
 
 
 def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
@@ -2788,7 +2746,6 @@ def CString(terminators=b"\x00", encoding=None):
     #     encoding)
 
 
-
 def GreedyString(encoding=None):
     r"""
     A string that reads the rest of the stream until EOF, or writes a given string as is.
@@ -2813,6 +2770,6 @@ def GreedyString(encoding=None):
 
 
 #===============================================================================
-# other
+# end of file
 #===============================================================================
 
