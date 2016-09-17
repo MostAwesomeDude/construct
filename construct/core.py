@@ -9,10 +9,9 @@ from binascii import hexlify
 
 from construct.lib import Container, FlagsContainer, ListContainer, LazyContainer, LazyListContainer, LazySequenceContainer
 from construct.lib import BitStreamReader, BitStreamWriter, bytes2bits, bits2bytes
-from construct.lib import integer2bits, bits2integer, swapbitslines
+from construct.lib import integer2bits, bits2integer, swapbytes
 from construct.lib import HexString, hexdump
-from construct.lib.py3compat import int2byte, stringtypes, int2byte, iteratebytes, iterateints
-from construct.lib.binary import integer2bits, bits2integer, swapbitslines
+from construct.lib import int2byte, stringtypes, int2byte, iteratebytes, iterateints
 
 
 #===============================================================================
@@ -501,7 +500,7 @@ class BytesInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = _read_stream(stream, length)
         if self.swapped:
-            data = swapbitslines(data, self.bytesize)
+            data = swapbytes(data, self.bytesize)
         return bytes2bits(bits2integer(data, self.signed))
     def _build(self, obj, stream, context):
         if obj < 0 and not self.signed:
@@ -509,7 +508,7 @@ class BytesInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = bits2bytes(integer2bits(obj, length))
         if self.swapped:
-            data = swapbitslines(data, self.bytesize)
+            data = swapbytes(data, self.bytesize)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
@@ -559,7 +558,7 @@ class BitsInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = _read_stream(stream, length)
         if self.swapped:
-            data = swapbitslines(data, self.bytesize)
+            data = swapbytes(data, self.bytesize)
         return bits2integer(data, self.signed)
     def _build(self, obj, stream, context):
         if obj < 0 and not self.signed:
@@ -567,7 +566,7 @@ class BitsInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bits(obj, length)
         if self.swapped:
-            data = swapbitslines(data, self.bytesize)
+            data = swapbytes(data, self.bytesize)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
