@@ -125,8 +125,7 @@ class TestAll(declarativeunittest.TestCase):
 
         [Array(3,Byte).parse, b"\x01\x02\x03", [1,2,3], None],
         [Array(3,Byte).parse, b"\x01\x02\x03additionalgarbage", [1,2,3], None],
-        # issue #101
-        # [Array(3,Byte).parse, b"", [1,2,3], ArrayError],
+        [Array(3,Byte).parse, b"", [1,2,3], ArrayError],
         [Array(3,Byte).build, [1,2,3], b"\x01\x02\x03", None],
         [Array(3,Byte).build, [1,2], None, ArrayError],
         [Array(3,Byte).build, [1,2,3,4,5,6,7,8], None, ArrayError],
@@ -134,8 +133,7 @@ class TestAll(declarativeunittest.TestCase):
 
         [Array(lambda ctx: 3, Byte).parse, (b"\x01\x02\x03",Container(n=3)), [1,2,3], None],
         [Array(lambda ctx: 3, Byte).parse, (b"\x01\x02\x03additionalgarbage",Container(n=3)), [1,2,3], None],
-        # issue #101
-        # [Array(lambda ctx: 3, Byte).parse, (b"",Container(n=3)), None, ArrayError],
+        [Array(lambda ctx: 3, Byte).parse, (b"",Container(n=3)), None, ArrayError],
         [Array(lambda ctx: 3, Byte).build, ([1,2,3],Container(n=3)), b"\x01\x02\x03", None],
         [Array(lambda ctx: 3, Byte).build, ([1,2],Container(n=3)), None, ArrayError],
         [Array(lambda ctx: ctx.n, Byte).parse, (b"\x01\x02\x03",Container(n=3)), [1,2,3], None],
