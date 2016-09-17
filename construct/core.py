@@ -860,63 +860,6 @@ class Anchor(Construct):
         return 0
 
 
-AnchorRange = None
-
-# @singleton
-# class AnchorRange(Construct):
-#     r"""
-#     Gets the stream position at two times when parsing or building.
-
-#     Anchors are useful to measure sizes of Constructs. Place two AnchorRanges with same name, and the second one will return a container with both offsets and length. 
-
-#     This can also be used for checksumming. Give the Checksum field the name of this AnchorRange.
-
-#     ??the name of the anchor range (same for both instances)
-
-#     .. note:: Requires a tellable stream.
-
-#     Example::
-
-#         Struct("struct",
-#             AnchorRange("range"),
-#             Byte("a"),
-#             AnchorRange("range"),
-#         )
-#         .parse(b"\xff") -> Container(range=Container(offset1=0)(ofsset2=1)(length=1))(a=255)
-#         .build(dict(a=1)) -> b"\x01"
-#         .sizeof() -> 1
-#     """
-#     def __init__(self):
-#         Construct.__init__(self)
-#         # super(AnchorRange, self).__init__()
-#         self.flagbuildnone = True
-#     def _parse(self, stream, context):
-#         print(context)
-#         position = stream.tell()
-#         if self.name not in context:
-#             context[self.name] = position
-#             return position
-#         else:
-#             offset1 = context[self.name]
-#             offset2 = position
-#             obj = Container(offset1=offset1)(offset2=offset2)(length=offset2-offset1)
-#             context[self.name] = obj
-#             return obj
-#     def _build(self, obj, stream, context):
-#         print(obj, context)
-#         position = stream.tell()
-#         if self.name not in context:
-#             context[self.name] = position
-#         else:
-#             offset1 = context[self.name]
-#             offset2 = position
-#             obj = Container(offset1=offset1)(offset2=offset2)(length=offset2-offset1)
-#             context[self.name] = obj
-#     def _sizeof(self, context):
-#         return 0
-
-
-
 class Computed(Construct):
     r"""
     A computed value.
