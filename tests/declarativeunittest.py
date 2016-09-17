@@ -22,7 +22,7 @@ class TestCase(unittest.TestCase):
 
             if len(line) == 2:
                 returned, expected = line
-                if returned != expected:
+                if returned != expected or expected != returned:
                     errors.append("test id #%d" % i)
                     errors.append("returned %r, expected %r" % (returned, expected))
 
@@ -71,7 +71,7 @@ class TestCase(unittest.TestCase):
 
             if len(line) == 2:
                 returned, expected = line
-                if returned != expected:
+                if returned != expected or expected != returned:
                     errors.append("test id #%d" % i)
                     errors.append("returned %r, expected %r" % (returned, expected))
 
