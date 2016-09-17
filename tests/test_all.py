@@ -17,9 +17,11 @@ class TestAll(declarativeunittest.TestCase):
     alltests = [
 
         [Byte.parse, b"\x00", 0, None],
-        [Byte.build, 0, b"\x00", None],
         [Byte.parse, b"\xff", 255, None],
+        [Byte.build, 0, b"\x00", None],
         [Byte.build, 255, b"\xff", None],
+        [Byte.build, 300, b"\x00", None], # overflow
+        [Byte.build, 65536, b"\x00", None], # overflow
         [Byte.sizeof, None, 1, None],
 
         [UBInt8.parse, b"\x01", 0x01, None],
@@ -660,8 +662,7 @@ class TestAll2(declarativeunittest.TestCase):
 
         yield [IpAddress.parse, b"\x7f\x80\x81\x82", "127.128.129.130", None]
         yield [IpAddress.build, "127.1.2.3", b"\x7f\x01\x02\x03", None]
-        # issue #107
-        # yield [IpAddress.build, "300.1.2.3", None, FieldError if not PY26 else None]
+        yield [IpAddress.build, "300.1.2.3", None, NameError if not PY26 else None]
         yield [IpAddress.sizeof, None, 4, None]
 
         Node = Struct(
@@ -669,6 +670,7 @@ class TestAll2(declarativeunittest.TestCase):
             "next" / LazyBound(lambda ctx: Node), )
 
         # closed issue #127
+        # this one doesnt seem to check anything?
         yield [Node.parse, b"\x01", Container(value=1)(next=Node), None]
         yield [Node.parse, b"\x01", None, None]
 
