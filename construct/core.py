@@ -1733,8 +1733,7 @@ class Anchor(Construct):
         .sizeof() -> 1
     """
     def __init__(self):
-        Construct.__init__(self)
-        # super(Anchor, self).__init__()
+        super(self.__class__, self).__init__()
         self.flagbuildnone = True
     def _parse(self, stream, context):
         return stream.tell()
@@ -1790,7 +1789,7 @@ class Pass(Construct):
         .sizeof() -> 0
     """
     def __init__(self):
-        Construct.__init__(self)
+        super(self.__class__, self).__init__()
         self.flagbuildnone = True
     def _parse(self, stream, context):
         return None
@@ -1816,7 +1815,7 @@ class Terminator(Construct):
         .sizeof() -> 0
     """
     def __init__(self):
-        Construct.__init__(self)
+        super(self.__class__, self).__init__()
         self.flagbuildnone = True
     def _parse(self, stream, context):
         if stream.read(1):
@@ -1840,8 +1839,7 @@ class Numpy(Construct):
         .build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
     """
     def __init__(self):
-        Construct.__init__(self)
-        # super(Numpy, self).__init__()
+        super(self.__class__, self).__init__()
         try:
             import numpy
             self.lib = numpy
