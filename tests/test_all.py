@@ -11,6 +11,8 @@ try:
 except LookupError:
     zlibcodecraises = LookupError
 
+ident = lambda x: x
+
 
 
 class TestAll(declarativeunittest.TestCase):
@@ -600,16 +602,6 @@ class TestAll(declarativeunittest.TestCase):
         [Aligned(Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)), modulus=4).parse, b"\x02\xab\xcd\x00", Container(a=2)(f=b"\xab\xcd"), None],
         [Aligned(Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)), modulus=4).build, Container(a=2)(f=b"\xab\xcd"), b"\x02\xab\xcd\x00", None],
 
-        # [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-        # [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", None, SizeofError],
-        # [Buffered(UBInt8("buffered"), lambda x:x, lambda x:x, lambda x:x).build, 7, b"\x07", None],
-        # [Buffered(GreedyRange(UBInt8("buffered")), lambda x:x, lambda x:x, lambda x:x).build, [7], None, SizeofError],
-
-        # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-        # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-        # [Restream(UBInt8("restream"), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-        # [Restream(GreedyRange(UBInt8("restream")), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-
         [Flag.parse, b"\x00", False, None],
         [Flag.parse, b"\x01", True, None],
         [Flag.parse, b"\xff", True, None],
@@ -635,11 +627,36 @@ class TestAll(declarativeunittest.TestCase):
         [FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build, dict(), b'\x00', None],
         [FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build, dict(unknown=True), None, MappingError],
 
+
+        # following tests dont run?
+        # [Buffered(Byte, lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
+        # [Buffered(Byte, lambda x:x, lambda x:x, lambda x:x).build, 7, b"\x07", None],
+        # [Buffered(GreedyRange(Byte), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", None, SizeofError],
+        # [Buffered(GreedyRange(Byte), lambda x:x, lambda x:x, lambda x:x).build, [7], None, SizeofError],
+
+        # [Restream(Byte, lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
+        # [Restream(Byte, lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
+        # [Restream(GreedyRange(Byte), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
+        # [Restream(GreedyRange(Byte), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
+
+        # [Restreamed(UBInt16, ident, 1, ident, 1).parse(b"\x00\x01"), 1],
+        # [Restreamed(UBInt16, ident, 1, ident, 1).build(1), b"\x00\x01"],
+        # [Restreamed(BitsInteger(8), bits2bytes, 8, bytes2bits, 1).parse(b"\x0f"), 15],
+        # [Restreamed(BitsInteger(8), bits2bytes, 8, bytes2bits, 1).build(15), b"\x0f"],
+
     ]
 
 
 class TestAll2(declarativeunittest.TestCase):
     def alltestsinteractive(self):
+
+
+        yield [Restreamed(UBInt16, ident, 1, ident, 1).parse(b"\x00\x01"), 1000]
+        yield [Restreamed(UBInt16, ident, 1, ident, 1).build(1000), b"\x00\x01"]
+        yield [Restreamed(UBInt16, ident, 1, ident, 1).build, 1000, b"\x00\x01", None]
+        yield [Restreamed(BitsInteger(8), bits2bytes, 8, bytes2bits, 1).parse(b"\x0f"), 15]
+        yield [Restreamed(BitsInteger(8), bits2bytes, 8, bytes2bits, 1).build(15), b"\x0f"]
+
 
         MulDiv = ExprAdapter(Byte,
             encoder = lambda obj,ctx: obj // 7,

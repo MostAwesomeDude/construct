@@ -1,4 +1,37 @@
-from construct.lib.binary import bytes2bits, bits2bytes
+from construct.lib.binary import integer2bits, integer2bytes, onebit2integer, bits2integer, bytes2integer, bytes2bits, bits2bytes, swapbytes
+
+
+class RestreamedBytesIO(object):
+    __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer"]
+
+    def __init__(self, substream, encoder, encoderunit, decoder, decoderunit):
+        self.substream = substream
+        self.encoder = encoder
+        self.encoderunit = encoderunit
+        self.decoder = decoder
+        self.decoderunit = decoderunit
+        self.rbuffer = b""
+        self.wbuffer = b""
+
+    def read(self, count):
+        if count < 0:
+            raise ValueError("count cannot be negative")
+        while len(self.rbuffer) < count:
+            self.rbuffer += self.decoder(self.substream.read(self.decoderunit))
+        data, self.rbuffer = self.rbuffer[:count], self.rbuffer[count:]
+        return data
+
+    def write(self, data):
+        self.wbuffer += data
+        while len(self.wbuffer) >= self.encoderunit:
+            data, self.wbuffer = self.wbuffer[:self.encoderunit], self.wbuffer[self.encoderunit:]
+            self.substream.write(self.encoder(data))
+
+    def close(self):
+        if len(self.rbuffer):
+            raise ValueError("closing stream but %d unread bytes remain, %d in decoded unit" % (len(self.rbuffer), self.decoderunit))
+        if len(self.wbuffer):
+            raise ValueError("closing stream but %d unwritten bytes remain, %d in encoded unit" % (len(self.wbuffer), self.encoderunit))
 
 
 class BitStreamReader(object):
@@ -11,8 +44,7 @@ class BitStreamReader(object):
 
     def close(self):
         if self.total_size % 8 != 0:
-            raise ValueError("total size of read data must be a multiple of 8",
-                self.total_size)
+            raise ValueError("total size of read data must be a multiple of 8", self.total_size)
 
     def tell(self):
         return self.substream.tell()
