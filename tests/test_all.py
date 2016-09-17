@@ -98,15 +98,13 @@ class TestAll(declarativeunittest.TestCase):
         [Bytes(4).build, b"1234", b"1234", None],
         [Bytes(4).parse, b"", None, FieldError],
         [Bytes(4).build, b"toolong", None, FieldError],
-        # issue #99
-        # [Bytes(4).build, 1, None, FieldError],
-        # [Bytes(4).build, 0x01020304, None, FieldError],
+        [Bytes(4).build, 0, None, FieldError],
+        [Bytes(4).build, 0x01020304, None, FieldError],
         [Bytes(4).sizeof, None, 4, None],
 
         [Bytes(lambda ctx: ctx.n).parse, (b"12345678",Container(n=4)), b"1234", None],
         [Bytes(lambda ctx: ctx.n).build, (b"1234",Container(n=4)), b"1234", None],
-        # issue #99
-        # [Bytes(lambda ctx: ctx.n).build, (1,Container(n=4)), b"\x00\x00\x00\x01", None],
+        [Bytes(lambda ctx: ctx.n).build, (1,Container(n=4)), None, FieldError],
         [Bytes(lambda ctx: ctx.n).parse, (b"",Container(n=4)), None, FieldError],
         [Bytes(lambda ctx: ctx.n).build, (b"toolong",Container(n=4)), None, FieldError],
         [Bytes(lambda ctx: ctx.n).sizeof, None, None, AttributeError],
