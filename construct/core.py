@@ -485,14 +485,40 @@ def Bitwise(subcon):
             resizer = resizer)
 
 
-class BitField(Construct):
-    r"""
-    BitFields, as the name suggests, are fields that operate on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using them is very similar to all normal fields: they take a name and a length (in bits).
+class BytesInteger(Construct):
+    __slots__ = ["length", "signed", "swapped", "bytesize"]
+    def __init__(self, length, signed=False, swapped=False, bytesize=1):
+        super(BytesInteger, self).__init__()
+        self.length = length
+        self.signed = signed
+        self.swapped = swapped
+        self.bytesize = bytesize
+    def _parse(self, stream, context):
+        length = self.length(context) if callable(self.length) else self.length
+        data = _read_stream(stream, length)
+        if self.swapped:
+            data = swapbitslines(data, self.bytesize)
+        return bytes2bits(bits2integer(data, self.signed))
+    def _build(self, obj, stream, context):
+        if obj < 0 and not self.signed:
+            raise BitIntegerError("object is negative, but field is not signed", obj)
+        length = self.length(context) if callable(self.length) else self.length
+        data = bits2bytes(integer2bits(obj, length))
+        if self.swapped:
+            data = swapbitslines(data, self.bytesize)
+        _write_stream(stream, len(data), data)
+    def _sizeof(self, context):
+        return self.length(context) if callable(self.length) else self.length
 
-    :param length: number of bits in the field, or a function that takes context returns int
+
+class BitsInteger(Construct):
+    r"""
+    BitsInteger operates on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using it is very similar to BytesInteger.
+
+    :param length: number of bits in the field, or a function that takes context and returns int
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
     :param swapped: whether to swap byte order (little endian), default is False (big endian)
-    :param bytesize: number of bits per byte, used for byte-swapping (if swapped), default is 8.
+    :param bytesize: number of bits per byte as used for byte swapping (if swapped), default is 8
 
     Example::
 
@@ -518,9 +544,9 @@ class BitField(Construct):
         >>> foo.parse("\xe1\x1f")
         Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
     """
-    __slots__ = ["length", "swapped", "signed", "bytesize"]
+    __slots__ = ["length", "signed", "swapped", "bytesize"]
     def __init__(self, length, signed=False, swapped=False, bytesize=8):
-        super(BitField, self).__init__()
+        super(BitsInteger, self).__init__()
         self.length = length
         self.signed = signed
         self.swapped = swapped
@@ -549,15 +575,15 @@ class BitField(Construct):
 @singletonfunction
 def Bit():
     """A 1-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(1)
+    return BitsInteger(1)
 @singletonfunction
 def Nibble():
     """A 4-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(4)
+    return BitsInteger(4)
 @singletonfunction
 def Octet():
     """An 8-bit BitField; must be enclosed in a BitStruct"""
-    return BitField(8)
+    return BitsInteger(8)
 
 @singletonfunction
 def UBInt8():

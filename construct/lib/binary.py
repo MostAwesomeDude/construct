@@ -19,7 +19,7 @@ def integer2bits(number, width):
     bits = [b"\x00"] * width
     while number and i >= 0:
         bits[i] = b"\x01" if number & 1 else b"\x00"
-        # bits[i] = (b"\x00\x01")[number & 1]
+        # bits[i] = b"\x00\x01"[number & 1]
         number >>= 1
         i -= 1
     return b"".join(bits)
