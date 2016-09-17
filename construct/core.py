@@ -81,7 +81,10 @@ def _write_stream(stream, length, data):
         raise FieldError("could not write bytes, written %d, should %d" % (written, length))
 
 def _subobj(sc, obj):
-    return obj if sc.flagembedded else obj[sc.name]
+    if sc.flagembedded:
+        return obj
+    else:
+        return obj[sc.name]
 
 def _updcon(con, sc, obj):
     if sc.flagembedded:
@@ -487,8 +490,8 @@ class BitField(Construct):
     BitFields, as the name suggests, are fields that operate on raw, unaligned bits, and therefore must be enclosed in a BitStruct. Using them is very similar to all normal fields: they take a name and a length (in bits).
 
     :param length: number of bits in the field, or a function that takes context returns int
-    :param swapped: whether to swap byte order (little endian), default is False (big endian)
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
+    :param swapped: whether to swap byte order (little endian), default is False (big endian)
     :param bytesize: number of bits per byte, used for byte-swapping (if swapped), default is 8.
 
     Example::
@@ -516,11 +519,11 @@ class BitField(Construct):
         Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
     """
     __slots__ = ["length", "swapped", "signed", "bytesize"]
-    def __init__(self, length, swapped=False, signed=False, bytesize=8):
+    def __init__(self, length, signed=False, swapped=False, bytesize=8):
         super(BitField, self).__init__()
         self.length = length
-        self.swapped = swapped
         self.signed = signed
+        self.swapped = swapped
         self.bytesize = bytesize
     def _parse(self, stream, context):
         length = self.length(context) if callable(self.length) else self.length
@@ -538,7 +541,6 @@ class BitField(Construct):
         _write_stream(stream, len(data), data)
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
-
 
 
 #===============================================================================
@@ -730,9 +732,6 @@ class VarInt(Construct):
         .parse(b"\x85\x05") -> 645
         .build(645) -> b"\x85\x05"
     """
-    # def __init__(self):
-    #     # super(VarInt, self).__init__()
-    #     Construct.__init__(self)
     def _parse(self, stream, context):
         acc = 0
         while True:
@@ -1039,8 +1038,8 @@ class RepeatUntil(Subconstruct):
     r"""
     An array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return value.
 
-    :param predicate: a predicate function that takes (obj, context) and returns True if the stop-condition is met, or False to continue.
-    :param subcon: the subcon to repeat.
+    :param predicate: a predicate function that takes (obj, context) and returns True if the stop-condition is met, or False to continue
+    :param subcon: the subcon used to parse and build each element
 
     Example::
 
@@ -1427,12 +1426,11 @@ class Switch(Construct):
 
 def IfThenElse(predicate, thensubcon, elsesubcon):
     r"""
-    An if-then-else conditional construct: if the predicate indicates True,
-    `then_subcon` will be used; otherwise `else_subcon`
+    An if-then-else conditional construct. If the predicate indicates True, `thensubcon` will be used, otherwise `elsesubcon` will be used.
 
-    :param predicate: a function taking the context as an argument and returning True or False
-    :param then_subcon: the subcon that will be used if the predicate returns True
-    :param else_subcon: the subcon that will be used if the predicate returns False
+    :param predicate: a function taking the context as an argument and returning a bool
+    :param thensubcon: the subcon that will be used if the predicate indicates True
+    :param elsesubcon: the subcon that will be used if the predicate indicates False
     """
     return Switch(
         lambda ctx: bool(predicate(ctx)),
@@ -1443,20 +1441,17 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
     )
 
 
-def If(predicate, subcon, elsevalue=None):
+def If(predicate, subcon):
     r"""
-    An if-then conditional construct: if the predicate indicates True,
-    subcon will be used; otherwise, `elsevalue` will be returned instead.
+    An if-then conditional construct. If the predicate indicates True, the `subcon` will be used for parsing and building, otherwise parsing returns None and building is no-op.
 
-    :param predicate: a function taking the context as an argument and returning True or False
+    :param predicate: a function taking the context as an argument and returning bool
     :param subcon: the subcon that will be used if the predicate returns True
-    :param elsevalue: the value that will be used should the predicate return False.
-                      by default this value is None.
     """
     return IfThenElse(
         predicate,
         subcon,
-        "elsevalue" / Computed(lambda ctx: elsevalue),
+        Pass,
     )
 
 
@@ -1853,7 +1848,6 @@ class Numpy(Construct):
 #===============================================================================
 # tunneling and other
 #===============================================================================
-
 class Checksum(Construct):
     r"""
     A field that is build or validated by a hash of a given byte range.
