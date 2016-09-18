@@ -63,6 +63,8 @@ def singletonfunction(func):
     return func()
 
 def _read_stream(stream, length):
+    # if not isinstance(length, int):
+    #     raise TypeError("expected length to be int")
     if length < 0:
         raise ValueError("length must be >= 0", length)
     data = stream.read(length)
@@ -71,6 +73,8 @@ def _read_stream(stream, length):
     return data
 
 def _write_stream(stream, length, data):
+    # if not isinstance(data, bytes):
+    #     raise TypeError("expected data to be a bytes")
     if length < 0:
         raise ValueError("length must be >= 0", length)
     if len(data) != length:
@@ -284,7 +288,6 @@ class Subconstruct(Construct):
         self.name = subcon.name
         self.subcon = subcon
         self._inherit_flags(subcon)
-        self.flagbuildnone = subcon.flagbuildnone
     def _parse(self, stream, context):
         return self.subcon._parse(stream, context)
     def _build(self, obj, stream, context):
@@ -477,16 +480,16 @@ def Bitwise(subcon):
     Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
     """
     def resizer(length):
-        if length % 8 != 0:
+        if length % 8:
             raise SizeofError("size must be a multiple of 8", length)
         return length // 8
-    return Restream(subcon,
-        stream_reader = BitStreamReader,
-        stream_writer = BitStreamWriter,
-        resizer = resizer)
     return Buffered(subcon,
         encoder = bits2bytes,
         decoder = bytes2bits,
+        resizer = resizer)
+    return Restream(subcon,
+        stream_reader = BitStreamReader,
+        stream_writer = BitStreamWriter,
         resizer = resizer)
 
 
@@ -503,12 +506,12 @@ class BytesInteger(Construct):
         data = _read_stream(stream, length)
         if self.swapped:
             data = swapbytes(data, self.bytesize)
-        return bytes2bits(bits2integer(data, self.signed))
+        return bytes2integer(data, self.signed)
     def _build(self, obj, stream, context):
         if obj < 0 and not self.signed:
             raise BitIntegerError("object is negative, but field is not signed", obj)
         length = self.length(context) if callable(self.length) else self.length
-        data = bits2bytes(integer2bits(obj, length))
+        data = integer2bytes(obj, length)
         if self.swapped:
             data = swapbytes(data, self.bytesize)
         _write_stream(stream, len(data), data)
@@ -792,8 +795,6 @@ class Struct(Construct):
     def __init__(self, *subcons, **kw):
         super(Struct, self).__init__()
         self.subcons = subcons
-        self._inherit_flags(*subcons)
-        self.flagembedded = False
     def _parse(self, stream, context):
         obj = Container()
         context = Container(_ = context)
@@ -924,7 +925,7 @@ class Array(Subconstruct):
                 obj.append(self.subcon._parse(stream, context))
             return obj
         except ConstructError:
-            raise ArrayError("expected %d, found %d" % (count, c))
+            raise ArrayError("expected %d, found %d" % (count, len(obj)))
     def _build(self, obj, stream, context):
         count = self.count(context) if callable(self.count) else self.count
         if len(obj) != count:
@@ -1414,7 +1415,6 @@ class Switch(Construct):
         self.cases = cases
         self.default = default
         self.includekey = includekey
-        self._inherit_flags(*cases.values())
     def _parse(self, stream, context):
         key = self.keyfunc(context)
         obj = self.cases.get(key, self.default)._parse(stream, context)
@@ -1715,6 +1715,8 @@ class Const(Subconstruct):
             raise ConstError("expected %r but parsed %r" % (self.value,obj))
         return obj
     def _build(self, obj, stream, context):
+        if obj is not None and obj != self.value:
+            raise ConstError("expected None (its a build from none thing) or the right value")
         return self.subcon._build(self.value, stream, context)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
@@ -1966,7 +1968,6 @@ class Prefixed(Subconstruct):
         return subobj
     def _sizeof(self, context):
         return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
-        # raise SizeofError("cannot calculate size")
 
 
 class Compressed(Tunnel):
@@ -2025,8 +2026,6 @@ class LazyStruct(Construct):
     def __init__(self, *subcons, **kw):
         super(LazyStruct, self).__init__()
         self.subcons = subcons
-        self._inherit_flags(*subcons)
-        self.flagembedded = False
 
         try:
             self.offsetmap = {}
@@ -2153,8 +2152,6 @@ class LazySequence(Construct):
     def __init__(self, *subcons, **kw):
         super(LazySequence, self).__init__()
         self.subcons = subcons
-        self._inherit_flags(*subcons)
-        self.flagembedded = False
 
         try:
             self.offsetmap = {}
@@ -2280,7 +2277,7 @@ class Embedded(Subconstruct):
 
 class Renamed(Subconstruct):
     r"""
-    Renames an existing construct.
+    Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name.
 
     :param newname: the new name
     :param subcon: the subcon to rename

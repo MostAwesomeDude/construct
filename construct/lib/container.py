@@ -189,7 +189,7 @@ class Container(dict):
     def __repr__(self):
         parts = ["Container"]
         for k,v in self.iteritems():
-            if not k.startswith("_"):
+            if isinstance(k,str) and not k.startswith("_"):
                 parts.extend(["(",str(k),"=",repr(v),")"])
         if len(parts) == 1:
             parts.append("()")
@@ -199,8 +199,8 @@ class Container(dict):
     def __str__(self, indentation="\n    "):
         text = ["Container: "]
         for k,v in self.iteritems():
-            if not k.startswith("_"):
-                text.extend([indentation, k, " = "])
+            if isinstance(k,str) and not k.startswith("_"):
+                text.extend([indentation, str(k), " = "])
                 text.append(indentation.join(str(v).split("\n")))
         return "".join(text)
 
@@ -364,7 +364,7 @@ class LazyListContainer(ListContainer):
         return obj
 
     def __str__(self):
-        return "<LazyListContainer: %d possible items, %d cached>" % (len(self),len(self.cached))
+        return "<%s: %d possible items, %d cached>" % (self.__class__, len(self), len(self.cached))
 
 
 class LazySequenceContainer(LazyListContainer):

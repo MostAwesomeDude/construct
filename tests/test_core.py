@@ -1,9 +1,10 @@
 import unittest
-import hashlib
-from hashlib import sha512
+from declarativeunittest import raises
 
 from construct import *
-from construct.lib.py3compat import PY26, PY3, PYPY
+from construct.lib.py3compat import *
+
+import hashlib
 
 
 
@@ -170,23 +171,16 @@ class TestChecksum(unittest.TestCase):
 #         # When setting optional to False in vstring method, all three tests above work fine.
 
 
-# class TestEmbeddedBitStruct(unittest.TestCase):
+class TestEmbeddedBitStruct(unittest.TestCase):
 
-#     def test_from_issue_39(self):
-#         s = Struct('test',
-#             Byte('len'), 
-#             EmbeddedBitStruct(BitField('data', lambda ctx: ctx.len)),
-#         )
-#         self.assertEqual(s.parse(b"\x08\xff"), Container(len=8)(data=255))
-#         self.assertEqual(s.build(dict(len=8,data=255)), b"\x08\xff")
-#         # self.assertRaises(SizeofError, s.sizeof)
+    def test_from_issue_39(self):
+        pass
+        # s = Struct(
+        #     "len" / Byte, 
+        #     EmbeddedBitStruct("data" / BitsInteger(lambda ctx: ctx.len)),
+        # )
+        # assert s.parse(b"\x08\xff") == Container(len=8)(data=255)
+        # assert s.build(dict(len=8,data=255)) == b"\x08\xff"
+        # assert raises(s.sizeof) == SizeofError
 
-
-class TestNumpy(unittest.TestCase):
-
-    def test(self):
-        if not PYPY:
-            import numpy
-            obj = numpy.array([1,2,3], dtype=numpy.int64)
-            self.assertTrue(numpy.array_equal(Numpy.parse(Numpy.build(obj)), obj))
 
