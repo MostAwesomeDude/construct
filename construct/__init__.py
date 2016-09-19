@@ -36,7 +36,7 @@ __author__ = "Arkadiusz Bulski <arek.bulski@gmail.com>, Tomer Filiba <tomerfilib
 # aliases
 #===============================================================================
 # Bits = BitField
-Byte = UBInt8
+# Byte = UBInt8
 # Bytes = Field
 # Embed = Embedded
 

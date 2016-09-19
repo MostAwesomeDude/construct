@@ -686,6 +686,8 @@ def SNInt64():
     """Signed, native endianity 64-bit integer"""
     return FormatField("=", "q")
 
+Byte = UBInt8
+
 @singletonfunction
 def BFloat32():
     """Big endian, 32-bit IEEE floating point number"""
