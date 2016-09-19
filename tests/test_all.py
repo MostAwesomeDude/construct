@@ -448,6 +448,19 @@ class TestCore(unittest.TestCase):
         assert ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitsInteger(16), Padding(4))).parse(b'\xd0\xbc\xfa') == Container(flag1=1)(flag2=1)(number=0xabcd)
         assert BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitsInteger(16), Padding(4)).parse(b'\xfa\xbc\xd1') == Container(flag1=1)(flag2=1)(number=0xabcd)
 
+    def test_bitsswapped(self):
+        assert BitsSwapped(Bytes(2)).parse(b"\x0f\x01") == b"\xf0\x80"
+        assert BitsSwapped(Bytes(2)).build(b"\xf0\x80") == b"\x0f\x01"
+        assert Bitwise(Bytes(8)).parse(b"\xf2") == b'\x01\x01\x01\x01\x00\x00\x01\x00'
+        assert BitsSwapped(Bitwise(Bytes(8))).parse(b"\xf2") == b'\x00\x01\x00\x00\x01\x01\x01\x01'
+        assert BitStruct("a"/Nibble, "b"/Nibble).parse(b"\xf1") == Container(a=15)(b=1)
+        assert BitsSwapped(BitStruct("a"/Nibble, "b"/Nibble)).parse(b"\xf1") == Container(a=8)(b=15)
+
+    def test_bitsswapped_from_issue_145(self):
+        def LBitStruct(*subcons):
+            return BitsSwapped(BitStruct(*subcons))
+        assert LBitStruct("num"/Octet).parse(b"\x01") == Container(num=0x80)
+
     def test_slicing(self):
         assert Slicing(Array(4,Byte), 4, 1, 3, empty=0).parse(b"\x01\x02\x03\x04") == [2,3]
         assert Slicing(Array(4,Byte), 4, 1, 3, empty=0).build([2,3]) == b"\x00\x02\x03\x00"

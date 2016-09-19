@@ -1568,6 +1568,8 @@ class Restreamed(Subconstruct):
         self.stream2.substream = stream
         return self.subcon._build(obj, self.stream2, context)
     def _sizeof(self, context):
+        if self.sizecomputer is None:
+            raise SizeofError("cannot calculate size")
         return self.sizecomputer(self.subcon._sizeof(context))
 
 
@@ -1867,6 +1869,13 @@ class ByteSwapped(Subconstruct):
         _write_stream(stream, len(data), data)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
+
+
+def BitsSwapped(subcon):
+    return Restreamed(subcon,
+        lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
+        lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
+        lambda n: n)
 
 
 class Prefixed(Subconstruct):
