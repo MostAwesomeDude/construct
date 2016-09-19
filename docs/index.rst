@@ -35,7 +35,7 @@ Construct
     <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the last stable release. If you are maintaining a project that depends on this framework, you should use this version. This is also latest version on  <a class="reference external" href="https://pypi.python.org/pypi/construct">pypi</a>. </br>
     </br>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.7.1</a> was released on September 16th, 2016. Framework is undergoing significant API and implementation changes. Documentation is being updated at same time but some confusion may arise. Docstrngs are stale but they will be updated soon, then the readthedocs site. <br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.7.2</a> was released on September 19th, 2016. Framework is undergoing significant API and implementation changes. Documentation is being updated at same time but some confusion may arise. Docstrngs are stale but they will be updated soon, then the readthedocs site. <br/>
     </br>
 
     Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, report issues and bugs, and to send patches. There is also the <a class="reference external" href="https://groups.google.com/d/forum/construct3">mailing list</a> but GitHub should be preffered.
