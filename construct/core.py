@@ -795,6 +795,7 @@ class Struct(Construct):
             if sc.flagembedded:
                 subobj = sc._parse(stream, context).items()
                 obj.update(subobj)
+                context.update(subobj)
             else:
                 subobj = sc._parse(stream, context)
                 if sc.name is not None:
@@ -803,6 +804,7 @@ class Struct(Construct):
             context[i] = subobj
         return obj
     def _build(self, obj, stream, context):
+        context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
                 subobj = obj
@@ -814,9 +816,12 @@ class Struct(Construct):
             context[i] = subobj
             buildret = sc._build(subobj, stream, context)
             if buildret is not None:
+                if sc.flagembedded:
+                    context.update(buildret)
                 if sc.name is not None:
                     context[sc.name] = buildret
                 context[i] = buildret
+        return context
     def _sizeof(self, context):
         return sum(sc._sizeof(context) for sc in self.subcons)
 
@@ -846,11 +851,12 @@ class Sequence(Struct):
             subobj = sc._parse(stream, context)
             if sc.flagembedded:
                 obj.extend(subobj)
+                context[i] = subobj
             else:
                 obj.append(subobj)
                 if sc.name is not None:
                     context[sc.name] = subobj
-            context[i] = subobj
+                context[i] = subobj
         return obj
     def _build(self, obj, stream, context):
         objiter = iter(obj)
@@ -1998,6 +2004,7 @@ class LazyStruct(Construct):
             position = stream.tell()
             stream.seek(self.totalsize, 1)
             return LazyContainer(self.keys, self.offsetmap, {}, stream, position, context)
+        context = Container(_ = context)
         offsetmap = {}
         keys = Container()
         values = {}
@@ -2007,6 +2014,7 @@ class LazyStruct(Construct):
                 subobj = sc._parse(stream, context).items()
                 keys.update(subobj)
                 values.update(subobj)
+                context.update(subobj)
             elif size is None:
                 subobj = sc._parse(stream, context)
                 if sc.name is not None:
@@ -2022,6 +2030,7 @@ class LazyStruct(Construct):
         return LazyContainer(keys.keys(), offsetmap, values, stream, 0, context)
 
     def _build(self, obj, stream, context):
+        context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
                 subobj = obj
@@ -2033,9 +2042,12 @@ class LazyStruct(Construct):
             context[i] = subobj
             buildret = sc._build(subobj, stream, context)
             if buildret is not None:
+                if sc.flagembedded:
+                    context.update(buildret)
                 if sc.name is not None:
                     context[sc.name] = buildret
                 context[i] = buildret
+        return context
 
     def _sizeof(self, context):
         if self.totalsize is not None:

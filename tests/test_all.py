@@ -433,15 +433,14 @@ class TestCore(unittest.TestCase):
         assert d.build(dict(len=8,data=255)) == b"\x08\xff"
         assert d.sizeof() == 2
 
-    @pytest.mark.xfail(reason="issue #39 and #140")
     def test_bitstruct_from_issue_39(self):
         d = Struct(
             "len" / Byte, 
-            EmbeddedBitStruct("data" / BitsInteger(lambda ctx: ctx.len)),
+            EmbeddedBitStruct("data" / BitsInteger(lambda ctx: ctx._.len)),
         )
         assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
         assert d.build(dict(len=8,data=255)) == b"\x08\xff"
-        assert raises(d.sizeof) == SizeofError
+        assert raises(d.sizeof) == AttributeError
 
     def test_bytewise(self):
         assert Bitwise(Bytewise(Bytes(1))).parse(b"\xff") == b"\xff"
@@ -812,8 +811,8 @@ class TestCore(unittest.TestCase):
             }),
             "length" / Anchor,
         )
-        assert Header.parse(b"\x00\x05") == Container(type=0)(size=5)(length=2)
-        assert Header.parse(b"\x01\x00\x05") == Container(type=1)(size=5)(length=3)
+        assert Header.parse(b"\x00\x05")             == Container(type=0)(size=5)(length=2)
+        assert Header.parse(b"\x01\x00\x05")         == Container(type=1)(size=5)(length=3)
         assert Header.parse(b"\x02\x00\x00\x00\x05") == Container(type=2)(size=5)(length=5)
         assert Header.build(dict(type=0, size=5)) == b"\x00\x05"
         assert Header.build(dict(type=1, size=5)) == b"\x01\x00\x05"
@@ -823,8 +822,36 @@ class TestCore(unittest.TestCase):
             Embedded(Header),
             "data" / Bytes(lambda ctx: ctx.size),
         )
+        assert HeaderData.parse(b"\x00\x0512345")             == Container(type=0)(size=5)(length=2)(data=b"12345")
+        assert HeaderData.parse(b"\x01\x00\x0512345")         == Container(type=1)(size=5)(length=3)(data=b"12345")
+        assert HeaderData.parse(b"\x02\x00\x00\x00\x0512345") == Container(type=2)(size=5)(length=5)(data=b"12345")
         assert HeaderData.build(dict(type=0, size=5, data=b"12345")) == b"\x00\x0512345"
         assert HeaderData.build(dict(type=1, size=5, data=b"12345")) == b"\x01\x00\x0512345"
         assert HeaderData.build(dict(type=2, size=5, data=b"12345")) == b"\x02\x00\x00\x00\x0512345"
+
+    def test_struct_proper_context(self):
+        d1 = Struct(
+            "x"/Byte,
+            "inner"/Struct(
+                "y"/Byte,
+                "a"/Computed(this._.x+1),
+                "b"/Computed(this.y+2),
+            ),
+            "c"/Computed(this.x+3),
+            "d"/Computed(this.inner.y+4),
+        )
+        d2 = Struct(
+            "x"/Byte,
+            "inner"/Embedded(Struct(
+                "y"/Byte,
+                "a"/Computed(this._.x+1),  # important
+                "b"/Computed(this.y+2),    # important
+            )),
+            "c"/Computed(this.x+3),
+            "d"/Computed(this.y+4),
+        )
+        assert d1.parse(b"\x01\x0f") == Container(x=1)(inner=Container(y=15)(a=2)(b=17))(c=4)(d=19)
+        # a-field computed on nested context, merged only after entire inner-struct returns
+        assert d2.parse(b"\x01\x0f") == Container(x=1)(y=15)(a=2)(b=17)(c=4)(d=19)
 
 

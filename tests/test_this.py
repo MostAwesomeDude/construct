@@ -6,7 +6,6 @@ from construct import *
 from construct.lib import *
 
 
-@pytest.mark.xfail(reason="issue #142")
 class TestThis(unittest.TestCase):
     
     def testall(self):
@@ -14,14 +13,12 @@ class TestThis(unittest.TestCase):
             # straight-forward usage: instead of passing (lambda ctx: ctx["length"]) use this.length
             "length" / UBInt8,
             "value" / Bytes(this.length),
-            
             # an example of nesting: '_' refers to the parent's scope
             "nested" / Struct(
                 "b1" / UBInt8,
                 "b2" / UBInt8,
                 "b3" / Computed(this.b1 * this.b2 + this._.length),
             ),
-            
             # and conditions work as expected
             "condition" / IfThenElse(
                 this.nested.b1 > 50,
@@ -29,7 +26,6 @@ class TestThis(unittest.TestCase):
                 "c2" / UBInt8,
             ),
         )
-
         assert this_example.parse(b"\x05helloABXXXX") == Container(length=5)(value=b'hello')(nested=Container(b1=65)(b2=66)(b3=4295))(condition=1482184792)
         assert this_example.build(dict(length=5, value=b'hello', nested=dict(b1=65, b2=66), condition=1482184792)) == b"\x05helloABXXXX"
 
