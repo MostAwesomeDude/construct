@@ -9,7 +9,7 @@ from binascii import hexlify
 
 from construct.lib.container import Container, FlagsContainer, ListContainer, LazyContainer, LazyListContainer, LazySequenceContainer
 from construct.lib.binary import integer2bits, integer2bytes, onebit2integer, bits2integer, bytes2integer, bytes2bits, bits2bytes, swapbytes
-from construct.lib.bitstream import BitStreamReader, BitStreamWriter, RestreamedBytesIO
+from construct.lib.bitstream import RestreamedBytesIO
 from construct.lib.hex import HexString, hexdump
 from construct.lib.py3compat import PY3, PY26, PYPY, stringtypes, int2byte, byte2int, str2bytes, bytes2str, str2unicode, unicode2str, iteratebytes, iterateints
 
@@ -475,22 +475,13 @@ def Bitwise(subcon):
 
     .. warning:: Do not use pointers inside.
 
-    :param subcon: a bitwise construct (usually BitField)
-
-    Implementation details: subcons larger than MAX_BUFFER will be wrapped by Restream instead of Buffered.
+    :param subcon: any field that works with bits: Bits, BitStruct, BitsNumber, Bit, Nibble, Octet, etc.
     """
-    def resizer(length):
-        if length % 8:
-            raise SizeofError("size must be a multiple of 8", length)
-        return length // 8
-    return Buffered(subcon,
-        encoder = bits2bytes,
-        decoder = bytes2bits,
-        resizer = resizer)
-    return Restream(subcon,
-        stream_reader = BitStreamReader,
-        stream_writer = BitStreamWriter,
-        resizer = resizer)
+    return Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
+
+
+def Bytewise(subcon):
+    return Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
 
 
 class BytesInteger(Construct):
@@ -1219,13 +1210,13 @@ def AlignedStruct(name, *subcons, **kw):
     return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
 
 
-def BitStruct(name, *subcons):
+def BitStruct(*subcons):
     r"""
     A struct of bitwise fields
 
     :param \*subcons: the subcons that make up this structure
     """
-    return Bitwise(Struct(name, *subcons))
+    return Bitwise(Struct(*subcons))
 
 
 def EmbeddedBitStruct(*subcons):
@@ -1234,7 +1225,7 @@ def EmbeddedBitStruct(*subcons):
 
     :param \*subcons: the subcons that make up this structure
     """
-    return Bitwise(Embedded(Struct(None, *subcons)))
+    return Bitwise(Embedded(Struct(*subcons)))
 
 
 #===============================================================================
@@ -1548,88 +1539,33 @@ class Peek(Subconstruct):
         return 0
 
 
-class Buffered(Subconstruct):
+class Restreamed(Subconstruct):
     r"""
-    Creates an in-memory buffered stream, which can undergo encoding and decoding prior to being passed on to the subconstruct.
+    Transforms bytes between the underlying stream and the subcon.
+
+    When the parsing or building is done, the wrapper stream is closed. If read buffer or write buffer is not empty, then error is raised.
 
     .. seealso:: The :func:`~construct.macros.Bitwise` macro.
-
-    .. warning:: Do not use pointers inside ``Buffered``.
-
-    :param subcon: the subcon which will operate on the buffer
-    :param encoder: a function that takes a string and returns an encoded string (used after building)
-    :param decoder: a function that takes a string and returns a decoded string (used before parsing)
-    :param resizer: a function that takes the size of the subcon and "adjusts" or "resizes" it according to the encoding/decoding process.
-
-    Example::
-
-        Buffered(BitField("foo", 16),
-            encoder = bits2bytes,
-            decoder = bytes2bits,
-            resizer = lambda size: size / 8)
-    """
-    __slots__ = ["encoder", "decoder", "resizer"]
-    def __init__(self, subcon, decoder, encoder, resizer):
-        super(Buffered, self).__init__(subcon)
-        self.encoder = encoder
-        self.decoder = decoder
-        self.resizer = resizer
-    def _parse(self, stream, context):
-        data = self.decoder(_read_stream(stream, self._sizeof(context)))
-        return self.subcon.parse(data, context)
-    def _build(self, obj, stream, context):
-        data = self.encoder(self.subcon.build(obj, context))
-        _write_stream(stream, self._sizeof(context), data)
-    def _sizeof(self, context):
-        return self.resizer(self.subcon._sizeof(context))
-
-
-class Restream(Subconstruct):
-    """
-    Wraps the stream with a read-wrapper (for parsing) or a write-wrapper (for building). The stream wrapper can buffer the data internally, reading it from- or writing it to the underlying stream as needed. For example, BitStreamReader reads whole bytes from the underlying stream, but returns them as individual bits.
-
-    .. seealso:: The :func:`~construct.macros.Bitwise` macro.
-
-    When the parsing or building is done, the stream's close method will be invoked. It can perform any finalization needed for the stream wrapper, but it must not close the underlying stream.
 
     .. warning:: Do not use pointers inside.
 
-    :param subcon: the subcon
-    :param stream_reader: the read-wrapper
-    :param stream_writer: the write wrapper
-    :param resizer: a function that takes the size of the subcon and "adjusts" or "resizes" it according to the encoding/decoding process.
+    :param subcon: the subcon which will operate on the buffer
+    :param encoder: a function that takes a b-string and returns a b-string (used when building)
+    :param encoderunit: ratio as int, encoder takes that many bytes at once
+    :param decoder: a function that takes a b-string and returns a b-string (used when parsing)
+    :param decoderunit: ratio as int, decoder takes that many bytes at once
 
     Example::
 
-        Restream(BitField("foo", 16),
-            stream_reader = BitStreamReader,
-            stream_writer = BitStreamWriter,
-            resizer = lambda size: size / 8)
+        Restreamed(BitsInteger(8), bits2bytes, 8, bytes2bits, 1)
+        .parse(b"\x0f") == 15
+        .build(15) == b"\x0f"
     """
-    __slots__ = ["stream_reader", "stream_writer", "resizer"]
-    def __init__(self, subcon, stream_reader, stream_writer, resizer):
-        super(Restream, self).__init__(subcon)
-        self.stream_reader = stream_reader
-        self.stream_writer = stream_writer
-        self.resizer = resizer
-    def _parse(self, stream, context):
-        stream2 = self.stream_reader(stream)
-        obj = self.subcon._parse(stream2, context)
-        stream2.close()
-        return obj
-    def _build(self, obj, stream, context):
-        stream2 = self.stream_writer(stream)
-        self.subcon._build(obj, stream2, context)
-        stream2.close()
-    def _sizeof(self, context):
-        return self.resizer(self.subcon._sizeof(context))
-
-
-class Restreamed(Subconstruct):
-    __slots__ = ["stream2"]
-    def __init__(self, subcon, encoder, encoderunit, decoder, decoderunit):
+    __slots__ = ["stream2", "sizecomputer"]
+    def __init__(self, subcon, encoder, encoderunit, decoder, decoderunit, sizecomputer):
         super(Restreamed, self).__init__(subcon)
         self.stream2 = RestreamedBytesIO(None, encoder, encoderunit, decoder, decoderunit)
+        self.sizecomputer = sizecomputer
     def _parse(self, stream, context):
         self.stream2.substream = stream
         return self.subcon._parse(self.stream2, context)
@@ -1637,7 +1573,7 @@ class Restreamed(Subconstruct):
         self.stream2.substream = stream
         return self.subcon._build(obj, self.stream2, context)
     def _sizeof(self, context):
-        raise SizeofError("cannot calculate size")
+        return self.sizecomputer(self.subcon._sizeof(context))
 
 
 #===============================================================================

@@ -422,6 +422,13 @@ class TestCore(unittest.TestCase):
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof() == 2
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build(Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))) == b"\xe1\x1f"
 
+    def test_bytewise(self):
+        assert Bitwise(Bytewise(Bytes(1))).parse(b"\xff") == b"\xff"
+        assert Bitwise(Bytewise(Bytes(1))).build(b"\xff") == b"\xff"
+        assert Bitwise(Bytewise(Bytes(1))).sizeof() == 1
+        assert BitStruct(Nibble, "num"/Bytewise(UBInt24), Nibble).parse(b"\xf0\x10\x20\x3f") == Container(num=0x010203)
+        assert Bitwise(Sequence(Nibble, Bytewise(UBInt24), Nibble)).parse(b"\xf0\x10\x20\x3f") == [0x0f,0x010203,0x0f]
+
     def test_byteswapped(self):
         assert ByteSwapped(Bytes(5)).parse(b"12345?????") == b"54321"
         assert ByteSwapped(Bytes(5)).build(b"12345") == b"54321"
@@ -710,25 +717,15 @@ class TestCore(unittest.TestCase):
         obj = numpy.array([1,2,3], dtype=numpy.int64)
         assert numpy.array_equal(Numpy.parse(Numpy.build(obj)), obj)
 
-
-        # following tests dont run?
-        # [Buffered(Byte, lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-        # [Buffered(Byte, lambda x:x, lambda x:x, lambda x:x).build, 7, b"\x07", None],
-        # [Buffered(GreedyRange(Byte), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", None, SizeofError],
-        # [Buffered(GreedyRange(Byte), lambda x:x, lambda x:x, lambda x:x).build, [7], None, SizeofError],
-
-        # following tests dont run?
-        # [Restream(Byte, lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-        # [Restream(Byte, lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", 7, None],
-        # [Restream(GreedyRange(Byte), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-        # [Restream(GreedyRange(Byte), lambda x:x, lambda x:x, lambda x:x).parse, b"\x07", [7], None],
-
-    @pytest.mark.xfail(reason="issue #140")
     def test_restreamed(self):
-        assert Restreamed(UBInt16, ident, 1, ident, 1).parse(b"\x00\x01") == 1
-        assert Restreamed(UBInt16, ident, 1, ident, 1).build(1) == b"\x00\x01"
-        assert Restreamed(BitsInteger(8), bits2bytes, 8, bytes2bits, 1).parse(b"\x0f") == 15
-        assert Restreamed(BitsInteger(8), bits2bytes, 8, bytes2bits, 1).build(15) == b"\x0f"
+        assert Restreamed(UBInt16, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
+        assert Restreamed(UBInt16, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
+        assert Restreamed(UBInt16, ident, 1, ident, 1, ident).sizeof() == 2
+        assert raises(Restreamed(VarInt, ident, 1, ident, 1, ident).sizeof) == SizeofError
+        assert Restreamed(Bytes(2), None, None, lambda b: b*2, 1, None).parse(b"a") == b"aa"
+        assert Restreamed(Bytes(1), lambda b: b*2, 1, None, None, None).build(b"a") == b"aa"
+        assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
+        # tested mosty as Bitwise and Bytewise
 
     def test_muldiv(self):
         MulDiv = ExprAdapter(Byte,
