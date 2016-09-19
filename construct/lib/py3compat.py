@@ -5,6 +5,7 @@ Some Python 2 & 3 compatibility code.
 import sys
 
 
+PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PY26 = sys.version_info[:2] == (2,6)
 PY32 = sys.version_info[:2] == (3,2)
