@@ -1571,10 +1571,14 @@ class Restreamed(Subconstruct):
         self.sizecomputer = sizecomputer
     def _parse(self, stream, context):
         self.stream2.substream = stream
-        return self.subcon._parse(self.stream2, context)
+        obj = self.subcon._parse(self.stream2, context)
+        self.stream2.close()
+        return obj
     def _build(self, obj, stream, context):
         self.stream2.substream = stream
-        return self.subcon._build(obj, self.stream2, context)
+        buildret = self.subcon._build(obj, self.stream2, context)
+        self.stream2.close()
+        return buildret
     def _sizeof(self, context):
         if self.sizecomputer is None:
             raise SizeofError("cannot calculate size")
