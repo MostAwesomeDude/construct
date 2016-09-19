@@ -6,13 +6,6 @@ from construct import *
 from construct.lib import *
 from construct.lib.py3compat import *
 
-try:
-    import codecs
-    codecs.lookup("zlib")
-    zlibcodecraises = None
-except LookupError:
-    zlibcodecraises = LookupError
-
 ident = lambda x: x
 
 
@@ -511,13 +504,13 @@ class TestCore(unittest.TestCase):
         assert Prefixed(VarInt, GreedyBytes).build(b"abc") == b'\x03abc'
         assert raises(Prefixed(VarInt, GreedyBytes).sizeof) == SizeofError
 
-    @pytest.mark.xfail(reason="issue #140")
-    def test_from_issue_140_compressed(self):
-        assert raises(Prefixed(Byte, Compressed(GreedyBytes,"zlib")).parse, b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1???????????') == zlibcodecraises
-        assert raises(Prefixed(Byte, Compressed(GreedyBytes,"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") == zlibcodecraises
-        assert raises(Prefixed(Byte, Compressed(CString(),"zlib")).parse, b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????') == zlibcodecraises
-        assert raises(Prefixed(Byte, Compressed(CString(),"zlib")).build, b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") == zlibcodecraises
-        assert raises(Prefixed(Byte, Compressed(CString(),"zlib")).sizeof) == SizeofError
+    @pytest.mark.xfail(PY32 or PY33, reason="codecs module")
+    def test_compressed_from_issue_140(self):
+        assert Prefixed(Byte, Compressed(GreedyBytes, "zlib")).parse(b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1???????????') == b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        assert Prefixed(Byte, Compressed(GreedyBytes, "zlib")).build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") == b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1'
+        assert Prefixed(Byte, Compressed(CString(), "zlib")).parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????') == b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        assert Prefixed(Byte, Compressed(CString(), "zlib")).build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") == b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1'
+        assert raises(Prefixed(Byte, Compressed(CString(), "zlib")).sizeof) == SizeofError
 
     def test_string(self):
         assert String(5).parse(b"hello") == b"hello"
