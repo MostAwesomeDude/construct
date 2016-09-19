@@ -4,7 +4,6 @@ from declarativeunittest import raises
 from construct import *
 
 
-
 class TestSearch(unittest.TestCase):
 
     def setUp(self):
@@ -30,42 +29,44 @@ class TestSearch(unittest.TestCase):
     def test_search_sanity(self):
         obj1 = self.s.parse(b"\x11\x21\x22\x02\x02\x13\x51\x52")
 
-        self.assertEqual(obj1.search("bb"), None)
-        self.assertNotEqual(obj1.search("abcb"), None)
-        self.assertNotEqual(obj1.search("ad"), None)
-        self.assertEqual(obj1.search("aa"), 0x11)
-        self.assertEqual(obj1.search("aba"), 0x21)
-        self.assertEqual(obj1.search("abb"), 0x22)
-        self.assertEqual(obj1.search('ac'), 0x13)
+        assert obj1.search("bb") == None
+        assert obj1.search("abcb") != None
+        assert obj1.search("ad") != None
+        assert obj1.search("aa") == 0x11
+        assert obj1.search("aba") == 0x21
+        assert obj1.search("abb") == 0x22
+        assert obj1.search('ac') == 0x13
         
     def test_search_functionality(self):
         obj1 = self.s.parse(b"\x11\x21\x22\x02\x02\x13\x51\x52")
         obj2 = self.s.parse(b"\x11\x21\x22\x03\x03\x13\x51\x52")
 
-        self.assertEqual(obj1.search('abcb1a'), None)
-        self.assertEqual(obj1.search('abcb3a'), None)
-        self.assertEqual(obj1.search('abcb4a'), None)
-        self.assertEqual(obj1.search('abcb2a'), 0x02)
+        assert obj1.search('abcb1a') == None
+        assert obj1.search('abcb3a') == None
+        assert obj1.search('abcb4a') == None
+        assert obj1.search('abcb2a') == 0x02
         
-        self.assertEqual(obj2.search('abcb1a'), None)
-        self.assertEqual(obj2.search('abcb2a'), None)
-        self.assertEqual(obj2.search('abcb4a'), None)
-        self.assertEqual(obj2.search('abcb3a'), 0x03)
+        assert obj2.search('abcb1a') == None
+        assert obj2.search('abcb2a') == None
+        assert obj2.search('abcb4a') == None
+        assert obj2.search('abcb3a') == 0x03
+
         # Return only the first one
-        self.assertEqual(obj1.search("ada"), 0x51)
+        assert obj1.search("ada") == 0x51
         
     def test_search_all_sanity(self):
         obj1 = self.s.parse(b"\x11\x21\x22\x02\x02\x13\x51\x52")
 
-        self.assertEqual(obj1.search_all("bb"), [])
-        self.assertNotEqual(obj1.search_all("ad"), None)
-        self.assertEqual(obj1.search_all("aa"), [0x11])
-        self.assertEqual(obj1.search_all("aba"), [0x21])
-        self.assertEqual(obj1.search_all("abb"), [0x22])
-        self.assertEqual(obj1.search_all('ac'), [0x13])
+        assert obj1.search_all("bb") == []
+        assert obj1.search_all("ad") != None
+        assert obj1.search_all("aa") == [0x11]
+        assert obj1.search_all("aba") == [0x21]
+        assert obj1.search_all("abb") == [0x22]
+        assert obj1.search_all('ac') == [0x13]
         
     def test_search_all_functionality(self):
         obj1 = self.s.parse(b"\x11\x21\x22\x02\x02\x13\x51\x52")
+
         # Return all of them
-        self.assertEqual(obj1.search_all("ada"), [0x51,0x52])
+        assert obj1.search_all("ada") == [0x51,0x52]
 
