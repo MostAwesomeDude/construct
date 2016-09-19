@@ -17,10 +17,12 @@ class TestCore(unittest.TestCase):
         assert Byte.parse(b"\xff") == 255
         assert Byte.build(0) == b"\x00"
         assert Byte.build(255) == b"\xff"
-        if not PY26:
-            assert raises(Byte.build, 300) == FieldError
-            assert raises(Byte.build, 65536) == FieldError
         assert Byte.sizeof() == 1
+
+    @pytest.mark.xfail(PY26, reason="struct.pack has silent overflow")
+    def test_byte_overflow(self):
+        assert raises(Byte.build, 300) == FieldError
+        assert raises(Byte.build, 65536) == FieldError
 
     def test_ints(self):
         assert UBInt8.parse(b"\x01") == 0x01
@@ -123,11 +125,13 @@ class TestCore(unittest.TestCase):
         assert FormatField("<","L").build(0x78563412) == b"\x12\x34\x56\x78"
         assert raises(FormatField("<","L").parse, b"") == FieldError
         assert raises(FormatField("<","L").parse, b"\x12\x34\x56") == FieldError
-        if not PY26:
-            assert raises(FormatField("<","L").build, 2**100) == FieldError
-            assert raises(FormatField("<","L").build, 9e9999) == FieldError
         assert raises(FormatField("<","L").build, "string not int") == FieldError
         assert FormatField("<","L").sizeof() == 4
+
+    @pytest.mark.xfail(PY26, reason="struct.pack has silent overflow")
+    def test_formatfield_overflow(self):
+        assert raises(FormatField("<","L").build, 2**100) == FieldError
+        assert raises(FormatField("<","L").build, 9e9999) == FieldError
 
     def test_array(self):
         assert Array(3,Byte).parse(b"\x01\x02\x03") == [1,2,3]
@@ -504,8 +508,8 @@ class TestCore(unittest.TestCase):
         assert Prefixed(VarInt, GreedyBytes).build(b"abc") == b'\x03abc'
         assert raises(Prefixed(VarInt, GreedyBytes).sizeof) == SizeofError
 
-    @pytest.mark.xfail(PY32 or PY33, reason="codecs module")
-    def test_compressed_from_issue_140(self):
+    @pytest.mark.xfail(PY32 or PY33, reason="codecs module missing on some versions")
+    def test_compressed(self):
         assert Prefixed(Byte, Compressed(GreedyBytes, "zlib")).parse(b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1???????????') == b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
         assert Prefixed(Byte, Compressed(GreedyBytes, "zlib")).build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") == b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1'
         assert Prefixed(Byte, Compressed(CString(), "zlib")).parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????') == b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -609,13 +613,20 @@ class TestCore(unittest.TestCase):
         assert LazyStruct().parse(b"") == dict()
         assert LazyStruct().build(dict()) == b""
 
-        if PY3:
-            assert LazyStruct("a"/Byte, "b"/CString()).parse(b"\x01abc\x00") == dict(a=1,b=b"abc")
-            assert LazyStruct("a"/Byte).parse(b"\x01") == dict(a=1)
-            assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).parse(b"") == dict()
-            assert LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).parse(b"\x01\x02") == dict(a=1,b=dict(c=2))
-            assert LazyStruct("a"/Byte,"b"/CString()).parse(b"\x01abc\x00") == Struct("a"/Byte,"b"/CString()).parse(b"\x01abc\x00")
-            assert LazyStruct("a"/Byte,"b"/CString()).build(dict(a=1,b=b"abc")) == Struct("a"/Byte,"b"/CString()).build(dict(a=1,b=b"abc"))
+        assert dict(LazyStruct("a"/Byte).parse(b"\x01")) == dict(a=1)
+        assert LazyStruct("a"/Byte).build(dict(a=1)) == b"\x01"
+        assert dict(LazyStruct("a"/Byte,"b"/CString()).parse(b"\x01abc\x00")) == dict(a=1,b=b"abc")
+        assert LazyStruct("a"/Byte,"b"/CString()).build(dict(a=1,b=b"abc")) == b"\x01abc\x00"
+        assert dict(LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).parse(b"")) == dict()
+        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).build(dict()) == b""
+
+    @pytest.mark.xfail(reason="issue #140")
+    def test_lazystruct_nested_embedded(self):
+        assert dict(LazyStruct("a"/Byte,"b"/LazyStruct("c"/Byte)).parse(b"\x01\x02")) == dict(a=1,b=dict(c=2))
+        assert LazyStruct("a"/Byte,"b"/LazyStruct("c"/Byte)).build(dict(a=1,b=dict(c=2))) == b"\x01\x02"
+        # only parsing embedded fails
+        assert dict(LazyStruct("a"/Byte,Embedded(LazyStruct("c"/Byte))).parse(b"\x01\x02")) == dict(a=1,c=2)
+        assert LazyStruct("a"/Byte,Embedded(LazyStruct("c"/Byte))).build(dict(a=1,c=2)) == b"\x01\x02"
 
     def test_lazyrange(self):
         assert LazyRange(3,5,Byte).parse(b"\x01\x02\x03") == [1,2,3]
@@ -630,6 +641,7 @@ class TestCore(unittest.TestCase):
         assert raises(LazyRange(3,5,Byte).build, [1,2,3,4,5,6]) == RangeError
         assert raises(LazyRange(3,5,Byte).build, 0) == RangeError
         assert raises(LazyRange(3,5,Byte).sizeof) == SizeofError
+        assert LazyRange(0,100,Struct("id"/Byte)).parse(b'\x01\x02') == [Container(id=1),Container(id=2)]
         assert LazyRange(0,100,Struct("id"/Byte)).build([dict(id=i) for i in range(5)]) == b'\x00\x01\x02\x03\x04'
         assert raises(LazyRange(0,100,Struct("id"/Byte)).build, dict(id=1)) == RangeError
         assert raises(LazyRange(0,100,Struct("id"/Byte)).sizeof) == SizeofError
@@ -639,27 +651,26 @@ class TestCore(unittest.TestCase):
         assert raises(LazyRange, +2, -7, Byte) == RangeError
         assert raises(LazyRange, 1, 1, VarInt) == SizeofError
 
-        assert LazyRange(0,100,Struct("id"/Byte)).parse(b'\x01\x02') == [Container(id=1),Container(id=2)]
         assert LazyRange(1,9,Byte).parse(b"12345") == Range(1,9,Byte).parse(b"12345")
         assert LazyRange(1,9,Byte).build([1,2,3]) == Range(1,9,Byte).build([1,2,3])
 
     def test_lazysequence(self):
         assert LazySequence(UBInt8, UBInt16).parse(b"\x01\x00\x02") == [1,2]
         assert LazySequence(UBInt8, UBInt16).build([1,2]) == b"\x01\x00\x02"
+        assert LazySequence().parse(b"") == []
+        assert LazySequence().build([]) == b""
+        assert LazySequence().sizeof() == 0
+
+        assert LazySequence(UBInt8,UBInt16).parse(b"\x01\x00\x02") == Sequence(UBInt8,UBInt16).parse(b"\x01\x00\x02")
+        assert LazySequence(UBInt8,UBInt16).build([1,2]) == Sequence(UBInt8,UBInt16).build([1,2])
+        assert LazySequence(UBInt8,UBInt16).sizeof() == Sequence(UBInt8,UBInt16).sizeof()
 
     @pytest.mark.xfail(reason="issue #140")
-    def test_lazysequence_from_issue_140(self):
+    def test_lazysequence_nested_embedded(self):
         assert LazySequence(UBInt8, UBInt16, LazySequence(UBInt8, UBInt8)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
         assert LazySequence(UBInt8, UBInt16, LazySequence(UBInt8, UBInt8)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"
         assert LazySequence(UBInt8, UBInt16, Embedded(LazySequence(UBInt8, UBInt8))).parse(b"\x01\x00\x02\x03\x04") == [1,2,3,4]
         assert LazySequence(UBInt8, UBInt16, Embedded(LazySequence(UBInt8, UBInt8))).build([1,2,3,4]) == b"\x01\x00\x02\x03\x04"
-
-        assert LazySequence().parse(b"") == Sequence().parse(b"")
-        assert LazySequence().build([]) == Sequence().build([])
-        assert LazySequence().sizeof() == Sequence().sizeof()
-        assert LazySequence(UBInt8,UBInt16).parse(b"\x01\x00\x02") == Sequence(UBInt8,UBInt16).parse(b"\x01\x00\x02")
-        assert LazySequence(UBInt8,UBInt16).build([1,2]) == Sequence(UBInt8,UBInt16).build([1,2])
-        assert LazySequence(UBInt8,UBInt16).sizeof() == Sequence(UBInt8,UBInt16).sizeof()
 
     @pytest.mark.xfail(reason="issue #140")
     def test_ondemandpointer(self):
@@ -699,7 +710,7 @@ class TestCore(unittest.TestCase):
         assert FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build(dict()) == b'\x00'
         assert raises(FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build, dict(unknown=True)) == MappingError
 
-    @pytest.mark.xfail(PYPY, reason="Numpy not on Travis PYPY")
+    @pytest.mark.xfail(PYPY, reason="numpy not on Travis pypy")
     def test_numpy(self):
         import numpy
         obj = numpy.array([1,2,3], dtype=numpy.int64)
@@ -713,7 +724,7 @@ class TestCore(unittest.TestCase):
         assert Restreamed(Bytes(2), None, None, lambda b: b*2, 1, None).parse(b"a") == b"aa"
         assert Restreamed(Bytes(1), lambda b: b*2, 1, None, None, None).build(b"a") == b"aa"
         assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
-        # tested mosty as Bitwise and Bytewise
+        print("Note: tested mosty as Bitwise and Bytewise")
 
     def test_muldiv(self):
         MulDiv = ExprAdapter(Byte,
@@ -733,7 +744,7 @@ class TestCore(unittest.TestCase):
         assert IpAddress.build("127.1.2.3") == b"\x7f\x01\x02\x03"
         assert IpAddress.sizeof() == 4
 
-    @pytest.mark.xfail(reason="issue #127 and #140")
+    @pytest.mark.xfail(reason="do not know how to test it")
     def test_node_lazybound(self):
         Node = Struct(
             "value" / UBInt8,
