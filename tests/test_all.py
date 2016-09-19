@@ -622,8 +622,7 @@ class TestCore(unittest.TestCase):
         assert LazyRange(3,5,Byte).parse(b"\x01\x02\x03\x04") == [1,2,3,4]
         assert LazyRange(3,5,Byte).parse(b"\x01\x02\x03\x04\x05") == [1,2,3,4,5]
         assert LazyRange(3,5,Byte).parse(b"\x01\x02\x03\x04\x05\x06") == [1,2,3,4,5]
-        # copied below
-        # assert raises(LazyRange(3,5,Byte).parse, b"") == RangeError
+        assert raises(LazyRange(3,5,Byte).parse, b"") == RangeError
         assert LazyRange(3,5,Byte).build([1,2,3]) == b"\x01\x02\x03"
         assert LazyRange(3,5,Byte).build([1,2,3,4]) == b"\x01\x02\x03\x04"
         assert LazyRange(3,5,Byte).build([1,2,3,4,5]) == b"\x01\x02\x03\x04\x05"
@@ -643,10 +642,6 @@ class TestCore(unittest.TestCase):
         assert LazyRange(0,100,Struct("id"/Byte)).parse(b'\x01\x02') == [Container(id=1),Container(id=2)]
         assert LazyRange(1,9,Byte).parse(b"12345") == Range(1,9,Byte).parse(b"12345")
         assert LazyRange(1,9,Byte).build([1,2,3]) == Range(1,9,Byte).build([1,2,3])
-
-    @pytest.mark.xfail(reason="issue #140")
-    def test_lazyrange_from_issue_140(self):
-        assert raises(LazyRange(3,5,Byte).parse, b"") == RangeError
 
     def test_lazysequence(self):
         assert LazySequence(UBInt8, UBInt16).parse(b"\x01\x00\x02") == [1,2]

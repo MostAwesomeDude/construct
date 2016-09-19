@@ -2057,7 +2057,7 @@ class LazyRange(Construct):
         starts = stream.tell()
         ends = stream.seek(0,2)
         remaining = ends - starts
-        objcount = min(max(remaining//self.subsize, self.min), self.max)
+        objcount = min(remaining//self.subsize, self.max)
         if objcount < self.min:
             raise RangeError("not enough bytes %d to read the min %d of %d bytes each" % (remaining,self.min,self.subsize))
         stream.seek(starts + objcount*self.subsize, 0)
