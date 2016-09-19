@@ -1849,14 +1849,15 @@ class Checksum(Construct):
         return self.checksumfield._sizeof(context)
 
 
-class ByteSwapped(Subconstruct):
+def ByteSwapped(subcon):
     r"""
-    Swap the byte order within aligned boundaries of given size.
+    Swap the byte order within boundaries of the given subcon.
 
     :param subcon: the subcon on top of byte swapped bytes
-    :param size: int of how many bytes are to be swapped, None by default meaning subcon size
 
     Example::
+
+        ByteSwapped(UBInt24)     # eq to ULInt24
 
         ByteSwapped(Struct("struct",
             Byte("a"),
@@ -1864,19 +1865,12 @@ class ByteSwapped(Subconstruct):
         ))
 
         .parse(b"\x01\x02") -> Container(a=2)(b=1)
-        .parse(dict(a=2,b=1)) -> b"\x01\x02"
+        .build(dict(a=2,b=1)) -> b"\x01\x02"
     """
-    def __init__(self, subcon):
-        super(ByteSwapped, self).__init__(subcon)
-    def _parse(self, stream, context):
-        size = self.subcon._sizeof(context)
-        data = _read_stream(stream, size)[::-1]
-        return self.subcon._parse(BytesIO(data), context)
-    def _build(self, obj, stream, context):
-        data = self.subcon.build(obj, context)[::-1]
-        _write_stream(stream, len(data), data)
-    def _sizeof(self, context):
-        return self.subcon._sizeof(context)
+    return Restreamed(subcon,
+        lambda s: s[::-1], subcon.sizeof(),
+        lambda s: s[::-1], subcon.sizeof(),
+        lambda n: n)
 
 
 def BitsSwapped(subcon):
