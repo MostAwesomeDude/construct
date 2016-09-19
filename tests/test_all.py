@@ -198,10 +198,6 @@ class TestCore(unittest.TestCase):
     def test_struct(self):
         assert Struct("a" / ULInt16, "b" / Byte).parse(b"\x01\x00\x02") == Container(a=1)(b=2)
         assert Struct("a" / ULInt16, "b" / Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x02"
-        assert Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(inner=Container(c=3)(d=4))
-        assert Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).build(Container(a=1)(b=2)(inner=Container(c=3)(d=4))) == b"\x01\x00\x02\x03\x04"
-        assert Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(c=3)(d=4)
-        assert Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build(Container(a=1)(b=2)(c=3)(d=4)) == b"\x01\x00\x02\x03\x04"
         assert Struct("a"/Struct("b"/Byte)).parse(b"\x01") == Container(a=Container(b=1))
         assert Struct("a"/Struct("b"/Byte)).build(Container(a=Container(b=1))) == b"\x01"
         assert Struct("a"/Struct("b"/Byte)).sizeof() == 1
@@ -213,9 +209,17 @@ class TestCore(unittest.TestCase):
         assert Struct(Padding(2)).build(dict()) == b"\x00\x00"
         assert Struct(Padding(2)).sizeof() == 2
 
+    def test_struct_nested_embedded(self):
+        assert Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(inner=Container(c=3)(d=4))
+        assert Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).build(Container(a=1)(b=2)(inner=Container(c=3)(d=4))) == b"\x01\x00\x02\x03\x04"
+        assert Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(c=3)(d=4)
+        assert Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build(Container(a=1)(b=2)(c=3)(d=4)) == b"\x01\x00\x02\x03\x04"
+
     def test_sequence(self):
         assert Sequence(UBInt8, UBInt16).parse(b"\x01\x00\x02") == [1,2]
         assert Sequence(UBInt8, UBInt16).build([1,2]) == b"\x01\x00\x02"
+
+    def test_sequence_nested_embedded(self):
         assert Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
         assert Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"
         assert Sequence(UBInt8, UBInt16, Embedded(Sequence(UBInt8, UBInt8))).parse(b"\x01\x00\x02\x03\x04") == [1,2,3,4]
@@ -419,6 +423,15 @@ class TestCore(unittest.TestCase):
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).parse(b"\xe1\x1f") == Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof() == 2
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build(Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))) == b"\xe1\x1f"
+
+    def test_embeddedbitstruct(self):
+        d = Struct(
+            "len" / Byte, 
+            EmbeddedBitStruct("data" / BitsInteger(8)),
+        )
+        assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
+        assert d.build(dict(len=8,data=255)) == b"\x08\xff"
+        assert d.sizeof() == 2
 
     @pytest.mark.xfail(reason="issue #39 and #140")
     def test_bitstruct_from_issue_39(self):
