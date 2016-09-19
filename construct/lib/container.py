@@ -356,15 +356,15 @@ class LazyRangeContainer(ListContainer):
         return len(self)==len(other) and all(a==b for a,b in zip(self,other))
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, ",".join(self.__iter__()))
-        # return "<%s: %d possible items, %d cached>" % (self.__class__.__name__, len(self), len(self.cached))
+        return "<%s: %d possible items, %d cached>" % (self.__class__.__name__, len(self), len(self.cached))
+        # return "<%s: %s>" % (self.__class__.__name__, ",".join(repr(e) for e in self))
 
 
 class LazySequenceContainer(LazyRangeContainer):
-    __slots__ = ["subcons", "offsetmap", "cached", "stream", "addoffset", "context"]
+    __slots__ = ["count", "offsetmap", "cached", "stream", "addoffset", "context"]
 
-    def __init__(self, subcons, offsetmap, cached, stream, addoffset, context):
-        self.subcons = subcons
+    def __init__(self, count, offsetmap, cached, stream, addoffset, context):
+        self.count = count
         self.offsetmap = offsetmap
         self.cached = cached
         self.stream = stream
@@ -375,14 +375,15 @@ class LazySequenceContainer(LazyRangeContainer):
         if not 0 <= index < len(self):
             raise ValueError("index %d out of range 0-%d" % (index,len(self)-1))
         if index not in self.cached:
-            self.stream.seek(self.addoffset + self.offsetmap[index])
-            self.cached[index] = self.subcons[index]._parse(self.stream, self.context)
+            at,sc = self.offsetmap[index]
+            self.stream.seek(self.addoffset + at)
+            self.cached[index] = sc._parse(self.stream, self.context)
             if len(self.cached) == len(self):
                 self.offsetmap = None
                 self.stream = None
         return self.cached[index]
 
     def __len__(self):
-        return len(self.subcons)
+        return self.count
 
 

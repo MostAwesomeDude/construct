@@ -682,7 +682,6 @@ class TestCore(unittest.TestCase):
         assert LazySequence(UBInt8,UBInt16).build([1,2]) == Sequence(UBInt8,UBInt16).build([1,2])
         assert LazySequence(UBInt8,UBInt16).sizeof() == Sequence(UBInt8,UBInt16).sizeof()
 
-    @pytest.mark.xfail(reason="issue #140")
     def test_lazysequence_nested_embedded(self):
         assert LazySequence(UBInt8, UBInt16, LazySequence(UBInt8, UBInt8)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
         assert LazySequence(UBInt8, UBInt16, LazySequence(UBInt8, UBInt8)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"

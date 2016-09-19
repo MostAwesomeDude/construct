@@ -2111,7 +2111,9 @@ class LazySequence(Construct):
             self.offsetmap = {}
             at = 0
             for i,sc in enumerate(self.subcons):
-                self.offsetmap[i] = at
+                if sc.flagembedded:
+                    raise SizeofError
+                self.offsetmap[i] = (at, sc)
                 at += sc.sizeof()
             self.totalsize = at
         except SizeofError:
@@ -2129,18 +2131,27 @@ class LazySequence(Construct):
         if self.totalsize is not None:
             position = stream.tell()
             stream.seek(self.totalsize, 1)
-            return LazySequenceContainer(self.subcons, self.offsetmap, {}, stream, position, context)
+            return LazySequenceContainer(len(self.subcons), self.offsetmap, {}, stream, position, context)
         offsetmap = {}
         values = {}
-        for i,(sc,size) in enumerate(zip(self.subcons, self.subsizes)):
-            if size is None:
+        i = 0
+        for sc,size in zip(self.subcons, self.subsizes):
+            if sc.flagembedded:
+                subobj = list(sc._parse(stream, context))
+                for e in subobj:
+                    values[i] = e
+                    context[i] = e
+                    i += 1
+            elif size is None:
                 obj = sc._parse(stream, context)
                 values[i] = obj
                 context[i] = obj
+                i += 1
             else:
-                offsetmap[i] = stream.tell()
+                offsetmap[i] = (stream.tell(), sc)
                 stream.seek(size, 1)
-        return LazySequenceContainer(self.subcons, offsetmap, values, stream, 0, context)
+                i += 1
+        return LazySequenceContainer(i, offsetmap, values, stream, 0, context)
 
     def _build(self, obj, stream, context):
         objiter = iter(obj)
