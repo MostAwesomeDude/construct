@@ -605,11 +605,6 @@ class TestCore(unittest.TestCase):
         assert HexDump(Bytes(6)).parse(b'abcdef') == '0000   61 62 63 64 65 66                                 abcdef\n'
         assert HexDump(Bytes(6)).build(b'abcdef') == b'abcdef'
 
-    def test_ondemand(self):
-        assert OnDemand(Byte).parse(b"\x01garbage")() == 1
-        assert OnDemand(Byte).build(1) == b"\x01"
-        assert OnDemand(Byte).sizeof() == 1
-
     def test_lazystruct(self):
         assert LazyStruct().parse(b"") == Struct().parse(b"")
         assert LazyStruct().build({}) == Struct().build({})
@@ -683,9 +678,13 @@ class TestCore(unittest.TestCase):
         assert LazySequence(UBInt8, UBInt16, Embedded(LazySequence(UBInt8, UBInt8))).parse(b"\x01\x00\x02\x03\x04") == [1,2,3,4]
         assert LazySequence(UBInt8, UBInt16, Embedded(LazySequence(UBInt8, UBInt8))).build([1,2,3,4]) == b"\x01\x00\x02\x03\x04"
 
-    @pytest.mark.xfail(reason="issue #140")
+    def test_ondemand(self):
+        assert OnDemand(Byte).parse(b"\x01garbage")() == 1
+        assert OnDemand(Byte).build(1) == b"\x01"
+        assert OnDemand(Byte).sizeof() == 1
+
     def test_ondemandpointer(self):
-        assert OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03\x04")() == 3
+        assert OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03\garbage")() == 3
         assert OnDemandPointer(lambda ctx: 2, Byte).build(1) == b"\x00\x00\x01"
         assert OnDemandPointer(lambda ctx: 2, Byte).sizeof() == 0
 

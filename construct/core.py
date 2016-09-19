@@ -2153,7 +2153,7 @@ class OnDemand(Subconstruct):
 
     .. seealso:: The :func:`~construct.macros.OnDemandPointer` macro.
 
-    :param subcon: the subcon to read/write on demand
+    :param subcon: the subcon to read/write on demand. must be fixed size
 
     Example::
 
@@ -2166,15 +2166,35 @@ class OnDemand(Subconstruct):
         return lambda: self.subcon.parse(data, context)
 
 
-def OnDemandPointer(offsetfunc, subcon):
+class OnDemandPointer(Subconstruct):
     r"""
     An on-demand pointer.
 
-    :param offsetfunc: a function taking the context as an argument and returning the absolute stream position
-    :param subcon: the subcon that will be parsed from the `offsetfunc()` stream position on demand
-    :param force_build: see OnDemand. by default True.
+    :param offsetfunc: an int or a function taking context and returning the absolute stream position
+    :param subcon: the subcon that will be parsed or built at the `offset` stream position
     """
-    return OnDemand(Pointer(offsetfunc, subcon))
+    __slots__ = ["offset"]
+    def __init__(self, offset, subcon):
+        super(OnDemandPointer, self).__init__(subcon)
+        self.offset = offset
+    def _parse(self, stream, context):
+        def effectuate():
+            offset = self.offset(context) if callable(self.offset) else self.offset
+            fallback = stream.tell()
+            stream.seek(offset)
+            obj = self.subcon._parse(stream, context)
+            stream.seek(fallback)
+            return obj
+        return effectuate
+    def _build(self, obj, stream, context):
+        offset = self.offset(context) if callable(self.offset) else self.offset
+        fallback = stream.tell()
+        stream.seek(offset)
+        buildret = self.subcon._build(obj, stream, context)
+        stream.seek(fallback)
+        return buildret
+    def _sizeof(self, context):
+        return 0
 
 
 class LazyBound(Construct):
