@@ -144,11 +144,11 @@ class Container(dict):
         if len(self) != len(other):
             return False
         if skiporder:
-            for k,v in self.iteritems():
+            for k,v in self.items():
                 if k not in other or v != other[k]:
                     return False
         else:
-            for (k,v),(k2,v2) in zip(self.iteritems(), other.iteritems()):
+            for (k,v),(k2,v2) in zip(self.items(), other.items()):
                 if k != k2 or v != v2:
                     return False
         return True
@@ -268,22 +268,24 @@ class ListContainer(list):
 
 
 class LazyContainer(object):
-    __slots__ = ["subcons", "offsetmap", "cached", "stream", "addoffset", "context", "count"]
+    __slots__ = ["keysbackend", "offsetmap", "cached", "stream", "addoffset", "context"]
 
-    def __init__(self, subcons, offsetmap, cached, stream, addoffset, context):
-        self.subcons = subcons
+    def __init__(self, keysbackend, offsetmap, cached, stream, addoffset, context):
+        self.keysbackend = keysbackend
         self.offsetmap = offsetmap
         self.cached = cached
         self.stream = stream
         self.addoffset = addoffset
         self.context = context
-        self.count = len(self.keys())
 
     def __getitem__(self, key):
         if key not in self.cached:
-            at, sc = self.offsetmap.pop(key)
+            at, sc = self.offsetmap[key]
             self.stream.seek(self.addoffset + at)
             self.cached[key] = sc._parse(self.stream, self.context)
+            if len(self.cached) == len(self):
+                self.offsetmap = None
+                self.stream = None
         return self.cached[key]
 
     def __getattr__(self, name):
@@ -293,14 +295,20 @@ class LazyContainer(object):
             raise AttributeError(name)
 
     def __len__(self):
-        return self.count
+        return len(self.keysbackend)
 
     def keys(self):
-        return list(sc.name for sc in self.subcons if sc.name is not None)
+        return self.keysbackend
+
+    def values(self):
+        return list(v for k,v in self.items())
+
+    def items(self):
+        return [(name,self[name]) for name in self.keysbackend]
+
+    __iter__ = keys
 
     def __eq__(self, other):
-        # should this class derive from Container?
-        # Container.__eq__(self, other)
         try:
             for name in self.keys():
                 if self[name] != other[name]:
@@ -312,19 +320,11 @@ class LazyContainer(object):
         except KeyError:
             return False
 
-    def readall(self):
-        obj = Container()
-        for name in self:
-            obj[name] = self[name]
-        self.offsetmap = None
-        self.stream = None
-        return obj
-
     def __str__(self):
         return "<LazyContainer: %d possible items, %d cached>" % (len(self),len(self.cached))
 
 
-class LazyListContainer(ListContainer):
+class LazyRangeContainer(ListContainer):
     __slots__ = ["subcon", "subsize", "count", "stream", "addoffset", "context", "cached", "offsetmap"]
 
     def __init__(self, subcon, subsize, count, stream, addoffset, context):
@@ -342,32 +342,25 @@ class LazyListContainer(ListContainer):
         if index not in self.cached:
             self.stream.seek(self.addoffset + index * self.subsize)
             self.cached[index] = self.subcon._parse(self.stream, self.context)
+            if len(self.cached) == len(self):
+                self.stream = None
         return self.cached[index]
 
     def __len__(self):
         return self.count
 
+    def __iter__(self):
+        return (self[i] for i in range(len(self)))
+
     def __eq__(self, other):
-        if len(self) != len(other):
-            return False
-        for i in range(len(self)):
-            if self[i] != other[i]:
-                return False
-        return True
+        return len(self)==len(other) and all(a==b for a,b in zip(self,other))
 
-    def readall(self):
-        obj = ListContainer()
-        for index in range(len(self)):
-            obj[index] = self[index]
-        self.offsetmap = None   # derived
-        self.stream = None
-        return obj
-
-    def __str__(self):
-        return "<%s: %d possible items, %d cached>" % (self.__class__, len(self), len(self.cached))
+    def __repr__(self):
+        return "<%s: %s>" % (self.__class__.__name__, ",".join(self.__iter__()))
+        # return "<%s: %d possible items, %d cached>" % (self.__class__.__name__, len(self), len(self.cached))
 
 
-class LazySequenceContainer(LazyListContainer):
+class LazySequenceContainer(LazyRangeContainer):
     __slots__ = ["subcons", "offsetmap", "cached", "stream", "addoffset", "context"]
 
     def __init__(self, subcons, offsetmap, cached, stream, addoffset, context):
@@ -384,8 +377,12 @@ class LazySequenceContainer(LazyListContainer):
         if index not in self.cached:
             self.stream.seek(self.addoffset + self.offsetmap[index])
             self.cached[index] = self.subcons[index]._parse(self.stream, self.context)
+            if len(self.cached) == len(self):
+                self.offsetmap = None
+                self.stream = None
         return self.cached[index]
 
     def __len__(self):
         return len(self.subcons)
+
 

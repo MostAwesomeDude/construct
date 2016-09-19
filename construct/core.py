@@ -2,12 +2,12 @@ import struct
 from struct import Struct as Packer
 from struct import error as PackerError
 from io import BytesIO, StringIO
+from binascii import hexlify
 import sys
 import collections
 import codecs
-from binascii import hexlify
 
-from construct.lib.container import Container, FlagsContainer, ListContainer, LazyContainer, LazyListContainer, LazySequenceContainer
+from construct.lib.container import Container, FlagsContainer, ListContainer, LazyContainer, LazyRangeContainer, LazySequenceContainer
 from construct.lib.binary import integer2bits, integer2bytes, onebit2integer, bits2integer, bytes2integer, bytes2bits, bits2bytes, swapbytes
 from construct.lib.bitstream import RestreamedBytesIO
 from construct.lib.hex import HexString, hexdump
@@ -143,7 +143,7 @@ class Construct(object):
         self.flagembedded = False
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.name)
+        return "<%s: %s%s%s>" % (self.__class__.__name__, self.name, " nonbuild" if self.flagbuildnone else "", " embedded" if self.flagembedded else "")
 
     def _inherit_flags(self, *subcons):
         for sc in subcons:
@@ -791,7 +791,7 @@ class Struct(Construct):
         context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
-                subobj = sc._parse(stream, context)
+                subobj = sc._parse(stream, context).items()
                 obj.update(subobj)
             else:
                 subobj = sc._parse(stream, context)
@@ -1953,19 +1953,24 @@ class LazyStruct(Construct):
         )
         .parse(b"\x01\x00\x02abcde") -> LazyContainer(a=1,b=2,c=?)
     """
-    __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes"]
+    __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes", "keys"]
     def __init__(self, *subcons, **kw):
         super(LazyStruct, self).__init__()
         self.subcons = subcons
 
         try:
+            keys = Container()
             self.offsetmap = {}
             at = 0
             for sc in self.subcons:
+                if sc.flagembedded:
+                    raise SizeofError
                 if sc.name is not None:
+                    keys[sc.name] = None
                     self.offsetmap[sc.name] = (at, sc)
                 at += sc.sizeof()
             self.totalsize = at
+            self.keys = keys.keys()
         except SizeofError:
             self.offsetmap = None
             self.totalsize = None
@@ -1981,22 +1986,29 @@ class LazyStruct(Construct):
         if self.offsetmap is not None:
             position = stream.tell()
             stream.seek(self.totalsize, 1)
-            return LazyContainer(self.subcons, self.offsetmap, {}, stream, position, context)
+            return LazyContainer(self.keys, self.offsetmap, {}, stream, position, context)
         offsetmap = {}
+        keys = Container()
         values = {}
         position = stream.tell()
         for i,(sc,size) in enumerate(zip(self.subcons, self.subsizes)):
-            if size is None:
+            if sc.flagembedded:
+                subobj = sc._parse(stream, context).items()
+                keys.update(subobj)
+                values.update(subobj)
+            elif size is None:
                 subobj = sc._parse(stream, context)
                 if sc.name is not None:
+                    keys[sc.name] = None
                     values[sc.name] = subobj
                     context[sc.name] = subobj
                 context[i] = subobj
             else:
                 if sc.name is not None:
+                    keys[sc.name] = None
                     offsetmap[sc.name] = (stream.tell(), sc)
                 stream.seek(size, 1)
-        return LazyContainer(self.subcons, offsetmap, values, stream, 0, context)
+        return LazyContainer(keys.keys(), offsetmap, values, stream, 0, context)
 
     def _build(self, obj, stream, context):
         for i,sc in enumerate(self.subcons):
@@ -2056,7 +2068,7 @@ class LazyRange(Construct):
         if objcount < self.min:
             raise RangeError("not enough bytes %d to read the min %d of %d bytes each" % (remaining,self.min,self.subsize))
         stream.seek(starts + objcount*self.subsize, 0)
-        return LazyListContainer(self.subcon, self.subsize, objcount, stream, starts, context)
+        return LazyRangeContainer(self.subcon, self.subsize, objcount, stream, starts, context)
 
     def _build(self, obj, stream, context):
         if not isinstance(obj, collections.Sequence):
@@ -2111,9 +2123,9 @@ class LazySequence(Construct):
         values = {}
         for i,(sc,size) in enumerate(zip(self.subcons, self.subsizes)):
             if size is None:
-                subobj = sc._parse(stream, context)
-                values[i] = subobj
-                context[i] = subobj
+                obj = sc._parse(stream, context)
+                values[i] = obj
+                context[i] = obj
             else:
                 offsetmap[i] = stream.tell()
                 stream.seek(size, 1)

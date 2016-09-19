@@ -626,11 +626,9 @@ class TestCore(unittest.TestCase):
         assert dict(LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).parse(b"")) == dict()
         assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).build(dict()) == b""
 
-    @pytest.mark.xfail(reason="issue #140")
     def test_lazystruct_nested_embedded(self):
         assert dict(LazyStruct("a"/Byte,"b"/LazyStruct("c"/Byte)).parse(b"\x01\x02")) == dict(a=1,b=dict(c=2))
         assert LazyStruct("a"/Byte,"b"/LazyStruct("c"/Byte)).build(dict(a=1,b=dict(c=2))) == b"\x01\x02"
-        # only parsing embedded fails
         assert dict(LazyStruct("a"/Byte,Embedded(LazyStruct("c"/Byte))).parse(b"\x01\x02")) == dict(a=1,c=2)
         assert LazyStruct("a"/Byte,Embedded(LazyStruct("c"/Byte))).build(dict(a=1,c=2)) == b"\x01\x02"
 
