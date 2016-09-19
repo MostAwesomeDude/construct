@@ -706,7 +706,7 @@ class TestCore(unittest.TestCase):
         assert OnDemand(Byte).sizeof() == 1
 
     def test_ondemandpointer(self):
-        assert OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03\garbage")() == 3
+        assert OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03garbage")() == 3
         assert OnDemandPointer(lambda ctx: 2, Byte).build(1) == b"\x00\x00\x01"
         assert OnDemandPointer(lambda ctx: 2, Byte).sizeof() == 0
 
