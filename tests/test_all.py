@@ -6,6 +6,7 @@ from construct import *
 from construct.lib import *
 from construct.lib.py3compat import *
 
+import hashlib
 ident = lambda x: x
 
 
@@ -419,6 +420,16 @@ class TestCore(unittest.TestCase):
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof() == 2
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build(Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))) == b"\xe1\x1f"
 
+    @pytest.mark.xfail(reason="issue #39 and #140")
+    def test_bitstruct_from_issue_39(self):
+        d = Struct(
+            "len" / Byte, 
+            EmbeddedBitStruct("data" / BitsInteger(lambda ctx: ctx.len)),
+        )
+        assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
+        assert d.build(dict(len=8,data=255)) == b"\x08\xff"
+        assert raises(d.sizeof) == SizeofError
+
     def test_bytewise(self):
         assert Bitwise(Bytewise(Bytes(1))).parse(b"\xff") == b"\xff"
         assert Bitwise(Bytewise(Bytes(1))).build(b"\xff") == b"\xff"
@@ -751,4 +762,47 @@ class TestCore(unittest.TestCase):
             "next" / LazyBound(lambda ctx: Node), )
 
         assert Node.parse(b"\x01") == Container(value=1)(next=Node)
+
+    def test_checksum(self):
+        def sha512(b):
+            return hashlib.sha512(b).digest()
+        d = Struct(
+            "fields" / RawCopy(Struct(
+                "a" / Byte,
+                "b" / Byte,
+            )),
+            "checksum" / Checksum(Bytes(64), sha512, "fields"),
+        )
+
+        c = sha512(b"\x01\x02")
+        assert d.parse(b"\x01\x02"+c) == Container(fields=dict(data=b"\x01\x02", value=Container(a=1)(b=2), offset1=0, offset2=2, length=2))(checksum=c)
+        assert d.build(dict(fields=dict(data=b"\x01\x02"))) == b"\x01\x02"+c
+        assert d.build(dict(fields=dict(value=dict(a=1,b=2)))) == b"\x01\x02"+c
+
+    def test_from_issue_60(self):
+        Header = Struct(
+            "type" / UBInt8,
+            "size" / Switch(lambda ctx: ctx.type,
+            {
+                0: UBInt8,
+                1: UBInt16,
+                2: UBInt32,
+            }),
+            "length" / Anchor,
+        )
+        assert Header.parse(b"\x00\x05") == Container(type=0)(size=5)(length=2)
+        assert Header.parse(b"\x01\x00\x05") == Container(type=1)(size=5)(length=3)
+        assert Header.parse(b"\x02\x00\x00\x00\x05") == Container(type=2)(size=5)(length=5)
+        assert Header.build(dict(type=0, size=5)) == b"\x00\x05"
+        assert Header.build(dict(type=1, size=5)) == b"\x01\x00\x05"
+        assert Header.build(dict(type=2, size=5)) == b"\x02\x00\x00\x00\x05"
+
+        HeaderData = Struct(
+            Embedded(Header),
+            "data" / Bytes(lambda ctx: ctx.size),
+        )
+        assert HeaderData.build(dict(type=0, size=5, data=b"12345")) == b"\x00\x0512345"
+        assert HeaderData.build(dict(type=1, size=5, data=b"12345")) == b"\x01\x00\x0512345"
+        assert HeaderData.build(dict(type=2, size=5, data=b"12345")) == b"\x02\x00\x00\x00\x0512345"
+
 
