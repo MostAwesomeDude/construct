@@ -736,8 +736,6 @@ class TestCore(unittest.TestCase):
 
         assert IpAddress.parse(b"\x7f\x80\x81\x82") == "127.128.129.130"
         assert IpAddress.build("127.1.2.3") == b"\x7f\x01\x02\x03"
-        if not PY26:
-            assert raises(IpAddress.build, "300.1.2.3") == FieldError
         assert IpAddress.sizeof() == 4
 
     @pytest.mark.xfail(reason="issue #127 and #140")
@@ -747,5 +745,4 @@ class TestCore(unittest.TestCase):
             "next" / LazyBound(lambda ctx: Node), )
 
         assert Node.parse(b"\x01") == Container(value=1)(next=Node)
-        assert Node.parse(b"\x01") == None
 
