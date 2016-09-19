@@ -1460,43 +1460,38 @@ def If(predicate, subcon):
 # stream manipulation
 #===============================================================================
 class Pointer(Subconstruct):
-    """
+    r"""
     Changes the stream position to a given offset, where the construction should take place, and restores the stream position when finished.
 
-    .. seealso:: The :func:`~construct.core.Anchor`, :func:`~construct.core.OnDemand` and :func:`~construct.macros.OnDemandPointer` macro.
+    .. seealso:: The :func:`~construct.macros.OnDemandPointer` field, which also seeks to a given offset.
 
     .. note:: Requires a seekable stream.
 
-    :param offsetfunc: a function that takes the context and returns an absolute stream position, where the construction would take place
-    :param subcon: the subcon to use at ``offsetfunc()``
+    :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place
+    :param subcon: the subcon to use at the offset
 
     Example::
 
-        Struct("foo",
-            UBInt32("spam_pointer"),
-            Pointer(lambda ctx: ctx.spam_pointer,
-                Array(5, UBInt8("spam"))
-            )
-        )
+        ?
     """
-    __slots__ = ["offsetfunc"]
-    def __init__(self, offsetfunc, subcon):
+    __slots__ = ["offset"]
+    def __init__(self, offset, subcon):
         super(Pointer, self).__init__(subcon)
-        self.offsetfunc = offsetfunc
+        self.offset = offset
     def _parse(self, stream, context):
-        newpos = self.offsetfunc(context)
+        offset = self.offset(context) if callable(self.offset) else self.offset
         fallback = stream.tell()
-        stream.seek(newpos, 2 if newpos < 0 else 0)
+        stream.seek(offset, 2 if offset < 0 else 0)
         obj = self.subcon._parse(stream, context)
         stream.seek(fallback)
         return obj
     def _build(self, obj, stream, context):
-        newpos = self.offsetfunc(context)
+        offset = self.offset(context) if callable(self.offset) else self.offset
         fallback = stream.tell()
-        stream.seek(newpos, 2 if newpos < 0 else 0)
-        subobj = self.subcon._build(obj, stream, context)
+        stream.seek(offset, 2 if offset < 0 else 0)
+        buildret = self.subcon._build(obj, stream, context)
         stream.seek(fallback)
-        return subobj
+        return buildret
     def _sizeof(self, context):
         return 0
 
