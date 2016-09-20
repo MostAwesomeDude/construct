@@ -357,6 +357,9 @@ class TestCore(unittest.TestCase):
         assert Aligned(Int16ub, modulus=4).build(1) == b"\x00\x01\x00\x00"
         assert Aligned(Int32ub, modulus=4).build(1) == b"\x00\x00\x00\x01"
         assert Aligned(Int64ub, modulus=4).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
+        assert Aligned(Byte, modulus=this.m).parse(b"\xff\x00", dict(m=2)) == 255
+        assert Aligned(Byte, modulus=this.m).build(255, dict(m=2)) == b"\xff\x00"
+        assert Aligned(Byte, modulus=this.m).sizeof(dict(m=2)) == 2
 
     def test_alignedstruct(self):
         assert AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4, pattern=b"?").parse(b"\x01???\x00\x05??") == Container(a=1)(b=5)

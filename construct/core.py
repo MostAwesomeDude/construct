@@ -1250,30 +1250,31 @@ class Aligned(Subconstruct):
     """
     __slots__ = ["subcon", "modulus", "pattern"]
     def __init__(self, subcon, modulus, pattern=b"\x00"):
-        if modulus < 2:
-            raise ValueError("modulus must be at least 2", modulus)
         if not isinstance(pattern, bytes) or len(pattern) != 1:
             raise PaddingError("pattern expected to be b-string character")
         super(Aligned, self).__init__(subcon)
         self.modulus = modulus
         self.pattern = pattern
     def _parse(self, stream, context):
+        modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         position1 = stream.tell()
         obj = self.subcon._parse(stream, context)
         position2 = stream.tell()
-        pad = -(position2 - position1) % self.modulus
+        pad = -(position2 - position1) % modulus
         _read_stream(stream, pad)
         return obj
     def _build(self, obj, stream, context):
+        modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         position1 = stream.tell()
         subobj = self.subcon._build(obj, stream, context)
         position2 = stream.tell()
-        pad = -(position2 - position1) % self.modulus
+        pad = -(position2 - position1) % modulus
         _write_stream(stream, pad, self.pattern * pad)
         return subobj
     def _sizeof(self, context):
+        modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         sublen = self.subcon._sizeof(context)
-        return sublen + (-sublen % self.modulus)
+        return sublen + (-sublen % modulus)
 
 
 def AlignedStruct(*subcons, **kw):
