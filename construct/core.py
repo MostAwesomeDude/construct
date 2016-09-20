@@ -1296,16 +1296,29 @@ def AlignedStruct(*subcons, **kw):
 
 def BitStruct(*subcons):
     r"""
-    A struct of bitwise fields
+    Makes a structure inside a Bitwise.
+
+    .. seealso:: Uses :func:`~construct.Bitwise` and :func:`~construct.Struct`.
 
     :param \*subcons: the subcons that make up this structure
+
+    Example::
+
+        >>> BitStruct("field"/Octet).build(dict(field=5))
+        b'\x05'
+        >>> BitStruct("field"/Octet).parse(_)
+        Container(field=5)
+        >>> BitStruct("field"/Octet).sizeof()
+        1
     """
     return Bitwise(Struct(*subcons))
 
 
 def EmbeddedBitStruct(*subcons):
     r"""
-    An embedded BitStruct. no name is necessary.
+    Makes an embedded BitStruct.
+
+    .. seealso:: Uses :func:`~construct.Bitwise` and :func:`~construct.Embedded` and :func:`~construct.Struct`.
 
     :param \*subcons: the subcons that make up this structure
     """
