@@ -1015,9 +1015,7 @@ class Range(Subconstruct):
     r"""
     A homogenous array of elements. The array will iterate through between ``min`` to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits cleanly. If less than ``min`` units have been successfully parsed, a RangeError is raised.
 
-    .. seealso::
-
-        Analog :func:`~construct.GreedyRange` that parses until end of stream.
+    .. seealso:: Analog :func:`~construct.GreedyRange` that parses until end of stream.
 
     .. note:: This object requires a seekable stream for parsing.
 
@@ -1146,12 +1144,12 @@ class RawCopy(Subconstruct):
         >>> RawCopy(VarInt).build(dict(value=2**100))
         b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04'
         >>> RawCopy(VarInt).parse(_)
-        {'offset2': 15, 'offset1': 0, 'length': 15, 'data': b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04', 'value': 4}
+        {'length': 15, 'offset1': 0, 'value': 4, 'data': b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04', 'offset2': 15}
 
         >>> RawCopy(VarInt).build(dict(data=b"\x0f"))
         b'\x0f'
         >>> RawCopy(VarInt).parse(_)
-        {'offset2': 1, 'offset1': 0, 'length': 1, 'data': b'\x0f', 'value': 15}
+        {'length': 1, 'offset1': 0, 'value': 15, 'data': b'\x0f', 'offset2': 1}
     """
     def __init__(self, subcon):
         super(RawCopy, self).__init__(subcon)
@@ -1177,6 +1175,23 @@ class RawCopy(Subconstruct):
 
 
 class Padded(Subconstruct):
+    r"""
+    Appends additional null bytes to achieve a fixed length.
+
+    Example::
+
+        >>> Padded(4, Byte).build(255)
+        b'\xff\x00\x00\x00'
+        >>> Padded(4, Byte).parse(_)
+        255
+        >>> Padded(4, Byte).sizeof()
+        4
+
+        >>> Padded(4, VarInt).build(1)
+        b'\x01\x00\x00\x00'
+        >>> Padded(4, VarInt).build(70000)
+        b'\xf0\xa2\x04\x00'
+    """
     __slots__ = ["length", "pattern", "strict"]
     def __init__(self, length, subcon, pattern=b"\x00", strict=False):
         if not isinstance(pattern, bytes) or len(pattern) != 1:
@@ -1214,37 +1229,26 @@ class Padded(Subconstruct):
 
 class Aligned(Subconstruct):
     r"""
-    Aligns subcon to modulus boundary using padding pattern
+    Appends additional null bytes to achieve a length that is shortest multiple of a modulus.
 
     :param subcon: the subcon to align
-    :param modulus: the modulus boundary (default is 4)
+    :param modulus: the modulus to final length
     :param pattern: the padding pattern (default is \x00)
 
     Example::
 
-        Aligned(
-            Byte("num"),
-            modulus=4,
-        )
-
-        .parse(b"\xff\x00\x00\x00") -> Container(num=255)
-        .build(Container(num=255)) -> b"\xff\x00\x00\x00"
-        .sizeof() -> 4
-
-        Aligned(
-            ULInt16("num"),
-            modulus=4,
-        )
-
-        .parse(b"\xff\x00\x00\x00") -> Container(num=255)
-        .build(Container(num=255)) -> b"\xff\x00\x00\x00"
-        .sizeof() -> 4
+        >>> Aligned(UBInt16, modulus=4).build(1)
+        b'\x00\x01\x00\x00'
+        >>> Aligned(UBInt16, modulus=4).parse(_)
+        1
+        >>> Aligned(UBInt16, modulus=4).sizeof()
+        4
     """
     __slots__ = ["subcon", "modulus", "pattern"]
     def __init__(self, subcon, modulus, pattern=b"\x00"):
         if modulus < 2:
             raise ValueError("modulus must be at least 2", modulus)
-        if len(pattern) != 1:
+        if not isinstance(pattern, bytes) or len(pattern) != 1:
             raise PaddingError("pattern expected to be b-string character")
         super(Aligned, self).__init__(subcon)
         self.modulus = modulus
@@ -1270,7 +1274,9 @@ class Aligned(Subconstruct):
 
 def AlignedStruct(name, *subcons, **kw):
     r"""
-    A struct of aligned fields
+    Makes a structure where each field is aligned to the same modulus.
+
+    .. seealso:: Uses :func:`~construct.Aligned` and `~construct.Struct`.
 
     :param \*subcons: the subcons that make up this structure
     :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
