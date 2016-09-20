@@ -1272,16 +1272,26 @@ class Aligned(Subconstruct):
         return sublen + (-sublen % self.modulus)
 
 
-def AlignedStruct(name, *subcons, **kw):
+def AlignedStruct(*subcons, **kw):
     r"""
     Makes a structure where each field is aligned to the same modulus.
 
     .. seealso:: Uses :func:`~construct.Aligned` and `~construct.Struct`.
 
     :param \*subcons: the subcons that make up this structure
-    :param \*\*kw: keyword arguments to pass to Aligned: 'modulus' and 'pattern'
+    :param modulus: passed to each member
+    :param pattern: passed to each member
+
+    Example::
+
+        >>> AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4).build(dict(a=1,b=5))
+        b'\x01\x00\x00\x00\x00\x05\x00\x00'
+        >>> AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4).parse(_)
+        Container(a=1)(b=5)
+        >>> AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4).sizeof()
+        8
     """
-    return Struct(name, *(Aligned(sc, **kw) for sc in subcons))
+    return Struct(*(Aligned(sc, **kw) for sc in subcons))
 
 
 def BitStruct(*subcons):

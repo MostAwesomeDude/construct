@@ -348,6 +348,14 @@ class TestCore(unittest.TestCase):
         assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).parse(b"\x01\x00\x00\x00\x02") == Container(a=1)(b=2)
         assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x00\x00\x02"
         assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).sizeof() == 5
+        assert Aligned(UBInt8,  modulus=4).build(1) == b"\x01\x00\x00\x00"
+        assert Aligned(UBInt16, modulus=4).build(1) == b"\x00\x01\x00\x00"
+        assert Aligned(UBInt32, modulus=4).build(1) == b"\x00\x00\x00\x01"
+        assert Aligned(UBInt64, modulus=4).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
+
+    def test_alignedstruct(self):
+        assert AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4, pattern=b"?").parse(b"\x01???\x00\x05??") == Container(a=1)(b=5)
+        assert AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4, pattern=b"?").build(dict(a=1,b=5)) == b"\x01???\x00\x05??"
 
     def test_from_issue_87(self):
         assert ("string_name" / Byte).parse(b"\x01") == 1
