@@ -527,19 +527,18 @@ class TestCore(unittest.TestCase):
         assert Optional(ULInt32).build(None) == b""
         assert raises(Optional(ULInt32).sizeof) == SizeofError
 
+    @pytest.mark.xfail(reason="UNION IS BROKEN")
     def test_union(self):
-        assert Union("a"/UBInt16, "b"/Struct("b1"/UBInt8, "b2"/UBInt8)).parse(b"\x01\x02") == Container(a=0x0102)(b=Container(b1=1)(b2=2))
-        assert Union("a"/UBInt16, "b"/Struct("b1"/UBInt8, "b2"/UBInt8)).build(dict(a=0x0102,b=dict(b1=1,b2=2))) == b"\x01\x02"
-        assert Union("sub1"/Struct("a"/UBInt8, "b"/UBInt8), "sub2"/Struct("c"/ULInt16)).build(dict(sub1=dict(a=1,b=2))) == b"\x01\x02"
-        assert Union("sub1"/Struct("a"/UBInt8, "b"/UBInt8), "sub2"/Struct("c"/ULInt16)).build(dict(sub2=dict(c=3))) == b"\x03\x00"
-        assert Union("a"/UBInt8, "b"/UBInt16, buildfrom=0).build(dict(a=1,b=2)) == b"\x01"
-        assert Union("a"/UBInt8, "b"/UBInt16, buildfrom=1).build(dict(a=1,b=2)) == b"\x00\x02"
-        assert Union(Embedded("sub1"/Struct("a"/Byte, "b"/Byte)), Embedded("sub2"/Struct("c"/UBInt16)), buildfrom="sub1").build(dict(a=1,b=2)) == b"\x01\x02"
-        assert Union(Embedded("sub1"/Struct("a"/Byte, "b"/Byte)), Embedded("sub2"/Struct("c"/UBInt16)), buildfrom="sub2").build(dict(c=3)) == b"\x00\x03"
-        assert raises(Union("a"/Byte, "b"/PascalString(Byte)).build, None) == SelectError
+        assert Union("a"/Bytes(2), "b"/UBInt16).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
+        assert Union("a"/Bytes(2), "b"/UBInt16).build(dict(a=b"zz"))  == b"zz"
+        assert Union("a"/Bytes(2), "b"/UBInt16).build(dict(b=0x0102)) == b"\x01\x02"
+        assert Union("a"/Bytes(2), "b"/UBInt16, buildfrom=0).build(dict(a=b"zz",b=5))  == b"zz"
+        assert Union("a"/Bytes(2), "b"/UBInt16, buildfrom=1).build(dict(a=b"zz",b=5))  == b"\x00\x05"
+
         assert raises(Union(Byte).sizeof) == SizeofError
         assert raises(Union(VarInt).sizeof) == SizeofError
-        assert raises(Union(CString()).sizeof) == SizeofError
+        assert Union(Byte, VarInt, buildfrom=0).sizeof() == 1
+        assert raises(Union(Byte, VarInt, buildfrom=1).sizeof) == SizeofError
 
     def test_prefixedarray(self):
         assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]

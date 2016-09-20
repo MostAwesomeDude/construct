@@ -33,6 +33,8 @@ class SwitchError(ConstructError):
     pass
 class SelectError(ConstructError):
     pass
+class UnionError(ConstructError):
+    pass
 class TerminatorError(ConstructError):
     pass
 class OverwriteError(ConstructError):
@@ -1330,30 +1332,14 @@ def EmbeddedBitStruct(*subcons):
 #===============================================================================
 class Union(Construct):
     r"""
-    Set of overlapping fields (like unions in C). When parsing, all fields read the same data. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name. Size is the maximum of subcon sizes.
+    Set of overlapping fields (like unions in C). When parsing, all fields read the same data bytes. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name.
 
-    .. note:: Requires a seekable stream.
-
-    :param buildfrom: the subcon used for building and calculating the total size, can be integer index or string name or None (then tries each subcon)
     :param subcons: subconstructs for parsing, one of them used for building
+    :param buildfrom: the subcon used for building and calculating size, can be integer index or string name, default is None (then tries each subcon in sequence)
 
     Example::
 
-        Union("union",
-            Struct("sub1", ULInt8("a"), ULInt8("b") ),
-            Struct("sub2", ULInt16("c") ),
-        )
-
-        .build(dict(sub1=dict(a=1,b=2))) -> b"\x01\x02"
-        .build(dict(sub2=dict(c=3)))     -> b"\x03\x00"
-
-        Union("union",
-            Embedded(Struct("sub1", ULInt8("a"), ULInt8("b") )),
-            Embedded(Struct("sub2", ULInt16("c") )),
-        )
-
-        .build(dict(a=1,b=2)) -> b"\x01\x02"
-        .build(dict(c=3)) -> b"\x03\x00"
+        ???
     """
     __slots__ = ["subcons","buildfrom"]
     def __init__(self, *subcons, **kw):
@@ -1363,31 +1349,23 @@ class Union(Construct):
     def _parse(self, stream, context):
         ret = Container()
         for sc in self.subcons:
-            _updcon(ret, sc, sc._parse(stream, context))
+            if sc.name is not None:
+                ret[sc.name] = sc._parse(stream, context)
         return ret
     def _build(self, obj, stream, context):
-        if self.buildfrom is not None:
-            if isinstance(self.buildfrom, int):
-                index = self.buildfrom
-                name = self.subcons[index].name
-                self.subcons[index].subcon._build(_subobj(self.subcons[index], obj), stream, context)
-            elif isinstance(self.buildfrom, str):
-                index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
-                name = self.subcons[index].name
-                self.subcons[index].subcon._build(_subobj(self.subcons[index], obj), stream, context)
-            else:
-                raise TypeError("buildfrom is not int or str")
-        else:
+        if self.buildfrom is None:
             for sc in self.subcons:
-                try:
-                    data = sc.subcon.build(_subobj(sc, obj), context)
-                except Exception:
-                    pass
-                else:
-                    stream.write(data)
-                    break
-            else:
-                raise SelectError("no subconstruct matched", obj)
+                if sc.name in obj:
+                    return sc._build(obj[sc.name], stream, context)
+            raise UnionError("none of subcons were found in the dictionary %s" % obj)
+        else:
+            sc = self.subcons[self.buildfrom]
+            return sc._build(obj[sc.name], stream, context)
+    def _sizeof(self, context):
+        if self.buildfrom is None:
+            raise SizeofError("cannot calculate size")
+        else:
+            return self.subcons[self.buildfrom]._sizeof(context)
 
 
 class Select(Construct):
