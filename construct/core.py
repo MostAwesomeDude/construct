@@ -2693,14 +2693,13 @@ class StringEncoded(Adapter):
                 obj = self.encoding.decode(obj)
         return obj
     def _encode(self, obj, context):
-        if self.encoding:
+        if not isinstance(obj, bytes):
+            if not self.encoding:
+                raise StringError("no encoding provided when processing a unicode obj")
             if isinstance(self.encoding, str):
                 obj = obj.encode(self.encoding)
             else:
                 obj = self.encoding.encode(obj)
-        else:
-            if not isinstance(obj, bytes):
-                raise StringError("no encoding provided but building from unicode string?")
         return obj
 
 
