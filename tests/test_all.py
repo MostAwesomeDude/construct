@@ -501,11 +501,10 @@ class TestCore(unittest.TestCase):
         assert raises(Select(UBInt32, UBInt16).parse, b"\x07") == SelectError
         assert Select(UBInt32, UBInt16, UBInt8).parse(b"\x07") == 7
         assert Select(UBInt32, UBInt16, UBInt8).build(7) == b"\x00\x00\x00\x07"
-        assert raises(Select(UBInt32, UBInt16, UBInt8).sizeof) == SizeofError
         assert Select("a"/UBInt32, "b"/UBInt16, "c"/UBInt8, includename=True).parse(b"\x07") == ("c", 7)
         assert Select("a"/UBInt32, "b"/UBInt16, "c"/UBInt8, includename=True).build((("c", 7))) == b"\x07"
         assert raises(Select("a"/UBInt32, "b"/UBInt16, "c"/UBInt8, includename=True).build, (("d", 7))) == SelectError
-        assert raises(Select("a"/UBInt32, "b"/UBInt16, "c"/UBInt8, includename=True).sizeof) == SizeofError
+        assert raises(Select(Byte).sizeof) == SizeofError
 
     def test_peek(self):
         assert Peek(UBInt8).parse(b"\x01") == 1

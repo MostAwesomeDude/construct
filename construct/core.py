@@ -1334,7 +1334,7 @@ class Union(Construct):
     r"""
     Set of overlapping fields (like unions in C). When parsing, all fields read the same data bytes. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name.
 
-    :param subcons: subconstructs for parsing, one of them used for building
+    :param subcons: subconstructs for parsing (order sensitive), one of them used for building
     :param buildfrom: the subcon used for building and calculating size, can be integer index or string name, default is None (then tries each subcon in sequence)
 
     Example::
@@ -1369,62 +1369,54 @@ class Union(Construct):
 
 
 class Select(Construct):
-    """
+    r"""
     Selects the first matching subconstruct. It will literally try each of the subconstructs, until one matches.
 
-    .. note:: Requires a seekable stream.
-
-    :param subcons: the subcons to try (order-sensitive)
-    :param include_name: a keyword only argument, indicating whether to include the name of the selected subcon in the return value of parsing. default is false.
+    :param subcons: the subcons to try (order sensitive)
+    :param includename: indicates whether to include the name of the selected subcon in the return value of parsing, default is false
 
     Example::
 
-        Select("foo",
-            UBInt64("large"),
-            UBInt32("medium"),
-            UBInt16("small"),
-            UBInt8("tiny"),
-        )
+        >>> Select(UBInt32, UBInt16, UBInt8, Pass).parse(b"1234")
+        825373492
+        >>> Select(UBInt32, UBInt16, UBInt8, Pass).parse(b"12")
+        12594
+        >>> Select(UBInt32, UBInt16, UBInt8, Pass).parse(b"1")
+        49
+        >>> Select(UBInt32, UBInt16, UBInt8, Pass).parse(b"")
+
+        >>> Select(UBInt32, UBInt16, UBInt8, Pass).build(1)
+        b'\x00\x00\x00\x01'
     """
     __slots__ = ["subcons", "includename"]
     def __init__(self, *subcons, **kw):
-        includename = kw.pop("includename", False)
         super(Select, self).__init__()
         self.subcons = subcons
-        self.includename = includename
-        self._inherit_flags(*subcons)
+        self.includename = kw.pop("includename", False)
     def _parse(self, stream, context):
         for sc in self.subcons:
             fallback = stream.tell()
-            context2 = context.__copy__()
             try:
-                obj = sc._parse(stream, context2)
+                obj = sc._parse(stream, context)
             except ConstructError:
                 stream.seek(fallback)
             else:
-                context.__update__(context2)
-                if self.includename:
-                    return sc.name, obj
-                else:
-                    return obj
+                return (sc.name,obj) if self.includename else obj
         raise SelectError("no subconstruct matched")
     def _build(self, obj, stream, context):
         if self.includename:
             name, obj = obj
             for sc in self.subcons:
                 if sc.name == name:
-                    sc._build(obj, stream, context)
-                    return
+                    return sc._build(obj, stream, context)
         else:
             for sc in self.subcons:
-                context2 = context.__copy__()
                 try:
-                    data = sc.build(obj, context2)
+                    data = sc.build(obj, context)
                 except Exception:
                     pass
                 else:
-                    context.__update__(context2)
-                    stream.write(data)
+                    _write_stream(stream, len(data), data)
                     return
         raise SelectError("no subconstruct matched", obj)
 
