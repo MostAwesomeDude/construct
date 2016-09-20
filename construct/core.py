@@ -933,9 +933,7 @@ class Array(Subconstruct):
     r"""
     A homogenous array of elements. The array will iterate through exactly ``count`` elements. Will raise ArrayError if less elements are found.
 
-    .. seealso::
-
-        Base :func:`~construct.Range` construct.
+    .. seealso:: Base :func:`~construct.Range` construct.
 
     :param count: int or a function that takes context and returns the number of elements
     :param subcon: the subcon to process individual elements
@@ -2017,20 +2015,10 @@ class Compressed(Tunnel):
 #===============================================================================
 class LazyStruct(Construct):
     r"""
-    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
+    Equivalent to Struct construct, however fixed size members are parsed on demend, others are parsed immediately. If entire struct is fixed size then entire parse is essentially one seek.
 
-    If entire struct is fixed size, then all fields are parsed only when their keys are first accessed. Otherwise variable length fields are parsed immediately and fixed length fields are parsed later.
+    .. seealso:: Equivalent to :func:`~construct.Struct`.
 
-    :param subcons: a sequence of subconstructs that make up this structure.
-
-    Example::
-
-        LazyStruct("struct",
-            UBInt8("a"),
-            UBInt16("b"),
-            CString("c"),
-        )
-        .parse(b"\x01\x00\x02abcde") -> LazyContainer(a=1,b=2,c=?)
     """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes", "keys"]
     def __init__(self, *subcons, **kw):
@@ -2120,20 +2108,10 @@ class LazyStruct(Construct):
 
 class LazyRange(Construct):
     r"""
-    A sequence of named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
+    Equivalent to Range construct, members are parsed on demend. Works only with fixed size subcon.
 
-    If entire struct is fixed size, then all fields are parsed only when their keys are first accessed. Otherwise variable length fields are parsed immediately and fixed length fields are parsed later.
+    .. seealso:: Equivalent to :func:`~construct.Range`.
 
-    :param subcons: a sequence of subconstructs that make up this structure.
-
-    Example::
-
-        LazyStruct("struct",
-            UBInt8("a"),
-            UBInt16("b"),
-            CString("c"),
-        )
-        .parse(b"\x01\x00\x02abcde") -> LazyContainer(a=1,b=2,c=?)
     """
     __slots__ = ["subcon", "min", "max", "subsize"]
     def __init__(self, min, max, subcon):
@@ -2176,6 +2154,12 @@ class LazyRange(Construct):
 
 
 class LazySequence(Construct):
+    r"""
+    Equivalent to Sequence construct, however fixed size members are parsed on demend, others are parsed immediately. If entire sequence is fixed size then entire parse is essentially one seek.
+
+    .. seealso:: Equivalent to :func:`~construct.Sequence`.
+
+    """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes"]
     def __init__(self, *subcons, **kw):
         super(LazySequence, self).__init__()
@@ -2252,15 +2236,18 @@ class LazySequence(Construct):
 
 class OnDemand(Subconstruct):
     r"""
-    Allows for on-demand (lazy) parsing. When parsing, it will return a LazyContainer that represents a pointer to the data, but does not actually parse it from the stream until it is "demanded". By accessing the 'value' property of LazyContainers, you will demand the data from the stream. The data will be parsed and cached for later use. You can use the 'has_value' property to know whether the data has already been demanded.
+    Allows for on-demand (lazy) parsing. When parsing, it will return a function that when called, will return the parsed value. Works only with fixed size subcon.
 
-    .. seealso:: The :func:`~construct.macros.OnDemandPointer` macro.
-
-    :param subcon: the subcon to read/write on demand. must be fixed size
+    :param subcon: the subcon to read/write on demand, must be fixed size
 
     Example::
 
-        OnDemand(Array(10000, UBInt8("foo"))
+        >>> OnDemand(Byte).parse(b"\xff")
+        <function OnDemand._parse.<locals>.<lambda> at 0x7fdc241cfc80>
+        >>> _()
+        255
+        >>> OnDemand(Byte).build(16)
+        b'\x10'
     """
     def __init__(self, subcon):
         super(OnDemand, self).__init__(subcon)
@@ -2271,9 +2258,11 @@ class OnDemand(Subconstruct):
 
 class OnDemandPointer(Subconstruct):
     r"""
-    An on-demand pointer.
+    An on-demand pointer. Is both lazy and jumps to a position before reading.
 
-    :param offsetfunc: an int or a function taking context and returning the absolute stream position
+    .. seealso:: Base :func:`~construct.OnDemand` and :func:`~construct.Pointer` construct.
+
+    :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place, can return negative integer as position from the end backwards
     :param subcon: the subcon that will be parsed or built at the `offset` stream position
     """
     __slots__ = ["offset"]
@@ -2304,9 +2293,9 @@ class LazyBound(Construct):
     r"""
     Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees).
 
-    :param subconfunc: function taking context and returning a new construct
+    Note: there are no obvious examples on how to use it. Might be unusable.
 
-    ??? look at test suite ???
+    :param subconfunc: function taking context and returning a Construct, which can also return Pass or itself
     """
     __slots__ = ["subconfunc"]
     def __init__(self, subconfunc):
@@ -2325,9 +2314,16 @@ class LazyBound(Construct):
 #===============================================================================
 class Embedded(Subconstruct):
     r"""
-    Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences.
+    Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences. Name is also inherited.
 
     :param subcon: the struct to embed
+
+    Example::
+
+        >>> Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte).parse(b"abc")
+        Container(a=97)(b=98)(c=99)
+        >>> Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte).build(_)
+        b'abc'
     """
     def __init__(self, subcon):
         super(Embedded, self).__init__(subcon)
@@ -2336,7 +2332,7 @@ class Embedded(Subconstruct):
 
 class Renamed(Subconstruct):
     r"""
-    Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name.
+    Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name. Can be used to give same construct few different names. Used internally by / operator.
 
     :param newname: the new name
     :param subcon: the subcon to rename
@@ -2348,12 +2344,12 @@ class Renamed(Subconstruct):
 
 def Alias(newname, oldname):
     r"""
-    Creates an alias for an existing element in a struct.
+    Creates an alias for an existing element in a struct. When parsing, value is available under both keys. Building does nothing. Deprecated meaning there is no real use for it.
 
-    When parsing, value is available under both keys. Build is no-op.
+    .. seealso:: Note that :func:`~construct.Computed` is more powerful.
 
     :param newname: the new name
-    :param oldname: the name of an existing element
+    :param oldname: the name of an existing element, must be on same context level
     """
     return Renamed(newname, Computed(lambda ctx: ctx[oldname]))
 
@@ -2363,18 +2359,17 @@ def Alias(newname, oldname):
 #===============================================================================
 class Mapping(Adapter):
     r"""
-    Adapter that maps objects to other objects.
-    See SymmetricMapping and Enum.
+    Adapter that maps objects to other objects. Translates objects before parsing and before 
 
     :param subcon: the subcon to map
-    :param decoding: the decoding (parsing) mapping (a dict)
-    :param encoding: the encoding (building) mapping (a dict)
-    :param decdefault: the default return value when the object is not found
-                       in the decoding mapping. if no object is given, an exception is raised.
-                       if ``Pass`` is used, the unmapped object will be passed as-is
-    :param encdefault: the default return value when the object is not found
-                       in the encoding mapping. if no object is given, an exception is raised.
-                       if ``Pass`` is used, the unmapped object will be passed as-is
+    :param decoding: the decoding (parsing) mapping as a dict
+    :param encoding: the encoding (building) mapping as a dict
+    :param decdefault: the default return value when object is not found in the mapping, if no object is given an exception is raised, if ``Pass`` is used, the unmapped object will be passed as-is
+    :param encdefault: the default return value when object is not found in the mapping, if no object is given an exception is raised, if ``Pass`` is used, the unmapped object will be passed as-is
+
+    Example::
+
+        ???
     """
     __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
     def __init__(self, subcon, decoding, encoding, decdefault=NotImplemented, encdefault=NotImplemented):
@@ -2388,8 +2383,7 @@ class Mapping(Adapter):
             return self.encoding[obj]
         except (KeyError, TypeError):
             if self.encdefault is NotImplemented:
-                raise MappingError("no encoding mapping for %r [%s]" % (
-                    obj, self.subcon.name))
+                raise MappingError("no encoding mapping for %r" % (obj,))
             if self.encdefault is Pass:
                 return obj
             return self.encdefault
@@ -2398,8 +2392,7 @@ class Mapping(Adapter):
             return self.decoding[obj]
         except (KeyError, TypeError):
             if self.decdefault is NotImplemented:
-                raise MappingError("no decoding mapping for %r [%s]" % (
-                    obj, self.subcon.name))
+                raise MappingError("no decoding mapping for %r" % (obj,))
             if self.decdefault is Pass:
                 return obj
             return self.decdefault
@@ -2407,18 +2400,21 @@ class Mapping(Adapter):
 
 def SymmetricMapping(subcon, mapping, default=NotImplemented):
     r"""
-    Defines a symmetrical mapping: a->b, b->a.
+    Defines a symmetrical mapping, same mapping is used on parsing and building.
+
+    .. seealso:: Based on :func:`~construct.Mapping`.
 
     :param subcon: the subcon to map
-    :param mapping: the encoding mapping (a dict); the decoding mapping is
-                    achieved by reversing this mapping
-    :param default: the default value to use when no mapping is found. if no
-                    default value is given, and exception is raised. setting to Pass would
-                    return the value "as is" (unmapped)
+    :param encoding: the mapping as a dict
+    :param decdefault: the default return value when object is not found in the mapping, if no object is given an exception is raised, if ``Pass`` is used, the unmapped object will be passed as-is
+
+    Example::
+
+        ???
     """
     return Mapping(subcon,
         encoding = mapping,
-        decoding = dict((v, k) for k, v in mapping.items()),
+        decoding = dict((v,k) for k, v in mapping.items()),
         encdefault = default,
         decdefault = default,
     )
@@ -2426,6 +2422,13 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
 
 @singletonfunction
 def Flag():
+    r"""
+    A one byte (or one bit) field that maps to True or False bool. Non-zero bytes are consifered True.
+
+    Example::
+
+        ???
+    """
     return SymmetricMapping(UBInt8, {True : 1, False : 0}, default=True)
 
 
@@ -2435,24 +2438,26 @@ def Enum(subcon, mapping, default=NotImplemented):
 
     :param subcon: the subcon to map
     :param \*\*kw: keyword arguments which serve as the encoding mapping
-    :param _default_: an optional, keyword-only argument that specifies the
-                      default value to use when the mapping is undefined. if not given,
-                      and exception is raised when the mapping is undefined. use `Pass` to
-                      pass the unmapped value as-is
+    :param _default_: an optional, keyword-only argument that specifies the default value to use when the mapping is undefined. if not given, and exception is raised when the mapping is undefined. use `Pass` topass the unmapped value as-is
+
+    Example::
+
+        ???
     """
     return SymmetricMapping(subcon, mapping, default)
 
 
 class FlagsEnum(Adapter):
     r"""
-    A set of flag values mapping.
-
-    Adapter for flag fields. Each flag is extracted from the number, resulting
-    in a FlagsContainer object. Not intended for direct usage. See FlagsEnum.
+    A set of flag values mapping. Each flag is extracted from the number, resulting in a FlagsContainer dict that has each key assigned True or False.
 
     :param subcon: the subcon to extract
     :param flags: a dictionary mapping flag-names to their value
     :param \*\*kw: keyword arguments which serve as the encoding mapping
+
+    Example::
+
+        ???
     """
     __slots__ = ["flags"]
     def __init__(self, subcon, flags):
@@ -2480,7 +2485,7 @@ class FlagsEnum(Adapter):
 # adapters
 #===============================================================================
 class ExprAdapter(Adapter):
-    """
+    r"""
     A generic adapter that accepts 'encoder' and 'decoder' as parameters. You
     can use ExprAdapter instead of writing a full-blown class when only a
     simple expression is needed.
@@ -2506,6 +2511,10 @@ class ExprAdapter(Adapter):
 class HexDump(Adapter):
     """
     Adapter for hex-dumping strings. It returns a HexString, which is a string
+
+    Example::
+
+        ???
     """
     __slots__ = ["linesize"]
     def __init__(self, subcon, linesize=16):
@@ -2527,6 +2536,10 @@ class Slicing(Adapter):
     :param stop: stop index (or None for up-to-end)
     :param step: step (or 1 for every element)
     :param empty: value to fill the list with during building
+
+    Example::
+
+        ???
     """
     __slots__ = ["count", "start", "stop", "step", "empty"]
     def __init__(self, subcon, count, start, stop=None, step=1, empty=None):
@@ -2558,6 +2571,10 @@ class Indexing(Adapter):
     :param count: expected number of elements, needed during building
     :param index: the index of the list to get
     :param empty: value to fill the list with during building
+
+    Example::
+
+        ???
     """
     __slots__ = ["count", "index", "empty"]
     def __init__(self, subcon, count, index, empty):
@@ -2638,6 +2655,7 @@ class NoneOf(Validator):
 # strings
 #===============================================================================
 class StringEncoded(Adapter):
+    """Used internally."""
     __slots__ = ["encoding"]
     def __init__(self, subcon, encoding):
         super(StringEncoded, self).__init__(subcon)
@@ -2662,6 +2680,7 @@ class StringEncoded(Adapter):
 
 
 class StringPaddedTrimmed(Adapter):
+    """Used internally."""
     __slots__ = ["length", "padchar", "paddir", "trimdir"]
     def __init__(self, length, subcon, padchar=b"\x00", paddir="right", trimdir="right"):
         if not isinstance(padchar, bytes):
