@@ -1927,15 +1927,7 @@ def ByteSwapped(subcon):
 
     Example::
 
-        ByteSwapped(UBInt24)     # eq to ULInt24
-
-        ByteSwapped(Struct("struct",
-            Byte("a"),
-            Byte("b"),
-        ))
-
-        .parse(b"\x01\x02") -> Container(a=2)(b=1)
-        .build(dict(a=2,b=1)) -> b"\x01\x02"
+        ULInt24 <--> ByteSwapped(UBInt24)
     """
     return Restreamed(subcon,
         lambda s: s[::-1], subcon.sizeof(),
@@ -1944,6 +1936,18 @@ def ByteSwapped(subcon):
 
 
 def BitsSwapped(subcon):
+    r"""
+    Swap the bit order within each byte within boundaries of the given subcon.
+
+    :param subcon: the subcon on top of byte swapped bytes
+
+    Example::
+
+        >>> Bitwise(Bytes(8)).parse(b"\xa8")
+        b'\x01\x00\x01\x00\x01\x00\x00\x00'
+        >>> BitsSwapped(Bitwise(Bytes(8))).parse(b"\xa8")
+        b'\x00\x00\x00\x01\x00\x01\x00\x01'
+    """
     return Restreamed(subcon,
         lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
         lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
