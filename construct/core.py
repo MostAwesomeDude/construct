@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import struct
 from struct import Struct as Packer
 from struct import error as PackerError
@@ -816,7 +818,7 @@ class Struct(Construct):
 
     Some fields do not need to be named, since they are built from None anyway. See Const Padding Pass Terminator.
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.macros.Embedded` wrapper that merges fields into parent's fields.
+    .. seealso:: Can be nested easily, and embedded using :func:`~construct.Embedded` wrapper that merges fields into parent's fields.
 
     :param subcons: a sequence of subconstructs that make up this structure
 
@@ -882,7 +884,7 @@ class Sequence(Struct):
     r"""
     A sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.macros.Embedded` wrapper that merges entries into parent's entries.
+    .. seealso:: Can be nested easily, and embedded using :func:`~construct.Embedded` wrapper that merges entries into parent's entries.
 
     :param subcons: a sequence of subconstructs that make up this sequence
 
@@ -1434,6 +1436,10 @@ def Optional(subcon):
     Note: sizeof returns subcon size, although no bytes could be consumed or produced. Just something to consider.
 
     :param subcon: the subcon to optionally parse or build
+
+    Example::
+
+        ???
     """
     return Select(subcon, Pass)
 
@@ -2433,7 +2439,10 @@ def Flag():
 
     Example::
 
-        ???
+        >>> Flag.parse(b"\x01")
+        True
+        >>> Flag.build(True)
+        b'\x01'
     """
     return SymmetricMapping(Byte, {True : 1, False : 0}, default=True)
 
@@ -2479,7 +2488,10 @@ class FlagsEnum(Adapter):
 
     Example::
 
-        ???
+        >>> FlagsEnum(Byte,dict(a=1,b=2,c=4,d=8)).parse(b"\x03")
+        Container(c=False)(b=True)(a=True)(d=False)
+        >>> FlagsEnum(Byte,dict(a=1,b=2,c=4,d=8)).build(_)
+        b'\x03'
     """
     __slots__ = ["flags"]
     def __init__(self, subcon, flags):
@@ -2516,10 +2528,9 @@ class ExprAdapter(Adapter):
 
     Example::
 
-        ExprAdapter(Int8ub("foo"),
-            encoder = lambda obj, ctx: obj / 4,
-            decoder = lambda obj, ctx: obj * 4,
-        )
+        Ident = ExprAdapter(Byte,
+            encoder = lambda obj,ctx: obj+1,
+            decoder = lambda obj,ctx: obj-1, )
     """
     __slots__ = ["_encode", "_decode"]
     def __init__(self, subcon, encoder, decoder):
@@ -2530,14 +2541,13 @@ class ExprAdapter(Adapter):
 
 
 class HexDump(Adapter):
-    """
-    Adapter for hex-dumping strings. It returns a HexString, which is a string
-
-    HexString or hexdump ?????
+    r"""
+    Adapter for hex-dumping b-strings. It returns a hex dump as another b-string.
 
     Example::
 
-        ???
+        >>> HexDump(Bytes(10)).parse(b"12345abc;/")
+        '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/\n'
     """
     __slots__ = ["linesize"]
     def __init__(self, subcon, linesize=16):
@@ -2618,24 +2628,27 @@ class Indexing(Adapter):
 #===============================================================================
 class OneOf(Validator):
     r"""
-    Validates that the object is one of the listed values.
+    Validates that the object is one of the listed values, both during parsing and building.
 
-    :param subcon: object to validate
+    :param subcon: a construct to validate
     :param valids: a collection implementing `in`
 
     Example::
 
-        >>> OneOf(Int8ub("num"), [4,5,6,7]).parse(b"\x05")
-        5
-
-        >>> OneOf(Int8ub("num"), [4,5,6,7]).parse(b"\x08")
+        >>> OneOf(Byte, [1,2,3]).parse(b"\x01")
+        1
+        >>> OneOf(Byte, [1,2,3]).parse(b"\x08")
         construct.core.ValidationError: ('invalid object', 8)
 
-        >>> OneOf(Int8ub("num"), [4,5,6,7]).build(5)
-        b"\x05"
+        >>> OneOf(Bytes(1), b"1234567890").parse(b"4")
+        b'4'
+        >>> OneOf(Bytes(1), b"1234567890").parse(b"?")
+        construct.core.ValidationError: ('invalid object', b'?')
 
-        >>> OneOf(Int8ub("num"), [4,5,6,7]).build(8)
-        construct.core.ValidationError: ('invalid object', 8)
+        >>> OneOf(Bytes(2), b"1234567890").parse(b"78")
+        b'78'
+        >>> OneOf(Bytes(2), b"1234567890").parse(b"19")
+        construct.core.ValidationError: ('invalid object', b'19')
     """
     __slots__ = ["valids"]
     def __init__(self, subcon, valids):
@@ -2647,24 +2660,13 @@ class OneOf(Validator):
 
 class NoneOf(Validator):
     r"""
-    Validates that the object is none of the listed values.
+    Validates that the object is none of the listed values, both during parsing and building.
 
-    :param subcon: object to validate
+    :param subcon: a construct to validate
     :param invalids: a collection implementing `in`
 
-    Example::
+    .. seealso:: Look at :func:`~construct.OneOf` for examples, works the same.
 
-        >>> NoneOf(Int8ub("num"), [4,5,6,7]).parse(b"\x08")
-        8
-
-        >>> NoneOf(Int8ub("num"), [4,5,6,7]).parse(b"\x06")
-        construct.core.ValidationError: ('invalid object', 6)
-
-        >>> NoneOf(Int8ub("num"), [4,5,6,7]).build(8)
-        b"\x08"
-
-        >>> NoneOf(Int8ub("num"), [4,5,6,7]).build(6)
-        construct.core.ValidationError: ('invalid object', 6)
     """
     __slots__ = ["invalids"]
     def __init__(self, subcon, invalids):
@@ -2727,11 +2729,11 @@ class StringPaddedTrimmed(Adapter):
     def _encode(self, obj, context):
         length = self.length(context) if callable(self.length) else self.length
         if self.paddir == "right":
-            obj = obj.ljust(length, self.padchar)
+            obj = obj.ljust(length, self.padchar[0:1])
         elif self.paddir == "left":
-            obj = obj.rjust(length, self.padchar)
+            obj = obj.rjust(length, self.padchar[0:1])
         elif self.paddir == "center":
-            obj = obj.center(length, self.padchar)
+            obj = obj.center(length, self.padchar[0:1])
         else:
             raise StringError("paddir must be one of: right left center")
         if len(obj) > length:
@@ -2746,40 +2748,40 @@ class StringPaddedTrimmed(Adapter):
 
 def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
     r"""
-    A configurable, variable-length string field.
+    A configurable, fixed-length or variable-length string field.
 
     When parsing, the byte string is stripped of pad character (as specified) from the direction (as specified) then decoded (as specified). Length is a constant integer or a function of the context.
     When building, the string is encoded (as specified) then padded (as specified) from the direction (as specified) or trimmed as bytes (as specified).
 
     The padding character and direction must be specified for padding to work. The trim direction must be specified for trimming to work.
 
-    :param length: length in bytes (not unicode characters), as int or function
+    :param length: length in bytes (not unicode characters), as int or context function
     :param encoding: encoding (e.g. "utf8") or None for bytes
-    :param padchar: optional byte or unicode character to pad out strings
+    :param padchar: b-string character to pad out strings (by default b"\x00")
     :param paddir: direction to pad out strings (one of: right left both)
     :param trimdir: direction to trim strings (one of: right left)
 
     Example::
 
-        String("string", 5)
-        .parse(b"hello") -> b"hello"
-        .build(u"hello") raises StringError
-        .sizeof() -> 5
+        >>> String(10).build(b"hello")
+        b'hello\x00\x00\x00\x00\x00'
+        >>> String(10).parse(_)
+        b'hello'
+        >>> String(10).sizeof()
+        10
 
-        String("string", 12, encoding="utf8")
-        .parse(b"hello joh\xd4\x83n") -> u'hello joh\u0503n'
-        .build(u'abc') -> b'abc\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        .sizeof() -> 12
+        >>> String(10, encoding="utf8").build("Афон")
+        b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00\x00'
+        >>> String(10, encoding="utf8").parse(_)
+        'Афон'
 
-        String("string", 10, padchar="X", paddir="right")
-        .parse(b"helloXXXXX") -> b"hello"
-        .build(u"hello") -> b"helloXXXXX"
+        >>> String(10, padchar=b"XYZ", paddir="center").build(b"abc")
+        b'XXXabcXXXX'
+        >>> String(10, padchar=b"XYZ", paddir="center").parse(b"XYZabcXYZY")
+        b'abc'
 
-        String("string", 5, trimdir="right")
-        .build(u"hello12345") -> b"hello"
-
-        String("string", lambda ctx: ctx.somefield)
-        .sizeof() -> ?
+        >>> String(10, trimdir="right").build(b"12345678901234567890")
+        b'1234567890'
     """
     return StringEncoded(
         StringPaddedTrimmed(
@@ -2794,46 +2796,38 @@ def PascalString(lengthfield, encoding=None):
 
     ``PascalString`` is named after the string types of Pascal, which are length-prefixed. Lisp strings also follow this convention.
 
-    The length field will not appear in the same ``Container``, when parsing. Only the string will be returned. When building, the length is taken from len(the string). The length field can be anonymous (name is None) and can be variable length (such as VarInt).
+    The length field will not appear in the same dict, when parsing. Only the string will be returned. When building, actual length is prepended before the encoded string. The length field can be variable length (such as VarInt). Stored length is in bytes, not characters.
 
-    :param lengthfield: a field which will store the length of the string
+    :param lengthfield: a field used to parse and build the length
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
     Example::
 
-        PascalString("string", Int32ul(None))
-        .parse(b"\x05\x00\x00\x00hello") -> "hello"
-        .build("hello") -> -> b"\x05\x00\x00\x00hello"
-
-        PascalString("string", Int32ul(None), encoding="utf8")
-        .parse(b"\x05\x00\x00\x00hello") -> u"hello"
-        .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
+        >>> PascalString(VarInt, encoding="utf8").build("Афон")
+        b'\x08\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'
+        >>> PascalString(VarInt, encoding="utf8").parse(_)
+        'Афон'
     """
     return StringEncoded(Prefixed(lengthfield, GreedyBytes), encoding)
 
 
 def CString(terminators=b"\x00", encoding=None):
     r"""
-    A string ending in a terminator bytes character.
+    A string ending in a terminator b-string character.
 
-    ``CString`` is similar to the strings of C, C++, and other related programming languages.
+    ``CString`` is similar to the strings of C.
 
-    By default, the terminator is the NULL byte (b'\x00'). Terminators field can be a longer bytes string, and any of the characters breaks parsing. First character is used when building.
+    By default, the terminator is the NULL byte (b'\x00'). Terminators field can be a longer b-string, and any of the characters breaks parsing. First terminator byte is used when building.
 
-    :param terminators: sequence of valid terminators, in order of preference
+    :param terminators: sequence of valid terminators, first is used when building, all are used when parsing
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
     Example::
 
-        CString("text")
-        .parse(b"hello\x00") -> b"hello"
-        .build(b"hello") -> b"hello\x00"
-
-        CString("text", terminators=b"XYZ")
-        .parse(b"helloX") -> b"hello"
-        .parse(b"helloY") -> b"hello"
-        .parse(b"helloZ") -> b"hello"
-        .build(b"hello") -> b"helloX"
+        >>> CString(encoding="utf8").build("Афон")
+        b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
+        >>> CString(encoding="utf8").parse(_)
+        'Афон'
     """
     return StringEncoded(
         ExprAdapter(
@@ -2842,33 +2836,21 @@ def CString(terminators=b"\x00", encoding=None):
             decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1])),
         encoding)
 
-    # return StringEncoded(
-    #     ExprAdapter(
-    #         RepeatUntil(lambda obj,ctx: obj in terminators, Bytes(1)),
-    #         encoder = lambda obj,ctx: iteratebytes(obj+terminators),
-    #         decoder = lambda obj,ctx: b''.join(obj[:-1])),
-    #     encoding)
-
 
 def GreedyString(encoding=None):
     r"""
-    A string that reads the rest of the stream until EOF, or writes a given string as is.
-
-    If no encoding is given, this is essentially GreedyBytes.
+    A string that reads the rest of the stream until EOF, and writes a given string as is. If no encoding is given, this is essentially GreedyBytes.
 
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
-    .. seealso:: The :class:`~construct.core.GreedyBytes` class.
+    .. seealso:: Analog to :class:`~construct.GreedyBytes` and the same when no enoding is used.
 
     Example::
 
-        GreedyString("greedy")
-        .parse(b"hello\x00") -> b"hello\x00"
-        .build(b"hello\x00") -> b"hello\x00"
-
-        GreedyString("greedy", encoding="utf8")
-        .parse(b"hello\x00") -> u"hello\x00"
-        .build(u"hello\x00") -> b"hello\x00"
+        >>> GreedyString(encoding="utf8").build("Афон")
+        b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'
+        >>> GreedyString(encoding="utf8").parse(_)
+        'Афон'
     """
     return StringEncoded(GreedyBytes, encoding)
 

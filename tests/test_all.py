@@ -591,7 +591,7 @@ class TestCore(unittest.TestCase):
         assert String(10, padchar=b"X", paddir="right").build(b"hello") == b"helloXXXXX"
         assert String(10, padchar=b"X", paddir="left").build(b"hello") == b"XXXXXhello"
         assert String(10, padchar=b"X", paddir="center").build(b"hello") == b"XXhelloXXX"
-        assert raises(String, 10, padchar=u"X") == StringError     # missing encoding
+        assert raises(String, 10, padchar=u"X", encoding="utf8") == StringError     # missing encoding
         assert String(5, trimdir="right").build(b"1234567890") == b"12345"
         assert String(5, trimdir="left").build(b"1234567890") == b"67890"
         assert String(5, padchar=b"X", paddir="left", encoding="utf8").sizeof() == 5
