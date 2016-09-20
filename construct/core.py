@@ -2551,7 +2551,7 @@ class HexDump(Adapter):
 
 class Slicing(Adapter):
     r"""
-    Adapter for slicing a list (getting a slice from that list)
+    Adapter for slicing a list (getting a slice from that list). Works with Range and Sequence and their lazy equivalents.
 
     :param subcon: the subcon to slice
     :param count: expected number of elements, needed during building
@@ -2565,7 +2565,7 @@ class Slicing(Adapter):
         ???
     """
     __slots__ = ["count", "start", "stop", "step", "empty"]
-    def __init__(self, subcon, count, start, stop=None, step=1, empty=None):
+    def __init__(self, subcon, count, start, stop, step=1, empty=None):
         super(Slicing, self).__init__(subcon)
         self.count = count
         self.start = start
@@ -2588,7 +2588,7 @@ class Slicing(Adapter):
 
 class Indexing(Adapter):
     r"""
-    Adapter for indexing a list (getting a single item from that list)
+    Adapter for indexing a list (getting a single item from that list). Works with Range and Sequence and their lazy equivalents.
 
     :param subcon: the subcon to index
     :param count: expected number of elements, needed during building
@@ -2600,7 +2600,7 @@ class Indexing(Adapter):
         ???
     """
     __slots__ = ["count", "index", "empty"]
-    def __init__(self, subcon, count, index, empty):
+    def __init__(self, subcon, count, index, empty=None):
         super(Indexing, self).__init__(subcon)
         self.count = count
         self.index = index
