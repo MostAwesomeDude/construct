@@ -1,11 +1,13 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 from declarativeunittest import raises
 import pytest
 
 from construct import *
 from construct.lib import *
-from construct.lib.py3compat import *
 
+from io import BytesIO
 import hashlib
 ident = lambda x: x
 
@@ -101,6 +103,7 @@ class TestCore(unittest.TestCase):
         assert raises(VarInt.build, -1) == ValueError
         assert raises(VarInt.sizeof) == SizeofError
 
+    @pytest.mark.xfail(reason="testing not implemented, issue #155")
     def test_floats(self):
         assert Single.build(1.2) == b"?\x99\x99\x9a"
         assert Double.build(1.2) == b"?\xf3333333"
@@ -782,6 +785,11 @@ class TestCore(unittest.TestCase):
         assert Restreamed(Bytes(1), lambda b: b*2, 1, None, None, None).build(b"a") == b"aa"
         assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
         print("Note: tested mosty as Bitwise and Bytewise")
+
+    def test_rebuffered(self):
+        data = b"0" * 1000
+        assert Rebuffered(Array(1000,Byte)).parse_stream(BytesIO(data)) == [48]*1000
+        assert Rebuffered(Array(1000,Byte), tailcutoff=50).parse_stream(BytesIO(data)) == [48]*1000
 
     def test_expradapter(self):
         MulDiv = ExprAdapter(Byte,

@@ -1,7 +1,8 @@
+from time import sleep
 
 
-class RestreamedBytesIO(object):
-    """Used internally."""
+
+class RestreamedBytesIO:
     __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer"]
 
     def __init__(self, substream, encoder, encoderunit, decoder, decoderunit):
@@ -34,4 +35,84 @@ class RestreamedBytesIO(object):
             raise ValueError("closing stream but %d unread bytes remain, %d in decoded unit" % (len(self.rbuffer), self.decoderunit))
         if len(self.wbuffer):
             raise ValueError("closing stream but %d unwritten bytes remain, %d in encoded unit" % (len(self.wbuffer), self.encoderunit))
+
+    def seekable(self):
+        return False
+
+    def tellable(self):
+        return False
+
+
+
+class RebufferedBytesIO:
+    __slots__ = ["substream","offset","rwbuffer","moved","tailcutoff"]
+
+    def __init__(self, substream, tailcutoff=None):
+        self.substream = substream
+        self.offset = 0
+        self.rwbuffer = b""
+        self.moved = 0
+        self.tailcutoff = tailcutoff
+
+    def read(self, count):
+        startsat = self.offset
+        endsat = startsat + count
+        if startsat < self.moved:
+            raise IOError("could not read because tail was cut off")
+        while self.moved + len(self.rwbuffer) < endsat:
+            newdata = self.substream.read(128*1024)
+            self.rwbuffer += newdata
+            if not newdata:
+                sleep(0)
+        data = self.rwbuffer[startsat-self.moved:endsat-self.moved]
+        self.offset += count
+        if self.tailcutoff is not None and self.moved < self.offset - self.tailcutoff:
+            removed = self.offset - self.tailcutoff - self.moved
+            self.moved += removed
+            self.rwbuffer = self.rwbuffer[removed:]
+        if len(data) < count:
+            raise IOError("could not read enough bytes, something went wrong")
+        return data
+
+    def write(self, data):
+        startsat = self.offset
+        endsat = startsat + len(data)
+        while self.moved + len(self.rwbuffer) < startsat:
+            newdata = self.substream.read(128*1024)
+            self.rwbuffer += newdata
+            if not newdata:
+                sleep(0)
+        self.rwbuffer = self.rwbuffer[:startsat-self.moved] + data + self.rwbuffer[endsat-self.moved:]
+        self.offset = endsat
+        if self.tailcutoff is not None and self.moved < self.offset - self.tailcutoff:
+            removed = self.offset - self.tailcutoff - self.moved
+            self.moved += removed
+            self.rwbuffer = self.rwbuffer[removed:]
+        return len(data)
+
+    def seek(self, at, whence=0):
+        if whence == 0:
+            self.offset = at
+            return self.offset
+        elif whence == 1:
+            self.offset += at
+            return self.offset
+        else:
+            raise ValueError("seeks only with whence 0 and 1")
+
+    def seekable(self):
+        return True
+
+    def tell(self):
+        return self.offset
+
+    def tellable(self):
+        return True
+
+    def cachedfrom(self):
+        return self.moved
+
+    def cachedto(self):
+        return self.moved + len(self.rwbuffer)
+
 
