@@ -115,12 +115,12 @@ class TestCore(unittest.TestCase):
         assert Bytes(4).build(0x01020304) == b"\x01\x02\x03\x04"
         assert Bytes(4).sizeof() == 4
 
-        assert Bytes(lambda ctx: ctx.n).parse(b"12345678",Container(n=4)) == b"1234"
-        assert Bytes(lambda ctx: ctx.n).build(b"1234",Container(n=4)) == b"1234"
-        assert Bytes(lambda ctx: ctx.n).sizeof(Container(n=4)) == 4
-        assert Bytes(lambda ctx: ctx.n).build(1, Container(n=4)) == b"\x00\x00\x00\x01"
-        assert raises(Bytes(lambda ctx: ctx.n).build, b"", Container(n=4)) == FieldError
-        assert raises(Bytes(lambda ctx: ctx.n).build, b"toolong", Container(n=4)) == FieldError
+        assert Bytes(lambda ctx: ctx.n).parse(b"12345678",n=4) == b"1234"
+        assert Bytes(lambda ctx: ctx.n).build(b"1234",n=4) == b"1234"
+        assert Bytes(lambda ctx: ctx.n).sizeof(n=4) == 4
+        assert Bytes(lambda ctx: ctx.n).build(1, n=4) == b"\x00\x00\x00\x01"
+        assert raises(Bytes(lambda ctx: ctx.n).build, b"", n=4) == FieldError
+        assert raises(Bytes(lambda ctx: ctx.n).build, b"toolong", n=4) == FieldError
         assert raises(Bytes(lambda ctx: ctx.n).sizeof) == AttributeError
 
     def test_greedybytes(self):
@@ -150,15 +150,15 @@ class TestCore(unittest.TestCase):
         assert raises(Array(3,Byte).build, [1,2,3,4,5,6,7,8]) == ArrayError
         assert Array(3,Byte).sizeof() == 3
 
-        assert Array(lambda ctx: 3, Byte).parse(b"\x01\x02\x03",Container(n=3)) == [1,2,3]
-        assert Array(lambda ctx: 3, Byte).parse(b"\x01\x02\x03additionalgarbage",Container(n=3)) == [1,2,3]
-        assert raises(Array(lambda ctx: 3, Byte).parse, b"", Container(n=3)) == ArrayError
-        assert Array(lambda ctx: 3, Byte).build([1,2,3],Container(n=3)) == b"\x01\x02\x03"
-        assert raises(Array(lambda ctx: 3, Byte).build, [1,2], Container(n=3)) == ArrayError
-        assert Array(lambda ctx: ctx.n, Byte).parse(b"\x01\x02\x03", Container(n=3)) == [1,2,3]
-        assert Array(lambda ctx: ctx.n, Byte).build([1,2,3],Container(n=3)) == b"\x01\x02\x03"
+        assert Array(lambda ctx: 3, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
+        assert Array(lambda ctx: 3, Byte).parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
+        assert raises(Array(lambda ctx: 3, Byte).parse, b"", n=3) == ArrayError
+        assert Array(lambda ctx: 3, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
+        assert raises(Array(lambda ctx: 3, Byte).build, [1,2], n=3) == ArrayError
+        assert Array(lambda ctx: ctx.n, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
+        assert Array(lambda ctx: ctx.n, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
         assert raises(Array(lambda ctx: ctx.n, Byte).sizeof) == AttributeError
-        assert Array(lambda ctx: ctx.n, Byte).sizeof(Container(n=4)) == 4
+        assert Array(lambda ctx: ctx.n, Byte).sizeof(n=4) == 4
 
     def test_prefixedarray(self):
         assert PrefixedArray(Byte,Byte).parse(b"\x02\x0a\x0b") == [10,11]
@@ -237,7 +237,8 @@ class TestCore(unittest.TestCase):
         assert Computed(lambda ctx: "moo").build(None) == b""
         assert Computed(lambda ctx: "moo").sizeof() == 0
         assert Struct("c" / Computed(lambda ctx: "moo")).parse(b"") == Container(c="moo")
-        assert Struct("c" / Computed(lambda ctx: "moo")).build(Container(c=None)) == b""
+        assert Struct("c" / Computed(lambda ctx: "moo")).build({}) == b""
+        assert Struct("c" / Computed(lambda ctx: "moo")).build(dict()) == b""
         assert Struct("c" / Computed(lambda ctx: "moo")).build(Container()) == b""
         assert raises(Computed(lambda ctx: ctx.missing).parse, b"") == AttributeError
         assert raises(Computed(lambda ctx: ctx["missing"]).parse, b"") == KeyError
@@ -554,7 +555,6 @@ class TestCore(unittest.TestCase):
         assert raises(PrefixedArray(Byte, Byte).parse, b"") == ArrayError
         assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == ArrayError
         assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
-        assert raises(PrefixedArray(Byte, Byte).sizeof, [1,1,1]) == SizeofError
 
     def test_prefixed(self):
         assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xffgarbage") == 65535

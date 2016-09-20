@@ -179,15 +179,15 @@ class Construct(object):
         self2.__setstate__(self, self.__getstate__())
         return self2
 
-    def parse(self, data, context=None):
+    def parse(self, data, context=None, **kw):
         """
         Parse an in-memory buffer.
 
         Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
         """
-        return self.parse_stream(BytesIO(data), context)
+        return self.parse_stream(BytesIO(data), context, **kw)
 
-    def parse_stream(self, stream, context=None):
+    def parse_stream(self, stream, context=None, **kw):
         """
         Parse a stream.
 
@@ -195,6 +195,7 @@ class Construct(object):
         """
         if context is None:
             context = Container()
+        context.update(kw)
         return self._parse(stream, context)
 
     def _parse(self, stream, context):
@@ -205,17 +206,17 @@ class Construct(object):
         """
         raise NotImplementedError()
 
-    def build(self, obj, context=None):
+    def build(self, obj, context=None, **kw):
         """
         Build an object in memory.
 
         :returns: bytes
         """
         stream = BytesIO()
-        self.build_stream(obj, stream, context)
+        self.build_stream(obj, stream, context, **kw)
         return stream.getvalue()
 
-    def build_stream(self, obj, stream, context=None):
+    def build_stream(self, obj, stream, context=None, **kw):
         """
         Build an object directly into a stream.
 
@@ -223,6 +224,7 @@ class Construct(object):
         """
         if context is None:
             context = Container()
+        context.update(kw)
         self._build(obj, stream, context)
 
     def _build(self, obj, stream, context):
@@ -233,7 +235,7 @@ class Construct(object):
         """
         raise NotImplementedError()
 
-    def sizeof(self, context=None):
+    def sizeof(self, context=None, **kw):
         """
         Calculate the size of this object, optionally using a context.
 
@@ -246,6 +248,7 @@ class Construct(object):
         """
         if context is None:
             context = Container()
+        context.update(kw)
         return self._sizeof(context)
 
     def _sizeof(self, context):
