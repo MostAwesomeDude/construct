@@ -104,14 +104,14 @@ class TestCore(unittest.TestCase):
         assert Bytes(4).build(b"1234") == b"1234"
         assert raises(Bytes(4).parse, b"") == FieldError
         assert raises(Bytes(4).build, b"toolong") == FieldError
-        assert raises(Bytes(4).build, 0) == FieldError
-        assert raises(Bytes(4).build, 0x01020304) == ValueError
+        assert Bytes(4).build(1) == b"\x00\x00\x00\x01"
+        assert Bytes(4).build(0x01020304) == b"\x01\x02\x03\x04"
         assert Bytes(4).sizeof() == 4
 
         assert Bytes(lambda ctx: ctx.n).parse(b"12345678",Container(n=4)) == b"1234"
         assert Bytes(lambda ctx: ctx.n).build(b"1234",Container(n=4)) == b"1234"
         assert Bytes(lambda ctx: ctx.n).sizeof(Container(n=4)) == 4
-        assert raises(Bytes(lambda ctx: ctx.n).build, 1, Container(n=4)) == FieldError
+        assert Bytes(lambda ctx: ctx.n).build(1, Container(n=4)) == b"\x00\x00\x00\x01"
         assert raises(Bytes(lambda ctx: ctx.n).build, b"", Container(n=4)) == FieldError
         assert raises(Bytes(lambda ctx: ctx.n).build, b"toolong", Container(n=4)) == FieldError
         assert raises(Bytes(lambda ctx: ctx.n).sizeof) == AttributeError

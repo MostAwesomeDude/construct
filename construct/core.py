@@ -402,7 +402,7 @@ class Bytes(Construct):
         return _read_stream(stream, length)
     def _build(self, obj, stream, context):
         length = self.length(context) if callable(self.length) else self.length
-        data = int2byte(obj) if isinstance(obj, int) else obj
+        data = integer2bytes(obj, length) if isinstance(obj, int) else obj
         _write_stream(stream, length, data)
     def _sizeof(self, context):
         return self.length(context) if callable(self.length) else self.length
