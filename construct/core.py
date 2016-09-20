@@ -819,11 +819,11 @@ class Struct(Construct):
 
     Example::
 
-        >>> Struct("a"/ULInt8, "data"/Bytes(2), "data2"/Bytes(this.a)).parse(b"\x01abc")
+        >>> Struct("a"/Int8ul, "data"/Bytes(2), "data2"/Bytes(this.a)).parse(b"\x01abc")
         Container(a=1)(data=b'ab')(data2=b'c')
-        >>> Struct("a"/ULInt8, "data"/Bytes(2), "data2"/Bytes(this.a)).build(_)
+        >>> Struct("a"/Int8ul, "data"/Bytes(2), "data2"/Bytes(this.a)).build(_)
         b'\x01abc'
-        >>> Struct("a"/ULInt8, "data"/Bytes(2), "data2"/Bytes(this.a)).build(dict(a=5, data=b"??", data2=b"hello"))
+        >>> Struct("a"/Int8ul, "data"/Bytes(2), "data2"/Bytes(this.a)).build(dict(a=5, data=b"??", data2=b"hello"))
         b'\x05??hello'
 
         >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminator).build({})
@@ -892,9 +892,9 @@ class Sequence(Struct):
         >>> (Byte >> Byte).sizeof()
         2
 
-        >>> Sequence(Byte, CString(), BFloat32).build([255, b"hello", 123])
+        >>> Sequence(Byte, CString(), Float32b).build([255, b"hello", 123])
         b'\xffhello\x00B\xf6\x00\x00'
-        >>> Sequence(Byte, CString(), BFloat32).parse(_)
+        >>> Sequence(Byte, CString(), Float32b).parse(_)
         [255, b'hello', 123.0]
     """
     def _parse(self, stream, context):
@@ -1241,11 +1241,11 @@ class Aligned(Subconstruct):
 
     Example::
 
-        >>> Aligned(UBInt16, modulus=4).build(1)
+        >>> Aligned(Int16ub, modulus=4).build(1)
         b'\x00\x01\x00\x00'
-        >>> Aligned(UBInt16, modulus=4).parse(_)
+        >>> Aligned(Int16ub, modulus=4).parse(_)
         1
-        >>> Aligned(UBInt16, modulus=4).sizeof()
+        >>> Aligned(Int16ub, modulus=4).sizeof()
         4
     """
     __slots__ = ["subcon", "modulus", "pattern"]
@@ -1288,11 +1288,11 @@ def AlignedStruct(*subcons, **kw):
 
     Example::
 
-        >>> AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4).build(dict(a=1,b=5))
+        >>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).build(dict(a=1,b=5))
         b'\x01\x00\x00\x00\x00\x05\x00\x00'
-        >>> AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4).parse(_)
+        >>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).parse(_)
         Container(a=1)(b=5)
-        >>> AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4).sizeof()
+        >>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).sizeof()
         8
     """
     return Struct(*(Aligned(sc, **kw) for sc in subcons))
@@ -1379,15 +1379,15 @@ class Select(Construct):
 
     Example::
 
-        >>> Select(UBInt32, UBInt16, UBInt8, Pass).parse(b"1234")
+        >>> Select(Int32ub, Int16ub, Int8ub, Pass).parse(b"1234")
         825373492
-        >>> Select(UBInt32, UBInt16, UBInt8, Pass).parse(b"12")
+        >>> Select(Int32ub, Int16ub, Int8ub, Pass).parse(b"12")
         12594
-        >>> Select(UBInt32, UBInt16, UBInt8, Pass).parse(b"1")
+        >>> Select(Int32ub, Int16ub, Int8ub, Pass).parse(b"1")
         49
-        >>> Select(UBInt32, UBInt16, UBInt8, Pass).parse(b"")
+        >>> Select(Int32ub, Int16ub, Int8ub, Pass).parse(b"")
 
-        >>> Select(UBInt32, UBInt16, UBInt8, Pass).build(1)
+        >>> Select(Int32ub, Int16ub, Int8ub, Pass).build(1)
         b'\x00\x00\x00\x01'
     """
     __slots__ = ["subcons", "includename"]
@@ -1447,9 +1447,9 @@ class Switch(Construct):
 
     Example::
 
-        >>> Switch(this.n, { 1:Byte, 2:UBInt32 }).build(5, dict(n=1))
+        >>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, dict(n=1))
         b'\x05'
-        >>> Switch(this.n, { 1:Byte, 2:UBInt32 }).build(5, dict(n=2))
+        >>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, dict(n=2))
         b'\x00\x00\x00\x05'
     """
     @singleton
@@ -1586,9 +1586,9 @@ class Peek(Subconstruct):
 
     Example::
 
-        >>> Sequence(Peek(Byte), Peek(UBInt16)).parse(b"\x01\x02")
+        >>> Sequence(Peek(Byte), Peek(Int16ub)).parse(b"\x01\x02")
         [1, 258]
-        >>> Sequence(Peek(Byte), Peek(UBInt16)).sizeof()
+        >>> Sequence(Peek(Byte), Peek(Int16ub)).sizeof()
         0
     """
     def __init__(self, subcon):
@@ -1719,11 +1719,11 @@ class Const(Subconstruct):
         >>> Const(b"MZ").sizeof()
         2
 
-        >>> Const(ULInt32, 16).build(None)
+        >>> Const(Int32ul, 16).build(None)
         b'\x10\x00\x00\x00'
-        >>> Const(ULInt32, 16).parse(_)
+        >>> Const(Int32ul, 16).parse(_)
         16
-        >>> Const(ULInt32, 16).sizeof()
+        >>> Const(Int32ul, 16).sizeof()
         4
     """
     __slots__ = ["value"]
@@ -1929,7 +1929,7 @@ def ByteSwapped(subcon):
 
     Example::
 
-        ULInt24 <--> ByteSwapped(UBInt24)
+        Int24ul <--> ByteSwapped(Int24ub)
     """
     return Restreamed(subcon,
         lambda s: s[::-1], subcon.sizeof(),
@@ -2496,7 +2496,7 @@ class ExprAdapter(Adapter):
 
     Example::
 
-        ExprAdapter(UBInt8("foo"),
+        ExprAdapter(Int8ub("foo"),
             encoder = lambda obj, ctx: obj / 4,
             decoder = lambda obj, ctx: obj * 4,
         )
@@ -2604,16 +2604,16 @@ class OneOf(Validator):
 
     Example::
 
-        >>> OneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x05")
+        >>> OneOf(Int8ub("num"), [4,5,6,7]).parse(b"\x05")
         5
 
-        >>> OneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x08")
+        >>> OneOf(Int8ub("num"), [4,5,6,7]).parse(b"\x08")
         construct.core.ValidationError: ('invalid object', 8)
 
-        >>> OneOf(UBInt8("num"), [4,5,6,7]).build(5)
+        >>> OneOf(Int8ub("num"), [4,5,6,7]).build(5)
         b"\x05"
 
-        >>> OneOf(UBInt8("num"), [4,5,6,7]).build(8)
+        >>> OneOf(Int8ub("num"), [4,5,6,7]).build(8)
         construct.core.ValidationError: ('invalid object', 8)
     """
     __slots__ = ["valids"]
@@ -2633,16 +2633,16 @@ class NoneOf(Validator):
 
     Example::
 
-        >>> NoneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x08")
+        >>> NoneOf(Int8ub("num"), [4,5,6,7]).parse(b"\x08")
         8
 
-        >>> NoneOf(UBInt8("num"), [4,5,6,7]).parse(b"\x06")
+        >>> NoneOf(Int8ub("num"), [4,5,6,7]).parse(b"\x06")
         construct.core.ValidationError: ('invalid object', 6)
 
-        >>> NoneOf(UBInt8("num"), [4,5,6,7]).build(8)
+        >>> NoneOf(Int8ub("num"), [4,5,6,7]).build(8)
         b"\x08"
 
-        >>> NoneOf(UBInt8("num"), [4,5,6,7]).build(6)
+        >>> NoneOf(Int8ub("num"), [4,5,6,7]).build(6)
         construct.core.ValidationError: ('invalid object', 6)
     """
     __slots__ = ["invalids"]
@@ -2780,11 +2780,11 @@ def PascalString(lengthfield, encoding=None):
 
     Example::
 
-        PascalString("string", ULInt32(None))
+        PascalString("string", Int32ul(None))
         .parse(b"\x05\x00\x00\x00hello") -> "hello"
         .build("hello") -> -> b"\x05\x00\x00\x00hello"
 
-        PascalString("string", ULInt32(None), encoding="utf8")
+        PascalString("string", Int32ul(None), encoding="utf8")
         .parse(b"\x05\x00\x00\x00hello") -> u"hello"
         .build(u"hello") -> -> b"\x05\x00\x00\x00hello"
     """
