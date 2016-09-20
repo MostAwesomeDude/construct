@@ -11,19 +11,19 @@ class TestThis(unittest.TestCase):
     def testall(self):
         this_example = Struct(
             # straight-forward usage: instead of passing (lambda ctx: ctx["length"]) use this.length
-            "length" / UBInt8,
+            "length" / Int8ub,
             "value" / Bytes(this.length),
             # an example of nesting: '_' refers to the parent's scope
             "nested" / Struct(
-                "b1" / UBInt8,
-                "b2" / UBInt8,
+                "b1" / Int8ub,
+                "b2" / Int8ub,
                 "b3" / Computed(this.b1 * this.b2 + this._.length),
             ),
             # and conditions work as expected
             "condition" / IfThenElse(
                 this.nested.b1 > 50,
-                "c1" / UBInt32,
-                "c2" / UBInt8,
+                "c1" / Int32ub,
+                "c2" / Int8ub,
             ),
         )
         assert this_example.parse(b"\x05helloABXXXX") == Container(length=5)(value=b'hello')(nested=Container(b1=65)(b2=66)(b3=4295))(condition=1482184792)

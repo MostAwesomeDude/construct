@@ -26,69 +26,69 @@ class TestCore(unittest.TestCase):
         assert raises(Byte.build, 65536) == FieldError
 
     def test_ints(self):
-        assert UBInt8.parse(b"\x01") == 0x01
-        assert UBInt8.build(0x01) == b"\x01"
-        assert UBInt8.sizeof() == 1
-        assert UBInt16.parse(b"\x01\x02") == 0x0102
-        assert UBInt16.build(0x0102) == b"\x01\x02"
-        assert UBInt16.sizeof() == 2
-        assert UBInt32.parse(b"\x01\x02\x03\x04") == 0x01020304
-        assert UBInt32.build(0x01020304) == b"\x01\x02\x03\x04"
-        assert UBInt32.sizeof() == 4
-        assert UBInt64.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0102030405060708
-        assert UBInt64.build(0x0102030405060708) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
-        assert UBInt64.sizeof() == 8
-        assert SBInt8.parse(b"\x01") == 0x01
-        assert SBInt8.build(0x01) == b"\x01"
-        assert SBInt8.sizeof() == 1
-        assert SBInt16.parse(b"\x01\x02") == 0x0102
-        assert SBInt16.build(0x0102) == b"\x01\x02"
-        assert SBInt16.sizeof() == 2
-        assert SBInt32.parse(b"\x01\x02\x03\x04") == 0x01020304
-        assert SBInt32.build(0x01020304) == b"\x01\x02\x03\x04"
-        assert SBInt32.sizeof() == 4
-        assert SBInt64.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0102030405060708
-        assert SBInt64.build(0x0102030405060708) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
-        assert SBInt64.sizeof() == 8
-        assert ULInt8.parse(b"\x01") == 0x01
-        assert ULInt8.build(0x01) == b"\x01"
-        assert ULInt8.sizeof() == 1
-        assert ULInt16.parse(b"\x01\x02") == 0x0201
-        assert ULInt16.build(0x0201) == b"\x01\x02"
-        assert ULInt16.sizeof() == 2
-        assert ULInt32.parse(b"\x01\x02\x03\x04") == 0x04030201
-        assert ULInt32.build(0x04030201) == b"\x01\x02\x03\x04"
-        assert ULInt32.sizeof() == 4
-        assert ULInt64.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0807060504030201
-        assert ULInt64.build(0x0807060504030201) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
-        assert ULInt64.sizeof() == 8
-        assert SLInt8.parse(b"\x01") == 0x01
-        assert SLInt8.build(0x01) == b"\x01"
-        assert SLInt8.sizeof() == 1
-        assert SLInt16.parse(b"\x01\x02") == 0x0201
-        assert SLInt16.build(0x0201) == b"\x01\x02"
-        assert SLInt16.sizeof() == 2
-        assert SLInt32.parse(b"\x01\x02\x03\x04") == 0x04030201
-        assert SLInt32.build(0x04030201) == b"\x01\x02\x03\x04"
-        assert SLInt32.sizeof() == 4
-        assert SLInt64.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0807060504030201
-        assert SLInt64.build(0x0807060504030201) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
-        assert SLInt64.sizeof() == 8
+        assert Int8ub.parse(b"\x01") == 0x01
+        assert Int8ub.build(0x01) == b"\x01"
+        assert Int8ub.sizeof() == 1
+        assert Int16ub.parse(b"\x01\x02") == 0x0102
+        assert Int16ub.build(0x0102) == b"\x01\x02"
+        assert Int16ub.sizeof() == 2
+        assert Int32ub.parse(b"\x01\x02\x03\x04") == 0x01020304
+        assert Int32ub.build(0x01020304) == b"\x01\x02\x03\x04"
+        assert Int32ub.sizeof() == 4
+        assert Int64ub.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0102030405060708
+        assert Int64ub.build(0x0102030405060708) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
+        assert Int64ub.sizeof() == 8
+        assert Int8sb.parse(b"\x01") == 0x01
+        assert Int8sb.build(0x01) == b"\x01"
+        assert Int8sb.sizeof() == 1
+        assert Int16sb.parse(b"\x01\x02") == 0x0102
+        assert Int16sb.build(0x0102) == b"\x01\x02"
+        assert Int16sb.sizeof() == 2
+        assert Int32sb.parse(b"\x01\x02\x03\x04") == 0x01020304
+        assert Int32sb.build(0x01020304) == b"\x01\x02\x03\x04"
+        assert Int32sb.sizeof() == 4
+        assert Int64sb.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0102030405060708
+        assert Int64sb.build(0x0102030405060708) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
+        assert Int64sb.sizeof() == 8
+        assert Int8ul.parse(b"\x01") == 0x01
+        assert Int8ul.build(0x01) == b"\x01"
+        assert Int8ul.sizeof() == 1
+        assert Int16ul.parse(b"\x01\x02") == 0x0201
+        assert Int16ul.build(0x0201) == b"\x01\x02"
+        assert Int16ul.sizeof() == 2
+        assert Int32ul.parse(b"\x01\x02\x03\x04") == 0x04030201
+        assert Int32ul.build(0x04030201) == b"\x01\x02\x03\x04"
+        assert Int32ul.sizeof() == 4
+        assert Int64ul.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0807060504030201
+        assert Int64ul.build(0x0807060504030201) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
+        assert Int64ul.sizeof() == 8
+        assert Int8sl.parse(b"\x01") == 0x01
+        assert Int8sl.build(0x01) == b"\x01"
+        assert Int8sl.sizeof() == 1
+        assert Int16sl.parse(b"\x01\x02") == 0x0201
+        assert Int16sl.build(0x0201) == b"\x01\x02"
+        assert Int16sl.sizeof() == 2
+        assert Int32sl.parse(b"\x01\x02\x03\x04") == 0x04030201
+        assert Int32sl.build(0x04030201) == b"\x01\x02\x03\x04"
+        assert Int32sl.sizeof() == 4
+        assert Int64sl.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0807060504030201
+        assert Int64sl.build(0x0807060504030201) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
+        assert Int64sl.sizeof() == 8
 
     def test_ints24(self):
-        assert UBInt24.parse(b"\x01\x02\x03") == 0x010203
-        assert UBInt24.build(0x010203) == b"\x01\x02\x03"
-        assert UBInt24.sizeof() == 3
-        assert Struct('int24' / UBInt24).parse(b"\x01\x02\x03") == Container(int24=0x010203)
-        assert Struct('int24' / UBInt24).build(Container(int24=0x010203)) == b"\x01\x02\x03"
-        assert Struct('int24' / UBInt24).sizeof() == 3
+        assert Int24ub.parse(b"\x01\x02\x03") == 0x010203
+        assert Int24ub.build(0x010203) == b"\x01\x02\x03"
+        assert Int24ub.sizeof() == 3
+        assert Struct('int24' / Int24ub).parse(b"\x01\x02\x03") == Container(int24=0x010203)
+        assert Struct('int24' / Int24ub).build(Container(int24=0x010203)) == b"\x01\x02\x03"
+        assert Struct('int24' / Int24ub).sizeof() == 3
 
-        assert ULInt24.parse(b"\x01\x02\x03") == 0x030201
-        assert ULInt24.build(0x030201) == b"\x01\x02\x03"
-        assert ULInt24.sizeof() == 3
-        assert Struct('int24' / ULInt24).parse(b"\x01\x02\x03") == Container(int24=0x030201)
-        assert Struct('int24' / ULInt24).build(Container(int24=0x030201)) == b"\x01\x02\x03"
-        assert Struct('int24' / ULInt24).sizeof() == 3
+        assert Int24ul.parse(b"\x01\x02\x03") == 0x030201
+        assert Int24ul.build(0x030201) == b"\x01\x02\x03"
+        assert Int24ul.sizeof() == 3
+        assert Struct('int24' / Int24ul).parse(b"\x01\x02\x03") == Container(int24=0x030201)
+        assert Struct('int24' / Int24ul).build(Container(int24=0x030201)) == b"\x01\x02\x03"
+        assert Struct('int24' / Int24ul).sizeof() == 3
 
     def test_varint(self):
         for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
@@ -198,8 +198,8 @@ class TestCore(unittest.TestCase):
         assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).sizeof) == SizeofError
 
     def test_struct(self):
-        assert Struct("a" / ULInt16, "b" / Byte).parse(b"\x01\x00\x02") == Container(a=1)(b=2)
-        assert Struct("a" / ULInt16, "b" / Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x02"
+        assert Struct("a" / Int16ul, "b" / Byte).parse(b"\x01\x00\x02") == Container(a=1)(b=2)
+        assert Struct("a" / Int16ul, "b" / Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x02"
         assert Struct("a"/Struct("b"/Byte)).parse(b"\x01") == Container(a=Container(b=1))
         assert Struct("a"/Struct("b"/Byte)).build(Container(a=Container(b=1))) == b"\x01"
         assert Struct("a"/Struct("b"/Byte)).sizeof() == 1
@@ -212,20 +212,20 @@ class TestCore(unittest.TestCase):
         assert Struct(Padding(2)).sizeof() == 2
 
     def test_struct_nested_embedded(self):
-        assert Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(inner=Container(c=3)(d=4))
-        assert Struct("a" / Byte, "b" / UBInt16, "inner" / Struct("c" / Byte, "d" / Byte)).build(Container(a=1)(b=2)(inner=Container(c=3)(d=4))) == b"\x01\x00\x02\x03\x04"
-        assert Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(c=3)(d=4)
-        assert Struct("a" / Byte, "b" / UBInt16, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build(Container(a=1)(b=2)(c=3)(d=4)) == b"\x01\x00\x02\x03\x04"
+        assert Struct("a" / Byte, "b" / Int16ub, "inner" / Struct("c" / Byte, "d" / Byte)).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(inner=Container(c=3)(d=4))
+        assert Struct("a" / Byte, "b" / Int16ub, "inner" / Struct("c" / Byte, "d" / Byte)).build(Container(a=1)(b=2)(inner=Container(c=3)(d=4))) == b"\x01\x00\x02\x03\x04"
+        assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(c=3)(d=4)
+        assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build(Container(a=1)(b=2)(c=3)(d=4)) == b"\x01\x00\x02\x03\x04"
 
     def test_sequence(self):
-        assert Sequence(UBInt8, UBInt16).parse(b"\x01\x00\x02") == [1,2]
-        assert Sequence(UBInt8, UBInt16).build([1,2]) == b"\x01\x00\x02"
+        assert Sequence(Int8ub, Int16ub).parse(b"\x01\x00\x02") == [1,2]
+        assert Sequence(Int8ub, Int16ub).build([1,2]) == b"\x01\x00\x02"
 
     def test_sequence_nested_embedded(self):
-        assert Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
-        assert Sequence(UBInt8, UBInt16, Sequence(UBInt8, UBInt8)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"
-        assert Sequence(UBInt8, UBInt16, Embedded(Sequence(UBInt8, UBInt8))).parse(b"\x01\x00\x02\x03\x04") == [1,2,3,4]
-        assert Sequence(UBInt8, UBInt16, Embedded(Sequence(UBInt8, UBInt8))).build([1,2,3,4]) == b"\x01\x00\x02\x03\x04"
+        assert Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
+        assert Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"
+        assert Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))).parse(b"\x01\x00\x02\x03\x04") == [1,2,3,4]
+        assert Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))).build([1,2,3,4]) == b"\x01\x00\x02\x03\x04"
 
     def test_computed(self):
         assert Computed(lambda ctx: "moo").parse(b"") == "moo"
@@ -266,9 +266,9 @@ class TestCore(unittest.TestCase):
         assert Struct(Terminator).build(dict()) == b""
 
     def test_pointer(self):
-        assert Pointer(lambda ctx: 2, "pointer" / UBInt8).parse(b"\x00\x00\x07") == 7
-        assert Pointer(lambda ctx: 2, "pointer" / UBInt8).build(7) == b"\x00\x00\x07"
-        assert Pointer(lambda ctx: 2, "pointer" / UBInt8).sizeof() == 0
+        assert Pointer(lambda ctx: 2, "pointer" / Int8ub).parse(b"\x00\x00\x07") == 7
+        assert Pointer(lambda ctx: 2, "pointer" / Int8ub).build(7) == b"\x00\x00\x07"
+        assert Pointer(lambda ctx: 2, "pointer" / Int8ub).sizeof() == 0
 
     def test_const(self):
         assert Const(b"MZ").parse(b"MZ") == b"MZ"
@@ -279,43 +279,43 @@ class TestCore(unittest.TestCase):
         assert Const(Bytes(4), b"****").build(None) == b"****"
         assert Const(Bytes(4), b"****").build(b"****") == b"****"
         assert Const(Bytes(4), b"****").sizeof() == 4
-        assert Const(ULInt32, 255).parse(b"\xff\x00\x00\x00") == 255
-        assert Const(ULInt32, 255).build(None) == b"\xff\x00\x00\x00"
-        assert Const(ULInt32, 255).build(255) == b"\xff\x00\x00\x00"
-        assert Const(ULInt32, 255).sizeof() == 4
+        assert Const(Int32ul, 255).parse(b"\xff\x00\x00\x00") == 255
+        assert Const(Int32ul, 255).build(None) == b"\xff\x00\x00\x00"
+        assert Const(Int32ul, 255).build(255) == b"\xff\x00\x00\x00"
+        assert Const(Int32ul, 255).sizeof() == 4
         assert raises(Const(b"MZ").parse, b"ELF") == ConstError
         assert raises(Const(b"MZ").build, b"???") == ConstError
-        assert raises(Const(ULInt32, 255).parse, b"\x00\x00\x00\x00") == ConstError
+        assert raises(Const(Int32ul, 255).parse, b"\x00\x00\x00\x00") == ConstError
         assert Struct("sig" / Const(b"MZ")).parse(b"MZ") == Container(sig=b"MZ")
         assert Struct("sig" / Const(b"MZ")).build(Container(sig=b"MZ")) == b"MZ"
         assert Struct("sig" / Const(b"MZ")).build(Container()) == b"MZ"
         assert Struct("sig" / Const(b"MZ")).sizeof() == 2
 
     def test_switch(self):
-        assert Switch(lambda ctx: 5, {1:Byte, 5:UBInt16}).parse(b"\x00\x02") == 2
-        assert Switch(lambda ctx: 6, {1:Byte, 5:UBInt16}, default=Byte).parse(b"\x00\x02") == 0
-        assert Switch(lambda ctx: 5, {1:Byte, 5:UBInt16}, includekey=True).parse(b"\x00\x02") == (5,2)
-        assert Switch(lambda ctx: 5, {1:Byte, 5:UBInt16}).build(2) == b"\x00\x02"
-        assert Switch(lambda ctx: 6, {1:Byte, 5:UBInt16}, default=Byte).build(9) == b"\x09"
-        assert Switch(lambda ctx: 5, {1:Byte, 5:UBInt16}, includekey=True).build((5,2)) == b"\x00\x02"
-        assert raises(Switch(lambda ctx: 6, {1:Byte, 5:UBInt16}).parse, b"\x00\x02") == SwitchError
-        assert raises(Switch(lambda ctx: 6, {1:Byte, 5:UBInt16}).build, 9) == SwitchError
-        assert raises(Switch(lambda ctx: 5, {1:Byte, 5:UBInt16}, includekey=True).build, (89,2)) == SwitchError
-        assert raises(Switch(lambda ctx: 5, {1:Byte, 5:UBInt16}).sizeof) == SizeofError
+        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).parse(b"\x00\x02") == 2
+        assert Switch(lambda ctx: 6, {1:Byte, 5:Int16ub}, default=Byte).parse(b"\x00\x02") == 0
+        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}, includekey=True).parse(b"\x00\x02") == (5,2)
+        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).build(2) == b"\x00\x02"
+        assert Switch(lambda ctx: 6, {1:Byte, 5:Int16ub}, default=Byte).build(9) == b"\x09"
+        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}, includekey=True).build((5,2)) == b"\x00\x02"
+        assert raises(Switch(lambda ctx: 6, {1:Byte, 5:Int16ub}).parse, b"\x00\x02") == SwitchError
+        assert raises(Switch(lambda ctx: 6, {1:Byte, 5:Int16ub}).build, 9) == SwitchError
+        assert raises(Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}, includekey=True).build, (89,2)) == SwitchError
+        assert raises(Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).sizeof) == SizeofError
 
     def test_ifthenelse(self):
-        assert IfThenElse(lambda ctx: True,  UBInt8, UBInt16).parse(b"\x01") == 1
-        assert IfThenElse(lambda ctx: False, UBInt8, UBInt16).parse(b"\x00\x01") == 1
-        assert IfThenElse(lambda ctx: True,  UBInt8, UBInt16).build(1) == b"\x01"
-        assert IfThenElse(lambda ctx: False, UBInt8, UBInt16).build(1) == b"\x00\x01"
-        assert raises(IfThenElse(lambda ctx: False, UBInt8, UBInt16).sizeof) == SizeofError
+        assert IfThenElse(lambda ctx: True,  Int8ub, Int16ub).parse(b"\x01") == 1
+        assert IfThenElse(lambda ctx: False, Int8ub, Int16ub).parse(b"\x00\x01") == 1
+        assert IfThenElse(lambda ctx: True,  Int8ub, Int16ub).build(1) == b"\x01"
+        assert IfThenElse(lambda ctx: False, Int8ub, Int16ub).build(1) == b"\x00\x01"
+        assert raises(IfThenElse(lambda ctx: False, Int8ub, Int16ub).sizeof) == SizeofError
 
     def test_if(self):
-        assert If(lambda ctx: True,  UBInt8).parse(b"\x01") == 1
-        assert If(lambda ctx: False, UBInt8).parse(b"") == None
-        assert If(lambda ctx: True,  UBInt8).build(1) == b"\x01"
-        assert If(lambda ctx: False, UBInt8).build(None) == b""
-        assert raises(If(lambda ctx: False, UBInt8).sizeof) == SizeofError
+        assert If(lambda ctx: True,  Int8ub).parse(b"\x01") == 1
+        assert If(lambda ctx: False, Int8ub).parse(b"") == None
+        assert If(lambda ctx: True,  Int8ub).build(1) == b"\x01"
+        assert If(lambda ctx: False, Int8ub).build(None) == b""
+        assert raises(If(lambda ctx: False, Int8ub).sizeof) == SizeofError
 
     def test_padding(self):
         assert Padding(4).parse(b"\x00\x00\x00\x00") == None
@@ -348,14 +348,14 @@ class TestCore(unittest.TestCase):
         assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).parse(b"\x01\x00\x00\x00\x02") == Container(a=1)(b=2)
         assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x00\x00\x02"
         assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).sizeof() == 5
-        assert Aligned(UBInt8,  modulus=4).build(1) == b"\x01\x00\x00\x00"
-        assert Aligned(UBInt16, modulus=4).build(1) == b"\x00\x01\x00\x00"
-        assert Aligned(UBInt32, modulus=4).build(1) == b"\x00\x00\x00\x01"
-        assert Aligned(UBInt64, modulus=4).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
+        assert Aligned(Int8ub,  modulus=4).build(1) == b"\x01\x00\x00\x00"
+        assert Aligned(Int16ub, modulus=4).build(1) == b"\x00\x01\x00\x00"
+        assert Aligned(Int32ub, modulus=4).build(1) == b"\x00\x00\x00\x01"
+        assert Aligned(Int64ub, modulus=4).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
 
     def test_alignedstruct(self):
-        assert AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4, pattern=b"?").parse(b"\x01???\x00\x05??") == Container(a=1)(b=5)
-        assert AlignedStruct("a"/UBInt8, "b"/UBInt16, modulus=4, pattern=b"?").build(dict(a=1,b=5)) == b"\x01???\x00\x05??"
+        assert AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4, pattern=b"?").parse(b"\x01???\x00\x05??") == Container(a=1)(b=5)
+        assert AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4, pattern=b"?").build(dict(a=1,b=5)) == b"\x01???\x00\x05??"
 
     def test_from_issue_87(self):
         assert ("string_name" / Byte).parse(b"\x01") == 1
@@ -375,9 +375,9 @@ class TestCore(unittest.TestCase):
         assert Byte[2:3].parse(b"\x01\x02\x03\x04") == [1,2,3]
         assert Struct("nums" / Byte[4]).parse(b"\x01\x02\x03\x04") == Container(nums=[1,2,3,4])
         assert Struct("nums" / Byte[4]).build(Container(nums=[1,2,3,4])) == b"\x01\x02\x03\x04"
-        assert (UBInt8 >> UBInt16).parse(b"\x01\x00\x02") == [1,2]
-        assert (UBInt8 >> UBInt16 >> UBInt32).parse(b"\x01\x00\x02\x00\x00\x00\x03") == [1,2,3]
-        assert (UBInt8[2] >> UBInt16[2]).parse(b"\x01\x02\x00\x03\x00\x04") == [[1,2],[3,4]]
+        assert (Int8ub >> Int16ub).parse(b"\x01\x00\x02") == [1,2]
+        assert (Int8ub >> Int16ub >> Int32ub).parse(b"\x01\x00\x02\x00\x00\x00\x03") == [1,2,3]
+        assert (Int8ub[2] >> Int16ub[2]).parse(b"\x01\x02\x00\x03\x00\x04") == [[1,2],[3,4]]
 
     def test_renamed(self):
         assert Struct(Renamed("new", Renamed("old", Byte))).parse(b"\x01") == Container(new=1)
@@ -460,8 +460,8 @@ class TestCore(unittest.TestCase):
         assert Bitwise(Bytewise(Bytes(1))).parse(b"\xff") == b"\xff"
         assert Bitwise(Bytewise(Bytes(1))).build(b"\xff") == b"\xff"
         assert Bitwise(Bytewise(Bytes(1))).sizeof() == 1
-        assert BitStruct(Nibble, "num"/Bytewise(UBInt24), Nibble).parse(b"\xf0\x10\x20\x3f") == Container(num=0x010203)
-        assert Bitwise(Sequence(Nibble, Bytewise(UBInt24), Nibble)).parse(b"\xf0\x10\x20\x3f") == [0x0f,0x010203,0x0f]
+        assert BitStruct(Nibble, "num"/Bytewise(Int24ub), Nibble).parse(b"\xf0\x10\x20\x3f") == Container(num=0x010203)
+        assert Bitwise(Sequence(Nibble, Bytewise(Int24ub), Nibble)).parse(b"\xf0\x10\x20\x3f") == [0x0f,0x010203,0x0f]
 
     def test_byteswapped(self):
         assert ByteSwapped(Bytes(5)).parse(b"12345?????") == b"54321"
@@ -498,41 +498,41 @@ class TestCore(unittest.TestCase):
         assert Indexing(Array(4,Byte), 4, 2, empty=0).sizeof() == 4
 
     def test_select(self):
-        assert raises(Select(UBInt32, UBInt16).parse, b"\x07") == SelectError
-        assert Select(UBInt32, UBInt16, UBInt8).parse(b"\x07") == 7
-        assert Select(UBInt32, UBInt16, UBInt8).build(7) == b"\x00\x00\x00\x07"
-        assert Select("a"/UBInt32, "b"/UBInt16, "c"/UBInt8, includename=True).parse(b"\x07") == ("c", 7)
-        assert Select("a"/UBInt32, "b"/UBInt16, "c"/UBInt8, includename=True).build((("c", 7))) == b"\x07"
-        assert raises(Select("a"/UBInt32, "b"/UBInt16, "c"/UBInt8, includename=True).build, (("d", 7))) == SelectError
+        assert raises(Select(Int32ub, Int16ub).parse, b"\x07") == SelectError
+        assert Select(Int32ub, Int16ub, Int8ub).parse(b"\x07") == 7
+        assert Select(Int32ub, Int16ub, Int8ub).build(7) == b"\x00\x00\x00\x07"
+        assert Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).parse(b"\x07") == ("c", 7)
+        assert Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).build((("c", 7))) == b"\x07"
+        assert raises(Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).build, (("d", 7))) == SelectError
         assert raises(Select(Byte).sizeof) == SizeofError
 
     def test_peek(self):
-        assert Peek(UBInt8).parse(b"\x01") == 1
-        assert Peek(UBInt8).parse(b"") == None
-        assert Peek(UBInt8).build(1) == b""
-        assert Peek(UBInt8).build(None) == b""
-        assert Peek(UBInt8).sizeof() == 0
+        assert Peek(Int8ub).parse(b"\x01") == 1
+        assert Peek(Int8ub).parse(b"") == None
+        assert Peek(Int8ub).build(1) == b""
+        assert Peek(Int8ub).build(None) == b""
+        assert Peek(Int8ub).sizeof() == 0
         assert Peek(VarInt).sizeof() == 0
-        assert Struct(Peek("a"/UBInt8), "b"/UBInt16).parse(b"\x01\x02") == Container(a=1)(b=0x0102)
-        assert Struct(Peek("a"/UBInt8), "b"/UBInt16).build(dict(a=1,b=0x0102)) == b"\x01\x02"
-        assert Struct(Peek("a"/Byte), Peek("b"/UBInt16)).parse(b"\x01\x02") == Container(a=1)(b=0x0102)
-        assert Struct(Peek("a"/Byte), Peek("b"/UBInt16)).build(dict(a=0,b=0x0102)) == b""
-        assert Struct(Peek("a"/Byte), Peek("b"/UBInt16)).sizeof() == 0
+        assert Struct(Peek("a"/Int8ub), "b"/Int16ub).parse(b"\x01\x02") == Container(a=1)(b=0x0102)
+        assert Struct(Peek("a"/Int8ub), "b"/Int16ub).build(dict(a=1,b=0x0102)) == b"\x01\x02"
+        assert Struct(Peek("a"/Byte), Peek("b"/Int16ub)).parse(b"\x01\x02") == Container(a=1)(b=0x0102)
+        assert Struct(Peek("a"/Byte), Peek("b"/Int16ub)).build(dict(a=0,b=0x0102)) == b""
+        assert Struct(Peek("a"/Byte), Peek("b"/Int16ub)).sizeof() == 0
 
     def test_optional(self):
-        assert Optional(ULInt32).parse(b"\x01\x00\x00\x00") == 1
-        assert Optional(ULInt32).build(1) == b"\x01\x00\x00\x00"
-        assert Optional(ULInt32).parse(b"???") == None
-        assert Optional(ULInt32).build(None) == b""
-        assert raises(Optional(ULInt32).sizeof) == SizeofError
+        assert Optional(Int32ul).parse(b"\x01\x00\x00\x00") == 1
+        assert Optional(Int32ul).build(1) == b"\x01\x00\x00\x00"
+        assert Optional(Int32ul).parse(b"???") == None
+        assert Optional(Int32ul).build(None) == b""
+        assert raises(Optional(Int32ul).sizeof) == SizeofError
 
     @pytest.mark.xfail(reason="UNION IS BROKEN")
     def test_union(self):
-        assert Union("a"/Bytes(2), "b"/UBInt16).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
-        assert Union("a"/Bytes(2), "b"/UBInt16).build(dict(a=b"zz"))  == b"zz"
-        assert Union("a"/Bytes(2), "b"/UBInt16).build(dict(b=0x0102)) == b"\x01\x02"
-        assert Union("a"/Bytes(2), "b"/UBInt16, buildfrom=0).build(dict(a=b"zz",b=5))  == b"zz"
-        assert Union("a"/Bytes(2), "b"/UBInt16, buildfrom=1).build(dict(a=b"zz",b=5))  == b"\x00\x05"
+        assert Union("a"/Bytes(2), "b"/Int16ub).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
+        assert Union("a"/Bytes(2), "b"/Int16ub).build(dict(a=b"zz"))  == b"zz"
+        assert Union("a"/Bytes(2), "b"/Int16ub).build(dict(b=0x0102)) == b"\x01\x02"
+        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=0).build(dict(a=b"zz",b=5))  == b"zz"
+        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=1).build(dict(a=b"zz",b=5))  == b"\x00\x05"
 
         assert raises(Union(Byte).sizeof) == SizeofError
         assert raises(Union(VarInt).sizeof) == SizeofError
@@ -549,12 +549,12 @@ class TestCore(unittest.TestCase):
         assert raises(PrefixedArray(Byte, Byte).sizeof, [1,1,1]) == SizeofError
 
     def test_prefixed(self):
-        assert Prefixed(Byte, ULInt16).parse(b"\x02\xff\xffgarbage") == 65535
-        assert Prefixed(Byte, ULInt16).build(65535) == b"\x02\xff\xff"
-        assert Prefixed(Byte, ULInt16).sizeof() == 3
+        assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xffgarbage") == 65535
+        assert Prefixed(Byte, Int16ul).build(65535) == b"\x02\xff\xff"
+        assert Prefixed(Byte, Int16ul).sizeof() == 3
         assert Prefixed(VarInt, GreedyBytes).parse(b"\x03abcgarbage") == b"abc"
         assert Prefixed(VarInt, GreedyBytes).build(b"abc") == b'\x03abc'
-        assert Prefixed(Byte, UBInt64).sizeof() == 9
+        assert Prefixed(Byte, Int64ub).sizeof() == 9
         assert raises(Prefixed(VarInt, GreedyBytes).sizeof) == SizeofError
 
     @pytest.mark.xfail(PY32 or PY33, reason="codecs module missing on some versions")
@@ -594,8 +594,8 @@ class TestCore(unittest.TestCase):
         assert PascalString(Byte).build(b"hello") == b"\x05hello"
         assert PascalString(Byte, encoding="utf8").parse(b"\x05hello") == u"hello"
         assert PascalString(Byte, encoding="utf8").build(u"hello") == b"\x05hello"
-        assert PascalString(UBInt16).parse(b"\x00\x05hello????????") == b"hello"
-        assert PascalString(UBInt16).build(b"hello") == b"\x00\x05hello"
+        assert PascalString(Int16ub).parse(b"\x00\x05hello????????") == b"hello"
+        assert PascalString(Int16ub).build(b"hello") == b"\x00\x05hello"
         assert raises(PascalString(Byte).sizeof) == SizeofError
         assert raises(PascalString(VarInt).sizeof) == SizeofError
 
@@ -700,21 +700,21 @@ class TestCore(unittest.TestCase):
         assert LazyRange(1,9,Byte).build([1,2,3]) == Range(1,9,Byte).build([1,2,3])
 
     def test_lazysequence(self):
-        assert LazySequence(UBInt8, UBInt16).parse(b"\x01\x00\x02") == [1,2]
-        assert LazySequence(UBInt8, UBInt16).build([1,2]) == b"\x01\x00\x02"
+        assert LazySequence(Int8ub, Int16ub).parse(b"\x01\x00\x02") == [1,2]
+        assert LazySequence(Int8ub, Int16ub).build([1,2]) == b"\x01\x00\x02"
         assert LazySequence().parse(b"") == []
         assert LazySequence().build([]) == b""
         assert LazySequence().sizeof() == 0
 
-        assert LazySequence(UBInt8,UBInt16).parse(b"\x01\x00\x02") == Sequence(UBInt8,UBInt16).parse(b"\x01\x00\x02")
-        assert LazySequence(UBInt8,UBInt16).build([1,2]) == Sequence(UBInt8,UBInt16).build([1,2])
-        assert LazySequence(UBInt8,UBInt16).sizeof() == Sequence(UBInt8,UBInt16).sizeof()
+        assert LazySequence(Int8ub,Int16ub).parse(b"\x01\x00\x02") == Sequence(Int8ub,Int16ub).parse(b"\x01\x00\x02")
+        assert LazySequence(Int8ub,Int16ub).build([1,2]) == Sequence(Int8ub,Int16ub).build([1,2])
+        assert LazySequence(Int8ub,Int16ub).sizeof() == Sequence(Int8ub,Int16ub).sizeof()
 
     def test_lazysequence_nested_embedded(self):
-        assert LazySequence(UBInt8, UBInt16, LazySequence(UBInt8, UBInt8)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
-        assert LazySequence(UBInt8, UBInt16, LazySequence(UBInt8, UBInt8)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"
-        assert LazySequence(UBInt8, UBInt16, Embedded(LazySequence(UBInt8, UBInt8))).parse(b"\x01\x00\x02\x03\x04") == [1,2,3,4]
-        assert LazySequence(UBInt8, UBInt16, Embedded(LazySequence(UBInt8, UBInt8))).build([1,2,3,4]) == b"\x01\x00\x02\x03\x04"
+        assert LazySequence(Int8ub, Int16ub, LazySequence(Int8ub, Int8ub)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
+        assert LazySequence(Int8ub, Int16ub, LazySequence(Int8ub, Int8ub)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"
+        assert LazySequence(Int8ub, Int16ub, Embedded(LazySequence(Int8ub, Int8ub))).parse(b"\x01\x00\x02\x03\x04") == [1,2,3,4]
+        assert LazySequence(Int8ub, Int16ub, Embedded(LazySequence(Int8ub, Int8ub))).build([1,2,3,4]) == b"\x01\x00\x02\x03\x04"
 
     def test_ondemand(self):
         assert OnDemand(Byte).parse(b"\x01garbage")() == 1
@@ -765,9 +765,9 @@ class TestCore(unittest.TestCase):
         assert numpy.array_equal(Numpy.parse(Numpy.build(obj)), obj)
 
     def test_restreamed(self):
-        assert Restreamed(UBInt16, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
-        assert Restreamed(UBInt16, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
-        assert Restreamed(UBInt16, ident, 1, ident, 1, ident).sizeof() == 2
+        assert Restreamed(Int16ub, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
+        assert Restreamed(Int16ub, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
+        assert Restreamed(Int16ub, ident, 1, ident, 1, ident).sizeof() == 2
         assert raises(Restreamed(VarInt, ident, 1, ident, 1, ident).sizeof) == SizeofError
         assert Restreamed(Bytes(2), None, None, lambda b: b*2, 1, None).parse(b"a") == b"aa"
         assert Restreamed(Bytes(1), lambda b: b*2, 1, None, None, None).build(b"a") == b"aa"
@@ -795,7 +795,7 @@ class TestCore(unittest.TestCase):
     def test_lazybound_node(self):
         print("need some ideas how to test it")
         Node = Struct(
-            "value" / UBInt8,
+            "value" / Int8ub,
             "next" / LazyBound(lambda ctx: Node), )
 
     def test_checksum(self):
@@ -816,12 +816,12 @@ class TestCore(unittest.TestCase):
 
     def test_from_issue_60(self):
         Header = Struct(
-            "type" / UBInt8,
+            "type" / Int8ub,
             "size" / Switch(lambda ctx: ctx.type,
             {
-                0: UBInt8,
-                1: UBInt16,
-                2: UBInt32,
+                0: Int8ub,
+                1: Int16ub,
+                2: Int32ub,
             }),
             "length" / Anchor,
         )

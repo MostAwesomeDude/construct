@@ -622,142 +622,142 @@ def Octet():
     return BitsInteger(8)
 
 @singletonfunction
-def UBInt8():
+def Int8ub():
     """Unsigned, big endian 8-bit integer"""
     return FormatField(">", "B")
 @singletonfunction
-def UBInt16():
+def Int16ub():
     """Unsigned, big endian 16-bit integer"""
     return FormatField(">", "H")
 @singletonfunction
-def UBInt32():
+def Int32ub():
     """Unsigned, big endian 32-bit integer"""
     return FormatField(">", "L")
 @singletonfunction
-def UBInt64():
+def Int64ub():
     """Unsigned, big endian 64-bit integer"""
     return FormatField(">", "Q")
 
 @singletonfunction
-def SBInt8():
+def Int8sb():
     """Signed, big endian 8-bit integer"""
     return FormatField(">", "b")
 @singletonfunction
-def SBInt16():
+def Int16sb():
     """Signed, big endian 16-bit integer"""
     return FormatField(">", "h")
 @singletonfunction
-def SBInt32():
+def Int32sb():
     """Signed, big endian 32-bit integer"""
     return FormatField(">", "l")
 @singletonfunction
-def SBInt64():
+def Int64sb():
     """Signed, big endian 64-bit integer"""
     return FormatField(">", "q")
 
 @singletonfunction
-def ULInt8():
+def Int8ul():
     """Unsigned, little endian 8-bit integer"""
     return FormatField("<", "B")
 @singletonfunction
-def ULInt16():
+def Int16ul():
     """Unsigned, little endian 16-bit integer"""
     return FormatField("<", "H")
 @singletonfunction
-def ULInt32():
+def Int32ul():
     """Unsigned, little endian 32-bit integer"""
     return FormatField("<", "L")
 @singletonfunction
-def ULInt64():
+def Int64ul():
     """Unsigned, little endian 64-bit integer"""
     return FormatField("<", "Q")
 
 @singletonfunction
-def SLInt8():
+def Int8sl():
     """Signed, little endian 8-bit integer"""
     return FormatField("<", "b")
 @singletonfunction
-def SLInt16():
+def Int16sl():
     """Signed, little endian 16-bit integer"""
     return FormatField("<", "h")
 @singletonfunction
-def SLInt32():
+def Int32sl():
     """Signed, little endian 32-bit integer"""
     return FormatField("<", "l")
 @singletonfunction
-def SLInt64():
+def Int64sl():
     """Signed, little endian 64-bit integer"""
     return FormatField("<", "q")
 
 @singletonfunction
-def UNInt8():
+def Int8un():
     """Unsigned, native endianity 8-bit integer"""
     return FormatField("=", "B")
 @singletonfunction
-def UNInt16():
+def Int16un():
     """Unsigned, native endianity 16-bit integer"""
     return FormatField("=", "H")
 @singletonfunction
-def UNInt32():
+def Int32un():
     """Unsigned, native endianity 32-bit integer"""
     return FormatField("=", "L")
 @singletonfunction
-def UNInt64():
+def Int64un():
     """Unsigned, native endianity 64-bit integer"""
     return FormatField("=", "Q")
 
 @singletonfunction
-def SNInt8():
+def Int8sn():
     """Signed, native endianity 8-bit integer"""
     return FormatField("=", "b")
 @singletonfunction
-def SNInt16():
+def Int16sn():
     """Signed, native endianity 16-bit integer"""
     return FormatField("=", "h")
 @singletonfunction
-def SNInt32():
+def Int32sn():
     """Signed, native endianity 32-bit integer"""
     return FormatField("=", "l")
 @singletonfunction
-def SNInt64():
+def Int64sn():
     """Signed, native endianity 64-bit integer"""
     return FormatField("=", "q")
 
-Byte = UBInt8
+Byte = Int8ul
 
 @singletonfunction
-def BFloat32():
+def Float32b():
     """Big endian, 32-bit IEEE floating point number"""
     return FormatField(">", "f")
 @singletonfunction
-def LFloat32():
+def Float32l():
     """Little endian, 32-bit IEEE floating point number"""
     return FormatField("<", "f")
 @singletonfunction
-def NFloat32():
+def Float32n():
     """Native endianity, 32-bit IEEE floating point number"""
     return FormatField("=", "f")
 
 @singletonfunction
-def BFloat64():
+def Float64b():
     """Big endian, 64-bit IEEE floating point number"""
     return FormatField(">", "d")
 @singletonfunction
-def LFloat64():
+def Float64l():
     """Little endian, 64-bit IEEE floating point number"""
     return FormatField("<", "d")
 @singletonfunction
-def NFloat64():
+def Float64n():
     """Native endianity, 64-bit IEEE floating point number"""
     return FormatField("=", "d")
 
 
 @singletonfunction
-def UBInt24():
+def Int24ub():
     """A 3-byte big-endian integer, as used in ancient file formats."""
     return BytesInteger(3)
 @singletonfunction
-def ULInt24():
+def Int24ul():
     """A 3-byte little-endian integer, as used in ancient file formats."""
     return BytesInteger(3, swapped=True)
 
@@ -2429,7 +2429,7 @@ def Flag():
 
         ???
     """
-    return SymmetricMapping(UBInt8, {True : 1, False : 0}, default=True)
+    return SymmetricMapping(Byte, {True : 1, False : 0}, default=True)
 
 
 def Enum(subcon, mapping, default=NotImplemented):
@@ -2814,7 +2814,7 @@ def CString(terminators=b"\x00", encoding=None):
     """
     return StringEncoded(
         ExprAdapter(
-            RepeatUntil(lambda obj,ctx: int2byte(obj) in terminators, UBInt8),
+            RepeatUntil(lambda obj,ctx: int2byte(obj) in terminators, Byte),
             encoder = lambda obj,ctx: iterateints(obj+terminators),
             decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1])),
         encoding)
