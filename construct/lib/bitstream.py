@@ -1,6 +1,7 @@
 
 
 class RestreamedBytesIO(object):
+    """Used internally."""
     __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer"]
 
     def __init__(self, substream, encoder, encoderunit, decoder, decoderunit):

@@ -1,9 +1,10 @@
 """
-Various containers.
+Various containers exposed to the user.
 """
 
 
 def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"):
+    """Used internally."""
     def decorator(func):
         def wrapper(self, *args, **kw):
             if getattr(self, lock_name, False):
@@ -22,11 +23,9 @@ def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"
 
 class Container(dict):
     r"""
-    Generic ordered dictionary that allows both key and attribute access.
+    Generic ordered dictionary that allows both key and attribute access, and preserve key order by insertion. Also it uses __call__ method to chain add keys, because **kw does not preserve order.
 
-    Containers are dictionaries, translating attribute access into key access, and preserving key order. Also they use call method to add keys, because **kw does not preserve order.
-
-    Structs parse return containers, becuase their fields have order.
+    Struct and Sequence, and few others parsers returns a container, since their members have order so do keys.
 
     Example::
 
@@ -207,9 +206,7 @@ class Container(dict):
 
 class FlagsContainer(Container):
     r"""
-    A container providing pretty-printing for flags.
-
-    Only set flags are displayed.
+    Container made to represent a FlagsEnum, only equality skips order. Provides pretty-printing for flags. Only set flags are displayed.
     """
 
     def __eq__(self, other, skiporder=True):
@@ -231,7 +228,7 @@ class FlagsContainer(Container):
 
 class ListContainer(list):
     r"""
-    A container for lists.
+    A generic container for lists. Provides pretty-printing.
     """
 
     @recursion_lock()
@@ -268,6 +265,9 @@ class ListContainer(list):
 
 
 class LazyContainer(object):
+    r"""
+    Lazy equivalent to Container. Works the same but parses subcons on first access whenever possible.
+    """
     __slots__ = ["keysbackend", "offsetmap", "cached", "stream", "addoffset", "context"]
 
     def __init__(self, keysbackend, offsetmap, cached, stream, addoffset, context):
@@ -325,6 +325,9 @@ class LazyContainer(object):
 
 
 class LazyRangeContainer(ListContainer):
+    r"""
+    Lazy equivalent to ListContainer. Works the same but parses subcons on first access whenever possible.
+    """
     __slots__ = ["subcon", "subsize", "count", "stream", "addoffset", "context", "cached", "offsetmap"]
 
     def __init__(self, subcon, subsize, count, stream, addoffset, context):
@@ -361,6 +364,9 @@ class LazyRangeContainer(ListContainer):
 
 
 class LazySequenceContainer(LazyRangeContainer):
+    r"""
+    Lazy equivalent to ListContainer. Works the same but parses subcons on first access whenever possible.
+    """
     __slots__ = ["count", "offsetmap", "cached", "stream", "addoffset", "context"]
 
     def __init__(self, count, offsetmap, cached, stream, addoffset, context):
