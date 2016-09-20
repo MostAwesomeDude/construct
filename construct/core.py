@@ -143,7 +143,7 @@ class Construct(object):
         self.flagembedded = False
 
     def __repr__(self):
-        return "<%s: %s%s%s>" % (self.__class__.__name__, self.name, " nonbuild" if self.flagbuildnone else "", " embedded" if self.flagembedded else "")
+        return "<%s: %s%s%s>" % (self.__class__.__name__, self.name, " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "")
 
     def _inherit_flags(self, *subcons):
         for sc in subcons:
@@ -251,7 +251,7 @@ class Construct(object):
     def __getitem__(self, count):
         if isinstance(count, slice):
             if count.step:
-                raise ValueError("Slice must not contain as step: %r" % (count,))
+                raise ValueError("slice must not contain as step: %r" % (count,))
             return Range(count.start, count.stop, self)
         elif isinstance(count, int) or hasattr(count, "__call__"):
             return Range(count, count, self)
@@ -314,20 +314,16 @@ class Adapter(Subconstruct):
         raise NotImplementedError()
 
 
-class SymmetricAdapter(Subconstruct):
+class SymmetricAdapter(Adapter):
     r"""
     Abstract adapter parent class.
 
-    Needs to implement ``_decode()`` only.
+    Needs to implement ``_decode()`` only. Encoding is done by same method.
 
     :param subcon: the construct to wrap
     """
-    def _parse(self, stream, context):
-        return self._decode(self.subcon._parse(stream, context), context)
-    def _build(self, obj, stream, context):
-        return self.subcon._build(self._decode(obj, context), stream, context)
-    def _decode(self, obj, context):
-        raise NotImplementedError()
+    def _encode(self, obj, context):
+        return self._decode(obj, context)
 
 
 class Validator(SymmetricAdapter):
