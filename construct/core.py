@@ -2508,11 +2508,11 @@ class FlagsEnum(Adapter):
 #===============================================================================
 class ExprAdapter(Adapter):
     r"""
-    A generic adapter that accepts 'encoder' and 'decoder' as parameters. You can use ExprAdapter instead of writing a full-blown class when only a simple expression is needed.
+    A generic adapter that takes 'encoder' and 'decoder' as parameters. You can use ExprAdapter instead of writing a full-blown class when only a simple expression is needed.
 
     :param subcon: the subcon to adapt
-    :param encoder: a function that takes (obj, context) and returns an encoded version of obj
-    :param decoder: a function that takes (obj, context) and returns an decoded version of obj
+    :param encoder: a function that takes (obj, context) and returns an encoded version of obj, or None for identity
+    :param decoder: a function that takes (obj, context) and returns an decoded version of obj, or None for identity
 
     Example::
 
@@ -2524,8 +2524,9 @@ class ExprAdapter(Adapter):
     __slots__ = ["_encode", "_decode"]
     def __init__(self, subcon, encoder, decoder):
         super(ExprAdapter, self).__init__(subcon)
-        self._encode = encoder
-        self._decode = decoder
+        ident = lambda obj,ctx: obj
+        self._encode = encoder if callable(encoder) else ident
+        self._decode = decoder if callable(decoder) else ident
 
 
 class HexDump(Adapter):

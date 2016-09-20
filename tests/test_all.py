@@ -783,7 +783,7 @@ class TestCore(unittest.TestCase):
         assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
         print("Note: tested mosty as Bitwise and Bytewise")
 
-    def test_muldiv(self):
+    def test_expradapter(self):
         MulDiv = ExprAdapter(Byte,
             encoder = lambda obj,ctx: obj // 7,
             decoder = lambda obj,ctx: obj * 7, )
@@ -791,6 +791,14 @@ class TestCore(unittest.TestCase):
         assert MulDiv.parse(b"\x06") == 42
         assert MulDiv.build(42) == b"\x06"
         assert MulDiv.sizeof() == 1
+
+        Ident = ExprAdapter(Byte,
+            encoder = lambda obj,ctx: obj+1,
+            decoder = lambda obj,ctx: obj-1, )
+
+        assert Ident.parse(b"\x02") == 1
+        assert Ident.build(1) == b"\x02"
+        assert Ident.sizeof() == 1
 
     def test_ipaddress(self):
         IpAddress = ExprAdapter(Array(4,Byte), 
