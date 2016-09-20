@@ -367,6 +367,8 @@ class Tunnel(Subconstruct):
         raise NotImplementedError()
     def _encode(self, data, context):
         raise NotImplementedError()
+    def _sizeof(self, context):
+        raise SizeofError("cannot calculate size")
 
 
 #===============================================================================
@@ -1987,26 +1989,19 @@ class Prefixed(Subconstruct):
 
 class Compressed(Tunnel):
     r"""
-    Compresses or decompresses a subcon.
+    Compresses or decompresses underlying stream when processing the subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. 
 
-    When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should either be used with Prefixed or on entire stream.
-
-    Name of the subcon is used for this construct.
-
-    .. seealso:: The :class:`~construct.core.Prefixed` class.
+    .. seealso:: This construct should either be used with :func:`~construct.Prefixed` or on entire stream.
 
     :param subcon: the subcon used for storing the value
-    :param encoding: any of the codecs module bytes<->bytes encodings, ie. "zlib"
+    :param encoding: any of the codecs module bytes<->bytes encodings, like zlib
 
     Example::
 
-        Compressed(CString(None), "zlib")
-        .parse(b'x\x9c30\xc0\n\x18\x008(\x04Q') -> b"00000000000000000000000"
-        .build(b"00000000000000000000000") -> b'x\x9c30\xc0\n\x18\x008(\x04Q'
-
-        Prefixed(Byte(None), Compressed(CString(None), "zlib"))
-        .parse(b"\x0cx\x9c30\xc0\n\x18\x008(\x04Q") -> b"00000000000000000000000"
-        .build(b"00000000000000000000000") -> b"\x0cx\x9c30\xc0\n\x18\x008(\x04Q"
+        >>> Compressed(GreedyBytes, "zlib").build(b"0"*10000)
+        b'x\x9c\xed\xc1\x01\r\x00\x00\x00\xc2\xa0J\xef\x9f\xce\x1cn@\x01\x00\x00\x00\x00\x00\x00\x00\x00\xc0\xbf\x01K\x07Sj'
+        >>> Compressed(GreedyBytes, "zlib").parse(_)
+        b'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...'
    """
     def __init__(self, subcon, encoding):
         super(Compressed, self).__init__(subcon)

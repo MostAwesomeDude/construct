@@ -559,11 +559,14 @@ class TestCore(unittest.TestCase):
 
     @pytest.mark.xfail(PY32 or PY33, reason="codecs module missing on some versions")
     def test_compressed(self):
-        assert Prefixed(Byte, Compressed(GreedyBytes, "zlib")).parse(b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1???????????') == b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        assert Prefixed(Byte, Compressed(GreedyBytes, "zlib")).build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") == b'\x0cx\x9c30\xa0=\x00\x00\xb3q\x12\xc1'
-        assert Prefixed(Byte, Compressed(CString(), "zlib")).parse(b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1??????????????') == b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        assert Prefixed(Byte, Compressed(CString(), "zlib")).build(b"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") == b'\rx\x9c30\xa0=`\x00\x00\xc62\x12\xc1'
-        assert raises(Prefixed(Byte, Compressed(CString(), "zlib")).sizeof) == SizeofError
+        zeros = b"0" * 1000
+        compressor = Compressed(GreedyBytes, "zlib")
+        assert compressor.parse(compressor.build(zeros)) == zeros
+        assert len(compressor.build(zeros)) == 17
+        assert raises(compressor.sizeof) == SizeofError
+
+        compressor = Compressed(Bytes(1000), "zlib")
+        assert raises(compressor.sizeof) == SizeofError
 
     def test_string(self):
         assert String(5).parse(b"hello") == b"hello"
