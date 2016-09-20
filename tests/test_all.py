@@ -554,6 +554,7 @@ class TestCore(unittest.TestCase):
         assert Prefixed(Byte, ULInt16).sizeof() == 3
         assert Prefixed(VarInt, GreedyBytes).parse(b"\x03abcgarbage") == b"abc"
         assert Prefixed(VarInt, GreedyBytes).build(b"abc") == b'\x03abc'
+        assert Prefixed(Byte, UBInt64).sizeof() == 9
         assert raises(Prefixed(VarInt, GreedyBytes).sizeof) == SizeofError
 
     @pytest.mark.xfail(PY32 or PY33, reason="codecs module missing on some versions")

@@ -1956,18 +1956,17 @@ def BitsSwapped(subcon):
 
 class Prefixed(Subconstruct):
     r"""
-    Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, bytes are passed as is.
+    Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, data is prefixed by its length.
 
-    Name of the subcon is used for this construct.
+    .. seealso:: The :func:`~construct.VarInt` encoding should be preferred over :func:`~construct.Byte` and fixed size fields. VarInt is more compact and does never overflow.
 
     :param lengthfield: a subcon used for storing the length
     :param subcon: the subcon used for storing the value
 
     Example::
 
-        Prefixed(VarInt(None), GreedyBytes(None))
-        .parse(b"\x03xyzgarbage") -> b"xyz"
-        .build(b"xyz") -> b'\x03xyz'
+        >>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello????remainins")
+        b'hello'
     """
     __slots__ = ["name", "lengthfield", "subcon"]
     def __init__(self, lengthfield, subcon):
