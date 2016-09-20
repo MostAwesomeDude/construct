@@ -2486,9 +2486,7 @@ class FlagsEnum(Adapter):
 #===============================================================================
 class ExprAdapter(Adapter):
     r"""
-    A generic adapter that accepts 'encoder' and 'decoder' as parameters. You
-    can use ExprAdapter instead of writing a full-blown class when only a
-    simple expression is needed.
+    A generic adapter that accepts 'encoder' and 'decoder' as parameters. You can use ExprAdapter instead of writing a full-blown class when only a simple expression is needed.
 
     :param subcon: the subcon to adapt
     :param encoder: a function that takes (obj, context) and returns an encoded version of obj
@@ -2511,6 +2509,8 @@ class ExprAdapter(Adapter):
 class HexDump(Adapter):
     """
     Adapter for hex-dumping strings. It returns a HexString, which is a string
+
+    HexString or hexdump ?????
 
     Example::
 
