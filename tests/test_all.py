@@ -273,6 +273,10 @@ class TestCore(unittest.TestCase):
         assert Const(b"MZ").build(None) == b"MZ"
         assert Const(b"MZ").build(b"MZ") == b"MZ"
         assert Const(b"MZ").sizeof() == 2
+        assert Const(Bytes(4), b"****").parse(b"****") == b"****"
+        assert Const(Bytes(4), b"****").build(None) == b"****"
+        assert Const(Bytes(4), b"****").build(b"****") == b"****"
+        assert Const(Bytes(4), b"****").sizeof() == 4
         assert Const(ULInt32, 255).parse(b"\xff\x00\x00\x00") == 255
         assert Const(ULInt32, 255).build(None) == b"\xff\x00\x00\x00"
         assert Const(ULInt32, 255).build(255) == b"\xff\x00\x00\x00"
