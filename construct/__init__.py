@@ -22,7 +22,7 @@ Hands-on example:
 from construct.core import *
 # from construct.adapters import ExprAdapter, FlagsAdapter, FlagsContainer, HexDump, HexString, Indexing, MappingAdapter, MappingError, NoneOf, OneOf, Slicing
 # from construct.macros import Alias, AlignedStruct, Array, BFloat32, BFloat64, Bit, BitField, BitStreamReader, BitStreamWriter, BitStruct, Bitwise, Embedded, EmbeddedBitStruct, Enum, Field, Flag, FlagsEnum, GreedyRange, If, IfThenElse, LFloat32, LFloat64, NFloat32, NFloat64, Nibble, Octet, OnDemandPointer, OpenRange, Optional, OptionalGreedyRange, PrefixedArray, Renamed, SBInt16, SBInt32, SBInt64, SBInt8, SLInt16, SLInt32, SLInt64, SLInt8, SNInt16, SNInt32, SNInt64, SNInt8, SeqOfOne, SymmetricMapping, UBInt16, UBInt32, UBInt64, UBInt8, ULInt16, ULInt32, ULInt64, ULInt8, UNInt16, UNInt32, UNInt64, UNInt8, PascalString
-from construct.lib.expr import this, Path
+from construct.expr import this, Path
 from construct.debug import Probe, Debugger
 from construct.version import version, version_string as __version__
 
