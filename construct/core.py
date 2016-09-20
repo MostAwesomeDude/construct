@@ -1423,9 +1423,7 @@ class Select(Construct):
 
 def Optional(subcon):
     r"""
-    An optional construct.
-
-    If parsing fails, returns None. If building fails, writes nothing.
+    Makes an optional construct, that tries to parse the subcon. If parsing fails, returns None. If building fails, writes nothing.
 
     Note: sizeof returns subcon size, although no bytes could be consumed or produced. Just something to consider.
 
@@ -1435,26 +1433,22 @@ def Optional(subcon):
 
 
 class Switch(Construct):
-    """
+    r"""
     A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
 
-    .. seealso:: The :func:`Pass` singleton.
+    .. seealso:: The :class:`Pass` singleton.
 
-    :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case.
-    :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc.
-    :param default: a default field to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. You can use the builtin construct Pass for do-nothing.
-    :param includekey: whether or not to include the key in the return value of parsing. defualt is False.
+    :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case
+    :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc
+    :param default: a default field to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. Pass can be used for do-nothing
+    :param includekey: whether to include the key in the return value of parsing, defualt is False
 
     Example::
 
-        Struct(
-            "type" / UBInt8,
-            "value" / Switch(lambda ctx: ctx.type, {
-                1 : UBInt8,
-                2 : UBInt16,
-                3 : UBInt32,
-                4 : UBInt64,
-            }))
+        >>> Switch(this.n, { 1:Byte, 2:UBInt32 }).build(5, dict(n=1))
+        b'\x05'
+        >>> Switch(this.n, { 1:Byte, 2:UBInt32 }).build(5, dict(n=2))
+        b'\x00\x00\x00\x05'
     """
     @singleton
     class NoDefault(Construct):
@@ -1496,9 +1490,16 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
     r"""
     An if-then-else conditional construct. If the predicate indicates True, `thensubcon` will be used, otherwise `elsesubcon` will be used.
 
-    :param predicate: a function taking the context as an argument and returning a bool
+    :param predicate: a function taking context and returning a bool
     :param thensubcon: the subcon that will be used if the predicate indicates True
     :param elsesubcon: the subcon that will be used if the predicate indicates False
+
+    Example::
+
+        >>> IfThenElse(this.x > 0, VarInt, Byte).build(255, dict(x=1))
+        b'\xff\x01'
+        >>> IfThenElse(this.x > 0, VarInt, Byte).build(255, dict(x=0))
+        b'\xff'
     """
     return Switch(
         lambda ctx: bool(predicate(ctx)),
@@ -1513,8 +1514,15 @@ def If(predicate, subcon):
     r"""
     An if-then conditional construct. If the predicate indicates True, the `subcon` will be used for parsing and building, otherwise parsing returns None and building is no-op.
 
-    :param predicate: a function taking the context as an argument and returning bool
+    :param predicate: a function taking context and returning a bool
     :param subcon: the subcon that will be used if the predicate returns True
+
+    Example::
+
+        >>> If(this.x > 0, Byte).build(255, dict(x=1))
+        b'\xff'
+        >>> If(this.x > 0, Byte).build(255, dict(x=0))
+        b''
     """
     return IfThenElse(
         predicate,
@@ -1530,16 +1538,19 @@ class Pointer(Subconstruct):
     r"""
     Changes the stream position to a given offset, where the construction should take place, and restores the stream position when finished.
 
-    .. seealso:: The :func:`~construct.macros.OnDemandPointer` field, which also seeks to a given offset.
+    .. seealso:: Analog :func:`~construct.OnDemandPointer` field, which also seeks to a given offset.
 
-    .. note:: Requires a seekable stream.
-
-    :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place
+    :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place, can return negative integer as position from the end backwards
     :param subcon: the subcon to use at the offset
 
     Example::
 
-        ?
+        >>> Pointer(8, Bytes(1)).parse(b"abcdefghijkl")
+        b'i'
+        >>> Pointer(8, Bytes(1)).build(b"x")
+        b'\x00\x00\x00\x00\x00\x00\x00\x00x'
+        >>> Pointer(8, Bytes(1)).sizeof()
+        0
     """
     __slots__ = ["offset"]
     def __init__(self, offset, subcon):
@@ -1565,25 +1576,18 @@ class Pointer(Subconstruct):
 
 class Peek(Subconstruct):
     r"""
-    Peeks at the stream.
+    Peeks at the stream. Parses without changing the stream position. If the end of the stream is reached when peeking, returns None. Size is defined as size of the subcon, even tho Peek's size is 0 by design. Building is no-op.
 
-    Parses the subcon without changing the stream position. If the end of the stream is reached when peeking, returns None. Size is defined as size of the subcon, even tho the stream is not advanced during parsing.
-
-    .. seealso:: The :class:`~construct.core.Union` class.
+    .. seealso:: The :func:`~construct.Union` class.
   
-    .. note:: Requires a seekable stream.
-
     :param subcon: the subcon to peek at
 
     Example::
 
-        Struct("struct",
-            Peek(Byte("a")),
-            Peek(Bytes("b", 2)),
-        )
-        .parse(b"\x01\x02") -> Container(a=1)(b=258)
-        .build(dict(a=0,b=258)) -> b"\x01\x02"
-        .build(dict(a=1,b=258)) -> b"\x01\x02"
+        >>> Sequence(Peek(Byte), Peek(UBInt16)).parse(b"\x01\x02")
+        [1, 258]
+        >>> Sequence(Peek(Byte), Peek(UBInt16)).sizeof()
+        0
     """
     def __init__(self, subcon):
         super(Peek, self).__init__(subcon)
@@ -1605,9 +1609,9 @@ class Restreamed(Subconstruct):
     r"""
     Transforms bytes between the underlying stream and the subcon.
 
-    When the parsing or building is done, the wrapper stream is closed. If read buffer or write buffer is not empty, then error is raised.
+    When the parsing or building is done, the wrapper stream is closed. If read buffer or write buffer is not empty, error is raised.
 
-    .. seealso:: The :func:`~construct.macros.Bitwise` macro.
+    .. seealso:: Both :func:`~construct.Bitwise` and :func:`~construct.Bytewise` are implemented using Restreamed.
 
     .. warning:: Do not use pointers inside.
 
@@ -1619,9 +1623,11 @@ class Restreamed(Subconstruct):
 
     Example::
 
-        Restreamed(BitsInteger(8), bits2bytes, 8, bytes2bits, 1)
-        .parse(b"\x0f") == 15
-        .build(15) == b"\x0f"
+        Bitwise is implemented as
+        Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
+
+        Bytewise is implemented as
+        Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
     """
     __slots__ = ["stream2", "sizecomputer"]
     def __init__(self, subcon, encoder, encoderunit, decoder, decoderunit, sizecomputer):
@@ -1649,22 +1655,23 @@ class Restreamed(Subconstruct):
 #===============================================================================
 class Padding(Construct):
     r"""
-    A padding field (adds bytes when building, discards bytes when parsing).
+    A padding field that adds bytes when building, discards bytes when parsing.
 
-    :param length: length of the field. can be either an integer or a function that takes the context as an argument and returns the length
-    :param pattern: the padding pattern (b-string character). default is b"\x00"
-    :param strict: whether to verify during parsing that the stream contains the pattern. raises an exception if actual padding differs from the pattern. default is False.
+    :param length: length of the padding, an int or a function taking context and returning an int
+    :param pattern: padding pattern as b-string character, default is b"\x00" null character
+    :param strict: whether to verify during parsing that the stream contains the pattern, raises an exception if actual padding differs from the pattern, default is False
 
     Example::
 
-        Struct("struct",
-            Byte("num"),
-            Padding(4),
-        )
+        >>> (Padding(4) >> Bytes(4)).parse(b"????abcd")
+        [None, b'abcd']
+        >>> (Padding(4) >> Bytes(4)).build(_)
+        b'\x00\x00\x00\x00abcd'
+        >>> (Padding(4) >> Bytes(4)).sizeof()
+        8
 
-        .parse(b"\xff\x00\x00\x00\x00") -> Container(num=255)
-        .build(Container(num=255)) -> b"\xff\x00\x00\x00\x00"
-        .sizeof() -> 5
+        >>> Padding(4, strict=True).parse(b"****")
+        construct.core.PaddingError: expected b'\x00\x00\x00\x00', found b'****'
     """
     __slots__ = ["length", "pattern", "strict"]
     def __init__(self, length, pattern=b"\x00", strict=False):
@@ -1746,19 +1753,14 @@ class Anchor(Construct):
 
     Anchors are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference using a Compute.
 
-    .. note:: Requires a tellable stream.
+    .. seealso:: Better to use :func:`~construct.CopyRaw` wrapper.
 
     Example::
 
-        Struct("struct",
-            Anchor("offset1"),
-            Byte("a")
-            Anchor("offset1"),
-            Computed("length", lambda ctx: ctx.offset2 - ctx.offset1),
-        )
-        .parse(b"\xff") -> Container(offset1=0)(a=255)(ofsset2=1)(length=1)
-        .build(dict(a=255)) -> b"\xff"
-        .sizeof() -> 1
+        >>> Struct("num"/VarInt, "offset"/Anchor).build(dict(num=88))
+        b'X'
+        >>> Struct("num"/VarInt, "offset"/Anchor).parse(_)
+        Container(num=88)(offset=1)
     """
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -1773,22 +1775,14 @@ class Anchor(Construct):
 
 class Computed(Construct):
     r"""
-    A computed value.
+    A computed value. Underlying byte stream is unaffected. When parsing `func(context)` provides the value.
 
-    Underlying byte stream is unaffected. When parsing `func(context)` provides the value.
-
-    :param func: a function that takes the context and return the computed value
+    :param func: a function that takes context and returns the computed value
 
     Example::
 
-        Struct("struct",
-            UBInt8("width"),
-            UBInt8("height"),
-            Computed("total", lambda ctx: ctx.width * ctx.height),
-        )
-
-        .parse(b'\x04\x05') -> Container(width=4,height=5,total=20)
-        .build(dict(width=4,height=5)) -> b'\x04\x05'
+        >>> Struct("width"/Byte, "height"/Byte, "total"/Computed(this.width*this.height)).parse(b"12")
+        Container(width=49)(height=50)(total=2450)
     """
     __slots__ = ["func"]
     def __init__(self, func):
@@ -1810,11 +1804,11 @@ class Pass(Construct):
 
     Example::
 
-        Pass
-
-        .parse(b'') -> None
-        .build(None) -> b''
-        .sizeof() -> 0
+        >>> Pass.parse(b"")
+        >>> Pass.build(None)
+        b''
+        >>> Pass.sizeof()
+        0
     """
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -1836,11 +1830,9 @@ class Terminator(Construct):
 
     Example::
 
-        Terminator
-
-        .parse(b'') -> None
-        .parse(b'remaining') -> TerminatorError
-        .sizeof() -> 0
+        >>> Terminator.parse(b"")
+        >>> Terminator.parse(b"remaining")
+        construct.core.TerminatorError: expected end of stream
     """
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -1861,10 +1853,12 @@ class Numpy(Construct):
 
     Example::
 
-        Numpy
-
-        .parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00") -> array([1, 2, 3])
-        .build(array([1, 2, 3])) -> b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+        >>> import numpy
+        >>> a = numpy.asarray([1,2,3])
+        >>> Numpy.build(a)
+        b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+        >>> Numpy.parse(_)
+        array([1, 2, 3])
     """
     def __init__(self):
         super(self.__class__, self).__init__()
