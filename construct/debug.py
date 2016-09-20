@@ -12,11 +12,8 @@ from construct.lib import HexString, Container, ListContainer
 
 
 class Probe(Construct):
-    """
-    A probe: dumps the context, stack frames, and stream content to the screen
-    to aid the debugging process.
-
-    .. seealso:: :class:`Debugger`.
+    r"""
+    A probe: dumps the context, stack frames, and stream content to the screen to aid the debugging process.
 
     :param name: the display name
     :param show_stream: whether or not to show stream contents. default is True. the stream must be seekable.
@@ -26,21 +23,18 @@ class Probe(Construct):
     
     Example::
     
-        Struct("foo",
-            UBInt8("a"),
+        Struct(
+            "a" / UBInt8,
             Probe("between a and b"),
-            UBInt8("b"),
+            "b" / UBInt8,
         )
+        .parse(b"\x01\x02")
+        .build(dict(a=1, b=2))
     """
-    __slots__ = [
-        "printname", "show_stream", "show_context", "show_stack", 
-        "stream_lookahead"
-    ]
+    __slots__ = ["printname", "show_stream", "show_context", "show_stack", "stream_lookahead"]
     counter = 0
     
-    def __init__(self, name = None, show_stream = True, 
-                 show_context = True, show_stack = True, 
-                 stream_lookahead = 100):
+    def __init__(self, name=None, show_stream=True, show_context=True, show_stack=True, stream_lookahead=100):
         super(Probe, self).__init__(None)
         if name is None:
             Probe.counter += 1
@@ -88,22 +82,23 @@ class Probe(Construct):
         print(obj)
         print("=" * 80)
 
+
 class Debugger(Subconstruct):
-    """
-    A pdb-based debugger. When an exception occurs in the subcon, a debugger
-    will appear and allow you to debug the error (and even fix on-the-fly).
+    r"""
+    A pdb-based debugger. When an exception occurs in the subcon, a debugger will appear and allow you to debug the error (and even fix it on-the-fly).
     
     :param subcon: the subcon to debug
     
     Example::
     
         Debugger(
-            Enum(UBInt8("foo"),
-                a = 1,
-                b = 2,
-                c = 3
+            Enum(UBInt8, 
+                a=1, 
+                b=2, 
+                c=3,
             )
         )
+        .parse(b"?")
     """
     __slots__ = ["retval"]
     def _parse(self, stream, context):
@@ -111,8 +106,7 @@ class Debugger(Subconstruct):
             return self.subcon._parse(stream, context)
         except Exception:
             self.retval = NotImplemented
-            self.handle_exc("(you can set the value of 'self.retval', "
-                "which will be returned)")
+            self.handle_exc("(you can set the value of 'self.retval', which will be returned)")
             if self.retval is NotImplemented:
                 raise
             else:
@@ -123,11 +117,11 @@ class Debugger(Subconstruct):
         except Exception:
             self.handle_exc()
     def handle_exc(self, msg = None):
-        print("=" * 80)
+        print("================================================================================")
         print("Debugging exception of %s:" % (self.subcon,))
         print("".join(traceback.format_exception(*sys.exc_info())[1:]))
         if msg:
             print(msg)
         pdb.post_mortem(sys.exc_info()[2])
-        print("=" * 80)
+        print("================================================================================")
 
