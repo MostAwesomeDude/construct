@@ -101,6 +101,11 @@ class TestCore(unittest.TestCase):
         assert raises(VarInt.build, -1) == ValueError
         assert raises(VarInt.sizeof) == SizeofError
 
+    def test_floats(self):
+        assert Single.build(1.2) == b"?\x99\x99\x9a"
+        assert Double.build(1.2) == b"?\xf3333333"
+
+
     def test_bytes(self):
         assert Bytes(4).parse(b"12345678") == b"1234"
         assert Bytes(4).build(b"1234") == b"1234"

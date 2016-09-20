@@ -723,7 +723,7 @@ def Int64sn():
     """Signed, native endianity 64-bit integer"""
     return FormatField("=", "q")
 
-Byte = Int8ul
+Byte = Int8ub
 
 @singletonfunction
 def Float32b():
@@ -751,6 +751,8 @@ def Float64n():
     """Native endianity, 64-bit IEEE floating point number"""
     return FormatField("=", "d")
 
+Single = Float32b
+Double = Float64b
 
 @singletonfunction
 def Int24ub():
