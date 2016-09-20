@@ -761,33 +761,40 @@ def ULInt24():
 @singleton
 class VarInt(Construct):
     r"""
-    Varint encoded integer. Each 7 bits of the number are encoded in one byte in the stream.
+    Varint encoded integer. Each 7 bits of the number are encoded in one byte in the stream, having leftmost bit not set when byte is terminal.
 
     Scheme defined at Google's site:
     https://developers.google.com/protocol-buffers/docs/encoding
+    https://techoverflow.net/blog/2013/01/25/efficiently-encoding-variable-length-integers-in-cc/
 
     Example::
 
-        >>> VarInt.build(645)
-        b'\x85\x05'
+        >>> VarInt.build(16)
+        b'\x10'
         >>> VarInt.parse(_)
-        645
+        16
+        >>> VarInt.build(2**100)
+        b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04'
+        >>> VarInt.parse(_)
+        1267650600228229401496703205376
     """
     def _parse(self, stream, context):
-        acc = 0
+        acc = []
         while True:
-            b = ord(_read_stream(stream, 1))
-            acc = (acc << 7) | (b & 127)
-            if not b & 128:
+            b = byte2int(_read_stream(stream, 1))
+            acc.append(b & 0b01111111)
+            if not b & 0b10000000:
                 break
-        return acc
+        num = 0
+        for b in reversed(acc):
+            num = (num << 7) | b
+        return num
     def _build(self, obj, stream, context):
         if obj < 0:
             raise ValueError("varint cannot build from negative number")
-        while obj > 127:
-            b = 128 | (obj & 127)
+        while obj > 0b01111111:
+            _write_stream(stream, 1, int2byte(0b10000000 | (obj & 0b01111111)))
             obj >>= 7
-            _write_stream(stream, 1, int2byte(b))
         _write_stream(stream, 1, int2byte(obj))
 
 

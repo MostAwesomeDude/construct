@@ -91,10 +91,12 @@ class TestCore(unittest.TestCase):
         assert Struct('int24' / ULInt24).sizeof() == 3
 
     def test_varint(self):
-        assert VarInt.parse(b"\x05") == 5
-        assert VarInt.parse(b"\x85\x05") == 645
-        assert VarInt.build(5) == b"\x05"
-        assert VarInt.build(645) == b"\x85\x05"
+        for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
+            assert VarInt.parse(VarInt.build(n)) == n
+            assert len(VarInt.build(n)) >= len("%x" % n)//2
+        for n in range(0, 127):
+            assert VarInt.build(n) == int2byte(n)
+
         assert raises(VarInt.parse, b"") == FieldError
         assert raises(VarInt.build, -1) == ValueError
         assert raises(VarInt.sizeof) == SizeofError
