@@ -90,10 +90,6 @@ class TestContainer(unittest.TestCase):
         assert c != d
         assert d != c
 
-        c = Container(a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12,m=13,n=14)
-        print("WARNING: dict randomizes key order so this test may fail unexpectedly if the order is correct by chance.")
-        assert c != Container(shuffled(c.items()))
-
         c = Container(a=1)
         d = [("a" == 1)]
         assert c != d
@@ -152,23 +148,17 @@ class TestContainer(unittest.TestCase):
         assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = <recursion detected>"
         assert repr(c) == "Container(a=1)(b=2)(c=<recursion detected>)"
 
-        print("NOTE: dicts do not preserve order while eq does check it (by default).")
-        print("However, only one entry is in order.")
         c = Container({'a': 1})
         d = Container(a=1)
         assert c == d
-        assert c.__eq__(d, skiporder=True)
-        assert c.__eq__(d, skiporder=False)
 
-        print("NOTE: dicts do not preserve order while eq does check it (by default).")
         c = Container({'a': 1, 'b': 42}, {'b': 2})
         d = Container(a=1, b=2)
-        assert c.__eq__(d, skiporder=True)
+        assert c == d
 
-        print("NOTE: dicts do not preserve order while eq does check it (by default).")
         c = Container({'b': 42, 'c': 43}, {'a': 1, 'b': 2, 'c': 4}, c=3, d=4)
         d = Container(a=1, b=2, c=3, d=4)
-        assert c.__eq__(d, skiporder=True)
+        assert c == d
 
 
 class TestFlagsContainer(unittest.TestCase):

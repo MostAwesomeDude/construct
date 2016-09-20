@@ -137,23 +137,18 @@ class Container(dict):
 
     __iter__ = iterkeys
 
-    def __eq__(self, other, skiporder=False):
+    def __eq__(self, other):
         if not isinstance(other, dict):
             return False
         if len(self) != len(other):
             return False
-        if skiporder:
-            for k,v in self.items():
-                if k not in other or v != other[k]:
-                    return False
-        else:
-            for (k,v),(k2,v2) in zip(self.items(), other.items()):
-                if k != k2 or v != v2:
-                    return False
+        for k,v in self.items():
+            if k not in other or v != other[k]:
+                return False
+        for k,v in other.items():
+            if k not in self or v != self[k]:
+                return False
         return True
-
-    def __ne__(self, other, skiporder=False):
-        return not self.__eq__(other, skiporder)
 
     def _search(self, name, search_all):
         items = []
@@ -208,12 +203,6 @@ class FlagsContainer(Container):
     r"""
     Container made to represent a FlagsEnum, only equality skips order. Provides pretty-printing for flags. Only set flags are displayed.
     """
-
-    def __eq__(self, other, skiporder=True):
-        return super(FlagsContainer, self).__eq__(other, skiporder)
-
-    def __ne__(self, other, skiporder=True):
-        return not self.__eq__(other, skiporder)
 
     @recursion_lock()
     def __str__(self, indentation="\n    "):
@@ -309,16 +298,17 @@ class LazyContainer(object):
     __iter__ = keys
 
     def __eq__(self, other):
-        try:
-            for name in self.keys():
-                if self[name] != other[name]:
-                    return False
-            for name in other.keys():
-                if self[name] != other[name]:
-                    return False
-            return True
-        except KeyError:
+        if not isinstance(other, dict):
             return False
+        if len(self) != len(other):
+            return False
+        for k,v in self.items():
+            if k not in other or v != other[k]:
+                return False
+        for k,v in other.items():
+            if k not in self.keysbackend or v != self[k]:
+                return False
+        return True
 
     def __str__(self):
         return "<LazyContainer: %d possible items, %d cached>" % (len(self),len(self.cached))
