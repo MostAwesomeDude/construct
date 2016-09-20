@@ -749,6 +749,7 @@ class TestCore(unittest.TestCase):
     def test_enum(self):
         assert Enum(Byte, dict(q=3,r=4,t=5)).parse(b"\x04") == "r"
         assert Enum(Byte, dict(q=3,r=4,t=5)).build("r") == b"\x04"
+        assert Enum(Byte, dict(q=3,r=4,t=5)).build(4) == b"\x04"
         assert raises(Enum(Byte, dict(q=3,r=4,t=5)).parse, b"\x07") == MappingError
         assert raises(Enum(Byte, dict(q=3,r=4,t=5)).build, "spam") == MappingError
         assert Enum(Byte, dict(q=3,r=4,t=5), default="spam").parse(b"\x07") == "spam"

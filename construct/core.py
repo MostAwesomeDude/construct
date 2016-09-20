@@ -2440,17 +2440,33 @@ def Flag():
 
 def Enum(subcon, mapping, default=NotImplemented):
     r"""
-    A set of named values mapping.
+    A set of named values mapping. Can build both from names and values.
 
     :param subcon: the subcon to map
     :param \*\*kw: keyword arguments which serve as the encoding mapping
-    :param _default_: an optional, keyword-only argument that specifies the default value to use when the mapping is undefined. if not given, and exception is raised when the mapping is undefined. use `Pass` topass the unmapped value as-is
+    :param default: an optional, keyword-only argument that specifies the default value to use when the mapping is undefined. if not given, and exception is raised when the mapping is undefined. use `Pass` topass the unmapped value as-is
 
     Example::
 
-        ???
+        >>> Enum(Byte,dict(a=1,b=2)).parse(b"\x01")
+        'a'
+        >>> Enum(Byte,dict(a=1,b=2)).parse(b"\x08")
+        construct.core.MappingError: no decoding mapping for 8
+
+        >>> Enum(Byte,dict(a=1,b=2)).build("a")
+        b'\x01'
+        >>> Enum(Byte,dict(a=1,b=2)).build(1)
+        b'\x01'
     """
-    return SymmetricMapping(subcon, mapping, default)
+    encmapping = mapping.copy()
+    for k,v in mapping.items():
+        encmapping[v] = v
+    return Mapping(subcon,
+        encoding = encmapping,
+        decoding = dict((v,k) for k, v in mapping.items()),
+        encdefault = default,
+        decdefault = default,
+    )
 
 
 class FlagsEnum(Adapter):
