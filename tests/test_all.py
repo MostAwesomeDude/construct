@@ -104,6 +104,14 @@ class TestCore(unittest.TestCase):
         assert raises(VarInt.build, -1) == ValueError
         assert raises(VarInt.sizeof) == SizeofError
 
+    def test_varint_randomized(self):
+        for i in range(100):
+            x = random.randrange(0, 2**1024)
+            assert VarInt.parse(VarInt.build(x)) == x
+            b = os.urandom(1024) + b"\x00\xff"
+            b = VarInt.build(VarInt.parse(b))
+            assert b.startswith(VarInt.build(VarInt.parse(b)))
+
     @pytest.mark.xfail(reason="testing not implemented, issue #155")
     def test_floats(self):
         assert Single.build(1.2) == b"?\x99\x99\x9a"
