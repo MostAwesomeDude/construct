@@ -7,6 +7,7 @@ import pytest
 from construct import *
 from construct.lib import *
 
+import os, random, itertools
 from io import BytesIO
 import hashlib
 ident = lambda x: x
@@ -107,7 +108,10 @@ class TestCore(unittest.TestCase):
     def test_floats(self):
         assert Single.build(1.2) == b"?\x99\x99\x9a"
         assert Double.build(1.2) == b"?\xf3333333"
-
+        for i in range(100):
+            x = random.random()
+            assert Single.parse(Single.build(x)) == x
+            assert Double.parse(Double.build(x)) == x
 
     def test_bytes(self):
         assert Bytes(4).parse(b"12345678") == b"1234"
@@ -138,6 +142,28 @@ class TestCore(unittest.TestCase):
         assert raises(FormatField("<","L").parse, b"\x12\x34\x56") == FieldError
         assert raises(FormatField("<","L").build, "string not int") == FieldError
         assert FormatField("<","L").sizeof() == 4
+
+    def test_formatfield_ints_randomized(self):
+        for endianess,dtype in itertools.product("<>=","bhlqBHLQ"):
+            d = FormatField(endianess, dtype)
+            for i in range(100):
+                x = random.randrange(0, 256**d.sizeof()//2)
+                assert d.parse(d.build(x)) == x
+            for i in range(100):
+                b = os.urandom(d.sizeof())
+                assert d.build(d.parse(b)) == b
+
+    @pytest.mark.xfail(reason="float unpack on random bytes fails randomly")
+    def test_formatfield_floats_randomized(self):
+        for endianess,dtype in itertools.product("<>=","fd"):
+            d = FormatField(endianess, dtype)
+            for i in range(100):
+                x = random.random()*12345
+                assert d.parse(d.build(x)) == x
+            for i in range(100):
+                # this fails
+                b = os.urandom(d.sizeof())
+                assert d.build(d.parse(b)) == b
 
     @pytest.mark.xfail(PY26, reason="struct.pack has silent overflow")
     def test_formatfield_overflow(self):

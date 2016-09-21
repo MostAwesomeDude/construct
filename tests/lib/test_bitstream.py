@@ -5,8 +5,8 @@ import pytest
 from construct import *
 
 from io import BytesIO
-from os import urandom
-from random import randrange
+import os
+import random
 
 
 
@@ -16,7 +16,7 @@ class TestBitstream(unittest.TestCase):
     def test_restreamed(self):
         pass
 
-    def test_buffered(self):
+    def test_rebuffered(self):
         z = b"0"
 
         print("sequential read")
@@ -24,11 +24,11 @@ class TestBitstream(unittest.TestCase):
         assert bstream.read(1000) == z*1000
 
         print("random reads")
-        data = urandom(1000)
+        data = os.urandom(1000)
         bstream = RebufferedBytesIO(BytesIO(data))
         for i in range(50):
-            o1 = randrange(0, 480)
-            o2 = randrange(520, 1000)
+            o1 = random.randrange(0, 480)
+            o2 = random.randrange(520, 1000)
             assert bstream.seek(o1) == o1
             assert bstream.tell() == o1
             assert bstream.read(o2-o1) == data[o1:o2]
@@ -42,12 +42,12 @@ class TestBitstream(unittest.TestCase):
         assert bstream.read(1000) == z*1000
 
         print("random writes")
-        data = urandom(1000)
+        data = os.urandom(1000)
         bstream = RebufferedBytesIO(BytesIO())
         assert bstream.write(data) == len(data)
         for i in range(50):
-            o1 = randrange(0, 480)
-            o2 = randrange(520, 1000)
+            o1 = random.randrange(0, 480)
+            o2 = random.randrange(520, 1000)
             assert bstream.seek(o1) == o1
             assert bstream.tell() == o1
             assert bstream.write(data[o1:o2]) == o2-o1
@@ -56,11 +56,11 @@ class TestBitstream(unittest.TestCase):
         assert bstream.read(len(data)) == data
 
         print("cutting off trail")
-        data = urandom(1000)
+        data = os.urandom(1000)
         bstream = RebufferedBytesIO(BytesIO(data), tailcutoff=50)
         for i in range(15):
             at = bstream.tell()
             assert bstream.read(50) == data[at:at+50]
-            jumpback = randrange(1, 19)
+            jumpback = random.randrange(1, 19)
             assert bstream.seek(-jumpback, 1)
 
