@@ -112,13 +112,14 @@ class TestCore(unittest.TestCase):
             b = VarInt.build(VarInt.parse(b))
             assert b.startswith(VarInt.build(VarInt.parse(b)))
 
-    @pytest.mark.xfail(reason="testing not implemented, issue #155")
     def test_floats(self):
         assert Single.build(1.2) == b"?\x99\x99\x9a"
         assert Double.build(1.2) == b"?\xf3333333"
+
+    def test_floats_randomized(self):
         for i in range(100):
             x = random.random()
-            assert Single.parse(Single.build(x)) == x
+            assert abs(Single.parse(Single.build(x)) - x) < 1e-3
             assert Double.parse(Double.build(x)) == x
 
     def test_bytes(self):
