@@ -7,8 +7,8 @@ import pytest
 from construct import *
 from construct.lib import *
 
-import os, random, itertools
 from io import BytesIO
+import os, random, itertools
 import hashlib
 ident = lambda x: x
 
@@ -155,11 +155,16 @@ class TestCore(unittest.TestCase):
 
     @pytest.mark.xfail(reason="float unpack on random bytes fails randomly")
     def test_formatfield_floats_randomized(self):
+        # there is a roundoff eror because Python float is a C double
+        # http://stackoverflow.com/questions/39619636/struct-unpackstruct-packfloat-has-roundoff-error
         for endianess,dtype in itertools.product("<>=","fd"):
             d = FormatField(endianess, dtype)
             for i in range(100):
                 x = random.random()*12345
-                assert d.parse(d.build(x)) == x
+                if dtype == "d":
+                    assert d.parse(d.build(x)) == x
+                else:
+                    assert abs(d.parse(d.build(x)) - x) < 1e-3
             for i in range(100):
                 # this fails
                 b = os.urandom(d.sizeof())

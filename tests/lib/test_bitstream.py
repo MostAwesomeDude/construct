@@ -5,8 +5,7 @@ import pytest
 from construct import *
 
 from io import BytesIO
-import os
-import random
+import os, random
 
 
 

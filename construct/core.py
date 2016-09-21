@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct
+import struct as packer
 from struct import Struct as Packer
 from struct import error as PackerError
 from io import BytesIO, StringIO
@@ -443,7 +443,7 @@ class FormatField(Bytes):
     See ``struct`` documentation for instructions on crafting format strings.
 
     :param endianity: format endianness string as one of: < > =
-    :param format: single format character like: B H L Q
+    :param format: single format character like: f d B H L Q b h l q
 
     Example::
 
@@ -454,32 +454,25 @@ class FormatField(Bytes):
         >>> FormatField(">","H").sizeof()
         2
     """
-    __slots__ = ["packer"]
+    __slots__ = ["fmtstr"]
     def __init__(self, endianity, format):
         if endianity not in (">", "<", "="):
             raise ValueError("endianity must be one of: = < >",
                 endianity)
         if len(format) != 1:
             raise ValueError("must specify one and only one format character")
-        self.packer = Packer(endianity + format)
-        super(FormatField, self).__init__(self.packer.size)
-    def __getstate__(self):
-        attrs = super(FormatField, self).__getstate__()
-        attrs["packer"] = attrs["packer"].format
-        return attrs
-    def __setstate__(self, attrs):
-        attrs["packer"] = Packer(attrs["packer"])
-        return super(FormatField, self).__setstate__(attrs)
+        super(FormatField, self).__init__(packer.calcsize(endianity + format))
+        self.fmtstr = endianity + format
     def _parse(self, stream, context):
         try:
-            return self.packer.unpack(_read_stream(stream, self.length))[0]
+            return packer.unpack(self.fmtstr, _read_stream(stream, self.sizeof()))[0]
         except Exception:
-            raise FieldError("packer %r error during parsing" % self.packer.format)
+            raise FieldError("packer %r error during parsing" % self.fmtstr)
     def _build(self, obj, stream, context):
         try:
-            _write_stream(stream, self.length, self.packer.pack(obj))
+            _write_stream(stream, self.sizeof(), packer.pack(self.fmtstr, obj))
         except Exception:
-            raise FieldError("packer %r error during building, given value %s" % (self.packer.format, obj))
+            raise FieldError("packer %r error during building, given value %s" % (self.fmtstr, obj))
 
 
 def Bitwise(subcon):
