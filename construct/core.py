@@ -1356,19 +1356,26 @@ class Union(Construct):
         self.buildfrom = kw.get("buildfrom", None)
     def _parse(self, stream, context):
         ret = Container()
-        for sc in self.subcons:
+        for i,sc in enumerate(self.subcons):
+            subobj = sc._parse(stream, context)
             if sc.name is not None:
-                ret[sc.name] = sc._parse(stream, context)
+                ret[sc.name] = subobj
+            context[i] = subobj
         return ret
     def _build(self, obj, stream, context):
         if self.buildfrom is None:
-            for sc in self.subcons:
-                if sc.name in obj:
+            for i,sc in enumerate(self.subcons):
+                if sc.name is not None:
+                    context[sc.name] = obj[sc.name]
+                if sc.flagbuildnone:
+                    return sc._build(None, stream, context)
+                elif sc.name in obj:
                     return sc._build(obj[sc.name], stream, context)
-            raise UnionError("none of subcons were found in the dictionary %s" % obj)
+            else:
+                raise UnionError("none of subcons %s were found in the dictionary %s" % (self.subcons, obj))
         else:
             sc = self.subcons[self.buildfrom]
-            return sc._build(obj[sc.name], stream, context)
+            sc._build(obj[sc.name], stream, context)
     def _sizeof(self, context):
         if self.buildfrom is None:
             raise SizeofError("cannot calculate size")
