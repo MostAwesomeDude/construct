@@ -32,13 +32,16 @@ Construct
 
     <strong>Sticky</strong><br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the last stable release. If you are maintaining a project that depends on this framework, you should use this version. This is also latest version on  <a class="reference external" href="https://pypi.python.org/pypi/construct">pypi</a>. </br>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the previous stable release. If you are maintaining a project that depends on this framework, you should use this version. This is also latest version on  <a class="reference external" href="https://pypi.python.org/pypi/construct">pypi</a>. </br>
     </br>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.7.2</a> was released on September 19th, 2016. Framework is undergoing significant API and implementation changes. Documentation is being updated at same time but some confusion may arise. Docstrngs are stale but they will be updated soon, then the readthedocs site. <br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8.1</a> was released on September 21th, 2016. There were significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Many classes were added or removed or renamed or their fields or behavior changes. You should read the documentation again. Docstrings are up-to-date. **Website is currently stale and broken.** <br/>
     </br>
 
-    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, report issues and bugs, and to send patches. There is also the <a class="reference external" href="https://groups.google.com/d/forum/construct3">mailing list</a> but GitHub should be preffered.
+    Warning: Union class is currently broken.</br>
+    </br>
+
+    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send patches. There is also the <a class="reference external" href="https://groups.google.com/d/forum/construct3">mailing list</a> but GitHub should be preffered.
     </div>
 
 Construct is a powerful **declarative** parser (and builder) for binary data.

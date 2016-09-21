@@ -55,3 +55,6 @@ to the typical complexity of text-based grammars and the relative difficulty
 of parsing Unicode correctly. While Construct does have a suite of special
 text-parsing structures, it was not designed to handle text and is not a good
 fit for those applications.
+
+Construct 2.5 droped the experimental text parsing support that was added in Construct 2.0; it was highly inefficient.
+

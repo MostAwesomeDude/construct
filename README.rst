@@ -22,23 +22,27 @@ work easier:
 * On-demand (lazy) parsing: read only what you require
 * Pointers: jump from here to there in the data stream 
 
+
 Notes
 -----
+Construct 2.8 is the fresh stable release. There were significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Many classes were added or removed or renamed or their fields or behavior changes. You should read the documentation again. Docstrings are up-to-date. **Website is currently stale and broken.**
 
-**There are significant ongoing API and implementation changes. Previous branch in maintained as stable 2.5 releases. If you want to test the new 2.7 code, please be aware. Currently both docstrings and webpages are stale.**
+Warning: Union class is currently broken.
 
-`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a rewrite from scratch and diverged from this project.
+Previous stable 2.5 release is not actively maintained. Only bugfixes will be added.
 
-Construct 2.5 drops the experimental text parsing support that was added in Construct 2.0; it was highly inefficient.
+`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a rewrite from scratch and belongs to another developer, it diverged from this project. As far as I can tell, it was not even released yet.
+
 
 Example
 -------
-
 (removed pending update)
+
 
 Resources
 ---------
-Construct's homepage is `<http://construct.readthedocs.org>`_, where you can find all kinds of docs and resources. The library itself is developed on `github <https://github.com/construct/construct>`_; please use `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, report issues and bugs, and to send patches. There is also the `mailing list <https://groups.google.com/d/forum/construct3>`_ but GitHub should be preffered.
+Construct's homepage is `<http://construct.readthedocs.org>`_, where you can find all kinds of docs and resources. The library itself is developed on `github <https://github.com/construct/construct>`_; please use `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests, report issues and bugs, and to send patches. There is also the `mailing list <https://groups.google.com/d/forum/construct3>`_ but GitHub should be preffered.
+
 
 Requirements
 ------------
