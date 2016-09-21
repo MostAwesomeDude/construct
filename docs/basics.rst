@@ -2,258 +2,237 @@
 The Basics
 ==========
 
+
 Fields
 ======
 
-Fields are the most fundamental unit of construction: they **parse** (read
-data from the stream and return an object) and **build** (take an object and
-write it down onto a stream). There are many kinds of fields, each working
-with a different type of data (numeric, boolean, strings, etc.).
+Fields are the most fundamental unit of construction: they **parse** (read data from the stream and return an object) and **build** (take an object and write it down onto a stream). There are many kinds of fields, each working with a different type of data (numeric, boolean, strings, etc.).
 
 Some examples of parsing:
 
->>> from construct import UBInt16, ULInt16
->>> UBInt16("foo").parse("\x01\x02")
+>>> from construct import Int16ub, Int16ul
+>>> Int16ub.parse("\x01\x02")
 258
->>> ULInt16("foo").parse("\x01\x02")
+>>> Int16ul.parse("\x01\x02")
 513
 
 Some examples of building:
 
->>> from construct import UBInt16, SBInt16
->>> UBInt16("foo").build(31337)
+>>> from construct import Int16ub, Int16sb
+>>> Int16ub.build(31337)
 'zi'
->>> SBInt16("foo").build(-31337)
+>>> Int16sb.build(-31337)
 '\x86\x97'
+
+Other fields like:
+
+>>> Flag.parse(b"\x01")
+True
+
+>>> Enum(Byte, dict(g=8,h=11)).parse(b"\x08")
+'g'
+>>> Enum(Byte, dict(g=8,h=11)).build(11)
+b'\x0b'
+
+>>> Float32b.build(12.345)
+b'AE\x85\x1f'
+>>> Single.parse(_)
+12.345000267028809
+
+
+Variable-length fields
+======================
+
+>>> VarInt.build(1234567890)
+b'\xd2\x85\xd8\xcc\x04'
+>>> VarInt.sizeof()
+construct.core.SizeofError: cannot calculate size
+
+Fields are sometimes fixed size and some composites behave differently when they are composed of those. Keep that detail in mind. Classes that cannot determine size always raise SizeofError in response. There are few classes where same instance may return an int or raise SizeofError depending on circumstances. Array size depends on whether count of elements is constant (can be a context lambda) and subcon is constant size.
+
+>>> Int16ub[2].sizeof()
+4
+>>> VarInt[1].sizeof()
+construct.core.SizeofError: cannot calculate size
+
 
 Structs
 =======
 
-For those of you familiar with C, Structs are very intuitive, but here's a
-short explanation for the larger audience. A Struct is a sequenced collection
-of fields or other components, that are parsed/built in that order. Note that
-if two or more fields of a Struct have the same name, the last field "wins";
-that is, the last field's value will be the value returned from a parse.
+For those of you familiar with C, Structs are very intuitive, but here's a short explanation for the larger audience. A Struct is a sequenced collection of fields or other components, that are parsed/built in that order. 
 
->>> from construct import Struct, UBInt8, SLInt16, LFloat32
->>> c = Struct("foo",
-...     UBInt8("a"),
-...     SLInt16("b"),
-...     LFloat32("c"),
+>>> format = Struct(
+...     "signature" / Const(b"BMP"),
+...     "width" / Int8ub,
+...     "height" / Int8ub,
+...     "pixels" / Array(this.width * this.height, Byte),
 ... )
->>> c
-<Struct('foo')>
->>> c.parse("\x07\x00\x01\x00\x00\x00\x01")
-Container(a = 7, b = 256, c = 2.350988701644575e-038)
+>>> format.build(dict(width=3,height=2,pixels=[7,8,9,11,12,13]))
+b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
+>>> format.parse(b'BMP\x03\x02\x07\x08\t\x0b\x0c\r')
+Container(signature=b'BMP')(width=3)(height=2)(pixels=[7, 8, 9, 11, 12, 13])
+
+Usually members are named but there are some classes that build from nothing and return nothing on parsing, so they have no need for a name (they can stay anonymous). Duplicated names within same struct can have unknown sideefffects.
+
+>>> test = Struct(
+...     Const(b"XYZ"),
+...     Padding(2),
+...     Pass,
+...     Terminator,
+... )
+>>> test.build({})
+b'XYZ\x00\x00'
+>>> test.parse(_)
+Container()
+
 
 Containers
 ----------
 
-What *is* that Container object, anyway? Well, a Container is a regular Python
-dictionary. It provides pretty-printing and accessing items as attributes, in
-addition to the normal facilities of dictionaries. Let's see more of those:
+What is that Container object, anyway? Well, a Container is a regular Python dictionary. It provides pretty-printing and accessing items as attributes as well as keys, and preserves insertion order in addition to the normal facilities of dictionaries. Let's see more of those:
 
->>> x = c.parse("\x07\x00\x01\x00\x00\x00\x01")
+>>> c = Struct("a"/Byte, "b"/Int16ul, "c"/Single)
+>>> x = c.parse(b"\x07\x00\x01\x00\x00\x00\x01")
 >>> x
-Container(a = 7, b = 256, c = 2.350988701644575e-038)
->>> x.a
-7
+Container(a=7)(b=256)(c=1.401298464324817e-45)
 >>> x.b
 256
->>> print x
-Container:
+>>> x["b"]
+256
+>>> print(x)
+Container: 
     a = 7
     b = 256
-    c = 2.350988701644575e-038
+    c = 1.401298464324817e-45
 
-Building
---------
+Thanks to blapid, containers can also be searched. Structs nested within Structs return containers within containers on parsing. One can search the entire "tree" of dicts for a particular name. Regular expressions are not supported.
 
-And here is how we build Structs:
+>>> con = Container(Container(a=1,d=Container(a=2)))
+>>> con.search("a")
+1
+>>> con.search_all("a")
+[1, 2]
 
->>> # Rebuild the parsed object.
->>> c.build(x)
-'\x07\x00\x01\x00\x00\x00\x01'
 
->>> # Mutate the parsed object and build...
->>> x.b = 5000
->>> c.build(x)
-'\x07\x88\x13\x00\x00\x00\x01'
+Building and parsing
+--------------------
 
->>> # ...Or, we can create a new container.
->>> c.build(Container(a = 9, b = 1234, c = 56.78))
-'\t\xd2\x04\xb8\x1ecB'
+And here is how we build Structs and others:
+
+>>> # Rebuilding and reparsing from returned...
+>>> format = Byte[10]
+>>> format.build([1,2,3,4,5,6,7,8,9,0])
+b'\x01\x02\x03\x04\x05\x06\x07\x08\t\x00'
+>>> format.parse(_)
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
+>>> format.build(_)
+b'\x01\x02\x03\x04\x05\x06\x07\x08\t\x00'
+
+>>> # Mutate the parsed object and rebuild...
+>>> st = Struct("num" / Int32ul)
+>>> st.build(dict(num=7890))
+b'\xd2\x1e\x00\x00'
+>>> x = st.parse(_)
+>>> x
+Container(num=7890)
+>>> x.num = 555
+>>> st.build(x)
+b'+\x02\x00\x00'
 
 .. note::
 
    Building is fully duck-typed and can be done with any object.
 
->>> class Foo(object): pass
-...
->>> f = Foo()
->>> f.a = 1
->>> f.b = 2
->>> f.c = 3
->>> c.build(f)
-'\x01\x02\x00\x00\x00@@'
+>>> c = Struct("b"/Int32ul, "c"/Flag)
+>>> class Dummy:
+...     def __getitem__(self, key):
+...             return 1
+... 
+>>> dummy = Dummy()
+>>> c.build(dummy)
+b'\x01\x00\x00\x00\x01'
 
-Nested
-------
 
-Structs can be nested. Structs can contain other Structs, as well as any
-construct. Here's how it's done:
+Nesting and embedding
+---------------------
 
->>> c = Struct("foo",
-...     UBInt8("a"),
-...     UBInt16("b"),
-...     Struct("bar",
-...         UBInt8("a"),
-...         UBInt16("b"),
+Structs can be nested. Structs can contain other Structs, as well as any construct. Here's how it's done:
+
+>>> st = Struct(
+...     "inner" / Struct(
+...             "data" / Bytes(4),
 ...     )
 ... )
->>> x = c.parse("ABBabb")
->>> x
-Container(a = 65, b = 16962, bar = Container(a = 97, b = 25186))
->>> print x
-Container:
-    a = 65
-    b = 16962
-    bar = Container:
-        a = 97
-        b = 25186
->>> x.a
-65
->>> x.bar
-Container(a = 97, b = 25186)
->>> x.bar.b
-25186
+>>> st.parse(b"lala")
+Container(inner=Container(data=b'lala'))
+>>> print(_)
+Container: 
+    inner = Container: 
+        data = b'lala'
 
-As you can see, Containers provide human-readable representations of the data,
-which is very important for large data structures.
+A Struct can be embedded into an enclosing Struct. This means all the fields of the embedded Struct will be merged into the fields of the enclosing Struct. This is useful when you want to split a big Struct into multiple parts, and then combine them all into one Struct. If names are duplicated, inner fields usually overtake the others.
 
-Embedding
----------
-
-A Struct can be embedded into an enclosing Struct. This means all the fields
-of the embedded Struct will be merged into the fields of the enclosing Struct.
-This is useful when you want to split a big Struct into multiple parts, and
-then combine them all into one Struct.
-
->>> foo = Struct("foo",
-...     UBInt8("a"),
-...     UBInt8("b"),
+>>> outer = Struct(
+...     "data" / Byte,
+...     "inner" / Embedded(Struct(
+...             "data" / Bytes(4),
+...     ))
 ... )
->>> bar = Struct("bar",
-...     foo, # This Struct is not embedded.
-...     UBInt8("c"),
-...     UBInt8("d"),
-... )
->>> bar2= Struct("bar",
-...     Embed(foo), # This Struct is embedded.
-...     UBInt8("c"),
-...     UBInt8("d"),
-... )
->>> bar.parse("abcd")
-Container(c = 99, d = 100, foo = Container(a = 97, b = 98))
->>> bar2.parse("abcd")
-Container(a = 97, b = 98, c = 99, d = 100)
+>>> outer.parse(b"01234")
+Container(data=b'1234')
 
-.. seealso:: The :func:`~construct.macros.Embedded` macro.
+>>> outer = Struct(
+...     "data" / Byte,
+...     Embedded(st),
+... )
+>>> 
+>>> outer.parse(b"01234")
+Container(data=48)(inner=Container(data=b'1234'))
+
+As you can see, Containers provide human-readable representations of the data, which is very important for large data structures.
+
+.. seealso:: The :func:`~construct.core.Embedded` macro.
+
 
 Sequences
 =========
 
-Sequences are very similar to Structs, but operate with lists rather than
-containers. Sequences are less commonly used than Structs, but are very handy
-in certain situations. Since a list is returned in place of an attribute
-container, the names of the sub-constructs are not important; two constructs
-with the same name will not override or replace each other.
+Sequences are very similar to Structs, but operate with lists rather than containers. Sequences are less commonly used than Structs, but are very handy in certain situations. Since a list is returned in place of an attribute container, the names of the sub-constructs are not important. Two constructs with the same name will not override or replace each other.
 
-Parsing
--------
+Building and parsing
+--------------------
 
->>> c = Sequence("foo",
-...     UBInt8("a"),
-...     UBInt16("b"),
-... )
->>> c
-<Sequence('foo')>
->>> c.parse("abb")
-[97, 25186]
+>>> seq = Int16ub >> CString(encoding="utf8") >> GreedyBytes
+>>> seq.parse(b"\x00\x80lalalaland\x00\x00\x00\x00\x00")
+[128, 'lalalaland', b'\x00\x00\x00\x00']
 
+Nesting and embedding
+---------------------
 
-Building
---------
+Like Structs, Sequences are compatible with the Embedded wrapper. Embedding one Sequence into another causes a merge of the parsed lists of the two Sequences.
 
->>> c.build([1,2])
-'\x01\x00\x02'
+>>> nseq = Sequence(Byte, Byte, Sequence(Byte, Byte))
+>>> nseq.parse(b"abcd")
+[97, 98, [99, 100]]
 
-
-Nested
-------
-
->>> c = Sequence("foo",
-...     UBInt8("a"),
-...     UBInt16("b"),
-...     Sequence("bar",
-...         UBInt8("a"),
-...         UBInt16("b"),
-...     )
-... )
->>> c.parse("ABBabb")
-[65, 16962, [97, 25186]]
-
-
-Embedded
---------
-
-Like Structs, Sequences are compatible with the Embed wrapper. Embedding one
-Sequence into another causes a merge of the parsed lists of the two Sequences.
-
->>> foo = Sequence("foo",
-...     UBInt8("a"),
-...     UBInt8("b"),
-... )
->>> bar = Sequence("bar",
-...     foo,                  # <-- unembedded
-...     UBInt8("c"),
-...     UBInt8("d"),
-... )
->>> bar2 = Sequence("bar",
-...     Embed(foo),           # <-- embedded
-...     UBInt8("c"),
-...     UBInt8("d"),
-... )
->>> bar.parse("abcd")
-[[97, 98], 99, 100]
->>> bar2.parse("abcd")
+>>> nseq = Sequence(Byte, Byte, Embedded(Sequence(Byte, Byte)))
+>>> nseq.parse(b"abcd")
 [97, 98, 99, 100]
 
-.. _repeaters:
 
 Repeaters
 =========
 
-Repeaters, as their name suggests, repeat a given unit for a specified number
-of times. At this point, we'll only cover static repeaters. Meta-repeaters
-will be covered in the meta-constructs tutorial.
+Repeaters, as their name suggests, repeat a given unit for a specified number of times. At this point, we'll only cover static repeaters where count is a constant int. Meta-repeaters take values at parse/build time from the context and they will be covered in the meta-constructs tutorial.
 
-We have four kinds of static repeaters. In fact, for those of you who wish to
-go under the hood, two of these repeaters are actually wrappers around Range.
-
-.. autofunction:: construct.Range
+We have four kinds of repeaters. In fact, for those of you who wish to look under the hood, two of these repeaters are actually wrappers around Range.
 
 .. autofunction:: construct.Array
 
+.. autofunction:: construct.Range
+
 .. autofunction:: construct.GreedyRange
 
-.. autofunction:: construct.OptionalGreedyRange
+.. autofunction:: construct.RepeatUntil
 
-Nesting
--------
 
-As with all constructs, Repeaters can be nested too. Here's an example:
-
->>> c = Array(5, Array(2, UBInt8("foo")))
->>> c.parse("aabbccddee")
-[[97, 97], [98, 98], [99, 99], [100, 100], [101, 101]]

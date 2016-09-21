@@ -53,7 +53,7 @@ Important notes
   can use regular Structs inside BitStructs.
 * BitStructs are embeddable.
 
-  .. seealso:: The :func:`~construct.macros.EmbeddedBitStruct` macro.
+.. seealso:: The :func:`~construct.core.EmbeddedBitStruct` macro.
 
 * Byte-Aligned - The total size of the elements of a BitStruct must be a
   multiple of 8 (due to alignment issues)

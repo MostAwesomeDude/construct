@@ -259,42 +259,4 @@ stream positions using it. See the following example:
 Container(absolute_position = 7, data = 255, padding_length = 5,
 relative_offset = 3)
 
-OnDemand
---------
 
-OnDemand allows lazy construction, meaning the data is actually parsed (or
-built) only when it's requested (demanded). On-demand parsing is very useful
-with record-oriented data, where you don't have to actually parse the data
-unless it's actually needed. The result of OnDemand is an OnDemandContainer --
-a special object that "remembers" the stream position where its data is found,
-and parses it when you access its .value property.
-
-.. note::
-
-    Lazy construction is available only for seekable streams (in-memory and
-    files). Sockets and pipes do not suppose seeking, so you'll have to first
-    read the data from the stream, and parse it in-memory.
-
->>> foo = Struct("foo",
-...     Byte("a"),
-...     OnDemand(Bytes("bigdata", 20)),  # <-- this will be read only on
-demand
-...     Byte("b"),
-... )
->>>
->>> x = foo.parse("\x0101234567890123456789\x02")
->>> x
-Container(a = 1, b = 2, bigdata = OnDemandContainer(<unread>))
->>>
->>> x.bigdata
-OnDemandContainer(<unread>)
->>> x.bigdata.has_value                      # <-- still unread
-False
->>>
->>> x.bigdata.value                          # <-- demand the data
-'01234567890123456789'
->>>
->>> x.bigdata.has_value                      # <-- already demanded
-True
->>> x.bigdata
-OnDemandContainer('01234567890123456789')

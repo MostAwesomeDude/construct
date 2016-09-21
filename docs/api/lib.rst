@@ -1,5 +1,6 @@
 ==========================================
-``construct.core`` -- entire module
+``construct.lib`` -- entire module
 ==========================================
 
-.. automodule:: construct.core
+.. automodule:: construct.lib
+

@@ -383,7 +383,7 @@ class Bytes(Construct):
     r"""
     A field consisting of a specified number of bytes. Builds from a b-string, or an integer (although deprecated and BytesInteger should be used).
 
-    .. seealso:: Analog :func:`~construct.BytesInteger` that parses and builds from integers.
+    .. seealso:: Analog :func:`~construct.core.BytesInteger` that parses and builds from integers.
 
     :param length: an int or a function that takes context and returns int
 
@@ -421,7 +421,7 @@ class GreedyBytes(Construct):
 
     This is an analog to `Bytes(infinity)`, pun intended.
 
-    .. seealso:: Analog :func:`~construct.GreedyString` that parses and builds from strings using an encoding.
+    .. seealso:: Analog :func:`~construct.core.GreedyString` that parses and builds from strings using an encoding.
 
     Example::
 
@@ -438,7 +438,7 @@ class GreedyBytes(Construct):
 
 class FormatField(Bytes):
     r"""
-    A field that uses ``struct`` module to pack and unpack data. This is used to implement basic *Int fields.
+    A field that uses ``struct`` module to pack and unpack data. This is used to implement basic Int* fields.
 
     See ``struct`` documentation for instructions on crafting format strings.
 
@@ -479,7 +479,7 @@ def Bitwise(subcon):
     r"""
     Converts the stream from bytes to bits, and passes the bitstream to underlying subcon.
 
-    .. seealso:: Analog :func:`~construct.Bytewise` that transforms subset of bits back to bytes.
+    .. seealso:: Analog :func:`~construct.core.Bytewise` that transforms subset of bits back to bytes.
 
     .. warning:: Do not use pointers inside.
 
@@ -501,7 +501,7 @@ def Bytewise(subcon):
     r"""
     Converts the stream from bits back to bytes. Needs to be used within Bitwise.
 
-    :param subcon: any field that works with bytes like: Bytes BytesInteger *Int Struct
+    :param subcon: any field that works with bytes like: Bytes BytesInteger Int* Struct
 
     Example::
 
@@ -517,9 +517,9 @@ def Bytewise(subcon):
 
 class BytesInteger(Construct):
     r"""
-    A byte field, that parses into and builds from integers as opposed to b-strings. This is similar to *Int fields but can be much longer than 4 or 8 bytes.
+    A byte field, that parses into and builds from integers as opposed to b-strings. This is similar to Int* fields but can be much longer than 4 or 8 bytes.
 
-    .. seealso:: Analog :func:`~construct.BitsInteger` that operatoes on bits.
+    .. seealso:: Analog :func:`~construct.core.BitsInteger` that operatoes on bits.
 
     :param length: number of bytes in the field, or a function that takes context and returns int
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
@@ -811,7 +811,7 @@ class Struct(Construct):
 
     Some fields do not need to be named, since they are built from None anyway. See Const Padding Pass Terminator.
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.Embedded` wrapper that merges fields into parent's fields.
+    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges fields into parent's fields.
 
     :param subcons: a sequence of subconstructs that make up this structure
 
@@ -877,7 +877,7 @@ class Sequence(Struct):
     r"""
     A sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.Embedded` wrapper that merges entries into parent's entries.
+    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges entries into parent's entries.
 
     :param subcons: a sequence of subconstructs that make up this sequence
 
@@ -933,7 +933,7 @@ class Array(Subconstruct):
     r"""
     A homogenous array of elements. The array will iterate through exactly ``count`` elements. Will raise ArrayError if less elements are found.
 
-    .. seealso:: Base :func:`~construct.Range` construct.
+    .. seealso:: Base :func:`~construct.core.Range` construct.
 
     :param count: int or a function that takes context and returns the number of elements
     :param subcon: the subcon to process individual elements
@@ -985,7 +985,7 @@ class PrefixedArray(Construct):
 
     .. seealso::
 
-        Analog :func:`~construct.Array` construct.
+        Analog :func:`~construct.core.Array` construct.
 
     :param lengthfield: a field parsing and building an integer
     :param subcon: the subcon to process individual elements
@@ -1017,7 +1017,7 @@ class Range(Subconstruct):
     r"""
     A homogenous array of elements. The array will iterate through between ``min`` to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits cleanly. If less than ``min`` units have been successfully parsed, a RangeError is raised.
 
-    .. seealso:: Analog :func:`~construct.GreedyRange` that parses until end of stream.
+    .. seealso:: Analog :func:`~construct.core.GreedyRange` that parses until end of stream.
 
     .. note:: This object requires a seekable stream for parsing.
 
@@ -1279,7 +1279,7 @@ def AlignedStruct(*subcons, **kw):
     r"""
     Makes a structure where each field is aligned to the same modulus.
 
-    .. seealso:: Uses :func:`~construct.Aligned` and `~construct.Struct`.
+    .. seealso:: Uses :func:`~construct.core.Aligned` and `~construct.core.Struct`.
 
     :param \*subcons: the subcons that make up this structure
     :param modulus: passed to each member
@@ -1301,7 +1301,7 @@ def BitStruct(*subcons):
     r"""
     Makes a structure inside a Bitwise.
 
-    .. seealso:: Uses :func:`~construct.Bitwise` and :func:`~construct.Struct`.
+    .. seealso:: Uses :func:`~construct.core.Bitwise` and :func:`~construct.core.Struct`.
 
     :param \*subcons: the subcons that make up this structure
 
@@ -1321,7 +1321,7 @@ def EmbeddedBitStruct(*subcons):
     r"""
     Makes an embedded BitStruct.
 
-    .. seealso:: Uses :func:`~construct.Bitwise` and :func:`~construct.Embedded` and :func:`~construct.Struct`.
+    .. seealso:: Uses :func:`~construct.core.Bitwise` and :func:`~construct.core.Embedded` and :func:`~construct.core.Struct`.
 
     :param \*subcons: the subcons that make up this structure
     """
@@ -1448,7 +1448,7 @@ class Switch(Construct):
     r"""
     A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
 
-    .. seealso:: The :class:`Pass` singleton.
+    .. seealso:: The :class:`~construct.core.Pass` singleton.
 
     :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case
     :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc
@@ -1550,7 +1550,7 @@ class Pointer(Subconstruct):
     r"""
     Changes the stream position to a given offset, where the construction should take place, and restores the stream position when finished.
 
-    .. seealso:: Analog :func:`~construct.OnDemandPointer` field, which also seeks to a given offset.
+    .. seealso:: Analog :func:`~construct.core.OnDemandPointer` field, which also seeks to a given offset.
 
     :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place, can return negative integer as position from the end backwards
     :param subcon: the subcon to use at the offset
@@ -1590,7 +1590,7 @@ class Peek(Subconstruct):
     r"""
     Peeks at the stream. Parses without changing the stream position. If the end of the stream is reached when peeking, returns None. Size is defined as size of the subcon, even tho Peek's size is 0 by design. Building is no-op.
 
-    .. seealso:: The :func:`~construct.Union` class.
+    .. seealso:: The :func:`~construct.core.Union` class.
   
     :param subcon: the subcon to peek at
 
@@ -1623,7 +1623,7 @@ class Restreamed(Subconstruct):
 
     When the parsing or building is done, the wrapper stream is closed. If read buffer or write buffer is not empty, error is raised.
 
-    .. seealso:: Both :func:`~construct.Bitwise` and :func:`~construct.Bytewise` are implemented using Restreamed.
+    .. seealso:: Both :func:`~construct.core.Bitwise` and :func:`~construct.core.Bytewise` are implemented using Restreamed.
 
     .. warning:: Do not use pointers inside.
 
@@ -1791,7 +1791,7 @@ class Anchor(Construct):
 
     Anchors are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference using a Compute.
 
-    .. seealso:: Better to use :func:`~construct.CopyRaw` wrapper.
+    .. seealso:: Better to use :func:`~construct.core.CopyRaw` wrapper.
 
     Example::
 
@@ -1912,8 +1912,74 @@ class Numpy(Construct):
 
 
 #===============================================================================
-# tunneling and other
+# tunneling and swapping
 #===============================================================================
+def ByteSwapped(subcon):
+    r"""
+    Swap the byte order within boundaries of the given subcon.
+
+    :param subcon: the subcon on top of byte swapped bytes
+
+    Example::
+
+        Int24ul <--> ByteSwapped(Int24ub)
+    """
+    return Restreamed(subcon,
+        lambda s: s[::-1], subcon.sizeof(),
+        lambda s: s[::-1], subcon.sizeof(),
+        lambda n: n)
+
+
+def BitsSwapped(subcon):
+    r"""
+    Swap the bit order within each byte within boundaries of the given subcon.
+
+    :param subcon: the subcon on top of byte swapped bytes
+
+    Example::
+
+        >>> Bitwise(Bytes(8)).parse(b"\xa8")
+        b'\x01\x00\x01\x00\x01\x00\x00\x00'
+        >>> BitsSwapped(Bitwise(Bytes(8))).parse(b"\xa8")
+        b'\x00\x00\x00\x01\x00\x01\x00\x01'
+    """
+    return Restreamed(subcon,
+        lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
+        lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
+        lambda n: n)
+
+
+class Prefixed(Subconstruct):
+    r"""
+    Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, data is prefixed by its length.
+
+    .. seealso:: The :func:`~construct.core.VarInt` encoding should be preferred over :func:`~construct.core.Byte` and fixed size fields. VarInt is more compact and does never overflow.
+
+    :param lengthfield: a subcon used for storing the length
+    :param subcon: the subcon used for storing the value
+
+    Example::
+
+        >>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello????remainins")
+        b'hello'
+    """
+    __slots__ = ["name", "lengthfield", "subcon"]
+    def __init__(self, lengthfield, subcon):
+        super(Prefixed, self).__init__(subcon)
+        self.lengthfield = lengthfield
+    def _parse(self, stream, context):
+        length = self.lengthfield._parse(stream, context)
+        data = _read_stream(stream, length)
+        return self.subcon.parse(data, context)
+    def _build(self, obj, stream, context):
+        data = self.subcon.build(obj, context)
+        subobj = self.lengthfield._build(len(data), stream, context)
+        _write_stream(stream, len(data), data)
+        return subobj
+    def _sizeof(self, context):
+        return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
+
+
 class Checksum(Construct):
     r"""
     A field that is build or validated by a hash of a given byte range.
@@ -1957,77 +2023,11 @@ class Checksum(Construct):
         return self.checksumfield._sizeof(context)
 
 
-def ByteSwapped(subcon):
-    r"""
-    Swap the byte order within boundaries of the given subcon.
-
-    :param subcon: the subcon on top of byte swapped bytes
-
-    Example::
-
-        Int24ul <--> ByteSwapped(Int24ub)
-    """
-    return Restreamed(subcon,
-        lambda s: s[::-1], subcon.sizeof(),
-        lambda s: s[::-1], subcon.sizeof(),
-        lambda n: n)
-
-
-def BitsSwapped(subcon):
-    r"""
-    Swap the bit order within each byte within boundaries of the given subcon.
-
-    :param subcon: the subcon on top of byte swapped bytes
-
-    Example::
-
-        >>> Bitwise(Bytes(8)).parse(b"\xa8")
-        b'\x01\x00\x01\x00\x01\x00\x00\x00'
-        >>> BitsSwapped(Bitwise(Bytes(8))).parse(b"\xa8")
-        b'\x00\x00\x00\x01\x00\x01\x00\x01'
-    """
-    return Restreamed(subcon,
-        lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
-        lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
-        lambda n: n)
-
-
-class Prefixed(Subconstruct):
-    r"""
-    Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, data is prefixed by its length.
-
-    .. seealso:: The :func:`~construct.VarInt` encoding should be preferred over :func:`~construct.Byte` and fixed size fields. VarInt is more compact and does never overflow.
-
-    :param lengthfield: a subcon used for storing the length
-    :param subcon: the subcon used for storing the value
-
-    Example::
-
-        >>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello????remainins")
-        b'hello'
-    """
-    __slots__ = ["name", "lengthfield", "subcon"]
-    def __init__(self, lengthfield, subcon):
-        super(Prefixed, self).__init__(subcon)
-        self.lengthfield = lengthfield
-    def _parse(self, stream, context):
-        length = self.lengthfield._parse(stream, context)
-        data = _read_stream(stream, length)
-        return self.subcon.parse(data, context)
-    def _build(self, obj, stream, context):
-        data = self.subcon.build(obj, context)
-        subobj = self.lengthfield._build(len(data), stream, context)
-        _write_stream(stream, len(data), data)
-        return subobj
-    def _sizeof(self, context):
-        return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
-
-
 class Compressed(Tunnel):
     r"""
     Compresses or decompresses underlying stream when processing the subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. 
 
-    .. seealso:: This construct should either be used with :func:`~construct.Prefixed` or on entire stream.
+    .. seealso:: This construct should either be used with :func:`~construct.core.Prefixed` or on entire stream.
 
     :param subcon: the subcon used for storing the value
     :param encoding: any of the codecs module bytes<->bytes encodings, like zlib
@@ -2055,7 +2055,7 @@ class LazyStruct(Construct):
     r"""
     Equivalent to Struct construct, however fixed size members are parsed on demend, others are parsed immediately. If entire struct is fixed size then entire parse is essentially one seek.
 
-    .. seealso:: Equivalent to :func:`~construct.Struct`.
+    .. seealso:: Equivalent to :func:`~construct.core.Struct`.
 
     """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes", "keys"]
@@ -2148,7 +2148,7 @@ class LazyRange(Construct):
     r"""
     Equivalent to Range construct, members are parsed on demend. Works only with fixed size subcon.
 
-    .. seealso:: Equivalent to :func:`~construct.Range`.
+    .. seealso:: Equivalent to :func:`~construct.core.Range`.
 
     """
     __slots__ = ["subcon", "min", "max", "subsize"]
@@ -2195,7 +2195,7 @@ class LazySequence(Construct):
     r"""
     Equivalent to Sequence construct, however fixed size members are parsed on demend, others are parsed immediately. If entire sequence is fixed size then entire parse is essentially one seek.
 
-    .. seealso:: Equivalent to :func:`~construct.Sequence`.
+    .. seealso:: Equivalent to :func:`~construct.core.Sequence`.
 
     """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes"]
@@ -2298,7 +2298,7 @@ class OnDemandPointer(Subconstruct):
     r"""
     An on-demand pointer. Is both lazy and jumps to a position before reading.
 
-    .. seealso:: Base :func:`~construct.OnDemand` and :func:`~construct.Pointer` construct.
+    .. seealso:: Base :func:`~construct.core.OnDemand` and :func:`~construct.core.Pointer` construct.
 
     :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place, can return negative integer as position from the end backwards
     :param subcon: the subcon that will be parsed or built at the `offset` stream position
@@ -2384,7 +2384,7 @@ def Alias(newname, oldname):
     r"""
     Creates an alias for an existing element in a struct. When parsing, value is available under both keys. Building does nothing. Deprecated meaning there is no real use for it.
 
-    .. seealso:: Note that :func:`~construct.Computed` is more powerful.
+    .. seealso:: Note that :func:`~construct.core.Computed` is more powerful.
 
     :param newname: the new name
     :param oldname: the name of an existing element, must be on same context level
@@ -2440,7 +2440,7 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
     r"""
     Defines a symmetrical mapping, same mapping is used on parsing and building.
 
-    .. seealso:: Based on :func:`~construct.Mapping`.
+    .. seealso:: Based on :func:`~construct.core.Mapping`.
 
     :param subcon: the subcon to map
     :param encoding: the mapping as a dict
@@ -2691,7 +2691,7 @@ class NoneOf(Validator):
     :param subcon: a construct to validate
     :param invalids: a collection implementing `in`
 
-    .. seealso:: Look at :func:`~construct.OneOf` for examples, works the same.
+    .. seealso:: Look at :func:`~construct.core.OneOf` for examples, works the same.
 
     """
     __slots__ = ["invalids"]
@@ -2868,7 +2868,7 @@ def GreedyString(encoding=None):
 
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
-    .. seealso:: Analog to :class:`~construct.GreedyBytes` and the same when no enoding is used.
+    .. seealso:: Analog to :class:`~construct.core.GreedyBytes` and the same when no enoding is used.
 
     Example::
 

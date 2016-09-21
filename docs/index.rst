@@ -23,6 +23,7 @@
     style="display: block; margin-left: auto; margin-right: auto;" title="Travis CI status"></a>
     </div>
 
+
 Construct
 =========
 .. raw:: html
@@ -32,83 +33,76 @@ Construct
 
     <strong>Sticky</strong><br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the previous stable release. If you are maintaining a project that depends on this framework, you should use this version. This is also latest version on  <a class="reference external" href="https://pypi.python.org/pypi/construct">pypi</a>. </br>
-    </br>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the previous stable release. If you are maintaining a project that depended on this framework for a long time, you should probably use this version. This branch is not actively maintained. Only bugfixes will be added.<br/>
+    <br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8.1</a> was released on September 21th, 2016. There were significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Many classes were added or removed or renamed or their fields or behavior changes. You should read the documentation again. Docstrings are up-to-date. **Website is currently stale and broken.** <br/>
-    </br>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8.1</a> was released on September 21th, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes were redesigned and reimplemented. You should read the documentation again. Docstrings are up-to-date. **Website is currently stale and broken.**<br/>
+    <br/>
 
-    Warning: Union class is currently broken.</br>
-    </br>
+    Warning: Union class is currently broken.<br/>
+    <br/>
 
-    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send patches. There is also the <a class="reference external" href="https://groups.google.com/d/forum/construct3">mailing list</a> but GitHub should be preffered.
+    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches.<br/>
     </div>
+
 
 Construct is a powerful **declarative** parser (and builder) for binary data.
 
-Instead of writing *imperative code* to parse a piece of data, you declaratively
-define a *data structure* that describes your data. As this data structure is not
-code, you can use it in one direction to *parse* data into Pythonic objects, 
-and in the other direction, convert ("build") objects into binary data.
+Instead of writing *imperative code* to parse a piece of data, you declaratively define a *data structure* that describes your data. As this data structure is not code, you can use it in one direction to *parse* data into Pythonic objects, and in the other direction, build objects into binary data.
 
-The library provides both simple, atomic constructs (such as integers of various sizes), 
-as well as composite ones which allow you form hierarchical structures of increasing complexity.
-Construct features **bit and byte granularity**, easy debugging and testing, an 
-**easy-to-extend subclass system**, and lots of primitive constructs to make your 
-work easier:
+The library provides both simple, atomic constructs (such as integers of various sizes), as well as composite ones which allow you form hierarchical and sequential structures of increasing complexity. Construct features **bit and byte granularity**, easy debugging and testing, an **easy-to-extend subclass system**, and lots of primitive constructs to make your work easier:
 
 * Fields: raw bytes or numerical types
 * Structs and Sequences: combine simpler constructs into more complex ones
+* Bitwise: splitting bytes into bit-grained fields
 * Adapters: change how data is represented
 * Arrays/Ranges: duplicate constructs
 * Meta-constructs: use the context (history) to compute the size of data
 * If/Switch: branch the computational path based on the context
-* On-demand (lazy) parsing: read only what you require
+* On-demand (lazy) parsing: read and parse only what you require
 * Pointers: jump from here to there in the data stream 
 
+
 Example
--------
-
-A ``PascalString`` is a string prefixed by its length::
-
-    >>> from construct import *
-    >>>
-    >>> PascalString = Struct("PascalString",
-    ...     UBInt8("length"),
-    ...     Bytes("data", lambda ctx: ctx.length),
-    ... )
-    >>>
-    >>> PascalString.parse("\x05helloXXX")
-    Container({'length': 5, 'data': 'hello'})
-    >>> PascalString.build(Container(length = 6, data = "foobar"))
-    '\x06foobar'
-
-Instead of specifying the length manually, let's use an adapter::
-
-    >>> PascalString2 = ExprAdapter(PascalString, 
-    ...     encoder = lambda obj, ctx: Container(length = len(obj), data = obj), 
-    ...     decoder = lambda obj, ctx: obj.data
-    ... )
-    >>> PascalString2.parse("\x05hello")
-    'hello'
-    >>> PascalString2.build("i'm a long string")
-    "\x11i'm a long string"
-
-See more examples of `file formats <https://github.com/construct/construct/tree/master/construct/formats>`_
-and `network protocols <https://github.com/construct/construct/tree/master/construct/protocols>`_ 
-in the repository.
-
-Resources
 ---------
-Construct's homepage is `<http://construct.readthedocs.org>`_, where you can find all kinds
-of docs and resources. The library itself is developed on `github <https://github.com/construct/construct>`_;
-please use `github issues <https://github.com/construct/construct/issues>`_ to report bugs, and
-github pull-requests to send in patches. For general discussion or questions, please use the 
-`new discussion group <https://groups.google.com/d/forum/construct3>`_.
+
+A ``Struct`` is a collection of ordered, named fields::
+
+    >>> format = Struct(
+    ...     "signature" / Const(b"BMP"),
+    ...     "width" / Int8ub,
+    ...     "height" / Int8ub,
+    ...     "pixels" / Array(this.width * this.height, Byte),
+    ... )
+    >>> format.build(dict(width=3,height=2,pixels=[7,8,9,11,12,13]))
+    b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
+    >>> format.parse(b'BMP\x03\x02\x07\x08\t\x0b\x0c\r')
+    Container(signature=b'BMP')(width=3)(height=2)(pixels=[7, 8, 9, 11, 12, 13])
+
+A ``Sequence`` is a collection of ordered fields, and differs from a ``Range`` in that latter is homogenous::
+
+    >>> format = PascalString(Byte, encoding="utf8") >> GreedyRange(Byte)
+    >>> format.build([u"lalalaland", [255,1,2]])
+    b'\nlalalaland\xff\x01\x02'
+    >>> format.parse(b"\x004361789432197")
+    ['', [52, 51, 54, 49, 55, 56, 57, 52, 51, 50, 49, 57, 55]]
+
+See more examples of `file formats <https://github.com/construct/construct/tree/master/construct/examples/formats>`_ and `network protocols <https://github.com/construct/construct/tree/master/construct/examples/protocols>`_ in the repository.
+
+
+Development and support
+-------------------------
+Please use the `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests, report issues and bugs, and to send in patches. There is also the `mailing list <https://groups.google.com/d/forum/construct3>`_ but GitHub should be preffered.
+
+Construct's main documentation is at `construct.readthedocs.org <http://construct.readthedocs.org>`_, where you can find all kinds of examples. The library itself is developed on `github <https://github.com/construct/construct>`_. Releases are also available on `pypi <https://pypi.python.org/pypi/construct>`_.
+
+`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a different project. It is a rewrite from scratch and belongs to another developer, it diverged from this project. As far as I can tell, it was not released yet.
+
 
 Requirements
-------------
+--------------
 Construct should run on any Python 2.6 2.7 3.3 3.4 3.5 and pypy pypy3 implementation.
+
 
 User Guide
 ==========
@@ -118,11 +112,12 @@ User Guide
 
    intro
    basics
+   advanced
    bitwise
    adapters
    meta
-   api/string
    misc
+   lazy
    extending
    debugging
 
@@ -132,10 +127,10 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
-   api/core
-   api/adapters
-   api/macros
+   api/strings
    api/debugging
+   api/core
+   api/lib
 
 Indices and tables
 ==================

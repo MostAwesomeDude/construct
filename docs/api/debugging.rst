@@ -1,5 +1,6 @@
 ================================
-``construct.debug`` -- Debugging
+Core API: Debugging
 ================================
 
 .. automodule:: construct.debug
+

@@ -1,11 +1,12 @@
-=======
-Strings
-=======
-
-Strings in Construct work very much like strings in other languages.
+===================
+Core API: Strings
+===================
 
 .. autofunction:: construct.String
 
 .. autofunction:: construct.PascalString
 
 .. autofunction:: construct.CString
+
+.. autofunction:: construct.GreedyString
+

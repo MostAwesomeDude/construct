@@ -8,8 +8,7 @@ Conditional
 Optional
 --------
 
-Attempts to parse or build the subconstruct; if it fails, returns a default
-value. By default, the default value is ``None``.
+Attempts to parse or build the subconstruct; if it fails, returns a default value. By default, the default value is ``None``.
 
 >>> foo = Optional(UBInt32("foo"))
 >>> foo.parse("\x12\x34\x56\x78")
@@ -27,8 +26,7 @@ None
 If
 --
 
-Parses or builds the subconstruct only if a certain condition is met.
-Otherwise, returns a default value. By default, the default value is ``None``.
+Parses or builds the subconstruct only if a certain condition is met. Otherwise, returns a default value. By default, the default value is ``None``.
 
 >>> foo = Struct("foo",
 ...     Flag("has_options"),
@@ -48,8 +46,7 @@ Container(has_options = False, options = None)
 IfThenElse
 ----------
 
-Branches the construction path based on a given condition. If the condition is
-met, the ``then_construct`` is used; otherwise the ``else_construct`` is used.
+Branches the construction path based on a given condition. If the condition is met, the ``then_construct`` is used; otherwise the ``else_construct`` is used.
 
 >>> foo = Struct("foo",
 ...     Byte("a"),
@@ -100,8 +97,7 @@ Container(a = 1, b = 2)
 Padding
 -------
 
-Padding is a sequence of bytes or bits that contains no data (its value is
-discarded), and is necessary only for padding, etc.
+Padding is a sequence of bytes or bits that contains no data (its value is discarded), and is necessary only for padding, etc.
 
 >>> foo = Struct("foo",
 ...     Byte("a"),
@@ -146,8 +142,7 @@ Container(a = 3, b = 3)
 Computed
 --------
 
-Represents a computed value. Value does not read or write anything to the
-stream; it only returns its computed value as the result.
+Represents a computed value. Value does not read or write anything to the stream; it only returns its computed value as the result.
 
 >>> foo = Struct("foo",
 ...     Byte("a"),
@@ -161,8 +156,7 @@ Container(a = 2, b = 9)
 Terminator
 ----------
 
-Asserts the end of the stream has been reached (so that no more trailing data
-is left unparsed).
+Asserts the end of the stream has been reached (so that no more trailing data is left unparsed).
 
 .. note:: Terminator is a singleton object. Do not try to "instantiate" it (i.e., ``Terminator()``).
 
@@ -188,9 +182,7 @@ None
 Const
 -----
 
-A constant value that is required to exist in the data. If the value is not
-matched, ConstError is raised. Useful for magic numbers, signatures, asserting
-correct protocol version, etc.
+A constant value that is required to exist in the data. If the value is not matched, ConstError is raised. Useful for magic numbers, signatures, asserting correct protocol version, etc.
 
 >>> foo = Const("jpegsignature", b"IHDR")
 >>> foo.parse(b"IHDR")
@@ -206,8 +198,7 @@ construct.extensions.ConstError: expected 'IHDR', found 'JPEG'
 Peek
 ----
 
-Parses the subconstruct but restores the stream position afterwards
-("peeking").
+Parses the subconstruct but restores the stream position afterwards ("peeking").
 
 .. note:: Works only with seekable streams (in-memory and files).
 
@@ -223,10 +214,7 @@ Container(a = 1, b = 2, c = 2)
 Union
 -----
 
-Treats the same data as multiple constructs (similar to C's union statement).
-When building, each subconstruct parses the same data (so you can "look" at
-the data in multiple views); when writing, the first subconstruct is used to
-build the final result.
+Treats the same data as multiple constructs (similar to C's union statement). When building, each subconstruct parses the same data (so you can "look" at the data in multiple views); when writing, the first subconstruct is used to build the final result.
 
 .. note:: Works only with seekable streams (in-memory and files).
 
@@ -251,27 +239,3 @@ Container:
 <-- only "a" is used for building
 '\x11"3D'
 
-
-LazyBound
----------
-
-A lazy-bound construct; it binds to the construct only at runtime. Useful for
-recursive data structures (like linked lists or trees), where a construct
-needs to refer to itself (while it doesn't exist yet).
-
->>> foo = Struct("foo",
-...     Flag("has_next"),
-...     If(lambda ctx: ctx["has_next"], LazyBound("next", lambda: foo)),
-... )
->>>
->>> print foo.parse("\x01\x01\x01\x00")
-Container:
-    has_next = True
-    next = Container:
-        has_next = True
-        next = Container:
-            has_next = True
-            next = Container:
-                has_next = False
-                next = None
->>>
