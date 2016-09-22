@@ -694,8 +694,8 @@ class TestCore(unittest.TestCase):
         assert raises(OneOf(Byte,[4,5,6,7]).build, 8) == ValidationError
 
     def test_hexdump(self):
-        assert HexDump(Bytes(6)).parse(b'abcdef') == '0000   61 62 63 64 65 66                                 abcdef\n'
-        assert HexDump(Bytes(6)).build(b'abcdef') == b'abcdef'
+        assert HexDump(Bytes(6)).parse(b'abcdef') == '0000   61 62 63 64 65 66                                 abcdef           \n'
+        assert HexDump(Bytes(6)).build('0000   61 62 63 64 65 66                                 abcdef           \n') == b'abcdef'
 
     def test_lazystruct(self):
         assert LazyStruct().parse(b"") == Struct().parse(b"")

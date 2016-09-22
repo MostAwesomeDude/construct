@@ -1,6 +1,5 @@
 """
-Extension 2 (ext2)
-Used in Linux systems
+Extension 2 (ext2) used in Linux systems
 """
 from construct import *
 

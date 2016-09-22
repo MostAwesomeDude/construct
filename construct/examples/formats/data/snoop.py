@@ -4,32 +4,30 @@ what : snoop v2 capture file.
  who : jesse@housejunkie.ca
 """
 
+from construct import *
 import time
-
-from construct import Adapter, Enum, Field, HexDumpAdapter, Const, OptionalGreedyRange, Padding, Struct, UBInt32
 
 
 class EpochTimeStampAdapter(Adapter):
     """ Convert epoch timestamp <-> localtime """
-
     def _decode(self, obj, context):
         return time.ctime(obj)
     def _encode(self, obj, context):
         return int(time.mktime(time.strptime(obj)))
 
-packet_record = Struct("packet_record",
-        UBInt32("original_length"),
-        UBInt32("included_length"),
-        UBInt32("record_length"),
-        UBInt32("cumulative_drops"),
-        EpochTimeStampAdapter(UBInt32("timestamp_seconds")),
-        UBInt32("timestamp_microseconds"),
-        HexDumpAdapter(Field("data", lambda ctx: ctx.included_length)),
+packet_record = "packet_record" / Struct(
+        "original_length" / Int32ub,
+        "included_length" / Int32ub,
+        "record_length" / Int32ub,
+        "cumulative_drops" / Int32ub,
+        "timestamp_seconds" / EpochTimeStampAdapter(Int32ub),
+        "timestamp_microseconds" / Int32ub,
+        "data" / HexDump(Bytes(this.included_length)),
         # 24 being the static length of the packet_record header
-        Padding(lambda ctx: ctx.record_length - ctx.included_length - 24),
+        Padding(this.record_length - this.included_length - 24),
     )
 
-datalink_type = Enum(UBInt32("datalink"),
+datalink_type = "datalink" / Enum(Int32ub, dict(
         IEEE802dot3 = 0,
         IEEE802dot4 = 1,
         IEEE802dot5 = 2,
@@ -41,11 +39,12 @@ datalink_type = Enum(UBInt32("datalink"),
         FDDI = 8,
         OTHER = 9,
         UNASSIGNED = 10,
+    ))
+
+snoop_file = Struct(
+        "signature" / Const(b"snoop\x00\x00\x00"),
+        "version" / Int32ub, # snoop v1 is deprecated
+        datalink_type,
+        GreedyRange(packet_record),
     )
 
-snoop_file = Struct("snoop",
-        Const(b"snoop\x00\x00\x00"),
-        UBInt32("version"), # snoop v1 is deprecated
-        datalink_type,
-        OptionalGreedyRange(packet_record),
-    )

@@ -1,15 +1,17 @@
-# fat.py; ad-hoc fat16 reader
-#    by Bram Westerbaan <bram@westerbaan.name> 
-#
-# references:
-#   http://en.wikipedia.org/wiki/File_Allocation_Table
-#   http://www.ecma-international.org/publications/standards/Ecma-107.htm
-#
-# example:
-#    with open("/dev/sdc1") as file:
-#        fs = FatFs(file)
-#        for rootdir in fs:
-#            print rootdir
+"""
+fat.py; ad-hoc fat16 reader
+   by Bram Westerbaan <bram@westerbaan.name> 
+
+references:
+  http://en.wikipedia.org/wiki/File_Allocation_Table
+  http://www.ecma-international.org/publications/standards/Ecma-107.htm
+
+example:
+   with open("/dev/sdc1", "rb") as file:
+       fs = FatFs(file)
+       for rootdir in fs:
+           print rootdir
+"""
 import numbers
 from io import BytesIO, BufferedReader
 
@@ -90,6 +92,7 @@ def PreDataRegion(name):
             Array(lambda ctx: (ctx.rootdirEntryCount*rde.sizeof()) 
                 / ctx.sectorSize, rde))
 
+
 class File(object):
     def __init__(self, dirEntry, fs):
         self.fs = fs
@@ -123,6 +126,7 @@ class File(object):
     def __str__(self):
         return "&%s %s" % (self.dirEntry.firstCluster, self.name)
 
+
 class Directory(File):
     def __init__(self, dirEntry, fs, children=None):
         super(Directory, self).__init__(dirEntry, fs)
@@ -146,7 +150,8 @@ class Directory(File):
     
     def __iter__(self):
         return iter(self.children)
-    
+
+
 class FatFs(Directory):
     def __init__(self, stream):
         self.stream = stream
@@ -224,3 +229,4 @@ class FatFs(Directory):
     @property
     def name(self):
         return ""
+

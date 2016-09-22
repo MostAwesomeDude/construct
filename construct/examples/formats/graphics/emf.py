@@ -4,7 +4,7 @@ Enhanced Meta File
 from construct import *
 
 
-record_type = Enum(ULInt32("record_type"),
+record_type = "record_type" / Enum(Int32ul, dict(
     ABORTPATH = 68,
     ANGLEARC = 41,
     ARC = 45,
@@ -101,62 +101,50 @@ record_type = Enum(ULInt32("record_type"),
     STROKEANDFILLPATH = 63,
     STROKEPATH = 64,
     WIDENPATH = 66,
-    _default_ = Pass,
-)
+), default=Pass)
 
-generic_record = Struct("records",
+generic_record = "records" / Struct(
     record_type,
-    ULInt32("record_size"),      # Size of the record in bytes 
-    Array(lambda ctx: (ctx.record_size - 8) // 4, ULInt32("params")),
-    # Union("params",              # Parameters
-    #     Field("raw", lambda ctx: ctx._.record_size - 8),
-    #     Array(lambda ctx: (ctx._.record_size - 8) // 4, ULInt32("params")),
-    # ),
+    "record_size" / Int32ul,      # Size of the record in bytes 
+    "params" / RawCopy(Array((this.record_size - 8) // 4, Int32ul)),
 )
 
-header_record = Struct("header_record",
+header_record = "header_record" / Struct(
     Const(record_type, "HEADER"),
-    ULInt32("record_size"),              # Size of the record in bytes 
-    SLInt32("bounds_left"),              # Left inclusive bounds 
-    SLInt32("bounds_right"),             # Right inclusive bounds 
-    SLInt32("bounds_top"),               # Top inclusive bounds 
-    SLInt32("bounds_bottom"),            # Bottom inclusive bounds 
-    SLInt32("frame_left"),               # Left side of inclusive picture frame 
-    SLInt32("frame_right"),              # Right side of inclusive picture frame 
-    SLInt32("frame_top"),                # Top side of inclusive picture frame 
-    SLInt32("frame_bottom"),             # Bottom side of inclusive picture frame 
-    Const(ULInt32("signature"), 0x464D4520),
-    ULInt32("version"),                  # Version of the metafile 
-    ULInt32("size"),                     # Size of the metafile in bytes 
-    ULInt32("num_of_records"),           # Number of records in the metafile 
-    ULInt16("num_of_handles"),           # Number of handles in the handle table 
+    "record_size" / Int32ul,              # Size of the record in bytes 
+    "bounds_left" / Int32sl,              # Left inclusive bounds 
+    "bounds_right" / Int32sl,             # Right inclusive bounds 
+    "bounds_top" / Int32sl,               # Top inclusive bounds 
+    "bounds_bottom" / Int32sl,            # Bottom inclusive bounds 
+    "frame_left" / Int32sl,               # Left side of inclusive picture frame 
+    "frame_right" / Int32sl,              # Right side of inclusive picture frame 
+    "frame_top" / Int32sl,                # Top side of inclusive picture frame 
+    "frame_bottom" / Int32sl,             # Bottom side of inclusive picture frame 
+    "signature" / Const(Int32ul, 0x464D4520),
+    "version" / Int32ul,                  # Version of the metafile 
+    "size" / Int32ul,                     # Size of the metafile in bytes 
+    "num_of_records" / Int32ul,           # Number of records in the metafile 
+    "num_of_handles" / Int16ul,           # Number of handles in the handle table 
     Padding(2),
-    ULInt32("description_size"),         # Size of description string in WORDs 
-    ULInt32("description_offset"),       # Offset of description string in metafile 
-    ULInt32("num_of_palette_entries"),   # Number of color palette entries 
-    SLInt32("device_width_pixels"),      # Width of reference device in pixels 
-    SLInt32("device_height_pixels"),     # Height of reference device in pixels 
-    SLInt32("device_width_mm"),          # Width of reference device in millimeters
-    SLInt32("device_height_mm"),         # Height of reference device in millimeters
+    "description_size" / Int32ul,         # Size of description string in WORDs 
+    "description_offset" / Int32ul,       # Offset of description string in metafile 
+    "num_of_palette_entries" / Int32ul,   # Number of color palette entries 
+    "device_width_pixels" / Int32sl,      # Width of reference device in pixels 
+    "device_height_pixels" / Int32sl,     # Height of reference device in pixels 
+    "device_width_mm" / Int32sl,          # Width of reference device in millimeters
+    "device_height_mm" / Int32sl,         # Height of reference device in millimeters
     
-    # description string
-    Pointer(lambda ctx: ctx.description_offset,
-        String("description", lambda ctx: ctx.description_size * 2),
-        # StringAdapter(
-        #     Array(lambda ctx: ctx.description_size,
-        #         Field("description", 2)
-        #     )
-        # )
+    "description" / Pointer(this.description_offset,
+        String(this.description_size * 2),
     ),
     
     # padding up to end of record
-    Padding(lambda ctx: ctx.record_size - 88),
+    Padding(this.record_size - 88),
 )
 
-emf_file = Struct("emf_file",
+emf_file = "emf_file" / Struct(
     header_record,
-    Array(lambda ctx: ctx.header_record.num_of_records - 1, 
-        generic_record
-    ),
+    Array(this.header_record.num_of_records - 1, generic_record),
 )
+
 

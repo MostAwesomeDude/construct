@@ -1,56 +1,29 @@
 """
 tcpdump capture file
 """
-import time
-from datetime import datetime
-
 from construct import *
+import time, datetime
 
 
 class MicrosecAdapter(Adapter):
     def _decode(self, obj, context):
-        return datetime.fromtimestamp(obj[0] + (obj[1] / 1000000.0))
+        return datetime.datetime.fromtimestamp(obj[0] + (obj[1] / 1000000.0))
     def _encode(self, obj, context):
         offset = time.mktime(*obj.timetuple())
         sec = int(offset)
         usec = (offset - sec) * 1000000
         return (sec, usec)
 
-packet = Struct("packet",
-    MicrosecAdapter(
-        Sequence("time", 
-            ULInt32("time"),
-            ULInt32("usec"),
-        )
-    ),
-    ULInt32("length"),
+packet = Struct(
+    MicrosecAdapter("time"/Int32ul >> "usec"/Int32ul),
+    "length" / Int32ul,
     Padding(4),
-    HexDumpAdapter(Field("data", lambda ctx: ctx.length)),
+    "data" / HexDump(Bytes(this.length)),
 )
 
-cap_file = Struct("cap_file",
+cap_file = Struct(
     Padding(24),
-    Rename("packets", OptionalGreedyRange(packet)),
+    "packets" / GreedyRange(packet),
 )
-
-
-if __name__ == "__main__":
-    obj = cap_file.parse_stream(open("../../tests/cap2.cap", "rb"))
-    print(len(obj.packets))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

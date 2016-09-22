@@ -10,33 +10,44 @@ def hexdump(data, linesize):
     r"""
     Turns bytes into a unicode string of the format:
 
-    >>> print(hexdump(b'0' * 100, 16))
+    >>>print(hexdump(b'0' * 100, 16))
     0000   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
     0010   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
     0020   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
     0030   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
     0040   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
     0050   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
-    0060   30 30 30 30                                       0000
+    0060   30 30 30 30                                       0000             
     """
     prettylines = []
-    if len(data) < 65536:
-        fmt = "%%04X   %%-%ds   %%s"
-    else:
-        fmt = "%%08X   %%-%ds   %%s"
-    fmt = fmt % (3 * linesize - 1,)
+    fmt = "%%04X   %%-%ds   %%s" % (3 * linesize - 1,)
+    fmtlinesize = 7 + 3*linesize + 3 + linesize
     for i in range(0, len(data), linesize):
         line = data[i:i+linesize]
         hextext = " ".join('%02x' % b for b in iterateints(line))
         rawtext = "".join(_printable[b] for b in iterateints(line))
         prettylines.append(fmt % (i, str(hextext), str(rawtext)))
+    if prettylines:
+        prettylines[-1] = prettylines[-1].ljust(fmtlinesize)
     prettylines.append("")
     return "\n".join(prettylines)
 
 
+def hexundump(data, linesize):
+    r"""
+    Reverse of ``hexdump()``.
+    """
+    raw = []
+    fmtlinesize = 7 + 3*linesize + 3 + linesize
+    for line in data.split("\n"):
+        bytes = [int2byte(int(s,16)) for s in line[7:7+3*linesize].split()]
+        raw.extend(bytes)
+    return b"".join(raw)
+
+
 class HexString(bytes):
     r"""
-    Represents bytes that will be hex-dumped to a string when its string representation is requested.
+    Represents bytes that will be hex-dumped when parsing, and un-dumped when building.
 
     See hexdump().
     """
