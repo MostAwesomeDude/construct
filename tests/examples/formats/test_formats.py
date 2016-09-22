@@ -38,13 +38,10 @@ class TestFormats(unittest.TestCase):
         self.common(emf_file, "emf1.emf")
 
     def test_bitmap(self):
-        self.common(bitmap_file, "bitmap8.bmp")
-        self.common(bitmap_file, "bitmap24.bmp")
-
-    @pytest.mark.xfail(reason="unknown")
-    def test_bitmap_2(self):
         self.common(bitmap_file, "bitmap1.bmp")
         self.common(bitmap_file, "bitmap4.bmp")
+        self.common(bitmap_file, "bitmap8.bmp")
+        self.common(bitmap_file, "bitmap24.bmp")
 
     def test_mbr(self):
         self.common(mbr_format, "mbr1")

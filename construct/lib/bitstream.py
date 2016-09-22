@@ -3,7 +3,7 @@ from time import sleep
 
 
 class RestreamedBytesIO:
-    __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer"]
+    __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer","sincereadwritten"]
 
     def __init__(self, substream, encoder, encoderunit, decoder, decoderunit):
         self.substream = substream
@@ -13,6 +13,7 @@ class RestreamedBytesIO:
         self.decoderunit = decoderunit
         self.rbuffer = b""
         self.wbuffer = b""
+        self.sincereadwritten = 0
 
     def read(self, count):
         if count < 0:
@@ -20,6 +21,7 @@ class RestreamedBytesIO:
         while len(self.rbuffer) < count:
             self.rbuffer += self.decoder(self.substream.read(self.decoderunit))
         data, self.rbuffer = self.rbuffer[:count], self.rbuffer[count:]
+        self.sincereadwritten += count
         return data
 
     def write(self, data):
@@ -28,6 +30,7 @@ class RestreamedBytesIO:
         while len(self.wbuffer) >= self.encoderunit:
             data, self.wbuffer = self.wbuffer[:self.encoderunit], self.wbuffer[self.encoderunit:]
             self.substream.write(self.encoder(data))
+        self.sincereadwritten += datalen
         return datalen
 
     def close(self):
@@ -39,8 +42,13 @@ class RestreamedBytesIO:
     def seekable(self):
         return False
 
+    def tell(self):
+        """WARNING: tell is correct only on read-only and write-only instances."""
+        return self.sincereadwritten
+
     def tellable(self):
-        return False
+        return True
+
 
 
 
