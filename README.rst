@@ -1,5 +1,6 @@
-Construct2
-==========
+Construct 2.8
+=============
+
 Construct is a powerful **declarative** parser (and builder) for binary data.
 
 Instead of writing *imperative code* to parse a piece of data, you declaratively define a *data structure* that describes your data. As this data structure is not code, you can use it in one direction to *parse* data into Pythonic objects, and in the other direction, build objects into binary data.

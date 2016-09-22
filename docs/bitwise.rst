@@ -70,8 +70,8 @@ Octet
  An sequence of 8 bits (byte)
 
 
-Fields that work with both bits and bytes
-=========================================
+Fields that do both
+===================
 
 Most simple fields (such as Flag, Padding, Terminator, etc.) are ignorant to the granularity of the data they operate on. The actual granularity depends on the enclosing layers.
 
