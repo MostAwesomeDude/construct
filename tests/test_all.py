@@ -303,13 +303,20 @@ class TestCore(unittest.TestCase):
         assert RawCopy(Byte).build(dict(value=255)) == b"\xff"
         assert RawCopy(Byte).sizeof() == 1
 
-    def test_anchor(self):
-        assert Anchor.parse(b"") == 0
-        assert Anchor.build(None) == b""
-        assert Anchor.sizeof() == 0
-        assert Struct("a"/Anchor, "b"/Byte, "c"/Anchor).parse(b"\xff") == Container(a=0)(b=255)(c=1)
-        assert Struct("a"/Anchor, "b"/Byte, "c"/Anchor).build(Container(a=0)(b=255)(c=1)) == b"\xff"
-        assert Struct("a"/Anchor, "b"/Byte, "c"/Anchor).build(dict(b=255)) == b"\xff"
+    def test_tell(self):
+        assert Tell.parse(b"") == 0
+        assert Tell.build(None) == b""
+        assert Tell.sizeof() == 0
+        assert Struct("a"/Tell, "b"/Byte, "c"/Tell).parse(b"\xff") == Container(a=0)(b=255)(c=1)
+        assert Struct("a"/Tell, "b"/Byte, "c"/Tell).build(Container(a=0)(b=255)(c=1)) == b"\xff"
+        assert Struct("a"/Tell, "b"/Byte, "c"/Tell).build(dict(b=255)) == b"\xff"
+
+    def test_seek(self):
+        assert (Seek(5) >> Byte).parse(b"01234x") == [5,120]
+        assert (Bytes(10) >> Seek(5) >> Byte).build([b"0123456789",None,255]) == b"01234\xff6789"
+        assert Seek(5).parse(b"") == 5
+        assert Seek(5).build(None) == b""
+        assert raises(Seek(5).sizeof) == SizeofError
 
     def test_pass(self):
         assert Pass.parse(b"") == None
@@ -910,7 +917,7 @@ class TestCore(unittest.TestCase):
                 1: Int16ub,
                 2: Int32ub,
             }),
-            "length" / Anchor,
+            "length" / Tell,
         )
         assert Header.parse(b"\x00\x05")             == Container(type=0)(size=5)(length=2)
         assert Header.parse(b"\x01\x00\x05")         == Container(type=1)(size=5)(length=3)

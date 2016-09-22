@@ -1630,6 +1630,57 @@ class Peek(Subconstruct):
         return 0
 
 
+@singleton
+class Tell(Construct):
+    r"""
+    Gets the stream position when parsing or building.
+
+    Tells are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute.
+
+    .. seealso:: Better to use :func:`~construct.core.CopyRaw` wrapper in almost any case.
+
+    Example::
+
+        >>> Struct("num"/VarInt, "offset"/Tell).build(dict(num=88))
+        b'X'
+        >>> Struct("num"/VarInt, "offset"/Tell).parse(_)
+        Container(num=88)(offset=1)
+    """
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.flagbuildnone = True
+    def _parse(self, stream, context):
+        return stream.tell()
+    def _build(self, obj, stream, context):
+        return stream.tell()
+    def _sizeof(self, context):
+        return 0
+
+
+class Seek(Construct):
+    r"""
+    Sets a new stream position when parsing or building. Seeks are useful when many other fields follow the jump. Pointer works when there is only one field to look at, but when there is more to be done, Seek may come useful.
+
+    .. seealso:: Analog :func:`~construct.core.Pointer` wrapper that has same side effect but also processed a subcon.
+
+    Example::
+
+        >>> (Seek(5) >> Byte).parse(b"01234x")
+        [5, 120]
+        >>> (Bytes(10) >> Seek(5) >> Byte).build([b"0123456789", None, 255])
+        b'01234\xff6789'
+    """
+    def __init__(self, at):
+        super(Seek, self).__init__()
+        self.at = at
+    def _parse(self, stream, context):
+        at = self.at(context) if callable(self.at) else self.at
+        return stream.seek(at)
+    def _build(self, obj, stream, context):
+        at = self.at(context) if callable(self.at) else self.at
+        return stream.seek(at)
+
+
 class Restreamed(Subconstruct):
     r"""
     Transforms bytes between the underlying stream and the subcon.
@@ -1795,33 +1846,6 @@ class Const(Subconstruct):
         return self.subcon._build(self.value, stream, context)
     def _sizeof(self, context):
         return self.subcon._sizeof(context)
-
-
-@singleton
-class Anchor(Construct):
-    r"""
-    Gets the stream position when parsing or building.
-
-    Anchors are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use an Anchor plus a relative offset. To get a size, place two Anchors and measure their difference using a Compute.
-
-    .. seealso:: Better to use :func:`~construct.core.CopyRaw` wrapper.
-
-    Example::
-
-        >>> Struct("num"/VarInt, "offset"/Anchor).build(dict(num=88))
-        b'X'
-        >>> Struct("num"/VarInt, "offset"/Anchor).parse(_)
-        Container(num=88)(offset=1)
-    """
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        self.flagbuildnone = True
-    def _parse(self, stream, context):
-        return stream.tell()
-    def _build(self, obj, stream, context):
-        return stream.tell()
-    def _sizeof(self, context):
-        return 0
 
 
 class Computed(Construct):

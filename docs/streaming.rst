@@ -15,11 +15,17 @@ Pointer allows for non-sequential construction. The pointer first changes the st
 .. autoclass:: construct.core.Pointer
 
 
-Anchor
-------
 
-Anchor is not really a meta construct, but it strongly coupled with Pointer, so I chose to list it here. Anchor simply returns the stream position at the moment it's invoked, so Pointers can "anchor" relative offsets to absolute stream positions using it. See the following example:
 
-.. autoclass:: construct.core.Anchor
+Pure side effects
+-----------------
+
+Seek makes a jump within the stream and leave it at point. It does not parse or build anything by itself.
+
+.. autoclass:: construct.core.Seek
+
+Tell checks the current stream position and returns it, also to the context. It does not parse or build anything by itself.
+
+.. autofunction:: construct.core.Tell
 
 
