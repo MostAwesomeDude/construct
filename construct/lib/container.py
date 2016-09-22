@@ -33,7 +33,7 @@ class Container(dict):
         
         Container(name="anonymous")(age=21)
 
-        # This is NOT correct because keyword arguments order is not preserved.
+        # This will NOT preserve order, although equality does check order. But pretty-printing will be affected.
         Container(name="anonymous", age=21)
 
         Container(container2)

@@ -117,6 +117,7 @@ User Guide
    adapters
    meta
    misc
+   streaming
    lazy
    extending
    debugging
@@ -128,6 +129,7 @@ API Reference
    :maxdepth: 2
 
    api/strings
+   api/repeaters
    api/debugging
    api/core
    api/lib

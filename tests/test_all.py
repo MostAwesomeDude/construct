@@ -860,7 +860,18 @@ class TestCore(unittest.TestCase):
         assert Ident.sizeof() == 1
 
     def test_ipaddress(self):
-        IpAddress = ExprAdapter(Array(4,Byte), 
+        class IpAddressAdapter(Adapter):
+            def _encode(self, obj, context):
+                return list(map(int, obj.split(".")))
+            def _decode(self, obj, context):
+                return "{0}.{1}.{2}.{3}".format(*obj)
+        IpAddress = IpAddressAdapter(Byte[4])
+
+        assert IpAddress.parse(b"\x7f\x80\x81\x82") == "127.128.129.130"
+        assert IpAddress.build("127.1.2.3") == b"\x7f\x01\x02\x03"
+        assert IpAddress.sizeof() == 4
+
+        IpAddress = ExprAdapter(Byte[4], 
             encoder = lambda obj,ctx: list(map(int, obj.split("."))),
             decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj), )
 

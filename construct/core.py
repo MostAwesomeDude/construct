@@ -1315,6 +1315,17 @@ def BitStruct(*subcons):
         Container(field=5)
         >>> BitStruct("field"/Octet).sizeof()
         1
+
+        >>> format = BitStruct(
+        ...     "a" / Flag,
+        ...     "b" / Nibble,
+        ...     "c" / BitsInteger(10),
+        ...     "d" / Padding(1),
+        ... )
+        >>> format.parse(b"\xbe\xef")
+        Container(a=True)(b=7)(c=887)(d=None)
+        >>> format.sizeof()
+        2
     """
     return Bitwise(Struct(*subcons))
 

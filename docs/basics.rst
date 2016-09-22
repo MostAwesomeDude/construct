@@ -223,16 +223,39 @@ Like Structs, Sequences are compatible with the Embedded wrapper. Embedding one 
 Repeaters
 =========
 
-Repeaters, as their name suggests, repeat a given unit for a specified number of times. At this point, we'll only cover static repeaters where count is a constant int. Meta-repeaters take values at parse/build time from the context and they will be covered in the meta-constructs tutorial.
+Repeaters, as their name suggests, repeat a given unit for a specified number of times. At this point, we'll only cover static repeaters where count is a constant int. Meta-repeaters take values at parse/build time from the context and they will be covered in the meta-constructs tutorial. Ranges differ from Sequences in that they are homogenous, they process elements of same kind. We have four kinds of repeaters. For those of you who wish to look under the hood, two of these repeaters are actually wrappers around Range.
 
-We have four kinds of repeaters. In fact, for those of you who wish to look under the hood, two of these repeaters are actually wrappers around Range.
+Arrays have a fixed constant count of elements. Operator `[]` is used instead of calling the `Array` class.
 
-.. autofunction:: construct.Array
+>>> Byte[10].parse(b"1234567890")
+[49, 50, 51, 52, 53, 54, 55, 56, 57, 48]
+>>> Byte[10].build([1,2,3,4,5,6,7,8,9,0])
+b'\x01\x02\x03\x04\x05\x06\x07\x08\t\x00'
 
-.. autofunction:: construct.Range
+Ranges are similar but they take a range (pun) of element counts. User can specify the minimum and maximum count.
 
-.. autofunction:: construct.GreedyRange
+>>> Byte[3:5].parse(b"1234")
+[49, 50, 51, 52]
+>>> Byte[3:5].parse(b"12")
+construct.core.RangeError: expected 3 to 5, found 2
+>>> Byte[3:5].build([1,2,3,4,5,6,7])
+construct.core.RangeError: expected from 3 to 5 elements, found 7
 
-.. autofunction:: construct.RepeatUntil
+GreedyRange is essentially a Range from 0 to infinity.
+
+>>> Byte[:].parse(b"dsadhsaui")
+[100, 115, 97, 100, 104, 115, 97, 117, 105]
+>>> Byte[:].min
+0
+>>> Byte[:].max
+9223372036854775807
+
+RepeatUntil is different than the others. Each element is tested by a lambda predicate. The predicate signals when a given element is the terminal element. The repeater inserts all previous items along with the terminal one, and returns just the same.
+
+>>> RepeatUntil(lambda obj,ctx: obj > 10, Byte).parse(b"\x01\x05\x08\xff\x01\x02\x03")
+[1, 5, 8, 255]
+>>> RepeatUntil(lambda obj,ctx: obj > 10, Byte).build(range(20))
+b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b'
+
 
 
