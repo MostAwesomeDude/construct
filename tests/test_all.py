@@ -219,7 +219,6 @@ class TestCore(unittest.TestCase):
         assert raises(Byte[2:].parse, b"") == RangeError
         assert raises(Byte[2:].build, []) == RangeError
 
-
         assert Range(3, 5, Byte).parse(b"\x01\x02\x03") == [1,2,3]
         assert Range(3, 5, Byte).parse(b"\x01\x02\x03\x04") == [1,2,3,4]
         assert Range(3, 5, Byte).parse(b"\x01\x02\x03\x04\x05") == [1,2,3,4,5]
@@ -691,6 +690,14 @@ class TestCore(unittest.TestCase):
         assert GreedyString(encoding="utf8").build(u"hello\x00") == b"hello\x00"
         assert GreedyString(encoding="utf8").build(u"") == b""
         assert raises(GreedyString().sizeof) == SizeofError
+
+    def test_globally_encoded_strings(self):
+        setglobalstringencoding("utf8")
+        assert String(20).build(u"Афон") == String(20, encoding="utf8").build(u"Афон")
+        assert PascalString(VarInt).build(u"Афон") == PascalString(VarInt, encoding="utf8").build(u"Афон")
+        assert CString().build(u"Афон") == CString(encoding="utf8").build(u"Афон")
+        assert GreedyString().build(u"Афон") == GreedyString(encoding="utf8").build(u"Афон")
+        setglobalstringencoding(None)
 
     def test_lazybound(self):
         assert LazyBound(lambda ctx: Byte).parse(b"\x01") == 1

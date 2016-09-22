@@ -55,7 +55,7 @@ b'39217839219...'
 Strings
 ========
 
-.. warning:: Strings in Construct work very much like strings in other languages. Be warned however, that Python 2 used byte strings that are now called `bytes`. Python 3 introduced unicode strings which require an encoding to be used, utf-8 being the best option. When no encoding is provided on Python 3, those constructs work on bytes string similar to Bytes and GreedyBytes fields.
+.. warning:: Strings in Construct work very much like strings in other languages. Be warned however, that Python 2 used byte strings that are now called `bytes`. Python 3 introduced unicode strings which require an encoding to be used, utf-8 being the best option. When no encoding is provided on Python 3, those constructs work on bytes string similar to Bytes and GreedyBytes fields. Encoding can be set once, globally using :func:`~construct.core.setglobalstringencoding`.
 
 String is a fixed-length construct that pads builded string with null bytes, and strips those same null bytes when parsing. Note that some encodings do not work properly because they return null bytes within the encoded stream, utf-16 and utf-32 for example.
 

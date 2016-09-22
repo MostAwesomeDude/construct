@@ -2748,6 +2748,17 @@ class NoneOf(Validator):
 #===============================================================================
 # strings
 #===============================================================================
+globalstringencoding = None
+
+
+def setglobalstringencoding(encoding):
+    r"""
+    Sets the encoding globally for all String PascalString CString GreedyString instances.
+    """
+    global globalstringencoding
+    globalstringencoding = encoding
+
+
 class StringEncoded(Adapter):
     """Used internally."""
     __slots__ = ["encoding"]
@@ -2755,20 +2766,22 @@ class StringEncoded(Adapter):
         super(StringEncoded, self).__init__(subcon)
         self.encoding = encoding
     def _decode(self, obj, context):
-        if self.encoding:
-            if isinstance(self.encoding, str):
-                obj = obj.decode(self.encoding)
+        encoding = globalstringencoding or self.encoding
+        if encoding:
+            if isinstance(encoding, str):
+                obj = obj.decode(encoding)
             else:
-                obj = self.encoding.decode(obj)
+                obj = encoding.decode(obj)
         return obj
     def _encode(self, obj, context):
+        encoding = globalstringencoding or self.encoding
         if not isinstance(obj, bytes):
-            if not self.encoding:
+            if not encoding:
                 raise StringError("no encoding provided when processing a unicode obj")
-            if isinstance(self.encoding, str):
-                obj = obj.encode(self.encoding)
+            if isinstance(encoding, str):
+                obj = obj.encode(encoding)
             else:
-                obj = self.encoding.encode(obj)
+                obj = encoding.encode(obj)
         return obj
 
 
