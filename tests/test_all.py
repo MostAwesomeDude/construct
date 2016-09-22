@@ -790,25 +790,25 @@ class TestCore(unittest.TestCase):
         assert Flag.sizeof() == 1
 
     def test_enum(self):
-        assert Enum(Byte, dict(q=3,r=4,t=5)).parse(b"\x04") == "r"
-        assert Enum(Byte, dict(q=3,r=4,t=5)).build("r") == b"\x04"
-        assert Enum(Byte, dict(q=3,r=4,t=5)).build(4) == b"\x04"
-        assert raises(Enum(Byte, dict(q=3,r=4,t=5)).parse, b"\x07") == MappingError
-        assert raises(Enum(Byte, dict(q=3,r=4,t=5)).build, "spam") == MappingError
-        assert Enum(Byte, dict(q=3,r=4,t=5), default="spam").parse(b"\x07") == "spam"
-        assert Enum(Byte, dict(q=3,r=4,t=5), default=9).build("spam") == b"\x09"
-        assert Enum(Byte, dict(q=3,r=4,t=5), default=Pass).parse(b"\x07") == 7
-        assert Enum(Byte, dict(q=3,r=4,t=5), default=Pass).build(9) == b"\x09"
-        assert Enum(Byte, dict(q=3,r=4,t=5)).sizeof() == 1
+        assert Enum(Byte, q=3,r=4,t=5).parse(b"\x04") == "r"
+        assert Enum(Byte, q=3,r=4,t=5).build("r") == b"\x04"
+        assert Enum(Byte, q=3,r=4,t=5).build(4) == b"\x04"
+        assert raises(Enum(Byte, q=3,r=4,t=5).parse, b"\x07") == MappingError
+        assert raises(Enum(Byte, q=3,r=4,t=5).build, "spam") == MappingError
+        assert Enum(Byte, q=3,r=4,t=5, default="spam").parse(b"\x07") == "spam"
+        assert Enum(Byte, q=3,r=4,t=5, default=9).build("spam") == b"\x09"
+        assert Enum(Byte, q=3,r=4,t=5, default=Pass).parse(b"\x07") == 7
+        assert Enum(Byte, q=3,r=4,t=5, default=Pass).build(9) == b"\x09"
+        assert Enum(Byte, q=3,r=4,t=5).sizeof() == 1
 
     def test_flagsenum(self):
-        assert FlagsEnum(Byte, dict(a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128)).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
-        assert FlagsEnum(Byte, dict(a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128)).build(FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)) == b'\x81'
-        assert FlagsEnum(Byte, dict(feature=4,output=2,input=1)).parse(b'\x04') == FlagsContainer(output=False,feature=True,input=False)
-        assert FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build(dict(feature=True, output=True, input=False)) == b'\x06'
-        assert FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build(dict(feature=True)) == b'\x04'
-        assert FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build(dict()) == b'\x00'
-        assert raises(FlagsEnum(Byte, dict(feature=4,output=2,input=1)).build, dict(unknown=True)) == MappingError
+        assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
+        assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).build(FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)) == b'\x81'
+        assert FlagsEnum(Byte, feature=4,output=2,input=1).parse(b'\x04') == FlagsContainer(output=False,feature=True,input=False)
+        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True, output=True, input=False)) == b'\x06'
+        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True)) == b'\x04'
+        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict()) == b'\x00'
+        assert raises(FlagsEnum(Byte, feature=4,output=2,input=1).build, dict(unknown=True)) == MappingError
 
     @pytest.mark.xfail(PYPY, reason="numpy not on Travis pypy")
     def test_numpy(self):

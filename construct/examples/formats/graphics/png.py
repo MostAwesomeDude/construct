@@ -17,7 +17,7 @@ coord = Struct(
     "y" / Int32ub,
 )
 
-compression_method = "compression_method" / Enum(Byte, dict(deflate = 0), default=Pass)
+compression_method = "compression_method" / Enum(Byte, deflate = 0, default=Pass)
 
 
 #===============================================================================
@@ -117,12 +117,13 @@ sbit_info = "sbit_info" / Switch(this._.image_header.color_type,
 # 11.3.3.5: sRGB - Standard RPG color space
 #===============================================================================
 srgb_info = "srgb_info" / Struct(
-    "rendering_intent" / Enum(Byte, dict(
+    "rendering_intent" / Enum(Byte,
         perceptual = 0,
         relative_colorimetric = 1,
         saturation = 2,
         absolute_colorimetric = 3,
-    ), default=Pass),
+        default=Pass
+    ),
 )
 
 #===============================================================================
@@ -196,7 +197,7 @@ hist_info = "frequency" / Array(this._.length / 2, Int16ub,
 phys_info = "phys_info" / Struct(
     "pixels_per_unit_x" / Int32ub,
     "pixels_per_unit_y" / Int32ub,
-    "unit" / Enum(Byte, dict(unknown = 0, meter = 1), default = Pass),
+    "unit" / Enum(Byte, unknown = 0, meter = 1, default = Pass),
 )
 
 #===============================================================================
@@ -285,18 +286,18 @@ image_header_chunk = "image_header" / Struct(
     "width" / Int32ub,
     "height" / Int32ub,
     "bit_depth" / Byte,
-    "color_type" / Enum(Byte, dict(
+    "color_type" / Enum(Byte,
         greyscale = 0,
         truecolor = 2,
         indexed = 3,
         greywithalpha = 4,
         truewithalpha = 6,
-        ), default = Pass,
+        default = Pass,
     ),
     compression_method,
     # "adaptive filtering with five basic filter types"
-    "filter_method" / Enum(Byte, dict(adaptive5 = 0), default = Pass),
-    "interlace_method" / Enum(Byte, dict(none = 0, adam7 = 1), default = Pass),
+    "filter_method" / Enum(Byte, adaptive5 = 0, default = Pass),
+    "interlace_method" / Enum(Byte, none = 0, adam7 = 1, default = Pass),
     "crc" / Int32ub,
 )
 

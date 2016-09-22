@@ -10,16 +10,16 @@ from construct import *
 mbr_format = "mbr" / Struct(
     "bootloader_code" / HexDump(Bytes(446)),
     "partitions" / Array(4, Struct(
-        "state" / Enum(Byte, dict(
+        "state" / Enum(Byte,
             INACTIVE = 0x00,
             ACTIVE = 0x80,
-        )),
+        ),
         "beginning" / BitStruct(
             "head" / Octet,
             "sect" / BitsInteger(6),
             "cyl" / BitsInteger(10),
         ),
-        "type" / Enum(Byte, dict(
+        "type" / Enum(Byte,
             Nothing = 0x00,
             FAT12 = 0x01,
             XENIX_ROOT = 0x02,
@@ -32,7 +32,8 @@ mbr_format = "mbr" / Struct(
             NTFS = 0x07,
             LINUX_SWAP = 0x82,
             LINUX_NATIVE = 0x83,
-        ), default=Pass),
+            default=Pass,
+        ),
         "ending" / BitStruct(
             "head" / Octet,
             "sect" / BitsInteger(6),

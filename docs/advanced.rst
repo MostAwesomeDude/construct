@@ -66,12 +66,12 @@ Other short fields
 >>> Flag.parse(b"\x01")
 True
 
->>> Enum(Byte, dict(g=8,h=11)).parse(b"\x08")
+>>> Enum(Byte, g=8, h=11).parse(b"\x08")
 'g'
->>> Enum(Byte, dict(g=8,h=11)).build(11)
+>>> Enum(Byte, g=8, h=11).build(11)
 b'\x0b'
 
->>> FlagsEnum(Byte,dict(a=1,b=2,c=4,d=8)).parse(b"\x03")
-Container(c=False)(d=False)(b=True)(a=True)
+>>> FlagsEnum(Byte, a=1, b=2, c=4, d=8).parse(b"\x03")
+Container(c=False)(b=True)(a=True)(d=False)
 
 

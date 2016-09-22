@@ -29,9 +29,9 @@ Other fields like:
 >>> Flag.parse(b"\x01")
 True
 
->>> Enum(Byte, dict(g=8,h=11)).parse(b"\x08")
+>>> Enum(Byte, g=8, h=11).parse(b"\x08")
 'g'
->>> Enum(Byte, dict(g=8,h=11)).build(11)
+>>> Enum(Byte, g=8, h=11).build(11)
 b'\x0b'
 
 >>> Float32b.build(12.345)

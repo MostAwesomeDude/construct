@@ -2473,24 +2473,24 @@ def Flag():
     return SymmetricMapping(Byte, {True : 1, False : 0}, default=True)
 
 
-def Enum(subcon, mapping, default=NotImplemented):
+def Enum(subcon, default=NotImplemented, **mapping):
     r"""
     A set of named values mapping. Can build both from names and values.
 
     :param subcon: the subcon to map
-    :param \*\*kw: keyword arguments which serve as the encoding mapping
+    :param \*\*mapping: keyword arguments which serve as the encoding mapping
     :param default: an optional, keyword-only argument that specifies the default value to use when the mapping is undefined. if not given, and exception is raised when the mapping is undefined. use `Pass` topass the unmapped value as-is
 
     Example::
 
-        >>> Enum(Byte,dict(a=1,b=2)).parse(b"\x01")
+        >>> Enum(Byte,a=1,b=2).parse(b"\x01")
         'a'
-        >>> Enum(Byte,dict(a=1,b=2)).parse(b"\x08")
+        >>> Enum(Byte,a=1,b=2).parse(b"\x08")
         construct.core.MappingError: no decoding mapping for 8
 
-        >>> Enum(Byte,dict(a=1,b=2)).build("a")
+        >>> Enum(Byte,a=1,b=2).build("a")
         b'\x01'
-        >>> Enum(Byte,dict(a=1,b=2)).build(1)
+        >>> Enum(Byte,a=1,b=2).build(1)
         b'\x01'
     """
     encmapping = mapping.copy()
@@ -2509,18 +2509,17 @@ class FlagsEnum(Adapter):
     A set of flag values mapping. Each flag is extracted from the number, resulting in a FlagsContainer dict that has each key assigned True or False.
 
     :param subcon: the subcon to extract
-    :param flags: a dictionary mapping flag-names to their value
-    :param \*\*kw: keyword arguments which serve as the encoding mapping
+    :param \*\*flags: a dictionary mapping flag-names to their value
 
     Example::
 
-        >>> FlagsEnum(Byte,dict(a=1,b=2,c=4,d=8)).parse(b"\x03")
+        >>> FlagsEnum(Byte,a=1,b=2,c=4,d=8).parse(b"\x03")
         Container(c=False)(b=True)(a=True)(d=False)
-        >>> FlagsEnum(Byte,dict(a=1,b=2,c=4,d=8)).build(_)
+        >>> FlagsEnum(Byte,a=1,b=2,c=4,d=8).build(_)
         b'\x03'
     """
     __slots__ = ["flags"]
-    def __init__(self, subcon, flags):
+    def __init__(self, subcon, **flags):
         super(FlagsEnum, self).__init__(subcon)
         self.flags = flags
     def _encode(self, obj, context):

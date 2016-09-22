@@ -27,7 +27,7 @@ packet_record = "packet_record" / Struct(
         Padding(this.record_length - this.included_length - 24),
     )
 
-datalink_type = "datalink" / Enum(Int32ub, dict(
+datalink_type = "datalink" / Enum(Int32ub,
         IEEE802dot3 = 0,
         IEEE802dot4 = 1,
         IEEE802dot5 = 2,
@@ -39,7 +39,7 @@ datalink_type = "datalink" / Enum(Int32ub, dict(
         FDDI = 8,
         OTHER = 9,
         UNASSIGNED = 10,
-    ))
+    )
 
 snoop_file = Struct(
         "signature" / Const(b"snoop\x00\x00\x00"),

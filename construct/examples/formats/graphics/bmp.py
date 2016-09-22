@@ -48,24 +48,25 @@ bitmap_file = "bitmap_file" / Struct(
     "data_offset" / Int32ul,
     "header_size" / Int32ul,
     # Enum(Alias("version", "header_size"),
-    "version" / Enum(Computed(this.header_size), dict(
+    "version" / Enum(Computed(this.header_size),
         v2 = 12,
         v3 = 40,
         v4 = 108,
-    ), default=Pass),
+        default=Pass
+    ),
     "width" / Int32ul,
     "height" / Int32ul,
     "number_of_pixels" / Computed(this.width * this.height),
     "planes" / Int16ul,
     "bpp" / Int16ul, # bits per pixel
-    "compression" / Enum(Int32ul, dict(
+    "compression" / Enum(Int32ul,
         Uncompressed = 0,
         RLE8 = 1,
         RLE4 = 2,
         Bitfields = 3,
         JPEG = 4,
         PNG = 5,
-    )),
+    ),
     "image_data_size" / Int32ul, # in bytes
     "horizontal_dpi" / Int32ul,
     "vertical_dpi" / Int32ul,

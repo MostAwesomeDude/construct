@@ -4,7 +4,7 @@ Enhanced Meta File
 from construct import *
 
 
-record_type = "record_type" / Enum(Int32ul, dict(
+record_type = "record_type" / Enum(Int32ul,
     ABORTPATH = 68,
     ANGLEARC = 41,
     ARC = 45,
@@ -101,7 +101,8 @@ record_type = "record_type" / Enum(Int32ul, dict(
     STROKEANDFILLPATH = 63,
     STROKEPATH = 64,
     WIDENPATH = 66,
-), default=Pass)
+    default=Pass
+)
 
 generic_record = "records" / Struct(
     record_type,
