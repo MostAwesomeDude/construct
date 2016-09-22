@@ -797,6 +797,9 @@ class TestCore(unittest.TestCase):
         assert OnDemand(Byte).build(1) == b"\x01"
         assert OnDemand(Byte).sizeof() == 1
 
+        parseret = OnDemand(Byte).parse(b"\x01garbage")
+        assert OnDemand(Byte).build(parseret) == b"\x01"
+
     def test_ondemandpointer(self):
         assert OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03garbage")() == 3
         assert OnDemandPointer(lambda ctx: 2, Byte).build(1) == b"\x00\x00\x01"

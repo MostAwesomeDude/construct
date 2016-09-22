@@ -2323,12 +2323,23 @@ class OnDemand(Subconstruct):
         255
         >>> OnDemand(Byte).build(16)
         b'\x10'
+
+        Can also re-build from the lambda returned at parsing.
+
+        >>> OnDemand(Byte).parse(b"\xff")
+        <function OnDemand._parse.<locals>.<lambda> at 0x7fcbd9855f28>
+        >>> OnDemand(Byte).build(_)
+        b'\xff'
     """
     def __init__(self, subcon):
         super(OnDemand, self).__init__(subcon)
     def _parse(self, stream, context):
         data = _read_stream(stream, self.subcon._sizeof(context))
         return lambda: self.subcon.parse(data, context)
+    def _build(self, obj, stream, context):
+        if callable(obj):
+            obj = obj()
+        return self.subcon._build(obj, stream, context)
 
 
 class OnDemandPointer(Subconstruct):
