@@ -185,6 +185,9 @@ class TestCore(unittest.TestCase):
         assert raises(FormatField("<","L").build, 9e9999) == FieldError
 
     def test_array(self):
+        assert Byte[4].parse(b"1234") == [49, 50, 51, 52]
+        assert Byte[4].build([49, 50, 51, 52]) == b"1234"
+
         assert Array(3,Byte).parse(b"\x01\x02\x03") == [1,2,3]
         assert Array(3,Byte).build([1,2,3]) == b"\x01\x02\x03"
         assert Array(3,Byte).parse(b"\x01\x02\x03additionalgarbage") == [1,2,3]
@@ -209,6 +212,14 @@ class TestCore(unittest.TestCase):
         assert raises(PrefixedArray(Byte,Byte).sizeof) == SizeofError
 
     def test_range(self):
+        assert Byte[2:4].parse(b"1234567890") == [49, 50, 51, 52]
+        assert Byte[2:4].build([49, 50, 51, 52]) == b"1234"
+        assert Byte[:4].parse(b"1234567890") == [49, 50, 51, 52]
+        assert Byte[:4].build([49, 50, 51, 52]) == b"1234"
+        assert raises(Byte[2:].parse, b"") == RangeError
+        assert raises(Byte[2:].build, []) == RangeError
+
+
         assert Range(3, 5, Byte).parse(b"\x01\x02\x03") == [1,2,3]
         assert Range(3, 5, Byte).parse(b"\x01\x02\x03\x04") == [1,2,3,4]
         assert Range(3, 5, Byte).parse(b"\x01\x02\x03\x04\x05") == [1,2,3,4,5]

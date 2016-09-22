@@ -265,9 +265,11 @@ class Construct(object):
     def __getitem__(self, count):
         if isinstance(count, slice):
             if count.step:
-                raise ValueError("slice must not contain as step: %r" % (count,))
-            return Range(count.start, count.stop, self)
-        elif isinstance(count, int) or hasattr(count, "__call__"):
+                raise ValueError("slice must not contain a step: %r" % (count,))
+            min = 0 if count.start is None else count.start
+            max = sys.maxsize if count.stop is None else count.stop
+            return Range(min, max, self)
+        elif isinstance(count, int) or callable(count):
             return Range(count, count, self)
         else:
             raise TypeError("Expected a number, a contextual expression or a slice thereof, got %r" % (count,))
