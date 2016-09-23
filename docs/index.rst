@@ -36,7 +36,7 @@ Construct
     <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the previous stable release. If you are maintaining a project that depended on this framework for a long time, you should probably use this version. This branch is not actively maintained. Only bugfixes will be added.<br/>
     <br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8.2</a> was released on September 23th, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes were redesigned and reimplemented. You should read the documentation again.<br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8</a> was released on September, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes were redesigned and reimplemented. You should read the documentation again.<br/>
     <br/>
 
     Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches.<br/>
