@@ -11,13 +11,10 @@ def raises(func, *args, **kw):
 
 
 def atmostone(*args):
-	return sum(int(bool(x)) for x in args) <= 1
+    return sum(int(bool(x)) for x in args) <= 1
 
 
 def alldifferent(*args):
-	for i,x in enumerate(args):
-		for j,y in enumerate(args):
-			if i != j and x == y:
-				return False
-	return True
+    return all(i != j and x == y for i,x in enumerate(args) for j,y in enumerate(args))
+
 
