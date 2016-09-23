@@ -181,6 +181,16 @@ Automatically aligns all the fields of the Struct to the modulus boundary. It do
 >>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).build(dict(a=1,b=5))
 b'\x01\x00\x00\x00\x00\x05\x00\x00'
 
+Padding
+-------
+
+Adds and removes bytes without returning the to the user. Analog to Padded but does not wrap around another construct.
+
+>>> Padding(4).build(None)
+b'\x00\x00\x00\x00'
+>>> Padding(4, strict=True).parse(b"****")
+construct.core.PaddingError: expected b'\x00\x00\x00\x00', found b'****'
+
 Padded
 ------
 

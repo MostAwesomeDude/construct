@@ -1760,7 +1760,7 @@ class Rebuffered(Subconstruct):
 #===============================================================================
 # miscellaneous
 #===============================================================================
-class Padding(Construct):
+def Padding(length, pattern=b"\x00", strict=False):
     r"""
     A padding field that adds bytes when building, discards bytes when parsing.
 
@@ -1777,31 +1777,12 @@ class Padding(Construct):
         >>> (Padding(4) >> Bytes(4)).sizeof()
         8
 
+        >>> Padding(4).build(None)
+        b'\x00\x00\x00\x00'
         >>> Padding(4, strict=True).parse(b"****")
         construct.core.PaddingError: expected b'\x00\x00\x00\x00', found b'****'
     """
-    __slots__ = ["length", "pattern", "strict"]
-    def __init__(self, length, pattern=b"\x00", strict=False):
-        if not isinstance(pattern, bytes) or len(pattern) != 1:
-            raise PaddingError("pattern expected to be b-string character")
-        super(Padding, self).__init__()
-        self.length = length
-        self.pattern = pattern
-        self.strict = strict
-        self.flagbuildnone = True
-    def _parse(self, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        read = _read_stream(stream, length)
-        if self.strict:
-            expected = length * self.pattern
-            if read != expected:
-                raise PaddingError("expected %r, found %r" % (expected, read))
-    def _build(self, obj, stream, context):
-        length = self.length(context) if callable(self.length) else self.length
-        padding = length * self.pattern
-        _write_stream(stream, length, padding)
-    def _sizeof(self, context):
-        return self.length(context) if callable(self.length) else self.length
+    return Padded(length, Pass, pattern=pattern, strict=strict)
 
 
 class Const(Subconstruct):
