@@ -8,8 +8,7 @@ from construct import *
 from construct.lib import *
 
 from io import BytesIO
-import os, random, itertools
-import hashlib
+import os, random, itertools, collections, hashlib
 ident = lambda x: x
 
 
@@ -845,6 +844,23 @@ class TestCore(unittest.TestCase):
         import numpy
         obj = numpy.array([1,2,3], dtype=numpy.int64)
         assert numpy.array_equal(Numpy.parse(Numpy.build(obj)), obj)
+
+    def test_namedtuple(self):
+        coord = collections.namedtuple("coord", "x y z")
+        Coord = NamedTuple("coord", "x y z", Byte[3])
+        assert Coord.parse(b"123") == coord(49,50,51)
+        assert Coord.build(coord(49,50,51)) == b"123"
+        assert Coord.sizeof() == 3
+
+        Coord = NamedTuple("coord", "x y z", Byte >> Byte >> Byte)
+        assert Coord.parse(b"123") == coord(49,50,51)
+        assert Coord.build(coord(49,50,51)) == b"123"
+        assert Coord.sizeof() == 3
+
+        Coord = NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte))
+        assert Coord.parse(b"123") == coord(49,50,51)
+        assert Coord.build(coord(49,50,51)) == b"123"
+        assert Coord.sizeof() == 3
 
     def test_restreamed(self):
         assert Restreamed(Int16ub, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1

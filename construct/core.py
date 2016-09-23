@@ -1926,6 +1926,36 @@ class Numpy(Construct):
         self.lib.save(stream, obj)
 
 
+class NamedTuple(Adapter):
+    r"""
+    Both arrays, structs and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of strings. Just like the std library namedtuple does.
+
+    Example::
+
+        >>> NamedTuple("coord", "x y z", Byte[3]).parse(b"123")
+        coord(x=49, y=50, z=51)
+        >>> NamedTuple("coord", "x y z", Byte >> Byte >> Byte).parse(b"123")
+        coord(x=49, y=50, z=51)
+        >>> NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte)).parse(b"123")
+        coord(x=49, y=50, z=51)
+    """
+    def __init__(self, tuplename, tuplefields, subcon):
+        super(NamedTuple, self).__init__(subcon)
+        self.factory = collections.namedtuple(tuplename, tuplefields)
+    def _decode(self, obj, context):
+        if isinstance(obj, list):
+            return self.factory(*obj)
+        if isinstance(obj, dict):
+            return self.factory(**obj)
+        raise AdaptationError("can only decode and encode from lists and dicts")
+    def _encode(self, obj, context):
+        if isinstance(self.subcon, (Sequence,Range)):
+            return list(obj)
+        if isinstance(self.subcon, (Struct)):
+            return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name is not None}
+        raise AdaptationError("can only decode and encode from lists and dicts")
+
+
 #===============================================================================
 # tunneling and swapping
 #===============================================================================

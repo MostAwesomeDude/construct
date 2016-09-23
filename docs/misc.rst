@@ -77,14 +77,25 @@ Numpy arrays can be preserved and retrived along with their dtype, shape and siz
 b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
 
 
+NamedTuple
+----------
+
+Both arrays, structs and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of strings. Just like the std library namedtuple does.
+
+>>> NamedTuple("coord", "x y z", Byte[3]).parse(b"123")
+coord(x=49, y=50, z=51)
+>>> NamedTuple("coord", "x y z", Byte >> Byte >> Byte).parse(b"123")
+coord(x=49, y=50, z=51)
+>>> NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte)).parse(b"123")
+coord(x=49, y=50, z=51)
+
+
 
 Conditional
 ===========
 
 Union
 -----
-
-.. warning:: Currently BROKEN.
 
 Treats the same data as multiple constructs (similar to C union statement). When parsing, each subconstruct parses the same data (so you can "look" at the data in multiple views). When building, the first subconstruct is used to build the final result.
 
