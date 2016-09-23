@@ -912,6 +912,7 @@ class Sequence(Struct):
                 context[i] = subobj
         return obj
     def _build(self, obj, stream, context):
+        context = Container(_ = context)
         objiter = iter(obj)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
@@ -923,6 +924,8 @@ class Sequence(Struct):
             context[i] = subobj
             buildret = sc._build(subobj, stream, context)
             if buildret is not None:
+                if sc.flagembedded:
+                    context.update(buildret)
                 if sc.name is not None:
                     context[sc.name] = buildret
                 context[i] = buildret
@@ -2274,6 +2277,7 @@ class LazySequence(Construct):
                 self.subsizes.append(None)
 
     def _parse(self, stream, context):
+        context = Container(_ = context)
         if self.totalsize is not None:
             position = stream.tell()
             stream.seek(self.totalsize, 1)
@@ -2300,6 +2304,7 @@ class LazySequence(Construct):
         return LazySequenceContainer(i, offsetmap, values, stream, 0, context)
 
     def _build(self, obj, stream, context):
+        context = Container(_ = context)
         objiter = iter(obj)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
@@ -2311,6 +2316,8 @@ class LazySequence(Construct):
             context[i] = subobj
             buildret = sc._build(subobj, stream, context)
             if buildret is not None:
+                if sc.flagembedded:
+                    context.update(buildret)
                 if sc.name is not None:
                     context[sc.name] = buildret
                 context[i] = buildret
