@@ -1305,12 +1305,12 @@ def EmbeddedBitStruct(*subcons):
 #===============================================================================
 class Union(Construct):
     r"""
-    Set of overlapping fields (like unions in C). When parsing, all fields read the same data bytes. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name.
+    Set of overlapping fields (like unions in C). When parsing, all fields read the same data bytes. When building, either the first subcon that can find an entry in given dict is allowed to put into the stream, or the subcon is selected by index or name. Can also build nothing.
 
     .. warning:: Currently BROKEN. And no buildfrom=int.
 
-    :param subcons: subconstructs for parsing (order sensitive), one of them used for building
-    :param buildfrom: the subcon used for building and calculating size, can be integer index or string name, default is None (then tries each subcon in sequence)
+    :param subcons: subconstructs (order and name sensitive)
+    :param buildfrom: the subcon used for building and calculating size, can be integer index or string name, default is None (then tries each subcon in sequence), or the Pass singleton
 
     Example::
 
@@ -1323,31 +1323,60 @@ class Union(Construct):
         self.buildfrom = kw.get("buildfrom", None)
     def _parse(self, stream, context):
         ret = Container()
+        context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
-            subobj = sc._parse(stream, context)
-            if sc.name is not None:
-                ret[sc.name] = subobj
+            if sc.flagembedded:
+                subobj = sc._parse(stream, context).items()
+                obj.update(subobj)
+                context.update(subobj)
+            else:
+                subobj = sc._parse(stream, context)
+                if sc.name is not None:
+                    ret[sc.name] = subobj
+                    context[sc.name] = subobj
             context[i] = subobj
         return ret
     def _build(self, obj, stream, context):
+        context = Container(_ = context)
+        context.update(obj)
+        if self.buildfrom is Pass:
+            return
         if self.buildfrom is None:
             for i,sc in enumerate(self.subcons):
-                if sc.name is not None:
-                    context[sc.name] = obj[sc.name]
-                if sc.flagbuildnone:
-                    return sc._build(None, stream, context)
+                if sc.subcon.flagbuildnone:
+                    buildret = sc.subcon._build(None, stream, context)
+                    if buildret is not None:
+                        if sc.flagembedded:
+                            context.update(buildret)
+                        if sc.name is not None:
+                            context[sc.name] = buildret
+                        context[i] = buildret
+                    return buildret
                 elif sc.name in obj:
-                    return sc._build(obj[sc.name], stream, context)
+                    context[sc.name] = obj[sc.name]
+                    buildret = sc.subcon._build(obj[sc.name], stream, context)
+                    if buildret is not None:
+                        if sc.flagembedded:
+                            context.update(buildret)
+                        if sc.name is not None:
+                            context[sc.name] = buildret
+                        context[i] = buildret
+                    return buildret
             else:
                 raise UnionError("none of subcons %s were found in the dictionary %s" % (self.subcons, obj))
-        else:
+        if isinstance(self.buildfrom, int):
             sc = self.subcons[self.buildfrom]
-            sc._build(obj[sc.name], stream, context)
+            return sc.subcon._build(obj[sc.name], stream, context)
+        if isinstance(self.buildfrom, str):
+            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
+            sc = self.subcons[index]
+            return sc.subcon._build(obj[sc.name], stream, context)
+        raise UnionError("buildfrom should be either: None Pass int str")
     def _sizeof(self, context):
         if self.buildfrom is None:
             raise SizeofError("cannot calculate size")
         else:
-            return self.subcons[self.buildfrom]._sizeof(context)
+            return self.subcons[self.buildfrom].subcon._sizeof(context)
 
 
 class Select(Construct):
@@ -1580,6 +1609,7 @@ class Peek(Subconstruct):
     """
     def __init__(self, subcon):
         super(Peek, self).__init__(subcon)
+        self.flagbuildnone = True
     def _parse(self, stream, context):
         fallback = stream.tell()
         try:

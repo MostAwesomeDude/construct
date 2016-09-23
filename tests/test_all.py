@@ -595,13 +595,15 @@ class TestCore(unittest.TestCase):
         assert Optional(Int32ul).build(None) == b""
         assert raises(Optional(Int32ul).sizeof) == SizeofError
 
-    @pytest.mark.xfail(reason="UNION IS BROKEN")
     def test_union(self):
         assert Union("a"/Bytes(2), "b"/Int16ub).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
         assert Union("a"/Bytes(2), "b"/Int16ub).build(dict(a=b"zz"))  == b"zz"
         assert Union("a"/Bytes(2), "b"/Int16ub).build(dict(b=0x0102)) == b"\x01\x02"
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=0).build(dict(a=b"zz",b=5))  == b"zz"
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=1).build(dict(a=b"zz",b=5))  == b"\x00\x05"
+        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="a").build(dict(a=b"zz",b=5))  == b"zz"
+        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="b").build(dict(a=b"zz",b=5))  == b"\x00\x05"
+        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=Pass).build({}) == b""
 
         assert raises(Union(Byte).sizeof) == SizeofError
         assert raises(Union(VarInt).sizeof) == SizeofError
