@@ -30,7 +30,6 @@ class TestFormats(unittest.TestCase):
         data = format.build(obj)
         print(data)
 
-    @pytest.mark.xfail(reason="parses fine but building fails")
     def test_png(self):
         self.common(png_file, "sample.png")
 

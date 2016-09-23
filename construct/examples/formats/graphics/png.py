@@ -25,13 +25,7 @@ compression_method = "compression_method" / Enum(Byte, deflate = 0, default=Pass
 #===============================================================================
 plte_info = "plte_info" / Struct(
     "num_entries" / Computed(this._.length / 3),
-    Array(this.num_entries,
-        "palette_entries" / Struct(
-            "red" / Byte,
-            "green" / Byte,
-            "blue" / Byte,
-        ),
-    ),
+    "palette_entries" / Array(this.num_entries, Byte[3]),
 )
 
 #===============================================================================
@@ -44,15 +38,9 @@ idat_info = "idat_info" / Bytes(this.length)
 #===============================================================================
 trns_info = "trns_info" / Switch(this._.image_header.color_type, 
     {
-        "greyscale": "data" / Struct(
-            "grey_sample" / Int16ub,
-        ),
-        "truecolor": "data" / Struct(
-            "red_sample" / Int16ub,
-            "blue_sample" / Int16ub,
-            "green_sample" / Int16ub,
-        ),
-        "indexed": "alpha" / Array(this.length, Byte),
+        "greyscale": Int16ub,
+        "truecolor": Int16ub[3],
+        "indexed": Array(this.length, Byte),
     }
 )
 
@@ -61,9 +49,7 @@ trns_info = "trns_info" / Switch(this._.image_header.color_type,
 #===============================================================================
 chrm_info = "chrm_info" / Struct(
     "white_point" / coord,
-    "red" / coord,
-    "green" / coord,
-    "blue" / coord,
+    "rgb" / coord[3],
 )
 
 #===============================================================================
@@ -87,43 +73,23 @@ iccp_info = "iccp_info" / Struct(
 #===============================================================================
 sbit_info = "sbit_info" / Switch(this._.image_header.color_type, 
     {
-        "greyscale": Struct(
-            "significant_grey_bits" / Byte,
-        ),
-        "truecolor": Struct("data",
-            "significant_red_bits" / Byte,
-            "significant_green_bits" / Byte,
-            "significant_blue_bits" / Byte,
-        ),
-        "indexed": Struct("data",
-            "significant_red_bits" / Byte,
-            "significant_green_bits" / Byte,
-            "significant_blue_bits" / Byte,
-        ),
-        "greywithalpha": Struct(
-            "significant_grey_bits" / Byte,
-            "significant_alpha_bits" / Byte,
-        ),
-        "truewithalpha": Struct(
-            "significant_red_bits" / Byte,
-            "significant_green_bits" / Byte,
-            "significant_blue_bits" / Byte,
-            "significant_alpha_bits" / Byte,
-        ),
+        "greyscale": Byte,
+        "truecolor": Byte[3],
+        "indexed": Byte[3],
+        "greywithalpha": Byte[2],
+        "truewithalpha": Byte[4],
     }
 )
 
 #===============================================================================
 # 11.3.3.5: sRGB - Standard RPG color space
 #===============================================================================
-srgb_info = "srgb_info" / Struct(
-    "rendering_intent" / Enum(Byte,
-        perceptual = 0,
-        relative_colorimetric = 1,
-        saturation = 2,
-        absolute_colorimetric = 3,
-        default=Pass
-    ),
+srgb_info = "rendering_intent" / Enum(Byte,
+    perceptual = 0,
+    relative_colorimetric = 1,
+    saturation = 2,
+    absolute_colorimetric = 3,
+    default=Pass
 )
 
 #===============================================================================
@@ -163,33 +129,18 @@ itxt_info = "itxt_info" / Struct(
 #===============================================================================
 bkgd_info = "bkgd_info" / Switch(this._.image_header.color_type, 
     {
-        "greyscale": Struct(
-            "grey" / Int16ub,
-        ),
-        "greywithalpha": Struct(
-            "grey" / Int16ub,
-        ),
-        "truecolor": Struct(
-            "red" / Int16ub,
-            "green" / Int16ub,
-            "blue" / Int16ub,
-        ),
-        "truewithalpha": Struct(
-            "red" / Int16ub,
-            "green" / Int16ub,
-            "blue" / Int16ub,
-        ),
-        "indexed": Struct(
-            "index" / Int16ub,
-        ),
+        "greyscale": Int16ub[1],
+        "greywithalpha": Int16ub[1],
+        "truecolor": Int16ub[3],
+        "truewithalpha": Int16ub[3],
+        "indexed": Int16ub[1],
     }
 )
 
 #===============================================================================
 # 11.3.5.2: hIST - Image histogram
 #===============================================================================
-hist_info = "frequency" / Array(this._.length / 2, Int16ub,
-)
+hist_info = "frequency" / Array(this._.length / 2, Int16ub)
 
 #===============================================================================
 # 11.3.5.3: pHYs - Physical pixel dimensions
@@ -217,17 +168,13 @@ splt_info = "data" / Struct(
         IfThenElse(this.sample_depth == 8,
             # Sample depth 8
             Struct(
-                "red" / Byte,
-                "green" / Byte,
-                "blue" / Byte,
+                "rgb" / Byte[3],
                 "alpha" / Byte,
                 "frequency" / Int16ub,
             ),
             # Sample depth 16
             Struct(
-                "red" / Int16ub,
-                "green" / Int16ub,
-                "blue" / Int16ub,
+                "rgb" / Byte[3],
                 "alpha" / Int16ub,
                 "frequency" / Int16ub,
             ),
@@ -238,7 +185,7 @@ splt_info = "data" / Struct(
 #===============================================================================
 # 11.3.6.1: tIME - Image last-modification time
 #===============================================================================
-time_info = "data" / Struct(
+time_info = "time_info" / Struct(
     "year" / Int16ub,
     "month" / Byte,
     "day" / Byte,
@@ -254,26 +201,26 @@ default_chunk_info = HexDump(Bytes(this.length))
 
 chunk = "chunk" / Struct(
     "length" / Int32ub,
-    "type" / String(4),
+    "type" / Bytes(4),
     "data" / Switch(this.type,
         {
-            "PLTE" : plte_info,
-            "IEND" : Pass,
-            "IDAT" : idat_info,
-            "tRNS" : trns_info,
-            "cHRM" : chrm_info,
-            "gAMA" : gama_info,
-            "iCCP" : iccp_info,
-            "sBIT" : sbit_info,
-            "sRGB" : srgb_info,
-            "tEXt" : text_info,
-            "zTXt" : ztxt_info,
-            "iTXt" : itxt_info,
-            "bKGD" : bkgd_info,
-            "hIST" : hist_info,
-            "pHYs" : phys_info,
-            "sPLT" : splt_info,
-            "tIME" : time_info,
+            b"PLTE" : plte_info,
+            b"IEND" : Pass,
+            b"IDAT" : idat_info,
+            b"tRNS" : trns_info,
+            b"cHRM" : chrm_info,
+            b"gAMA" : gama_info,
+            b"iCCP" : iccp_info,
+            b"sBIT" : sbit_info,
+            b"sRGB" : srgb_info,
+            b"tEXt" : text_info,
+            b"zTXt" : ztxt_info,
+            b"iTXt" : itxt_info,
+            b"bKGD" : bkgd_info,
+            b"hIST" : hist_info,
+            b"pHYs" : phys_info,
+            b"sPLT" : splt_info,
+            b"tIME" : time_info,
         },
         default = default_chunk_info,
     ),
