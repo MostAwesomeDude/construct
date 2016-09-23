@@ -1307,8 +1307,6 @@ class Union(Construct):
     r"""
     Set of overlapping fields (like unions in C). When parsing, all fields read the same data bytes. When building, either the first subcon that can find an entry in given dict is allowed to put into the stream, or the subcon is selected by index or name. Can also build nothing.
 
-    .. warning:: Currently BROKEN. And no buildfrom=int.
-
     :param subcons: subconstructs (order and name sensitive)
     :param buildfrom: the subcon used for building and calculating size, can be integer index or string name, default is None (then tries each subcon in sequence), or the Pass singleton
 
@@ -1778,8 +1776,10 @@ class Const(Subconstruct):
     r"""
     Constant field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
 
+    Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes, but depends on the subcon to read the appropriate amount. Consider for example, a field that eats null bytes and returns following byte. When parsing, both b"\x00\x00\x01" and b"\x01" will be parsed and checked OK.
+
     :param subcon: the subcon used to build value from, or a b-string value itself
-    :param value: the expected value, or None
+    :param value: optional, the expected value
 
     :raises ConstError: when parsed data does not match specified value, or building from wrong value
 

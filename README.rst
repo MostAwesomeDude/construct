@@ -49,9 +49,7 @@ Sticky
 --------
 Version 2.5.5 is the previous stable release. If you are maintaining a project that depended on this framework for a long time, you should probably use this version. This branch is not actively maintained. Only bugfixes will be added.
 
-Version 2.8.2 was released on September 23th, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes were redesigned and reimplemented. You should read the documentation again. Docstrings are up-to-date. **Website is currently half stale and broken.**
-
-Warning: Union class is currently broken.
+Version 2.8.2 was released on September 23th, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes were redesigned and reimplemented. You should read the documentation again.
 
 
 Development and support
