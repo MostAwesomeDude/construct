@@ -4,10 +4,9 @@ Dynamic Host Configuration Protocol for IPv4
 http://www.networksorcery.com/enp/protocol/dhcp.htm
 http://www.networksorcery.com/enp/protocol/bootp/options.htm
 """
-from binascii import unhexlify
-
 from construct import *
 from ipv4 import IpAddress
+from binascii import unhexlify
 
 
 dhcp_option = Struct("dhcp_option",

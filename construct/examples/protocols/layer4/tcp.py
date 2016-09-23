@@ -1,45 +1,37 @@
 """
 Transmission Control Protocol (TCP/IP protocol stack)
 """
-from binascii import unhexlify
-
 from construct import *
 
 
-tcp_header = Struct("tcp_header",
-    UBInt16("source"),
-    UBInt16("destination"),
-    UBInt32("seq"),
-    UBInt32("ack"),
+
+tcp_header = "tcp_header" / Struct(
+    "source" / Int16ub,
+    "destination" / Int16ub,
+    "seq" / Int32ub,
+    "ack" / Int32ub,
     EmbeddedBitStruct(
-        ExprAdapter(Nibble("header_length"), 
+        "header_length" / ExprAdapter(Nibble, 
             encoder = lambda obj, ctx: obj / 4,
             decoder = lambda obj, ctx: obj * 4,
         ),
         Padding(3),
-        Struct("flags",
-            Flag("ns"),
-            Flag("cwr"),
-            Flag("ece"),
-            Flag("urg"),
-            Flag("ack"),
-            Flag("psh"),
-            Flag("rst"),
-            Flag("syn"),
-            Flag("fin"),
+        "flags" / Struct(
+            "ns"  / Flag,
+            "cwr" / Flag,
+            "ece" / Flag,
+            "urg" / Flag,
+            "ack" / Flag,
+            "psh" / Flag,
+            "rst" / Flag,
+            "syn" / Flag,
+            "fin" / Flag,
         ),
     ),
-    UBInt16("window"),
-    UBInt16("checksum"),
-    UBInt16("urgent"),
-    Field("options", lambda ctx: ctx.header_length - 20),
+    "window" / Int16ub,
+    "checksum" / Int16ub,
+    "urgent" / Int16ub,
+    "options" / Bytes(this.header_length - 20),
 )
 
-if __name__ == "__main__":
-    cap = unhexlify(b"0db5005062303fb21836e9e650184470c9bc0000")
-    
-    obj = tcp_header.parse(cap)
-    print (obj)
-    
-    assert cap == tcp_header.build(tcp_header.parse(cap))
 

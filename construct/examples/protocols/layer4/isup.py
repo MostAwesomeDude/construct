@@ -4,10 +4,10 @@ ISDN User Part (SS7 protocol stack)
 from construct import *
 
 
-isup_header = Struct("isup_header",
-    Bytes("routing_label", 5),
-    UBInt16("cic"),
-    UBInt8("message_type"),
+isup_header = "isup_header" / Struct(
+    "routing_label" / Bytes(5),
+    "cic" / Int16ub,
+    "message_type" / Int8ub,
     # mandatory fixed parameters
     # mandatory variable parameters
     # optional parameters

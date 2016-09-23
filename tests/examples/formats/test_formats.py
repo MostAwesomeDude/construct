@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 
-import unittest
+import unittest, pytest, os
 from declarativeunittest import raises
-import pytest
+ontravis = 'TRAVIS' in os.environ
 
 from construct import *
 from construct.lib import *
 from construct.examples.formats import *
 
 from io import BytesIO
-import os, random, itertools
-import hashlib
+import os, random, itertools, hashlib
 ident = lambda x: x
-ontravis = 'TRAVIS' in os.environ
 
 
 

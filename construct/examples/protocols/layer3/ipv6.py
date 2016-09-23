@@ -1,46 +1,43 @@
 """
 Internet Protocol version 6 (TCP/IP protocol stack)
 """
-from binascii import unhexlify
 
 from construct import *
-from construct.lib.py3compat import str2bytes
-from construct.protocols.layer3.ipv4 import ProtocolEnum
 
+
+def ProtocolEnum(code):
+    return Enum(code,
+        ICMP = 1,
+        TCP = 6,
+        UDP = 17,
+    )
 
 class Ipv6AddressAdapter(Adapter):
     def _encode(self, obj, context):
-        if bytes is str:
-            return "".join(part.decode("hex") for part in obj.split(":"))
-        else:
-            return bytes(int(part, 16) for part in obj.split(":"))
+        return [int(part, 16) for part in obj.split(":")]
     def _decode(self, obj, context):
-        if bytes is str:
-            return ":".join(b.encode("hex") for b in obj)
-        else:
-            return ":".join("%02x" % (b,) for b in obj)
+        return ":".join("%02x" % b for b in obj)
 
-def Ipv6Address(name):
-    return Ipv6AddressAdapter(Bytes(name, 16))
+Ipv6Address = Ipv6AddressAdapter(Byte[16])
 
 
-ipv6_header = Struct("ip_header",
+ipv6_header = "ip_header" / Struct(
     EmbeddedBitStruct(
-        OneOf(Bits("version", 4), [6]),
-        Bits("traffic_class", 8),
-        Bits("flow_label", 20),
+        "version" / OneOf(BitsInteger(4), [6]),
+        "traffic_class" / BitsInteger(8),
+        "flow_label" / BitsInteger(20),
     ),
-    UBInt16("payload_length"),
-    ProtocolEnum(UBInt8("protocol")),
-    UBInt8("hoplimit"),
+    "payload_length" / Int16ub,
+    "protocol" / ProtocolEnum(Int8ub),
+    "hoplimit" / Int8ub,
     Alias("ttl", "hoplimit"),
-    Ipv6Address("source"),
-    Ipv6Address("destination"),
+    "source" / Ipv6Address,
+    "destination" / Ipv6Address,
 )
 
 
 if __name__ == "__main__":
-    o = ipv6_header.parse(b"\x6f\xf0\x00\x00\x01\x02\x06\x800123456789ABCDEFFEDCBA9876543210")
+    o = ipv6_header.parse()
     print(o)
     print(repr(ipv6_header.build(o)))
 

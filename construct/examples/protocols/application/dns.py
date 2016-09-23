@@ -1,10 +1,9 @@
 """
 Domain Name System (TCP/IP protocol stack)
 """
-from binascii import unhexlify
-
 from construct import *
 from construct.protocols.layer3.ipv4 import IpAddressAdapter
+from binascii import unhexlify
 
 
 class DnsStringAdapter(Adapter):
@@ -14,6 +13,7 @@ class DnsStringAdapter(Adapter):
         return parts
     def _decode(self, obj, context):
         return ".".join(obj[:-1])
+
 
 dns_record_class = Enum(UBInt16("class"),
     RESERVED = 0,
@@ -40,7 +40,7 @@ dns_record_type = Enum(UBInt16("type"),
 
 query_record = Struct("query_record",
     DnsStringAdapter(
-        RepeatUntil(lambda obj, ctx: obj == "",
+        RepeatUntil(lambda obj,ctx: obj == "",
             PascalString("name")
         )
     ),
@@ -48,7 +48,7 @@ query_record = Struct("query_record",
     dns_record_class,
 )
 
-rdata = Field("rdata", lambda ctx: ctx.rdata_length)
+rdata = Field("rdata", this.rdata_length)
 
 resource_record = Struct("resource_record",
     CString("name", terminators = b"\xc0\x00"),
@@ -57,7 +57,7 @@ resource_record = Struct("resource_record",
     dns_record_class,
     UBInt32("ttl"),
     UBInt16("rdata_length"),
-    IfThenElse("data", lambda ctx: ctx.type == "IPv4",
+    IfThenElse("data", this.type == "IPv4",
         IpAddressAdapter(rdata),
         rdata
     )
@@ -141,7 +141,6 @@ if __name__ == "__main__":
     obj = dns.parse(cap2)
     print (obj)
     print (repr(dns.build(obj)))
-    
-    
+
 
 

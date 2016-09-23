@@ -1,38 +1,32 @@
 """
 Ethernet (TCP/IP protocol stack)
 """
-from binascii import hexlify, unhexlify
-
 from construct import *
+from construct.lib import *
+
 
 
 class MacAddressAdapter(Adapter):
     def _encode(self, obj, context):
-        return unhexlify(obj.replace("-", ""))
+        return [int(part, 16) for part in obj.split("-")]
     def _decode(self, obj, context):
-        return "-".join(hexlify(b) for b in obj)
+        return "-".join("%02x" % b for b in obj)
 
-def MacAddress(name):
-    return MacAddressAdapter(Bytes(name, 6))
+MacAddress = MacAddressAdapter(Byte[6])
 
-ethernet_header = Struct("ethernet_header",
-    MacAddress("destination"),
-    MacAddress("source"),
-    Enum(UBInt16("type"),
+
+ethernet_header = "ethernet_header" / Struct(
+    "destination" / MacAddress,
+    "source" / MacAddress,
+    "type" / Enum(Int16ub,
         IPv4 = 0x0800,
         ARP = 0x0806,
         RARP = 0x8035,
         X25 = 0x0805,
         IPX = 0x8137,
         IPv6 = 0x86DD,
-        _default_ = Pass,
+        default = Pass,
     ),
 )
 
-
-if __name__ == "__main__":
-    cap = unhexlify(b"0011508c283c0002e34260090800")
-    obj = ethernet_header.parse(cap)
-    print (obj)
-    print (repr(ethernet_header.build(obj)))
 

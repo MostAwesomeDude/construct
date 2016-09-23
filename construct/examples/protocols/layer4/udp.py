@@ -6,21 +6,15 @@ from binascii import unhexlify
 from construct import *
 
 
-udp_header = Struct("udp_header",
-    Computed("header_length", lambda ctx: 8),
-    UBInt16("source"),
-    UBInt16("destination"),
-    ExprAdapter(UBInt16("payload_length"), 
+udp_header = "udp_header" / Struct(
+    "header_length" / Computed(lambda ctx: 8),
+    "source" / Int16ub,
+    "destination" / Int16ub,
+    "payload_length" / ExprAdapter(Int16ub, 
         encoder = lambda obj, ctx: obj + 8,
         decoder = lambda obj, ctx: obj - 8,
     ),
-    UBInt16("checksum"),
+    "checksum" / Int16ub,
 )
-
-if __name__ == "__main__":
-    cap = unhexlify(b"0bcc003500280689")
-    obj = udp_header.parse(cap)
-    print (obj)
-    print (repr(udp_header.build(obj)))
 
 

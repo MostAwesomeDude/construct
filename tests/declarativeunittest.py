@@ -1,5 +1,3 @@
-import unittest
-
 
 def raises(func, *args, **kw):
     try:
@@ -16,5 +14,4 @@ def atmostone(*args):
 
 def alldifferent(*args):
     return all(i != j and x == y for i,x in enumerate(args) for j,y in enumerate(args))
-
 

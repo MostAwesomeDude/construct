@@ -1,25 +1,15 @@
 """
 Internet Protocol version 4 (TCP/IP protocol stack)
 """
-from binascii import unhexlify
-
 from construct import *
 
 
 class IpAddressAdapter(Adapter):
     def _encode(self, obj, context):
-        if bytes is str:
-            return "".join(chr(int(b)) for b in obj.split("."))
-        else:
-            return bytes(int(b) for b in obj.split("."))
+        return list(map(int, obj.split(".")))
     def _decode(self, obj, context):
-        if bytes is str:
-            return ".".join(str(ord(b)) for b in obj)
-        else:
-            return ".".join("%d" % (b,) for b in obj)
-
-def IpAddress(name):
-    return IpAddressAdapter(Bytes(name, 4))
+        return "{0}.{1}.{2}.{3}".format(*obj)
+IpAddress = IpAddressAdapter(Byte[4])
 
 def ProtocolEnum(code):
     return Enum(code,
@@ -28,45 +18,39 @@ def ProtocolEnum(code):
         UDP = 17,
     )
 
-ipv4_header = Struct("ip_header",
+ipv4_header = "ip_header" / Struct(
     EmbeddedBitStruct(
-        Const(Nibble("version"), 4),
-        ExprAdapter(Nibble("header_length"), 
+        "version" / Const(Nibble, 4),
+        "header_length" / ExprAdapter(Nibble, 
             decoder = lambda obj, ctx: obj * 4, 
             encoder = lambda obj, ctx: obj / 4
         ),
     ),
-    BitStruct("tos",
-        Bits("precedence", 3),
-        Flag("minimize_delay"),
-        Flag("high_throuput"),
-        Flag("high_reliability"),
-        Flag("minimize_cost"),
+    "tos" / BitStruct(
+        "precedence" / BitsInteger(3),
+        "minimize_delay" / Flag,
+        "high_throuput" / Flag,
+        "high_reliability" / Flag,
+        "minimize_cost" / Flag,
         Padding(1),
     ),
-    UBInt16("total_length"),
-    Computed("payload_length", lambda ctx: ctx.total_length - ctx.header_length),
-    UBInt16("identification"),
+    "total_length" / Int16ub,
+    "payload_length" / Computed(this.total_length - this.header_length),
+    "identification" / Int16ub,
     EmbeddedBitStruct(
-        Struct("flags",
+        "flags" / Struct(
             Padding(1),
-            Flag("dont_fragment"),
-            Flag("more_fragments"),
+            "dont_fragment" / Flag,
+            "more_fragments" / Flag,
         ),
-        Bits("frame_offset", 13),
+        "frame_offset" / BitsInteger(13),
     ),
-    UBInt8("ttl"),
-    ProtocolEnum(UBInt8("protocol")),
-    UBInt16("checksum"),
-    IpAddress("source"),
-    IpAddress("destination"),
-    Field("options", lambda ctx: ctx.header_length - 20),
+    "ttl" / Int8ub,
+    "protocol" / ProtocolEnum(Int8ub),
+    "checksum" / Int16ub,
+    "source" / IpAddress,
+    "destination" / IpAddress,
+    "options" / Bytes(this.header_length - 20),
 )
 
-
-if __name__ == "__main__":
-    cap = unhexlify(b"4500003ca0e3000080116185c0a80205d474a126")
-    obj = ipv4_header.parse(cap)
-    print (obj)
-    print (repr(ipv4_header.build(obj)))
 

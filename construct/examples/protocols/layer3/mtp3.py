@@ -5,8 +5,8 @@ Message Transport Part 3 (SS7 protocol stack)
 from construct import *
 
 
-mtp3_header = BitStruct("mtp3_header",
-    Nibble("service_indicator"),
-    Nibble("subservice"),
+mtp3_header = "mtp3_header" / BitStruct(
+    "service_indicator" / Nibble,
+    "subservice" / Nibble,
 )
 

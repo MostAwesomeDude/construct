@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import unittest
+import unittest, pytest, os
 from declarativeunittest import raises
-import pytest
+ontravis = 'TRAVIS' in os.environ
 
 from construct import *
 from construct.lib import *
