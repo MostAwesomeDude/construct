@@ -20,7 +20,7 @@ class TestProtocols(unittest.TestCase):
         if ontravis:
             filename = "examples/protocols/" + filename
         if not ontravis:
-            filename = "../../../../tests/examples/protocols/" + filename
+            filename = "tests/examples/protocols/" + filename
         with open(filename,'rb') as f:
             data = f.read()
         obj = format.parse(data)

@@ -18,9 +18,9 @@ class TestFormats(unittest.TestCase):
 
     def common(self, format, filename):
         if ontravis:
-            filename = "examples/" + filename
+            filename = "examples/formats/" + filename
         if not ontravis:
-            filename = "tests/examples/" + filename
+            filename = "tests/examples/formats/" + filename
         with open(filename,'rb') as f:
             data = f.read()
         obj = format.parse(data)
