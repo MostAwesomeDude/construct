@@ -1,5 +1,5 @@
 =============
-Miscellaneous **
+Miscellaneous
 =============
 
 Miscellaneous

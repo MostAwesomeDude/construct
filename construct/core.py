@@ -1137,47 +1137,6 @@ class RepeatUntil(Subconstruct):
 #===============================================================================
 # subconstructs
 #===============================================================================
-class RawCopy(Subconstruct):
-    r"""
-    Returns a dict containing both parsed subcon, the raw bytes that were consumed by it, starting and ending offset in the stream, and the amount of bytes. Builds either from raw bytes or a value used by subcon.
-
-    Context does contain a dict with data (if built from raw bytes) or with both (if built from value) during building.
-
-    Example::
-
-        >>> RawCopy(VarInt).build(dict(value=2**100))
-        b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04'
-        >>> RawCopy(VarInt).parse(_)
-        {'length': 15, 'offset1': 0, 'value': 4, 'data': b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04', 'offset2': 15}
-
-        >>> RawCopy(VarInt).build(dict(data=b"\x0f"))
-        b'\x0f'
-        >>> RawCopy(VarInt).parse(_)
-        {'length': 1, 'offset1': 0, 'value': 15, 'data': b'\x0f', 'offset2': 1}
-    """
-    def __init__(self, subcon):
-        super(RawCopy, self).__init__(subcon)
-    def _parse(self, stream, context):
-        offset1 = stream.tell()
-        obj = self.subcon._parse(stream, context)
-        offset2 = stream.tell()
-        stream.seek(offset1)
-        data = _read_stream(stream, offset2-offset1)
-        return dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
-    def _build(self, obj, stream, context):
-        if 'data' in obj:
-            data = obj['data']
-            _write_stream(stream, len(data), data)
-            return dict(data=data, length=len(data))
-        elif 'value' in obj:
-            value = obj['value']
-            data = self.subcon.build(value, context)
-            _write_stream(stream, len(data), data)
-            return dict(data=data, value=value, length=len(data))
-        else:
-            raise ConstructError('both data and value keys are missing')
-
-
 class Padded(Subconstruct):
     r"""
     Appends additional null bytes to achieve a fixed length.
@@ -1937,6 +1896,44 @@ class Numpy(Construct):
 #===============================================================================
 # tunneling and swapping
 #===============================================================================
+class RawCopy(Subconstruct):
+    r"""
+    Returns a dict containing both parsed subcon, the raw bytes that were consumed by it, starting and ending offset in the stream, and the amount of bytes. Builds either from raw bytes or a value used by subcon.
+
+    Context does contain a dict with data (if built from raw bytes) or with both (if built from value) during building.
+
+    Example::
+
+        >>> RawCopy(VarInt).build(dict(value=255))
+        b'\xff\x01'
+        >>> RawCopy(VarInt).build(dict(data=b"\xff\x01"))
+        b'\xff\x01'
+        >>> RawCopy(VarInt).parse(_)
+        {'length': 2, 'offset2': 2, 'offset1': 0, 'data': b'\xff\x01', 'value': 255}
+    """
+    def __init__(self, subcon):
+        super(RawCopy, self).__init__(subcon)
+    def _parse(self, stream, context):
+        offset1 = stream.tell()
+        obj = self.subcon._parse(stream, context)
+        offset2 = stream.tell()
+        stream.seek(offset1)
+        data = _read_stream(stream, offset2-offset1)
+        return dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+    def _build(self, obj, stream, context):
+        if 'data' in obj:
+            data = obj['data']
+            _write_stream(stream, len(data), data)
+            return dict(data=data, length=len(data))
+        elif 'value' in obj:
+            value = obj['value']
+            data = self.subcon.build(value, context)
+            _write_stream(stream, len(data), data)
+            return dict(data=data, value=value, length=len(data))
+        else:
+            raise ConstructError('both data and value keys are missing')
+
+
 def ByteSwapped(subcon):
     r"""
     Swap the byte order within boundaries of the given subcon.

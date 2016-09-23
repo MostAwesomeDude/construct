@@ -120,6 +120,7 @@ Sections marked with ** are stale and broken.
    meta
    misc
    streaming
+   tunneling
    lazy
    extending
    debugging
@@ -132,7 +133,10 @@ API Reference
 
    api/strings
    api/repeaters
+   api/streaming
+   api/tunneling
    api/debugging
+
    api/core
    api/lib
 
