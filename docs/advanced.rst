@@ -34,6 +34,11 @@ Long integers (or those of particularly odd sizes) can be encoded using a fixed-
 >>> BytesInteger(16).build(255)
 b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff'
 
+Numbers are mostly implemented using `struct` module using:
+
+>>> FormatField("<","l").build(1)
+b'\x01\x00\x00\x00'
+
 
 
 Bytes and bits

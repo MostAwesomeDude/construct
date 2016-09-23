@@ -1348,6 +1348,8 @@ class Union(Construct):
     r"""
     Set of overlapping fields (like unions in C). When parsing, all fields read the same data bytes. When building, either the first subcon that builds without exception is allowed to put into the stream, or the subcon is selected by index or name.
 
+    .. warning:: Currently BROKEN. And no buildfrom=int.
+
     :param subcons: subconstructs for parsing (order sensitive), one of them used for building
     :param buildfrom: the subcon used for building and calculating size, can be integer index or string name, default is None (then tries each subcon in sequence)
 
@@ -1452,7 +1454,14 @@ def Optional(subcon):
 
     Example::
 
-        ???
+        >>> Optional(Int64ul).parse(b"1234")
+        >>> Optional(Int64ul).parse(b"12345678")
+        4050765991979987505
+
+        >>> Optional(Int64ul).build(1)
+        b'\x01\x00\x00\x00\x00\x00\x00\x00'
+        >>> Optional(Int64ul).build("1")
+        b''
     """
     return Select(subcon, Pass)
 
@@ -1549,11 +1558,7 @@ def If(predicate, subcon):
         >>> If(this.x > 0, Byte).build(255, dict(x=0))
         b''
     """
-    return IfThenElse(
-        predicate,
-        subcon,
-        Pass,
-    )
+    return IfThenElse(predicate, subcon, Pass)
 
 
 #===============================================================================
@@ -2422,6 +2427,13 @@ class Renamed(Subconstruct):
 
     :param newname: the new name
     :param subcon: the subcon to rename
+
+    Example::
+
+        >>> "name" / Int32ul
+        <Renamed: name>
+        >>> Renamed("name", Int32ul)
+        <Renamed: name>
     """
     def __init__(self, newname, subcon):
         super(Renamed, self).__init__(subcon)

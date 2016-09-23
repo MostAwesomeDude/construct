@@ -17,6 +17,23 @@ Pointer allows for non-sequential construction. The pointer first changes the st
 
 
 
+Peek
+----
+
+Parses the subconstruct but restores the stream position afterwards ("peeking").
+
+.. note:: Works only with seekable streams (in-memory and files).
+
+>>> foo = Struct("foo",
+...     Byte("a"),
+...     Peek(Byte("b")),
+...     Byte("c"),
+... )
+>>> foo.parse("\x01\x02")
+Container(a = 1, b = 2, c = 2)
+
+
+
 Pure side effects
 -----------------
 

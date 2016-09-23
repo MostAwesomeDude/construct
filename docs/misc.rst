@@ -2,155 +2,57 @@
 Miscellaneous **
 =============
 
-Conditional
-===========
-
-Optional
---------
-
-Attempts to parse or build the subconstruct; if it fails, returns a default value. By default, the default value is ``None``.
-
->>> foo = Optional(UBInt32("foo"))
->>> foo.parse("\x12\x34\x56\x78")
-305419896
->>> print foo.parse("\x12\x34\x56")
-None
->>>
->>> foo = Optional(UBInt32("foo"), default = 17)
->>> foo.parse("\x12\x34\x56\x78")
-305419896
->>> foo.parse("\x12\x34\x56")
-17
-
-
-If
---
-
-Parses or builds the subconstruct only if a certain condition is met. Otherwise, returns a default value. By default, the default value is ``None``.
-
->>> foo = Struct("foo",
-...     Flag("has_options"),
-...     If(lambda ctx: ctx["has_options"],
-...         Bytes("options", 5)
-...     )
-... )
->>>
->>> foo.parse("\x01hello")
-Container(has_options = True, options = 'hello')
->>>
->>> foo.parse("\x00hello")
-Container(has_options = False, options = None)
->>>
-
-
-IfThenElse
-----------
-
-Branches the construction path based on a given condition. If the condition is met, the ``then_construct`` is used; otherwise the ``else_construct`` is used.
-
->>> foo = Struct("foo",
-...     Byte("a"),
-...     IfThenElse("b", lambda ctx: ctx["a"] > 7,
-...         UBInt32("foo"),
-...         UBInt16("bar")
-...     ),
-... )
->>>
->>> foo.parse("\x09\xaa\xbb\xcc\xdd")    # <-- condition is met
-Container(a = 9, b = 2864434397L)
->>> foo.parse("\x02\xaa\xbb")            # <-- condition is not met
-Container(a = 2, b = 43707)
-
-
-Alignment and Padding
-=====================
-
-Aligned
--------
-
-Aligns the subconstruct to a given modulus boundary (default is 4).
-
->>> foo = Aligned(UBInt8("foo"))
->>> foo.parse("\xff\x00\x00\x00")
-255
->>> foo.build(255)
-'\xff\x00\x00\x00'
-
-
-AlignedStruct
--------------
-
-Automatically aligns all the fields of the Struct to the modulus
-boundary.
-
->>> foo = AlignedStruct("foo",
-...     Byte("a"),
-...     Byte("b"),
-... )
->>>
->>> foo.parse("\x01\x00\x00\x00\x02\x00\x00\x00")
-Container(a = 1, b = 2)
->>> foo.build(Container(a=1,b=2))
-'\x01\x00\x00\x00\x02\x00\x00\x00'
-
+Miscellaneous
+=============
 
 Padding
 -------
 
-Padding is a sequence of bytes or bits that contains no data (its value is discarded), and is necessary only for padding, etc.
+Padding is a sequence of bytes or bits that contains no data (its value is discarded), and is necessary only for padding, or it can be used simply to discard some amount of garbage data. Notice that Padding does not require a name, because it does not need a value to be built from. Struct detects that and does not even search the dictionary for a value mathing Padding's name.
 
->>> foo = Struct("foo",
-...     Byte("a"),
-...     Padding(2),
-...     Byte("b"),
+>>> st = Struct(
+...     Padding(4),
 ... )
->>>
->>> foo.parse("\x01\x00\x00\x02")
-Container(a = 1, b = 2)
+>>> st.build({})
+b'\x00\x00\x00\x00'
 
 
-Special Constructs
-==================
-
-Rename
-------
-
-Renames a construct.
-
->>> foo = Struct("foo",
-...     Rename("xxx", Byte("yyy")),
-... )
->>>
->>> foo.parse("\x02")
-Container(xxx = 2)
-
-
-Alias
+Const
 -----
 
-Creates an alias for an existing field of a Struct.
+A constant value that is required to exist in the data and match a given value. If the value is not matched, ConstError is raised. Useful for so called magic numbers, signatures, asserting correct protocol version, etc.
 
->>> foo = Struct("foo",
-...     Byte("a"),
-...     Alias("b", "a"),
-... )
->>>
->>> foo.parse("\x03")
-Container(a = 3, b = 3)
+>>> Const(b"IHDR").build()
+>>> Const(b"IHDR").build(None)
+b'IHDR'
+>>> Const(b"IHDR").parse(b"JPEG")
+construct.core.ConstError: expected b'IHDR' but parsed b'JPEG'
+
+By default, Const uses a Bytes field with size mathing the value. However, other fields can also be used:
+
+>>> Const(Int32ul, 1).build(None)
+b'\x01\x00\x00\x00'
 
 
 Computed
 --------
 
-Represents a computed value. Value does not read or write anything to the stream; it only returns its computed value as the result.
+Represents a computed value. Value does not read or write anything to the stream. It only returns its computed value as the result. Usually Computed fields are used for computations on the context. Look at the previous chapter. However, Computed can also produce values based on external environment, random module, or constants. For example:
 
->>> foo = Struct("foo",
-...     Byte("a"),
-...     Value("b", lambda ctx: ctx.a + 7)
-... )
->>>
->>> foo.parse("\x02")
-Container(a = 2, b = 9)
+>>> Computed(lambda ctx: os.urandom(10)).parse(b"")
+b'[\x86\xcc\xf1b\xd9\x10\x0f?\x1a'
+
+
+Pass
+----
+
+A do-nothing construct, useful in Switches and Enums.
+
+.. note:: Pass is a singleton object. Do not try to instantiate it, ``Pass()`` will not work.
+
+>>> Pass.parse(b"123123")
+>>> Pass.build(None)
+b''
 
 
 Terminator
@@ -158,65 +60,33 @@ Terminator
 
 Asserts the end of the stream has been reached (so that no more trailing data is left unparsed).
 
-.. note:: Terminator is a singleton object. Do not try to "instantiate" it (i.e., ``Terminator()``).
+.. note:: Terminator is a singleton object. Do not try to instantiate it, ``Terminator()`` will not work.
 
->>> Terminator.parse("")
->>> Terminator.parse("x")
-Traceback (most recent call last):
-  .
-  .
-construct.extensions.TerminatorError: end of stream not reached
+>>> Terminator.parse(b"")
+>>> Terminator.parse(b"x")
+construct.core.TerminatorError: expected end of stream
 
 
-Pass
-----
-
-A do-nothing construct; useful in Switches and Enums.
-
-.. note:: Pass is a singleton object. Do not try to "instantiate" it (i.e., ``Pass()``).
-
->>> print Pass.parse("xyz")
-None
-
-
-Const
+Numpy
 -----
 
-A constant value that is required to exist in the data. If the value is not matched, ConstError is raised. Useful for magic numbers, signatures, asserting correct protocol version, etc.
+Numpy arrays can be preserved and retrived along with their dtype, shape and size, and all. Otherwise, if dtype is constant, you could use PrefixedArray or Range to store enumerables.
 
->>> foo = Const("jpegsignature", b"IHDR")
->>> foo.parse(b"IHDR")
-b"IHDR"
->>> foo.parse(b"JPEG")
-Traceback (most recent call last):
-  .
-  .
-construct.extensions.ConstError: expected 'IHDR', found 'JPEG'
->>>
+>>> import numpy
+>>> Numpy.build(numpy.asarray([1,2,3]))
+b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
 
 
-Peek
-----
 
-Parses the subconstruct but restores the stream position afterwards ("peeking").
-
-.. note:: Works only with seekable streams (in-memory and files).
-
->>> foo = Struct("foo",
-...     Byte("a"),
-...     Peek(Byte("b")),
-...     Byte("c"),
-... )
->>> foo.parse("\x01\x02")
-Container(a = 1, b = 2, c = 2)
-
+Conditional
+===========
 
 Union
 -----
 
-Treats the same data as multiple constructs (similar to C's union statement). When building, each subconstruct parses the same data (so you can "look" at the data in multiple views); when writing, the first subconstruct is used to build the final result.
+.. warning:: Currently BROKEN.
 
-.. note:: Works only with seekable streams (in-memory and files).
+Treats the same data as multiple constructs (similar to C union statement). When parsing, each subconstruct parses the same data (so you can "look" at the data in multiple views). When building, the first subconstruct is used to build the final result.
 
 >>> foo = Union("foo",
 ...     UBInt32("a"),
@@ -238,4 +108,97 @@ Container:
 >>> foo.build(Container(a = 0x11223344, b=0,c=Container(low=0, high=0),d=0)) #
 <-- only "a" is used for building
 '\x11"3D'
+
+Select
+------
+
+<<< add >>>
+
+Optional
+--------
+
+Attempts to parse or build the subconstruct. If it fails during parsing, returns a None. If it fails during building, it puts nothing into the stream.
+
+>>> Optional(Int64ul).parse(b"1234")
+>>> Optional(Int64ul).parse(b"12345678")
+4050765991979987505
+
+>>> Optional(Int64ul).build(1)
+b'\x01\x00\x00\x00\x00\x00\x00\x00'
+>>> Optional(Int64ul).build("1")
+b''
+
+
+If
+--
+
+Parses or builds the subconstruct only if a certain condition is met. Otherwise, returns a None and puts nothing.
+
+>>> If(this.x > 0, Byte).build(255, dict(x=1))
+b'\xff'
+>>> If(this.x > 0, Byte).build(255, dict(x=0))
+b''
+
+
+IfThenElse
+----------
+
+Branches the construction path based on a given condition. If the condition is met, the ``thensubcon`` is used, otherwise the ``elsesubcon`` is used.
+
+>>> IfThenElse(this.x > 0, VarInt, Byte).build(255, dict(x=1))
+b'\xff\x01'
+>>> IfThenElse(this.x > 0, VarInt, Byte).build(255, dict(x=0))
+b'\xff'
+
+Switch
+------
+
+Branches the construction based on a return value from a function. This is a more general version of IfThenElse.
+
+>>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, dict(n=1))
+b'\x05'
+>>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, dict(n=2))
+b'\x00\x00\x00\x05'
+
+
+
+Alignment and Padding
+=====================
+
+Aligned
+-------
+
+Aligns the subconstruct to a given modulus boundary.
+
+>>> Aligned(Int16ub, modulus=4).build(1)
+b'\x00\x01\x00\x00'
+
+AlignedStruct
+-------------
+
+Automatically aligns all the fields of the Struct to the modulus boundary. It does NOT align entire Struct.
+
+>>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).build(dict(a=1,b=5))
+b'\x01\x00\x00\x00\x00\x05\x00\x00'
+
+Padded
+------
+
+Appends additional null bytes to achieve a fixed length.
+
+>>> Padded(4, Byte).build(255)
+b'\xff\x00\x00\x00'
+
+
+
+Special Constructs
+==================
+
+Those are either used internally or have no practical use. They are referenced just for completeness.
+
+.. autoclass:: construct.Embedded
+
+.. autoclass:: construct.Renamed
+
+.. autoclass:: construct.Alias
 
