@@ -10,3 +10,6 @@ class TestHex(unittest.TestCase):
         assert hexundump(hexdump(b"",32),32) == b""
         assert hexundump(hexdump(b"??????????",32),32) == b"??????????"
 
+        for i in range(100):
+            assert hexundump(hexdump(b"?"*i,32),32) == b"?"*i
+
