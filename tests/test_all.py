@@ -8,7 +8,7 @@ from construct import *
 from construct.lib import *
 
 from io import BytesIO
-import os, random, itertools, collections, hashlib
+import os, random, itertools, collections, hashlib, math
 ident = lambda x: x
 
 
@@ -161,10 +161,11 @@ class TestCore(unittest.TestCase):
                 b = os.urandom(d.sizeof())
                 assert d.build(d.parse(b)) == b
 
-    @pytest.mark.xfail(reason="float unpack on random bytes fails randomly")
     def test_formatfield_floats_randomized(self):
         # there is a roundoff eror because Python float is a C double
         # http://stackoverflow.com/questions/39619636/struct-unpackstruct-packfloat-has-roundoff-error
+        # and analog although that was misplaced
+        # http://stackoverflow.com/questions/39676482/struct-packstruct-unpackfloat-is-inconsistent-on-py3
         for endianess,dtype in itertools.product("<>=","fd"):
             d = FormatField(endianess, dtype)
             for i in range(100):
@@ -174,9 +175,9 @@ class TestCore(unittest.TestCase):
                 else:
                     assert abs(d.parse(d.build(x)) - x) < 1e-3
             for i in range(100):
-                # this fails
                 b = os.urandom(d.sizeof())
-                assert d.build(d.parse(b)) == b
+                if not math.isnan(d.parse(b)):
+                    assert d.build(d.parse(b)) == b
 
     @pytest.mark.xfail(PY26, reason="struct.pack has silent overflow")
     def test_formatfield_overflow(self):
