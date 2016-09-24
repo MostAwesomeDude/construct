@@ -3,7 +3,7 @@ Transition to 2.8 **
 =================
 
 Overall
--------
+=======
 
 All fields and complex constructs are now nameless. Look at Struct and Sequence, and also Range and Array.
 
