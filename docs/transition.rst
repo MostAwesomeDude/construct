@@ -176,11 +176,12 @@ Peek dropped `perform_build` parameter, never builds
 Tunneling
 ---------
 
-<<< this has no tutorial written yet so... >>>
-
 RawCopy was added, returns both parsed object and raw bytes consumed
 
 Prefixed was added, allows to put greedy fields inside structs and sequences
 
+ByteSwapped and BitsSwapped added
+
+Checksum and Compressed added
 
 

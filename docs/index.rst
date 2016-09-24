@@ -129,8 +129,11 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
+   api/bytes
    api/strings
+   api/structseq
    api/repeaters
+   api/lazy
    api/streaming
    api/tunneling
    api/debugging

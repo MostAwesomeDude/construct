@@ -10,4 +10,8 @@ Core API: Structs and Sequences
 
 .. autofunction:: construct.AlignedStruct
 
+.. autofunction:: construct.BitStruct
+
+.. autofunction:: construct.EmbeddedBitStruct
+
 

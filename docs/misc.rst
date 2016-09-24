@@ -97,33 +97,25 @@ Conditional
 Union
 -----
 
-Treats the same data as multiple constructs (similar to C union statement). When parsing, each subconstruct parses the same data (so you can "look" at the data in multiple views). When building, the first subconstruct is used to build the final result.
+Treats the same data as multiple constructs (similar to C union statement). When parsing, each subconstruct parses the same data (so you can "look" at the data in multiple views).
 
->>> foo = Union("foo",
-...     UBInt32("a"),
-...     UBInt16("b"),                            # <-- note that this field is
-of a different size
-...     Struct("c", UBInt16("high"), UBInt16("low")),
-...     LFloat32("d"),
-... )
->>>
->>> print foo.parse("\xaa\xbb\xcc\xdd")
-Container:
-    a = 2864434397L
-    b = 43707
-    c = Container:
-        high = 43707
-        low = 52445
-    d = -1.8440714901698642e+018
->>>
->>> foo.build(Container(a = 0x11223344, b=0,c=Container(low=0, high=0),d=0)) #
-<-- only "a" is used for building
-'\x11"3D'
+>>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
+Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
+
+>>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom=3).build(dict(chars=range(8)))
+b'\x00\x01\x02\x03\x04\x05\x06\x07'
+>>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
+b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
 Select
 ------
 
-<<< add >>>
+Attempts to parse or build each of the subcons, in order they were provided.
+
+>>> Select(Int32ub, CString(encoding="utf8")).build(1)
+b'\x00\x00\x00\x01'
+>>> Select(Int32ub, CString(encoding="utf8")).build("Афон")
+b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
 Optional
 --------
@@ -219,7 +211,4 @@ Those are either used internally or have no practical use. They are referenced j
 
 .. autoclass:: construct.Embedded
 
-.. autoclass:: construct.Renamed
-
-.. autoclass:: construct.Alias
 

@@ -1,5 +1,5 @@
 =================
-Tunneling tactics *
+Tunneling tactics **
 =================
 
 .. autofunction:: construct.RawCopy

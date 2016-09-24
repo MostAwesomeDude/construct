@@ -1308,14 +1308,22 @@ def EmbeddedBitStruct(*subcons):
 #===============================================================================
 class Union(Construct):
     r"""
-    Set of overlapping fields (like unions in C). When parsing, all fields read the same data bytes. When building, either the first subcon that can find an entry in given dict is allowed to put into the stream, or the subcon is selected by index or name. Can also build nothing.
+    Treats the same data as multiple constructs (similar to C union statement) so you can "look" at the data in multiple views.
+
+    When parsing, all fields read the same data bytes. When building, either the first subcon that can find an entry in given dict is allowed to put into the stream, or the subcon is selected by index or name. Can also build nothing.
 
     :param subcons: subconstructs (order and name sensitive)
     :param buildfrom: the subcon used for building and calculating size, can be integer index or string name, default is None (then tries each subcon in sequence), or the Pass singleton
 
     Example::
 
-        ???
+        >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
+        Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
+
+        >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom=3).build(dict(chars=range(8)))
+        b'\x00\x01\x02\x03\x04\x05\x06\x07'
+        >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
+        b'\x00\x01\x02\x03\x04\x05\x06\x07'
     """
     __slots__ = ["subcons","buildfrom"]
     def __init__(self, *subcons, **kw):
@@ -1389,16 +1397,10 @@ class Select(Construct):
 
     Example::
 
-        >>> Select(Int32ub, Int16ub, Int8ub, Pass).parse(b"1234")
-        825373492
-        >>> Select(Int32ub, Int16ub, Int8ub, Pass).parse(b"12")
-        12594
-        >>> Select(Int32ub, Int16ub, Int8ub, Pass).parse(b"1")
-        49
-        >>> Select(Int32ub, Int16ub, Int8ub, Pass).parse(b"")
-
-        >>> Select(Int32ub, Int16ub, Int8ub, Pass).build(1)
+        >>> Select(Int32ub, CString(encoding="utf8")).build(1)
         b'\x00\x00\x00\x01'
+        >>> Select(Int32ub, CString(encoding="utf8")).build("Афон")
+        b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
     """
     __slots__ = ["subcons", "includename"]
     def __init__(self, *subcons, **kw):
