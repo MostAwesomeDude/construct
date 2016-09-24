@@ -1197,21 +1197,21 @@ class Aligned(Subconstruct):
     r"""
     Appends additional null bytes to achieve a length that is shortest multiple of a modulus.
 
+    :param modulus: the modulus to final length, an int or a context->int function
     :param subcon: the subcon to align
-    :param modulus: the modulus to final length
-    :param pattern: the padding pattern (default is \x00)
+    :param pattern: optional, the padding pattern (default is \x00)
 
     Example::
 
-        >>> Aligned(Int16ub, modulus=4).build(1)
+        >>> Aligned(4, Int16ub).build(1)
         b'\x00\x01\x00\x00'
-        >>> Aligned(Int16ub, modulus=4).parse(_)
+        >>> Aligned(4, Int16ub).parse(_)
         1
-        >>> Aligned(Int16ub, modulus=4).sizeof()
+        >>> Aligned(4, Int16ub).sizeof()
         4
     """
     __slots__ = ["subcon", "modulus", "pattern"]
-    def __init__(self, subcon, modulus, pattern=b"\x00"):
+    def __init__(self, modulus, subcon, pattern=b"\x00"):
         if not isinstance(pattern, bytes) or len(pattern) != 1:
             raise PaddingError("pattern expected to be b-string character")
         super(Aligned, self).__init__(subcon)
@@ -1239,26 +1239,26 @@ class Aligned(Subconstruct):
         return sublen + (-sublen % modulus)
 
 
-def AlignedStruct(*subcons, **kw):
+def AlignedStruct(modulus, *subcons, **kw):
     r"""
     Makes a structure where each field is aligned to the same modulus.
 
     .. seealso:: Uses :func:`~construct.core.Aligned` and `~construct.core.Struct`.
 
-    :param \*subcons: the subcons that make up this structure
     :param modulus: passed to each member
-    :param pattern: passed to each member
+    :param \*subcons: the subcons that make up this structure
+    :param pattern: optional, keyword parameter passed to each member
 
     Example::
 
-        >>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).build(dict(a=1,b=5))
+        >>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5))
         b'\x01\x00\x00\x00\x00\x05\x00\x00'
-        >>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).parse(_)
+        >>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).parse(_)
         Container(a=1)(b=5)
-        >>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).sizeof()
+        >>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).sizeof()
         8
     """
-    return Struct(*(Aligned(sc, **kw) for sc in subcons))
+    return Struct(*[Aligned(modulus, sc, **kw) for sc in subcons])
 
 
 def BitStruct(*subcons):

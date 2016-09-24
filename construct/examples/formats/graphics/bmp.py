@@ -11,10 +11,10 @@ def UncompressedRows(subcon, align_to_byte = False):
     """argh! lines must be aligned to a 4-byte boundary, and bit-pixel
     lines must be aligned to full bytes..."""
     if align_to_byte:
-        line_pixels = Bitwise(Aligned(Array(this.width, subcon), modulus = 8))
+        line_pixels = Bitwise(Aligned(8, Array(this.width, subcon)))
     else:
         line_pixels = Array(this.width, subcon)
-    return Array(this.height, Aligned(line_pixels, modulus = 4))
+    return Array(this.height, Aligned(4, line_pixels))
 
 uncompressed_pixels = "uncompressed" / Switch(this.bpp,
     {

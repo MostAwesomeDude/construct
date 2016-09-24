@@ -407,23 +407,23 @@ class TestCore(unittest.TestCase):
         assert raises(Padded, 4, Byte, pattern=u"?") == PaddingError
 
     def test_aligned(self):
-        assert Aligned(Byte, modulus=4).parse(b"\x01\x00\x00\x00") == 1
-        assert Aligned(Byte, modulus=4).build(1) == b"\x01\x00\x00\x00"
-        assert Aligned(Byte, modulus=4).sizeof() == 4
-        assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).parse(b"\x01\x00\x00\x00\x02") == Container(a=1)(b=2)
-        assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x00\x00\x02"
-        assert Struct(Aligned("a"/Byte, modulus=4), "b"/Byte).sizeof() == 5
-        assert Aligned(Int8ub,  modulus=4).build(1) == b"\x01\x00\x00\x00"
-        assert Aligned(Int16ub, modulus=4).build(1) == b"\x00\x01\x00\x00"
-        assert Aligned(Int32ub, modulus=4).build(1) == b"\x00\x00\x00\x01"
-        assert Aligned(Int64ub, modulus=4).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
-        assert Aligned(Byte, modulus=this.m).parse(b"\xff\x00", dict(m=2)) == 255
-        assert Aligned(Byte, modulus=this.m).build(255, dict(m=2)) == b"\xff\x00"
-        assert Aligned(Byte, modulus=this.m).sizeof(dict(m=2)) == 2
+        assert Aligned(4, Byte).parse(b"\x01\x00\x00\x00") == 1
+        assert Aligned(4, Byte).build(1) == b"\x01\x00\x00\x00"
+        assert Aligned(4, Byte).sizeof() == 4
+        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).parse(b"\x01\x00\x00\x00\x02") == Container(a=1)(b=2)
+        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x00\x00\x02"
+        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).sizeof() == 5
+        assert Aligned(4, Int8ub).build(1) == b"\x01\x00\x00\x00"
+        assert Aligned(4, Int16ub).build(1) == b"\x00\x01\x00\x00"
+        assert Aligned(4, Int32ub).build(1) == b"\x00\x00\x00\x01"
+        assert Aligned(4, Int64ub).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
+        assert Aligned(this.m, Byte).parse(b"\xff\x00", dict(m=2)) == 255
+        assert Aligned(this.m, Byte).build(255, dict(m=2)) == b"\xff\x00"
+        assert Aligned(this.m, Byte).sizeof(dict(m=2)) == 2
 
     def test_alignedstruct(self):
-        assert AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4, pattern=b"?").parse(b"\x01???\x00\x05??") == Container(a=1)(b=5)
-        assert AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4, pattern=b"?").build(dict(a=1,b=5)) == b"\x01???\x00\x05??"
+        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub, pattern=b"?").parse(b"\x01???\x00\x05??") == Container(a=1)(b=5)
+        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub, pattern=b"?").build(dict(a=1,b=5)) == b"\x01???\x00\x05??"
 
     def test_from_issue_87(self):
         assert ("string_name" / Byte).parse(b"\x01") == 1
@@ -807,8 +807,8 @@ class TestCore(unittest.TestCase):
         assert OnDemandPointer(lambda ctx: 2, Byte).sizeof() == 0
 
     def test_from_issue_76(self):
-        assert Aligned(Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)), modulus=4).parse(b"\x02\xab\xcd\x00") == Container(a=2)(f=b"\xab\xcd")
-        assert Aligned(Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)), modulus=4).build(Container(a=2)(f=b"\xab\xcd")) == b"\x02\xab\xcd\x00"
+        assert Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).parse(b"\x02\xab\xcd\x00") == Container(a=2)(f=b"\xab\xcd")
+        assert Aligned(4,   Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).build(Container(a=2)(f=b"\xab\xcd")) == b"\x02\xab\xcd\x00"
 
     def test_flag(self):
         assert Flag.parse(b"\x00") == False
@@ -993,14 +993,14 @@ class TestCore(unittest.TestCase):
     @pytest.mark.xfail(reason="issue #171, expected result is not clear")
     def test_from_issue_171(self):
         attributes = BitStruct(
-            "attr" / Aligned(Array(3, Struct(
+            "attr" / Aligned(8, Array(3, Struct(
                 "attrCode" / BitsInteger(16),
                 "attrValue" / Switch(this.attrCode, {
                     34: BitsInteger(8),
                     205: BitsInteger(2),
                     512: BitsInteger(2)
                 }),
-            )), modulus=8),
+            ))),
         )
         blob = b"\x00\x22\x82\x00\xCD\x80\x80\x09"
         print(attributes.parse(blob))

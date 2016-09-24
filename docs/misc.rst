@@ -181,7 +181,7 @@ Aligned
 
 Aligns the subconstruct to a given modulus boundary.
 
->>> Aligned(Int16ub, modulus=4).build(1)
+>>> Aligned(4, Int16ub).build(1)
 b'\x00\x01\x00\x00'
 
 AlignedStruct
@@ -189,7 +189,7 @@ AlignedStruct
 
 Automatically aligns all the fields of the Struct to the modulus boundary. It does NOT align entire Struct.
 
->>> AlignedStruct("a"/Int8ub, "b"/Int16ub, modulus=4).build(dict(a=1,b=5))
+>>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5))
 b'\x01\x00\x00\x00\x00\x05\x00\x00'
 
 Padding
