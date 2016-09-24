@@ -87,18 +87,6 @@ def _write_stream(stream, length, data):
     if written != length:
         raise FieldError("could not write bytes, written %d, should %d" % (written, length))
 
-def _subobj(sc, obj):
-    if sc.flagembedded:
-        return obj
-    else:
-        return obj[sc.name]
-
-def _updcon(con, sc, obj):
-    if sc.flagembedded:
-        con.update(obj)
-    else:
-        con[sc.name] = obj
-
 
 #===============================================================================
 # abstract constructs
