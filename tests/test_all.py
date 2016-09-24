@@ -990,4 +990,22 @@ class TestCore(unittest.TestCase):
         # a-field computed on nested context, merged only after entire inner-struct returns
         assert d2.parse(b"\x01\x0f") == Container(x=1)(y=15)(a=2)(b=17)(c=4)(d=19)
 
+    @pytest.mark.xfail(reason="issue #171, expected result is not clear")
+    def test_from_issue_171(self):
+        attributes = BitStruct(
+            "attr" / Aligned(Array(3, Struct(
+                "attrCode" / BitsInteger(16),
+                "attrValue" / Switch(this.attrCode, {
+                    34: BitsInteger(8),
+                    205: BitsInteger(2),
+                    512: BitsInteger(2)
+                }),
+            )), modulus=8),
+        )
+        blob = b"\x00\x22\x82\x00\xCD\x80\x80\x09"
+        print(attributes.parse(blob))
+        assert attributes.parse(blob) == Container(attr=[
+            Container(attrCode=34,attrValue=130),
+            Container(attrCode=205,attrValue=2),
+            Container(attrCode=512,attrValue=1), ])
 
