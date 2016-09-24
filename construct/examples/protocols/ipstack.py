@@ -2,35 +2,764 @@
 TCP/IP Protocol Stack
 
 WARNING: before parsing the application layer over a TCP stream, you must 
-first combine all the TCP frames into a stream. See utils.tcpip for some solutions
+first combine all the TCP frames into a stream. See utils.tcpip for some solutions.
 """
+
 from construct import *
 from construct.lib import *
-from construct.protocols.layer2.ethernet import ethernet_header
-from construct.protocols.layer3.ipv4 import ipv4_header
-from construct.protocols.layer3.ipv6 import ipv6_header
-from construct.protocols.layer4.tcp import tcp_header
-from construct.protocols.layer4.udp import udp_header
 
 
+#===============================================================================
+# layer 2, Ethernet
+#===============================================================================
 
-layer4_tcp = Struct("layer4_tcp",
-    Rename("header", tcp_header),
-    HexDumpAdapter(
-        Field("next", lambda ctx:
-            ctx["_"]["header"].payload_length - ctx["header"].header_length
-        )
+class MacAddressAdapter(Adapter):
+    def _encode(self, obj, context):
+        return [int(part, 16) for part in obj.split("-")]
+    def _decode(self, obj, context):
+        return "-".join("%02x" % b for b in obj)
+
+MacAddress = MacAddressAdapter(Byte[6])
+
+
+ethernet_header = "ethernet_header" / Struct(
+    "destination" / MacAddress,
+    "source" / MacAddress,
+    "type" / Enum(Int16ub,
+        IPv4 = 0x0800,
+        ARP = 0x0806,
+        RARP = 0x8035,
+        X25 = 0x0805,
+        IPX = 0x8137,
+        IPv6 = 0x86DD,
+        default = Pass,
     ),
 )
 
-layer4_udp = Struct("layer4_udp",
-    Rename("header", udp_header),
-    HexDumpAdapter(
-        Field("next", lambda ctx: ctx["header"].payload_length)
+#===============================================================================
+# layer 2, ARP
+#===============================================================================
+
+# def HwAddress(name):
+#     return IfThenElse(this.hardware_type == "ETHERNET",
+#         MacAddressAdapter(Field("data", lambda ctx: ctx.hwaddr_length)),
+#         Field("data", lambda ctx: ctx.hwaddr_length)
+#     )
+
+# def ProtoAddress(name):
+#     return IfThenElse(name, lambda ctx: ctx.protocol_type == "IP",
+#         IpAddressAdapter(Field("data", lambda ctx: ctx.protoaddr_length)),
+#         Field("data", lambda ctx: ctx.protoaddr_length)
+#     )
+
+# arp_header = "arp_header" / Struct(
+#     "hardware_type" / Enum(Int16ub,
+#         ETHERNET = 1,
+#         EXPERIMENTAL_ETHERNET = 2,
+#         ProNET_TOKEN_RING = 4,
+#         CHAOS = 5,
+#         IEEE802 = 6,
+#         ARCNET = 7,
+#         HYPERCHANNEL = 8,
+#         ULTRALINK = 13,
+#         FRAME_RELAY = 15,
+#         FIBRE_CHANNEL = 18,
+#         IEEE1394 = 24,
+#         HIPARP = 28,
+#         ISO7816_3 = 29,
+#         ARPSEC = 30,
+#         IPSEC_TUNNEL = 31,
+#         INFINIBAND = 32,
+#     ),
+#     "protocol_type" / Enum(Int16ub,
+#         IP = 0x0800,
+#     ),
+#     "hwaddr_length" / Int8ub,
+#     "protoaddr_length" / Int8ub,
+#     Enum(Int16ub("opcode"),
+#         REQUEST = 1,
+#         REPLY = 2,
+#         REQUEST_REVERSE = 3,
+#         REPLY_REVERSE = 4,
+#         DRARP_REQUEST = 5,
+#         DRARP_REPLY = 6,
+#         DRARP_ERROR = 7,
+#         InARP_REQUEST = 8,
+#         InARP_REPLY = 9,
+#         ARP_NAK = 10
+        
+#     ),
+#     HwAddress("source_hwaddr"),
+#     ProtoAddress("source_protoaddr"),
+#     HwAddress("dest_hwaddr"),
+#     ProtoAddress("dest_protoaddr"),
+# )
+
+# rarp_header = Rename("rarp_header", arp_header)
+
+#===============================================================================
+# layer 2, Message Transport Part 2 (SS7 protocol stack)
+# (untested)
+#===============================================================================
+
+# mtp2_header = BitStruct("mtp2_header",
+#     Octet("flag1"),
+#     Bits("bsn", 7),
+#     Bit("bib"),
+#     Bits("fsn", 7),
+#     Bit("sib"),
+#     Octet("length"),
+#     Octet("service_info"),
+#     Octet("signalling_info"),
+#     Bits("crc", 16),
+#     Octet("flag2"),
+# )
+
+#===============================================================================
+# layer 3, IP v4
+#===============================================================================
+
+class IpAddressAdapter(Adapter):
+    def _encode(self, obj, context):
+        return list(map(int, obj.split(".")))
+    def _decode(self, obj, context):
+        return "{0}.{1}.{2}.{3}".format(*obj)
+IpAddress = IpAddressAdapter(Byte[4])
+
+def ProtocolEnum(code):
+    return Enum(code,
+        ICMP = 1,
+        TCP = 6,
+        UDP = 17,
+    )
+
+ipv4_header = "ip_header" / Struct(
+    EmbeddedBitStruct(
+        "version" / Const(Nibble, 4),
+        "header_length" / ExprAdapter(Nibble, 
+            decoder = lambda obj, ctx: obj * 4, 
+            encoder = lambda obj, ctx: obj / 4
+        ),
     ),
+    "tos" / BitStruct(
+        "precedence" / BitsInteger(3),
+        "minimize_delay" / Flag,
+        "high_throuput" / Flag,
+        "high_reliability" / Flag,
+        "minimize_cost" / Flag,
+        Padding(1),
+    ),
+    "total_length" / Int16ub,
+    "payload_length" / Computed(this.total_length - this.header_length),
+    "identification" / Int16ub,
+    EmbeddedBitStruct(
+        "flags" / Struct(
+            Padding(1),
+            "dont_fragment" / Flag,
+            "more_fragments" / Flag,
+        ),
+        "frame_offset" / BitsInteger(13),
+    ),
+    "ttl" / Int8ub,
+    "protocol" / ProtocolEnum(Int8ub),
+    "checksum" / Int16ub,
+    "source" / IpAddress,
+    "destination" / IpAddress,
+    "options" / Bytes(this.header_length - 20),
 )
 
-layer3_payload = Switch("next", lambda ctx: ctx["header"].protocol,
+#===============================================================================
+# layer 3, IP v6
+#===============================================================================
+def ProtocolEnum(code):
+    return Enum(code,
+        ICMP = 1,
+        TCP = 6,
+        UDP = 17,
+    )
+
+class Ipv6AddressAdapter(Adapter):
+    def _encode(self, obj, context):
+        return [int(part, 16) for part in obj.split(":")]
+    def _decode(self, obj, context):
+        return ":".join("%02x" % b for b in obj)
+
+Ipv6Address = Ipv6AddressAdapter(Byte[16])
+
+
+ipv6_header = "ip_header" / Struct(
+    EmbeddedBitStruct(
+        "version" / OneOf(BitsInteger(4), [6]),
+        "traffic_class" / BitsInteger(8),
+        "flow_label" / BitsInteger(20),
+    ),
+    "payload_length" / Int16ub,
+    "protocol" / ProtocolEnum(Int8ub),
+    "hoplimit" / Int8ub,
+    Alias("ttl", "hoplimit"),
+    "source" / Ipv6Address,
+    "destination" / Ipv6Address,
+)
+
+#===============================================================================
+# layer 3
+# Message Transport Part 3 (SS7 protocol stack)
+# (untested)
+#===============================================================================
+
+mtp3_header = "mtp3_header" / BitStruct(
+    "service_indicator" / Nibble,
+    "subservice" / Nibble,
+)
+
+#===============================================================================
+# layer 3
+# Internet Control Message Protocol for IPv4
+#===============================================================================
+
+# echo_payload = Struct("echo_payload",
+#     Int16ub("identifier"),
+#     Int16ub("sequence"),
+#     Bytes("data", 32), # length is implementation dependent... 
+#                        # is anyone using more than 32 bytes?
+# )
+
+# dest_unreachable_payload = Struct("dest_unreachable_payload",
+#     Padding(2),
+#     Int16ub("next_hop_mtu"),
+#     IpAddress("host"),
+#     Bytes("echo", 8),
+# )
+
+# dest_unreachable_code = Enum(Byte("code"),
+#     Network_unreachable_error = 0,
+#     Host_unreachable_error = 1,
+#     Protocol_unreachable_error = 2,
+#     Port_unreachable_error = 3,
+#     The_datagram_is_too_big = 4,
+#     Source_route_failed_error = 5,
+#     Destination_network_unknown_error = 6,
+#     Destination_host_unknown_error = 7,
+#     Source_host_isolated_error = 8,
+#     Desination_administratively_prohibited = 9,
+#     Host_administratively_prohibited2 = 10,
+#     Network_TOS_unreachable = 11,
+#     Host_TOS_unreachable = 12,
+# )
+
+# icmp_header = Struct("icmp_header",
+#     Enum(Byte("type"),
+#         Echo_reply = 0,
+#         Destination_unreachable = 3,
+#         Source_quench = 4,
+#         Redirect = 5,
+#         Alternate_host_address = 6,
+#         Echo_request = 8,
+#         Router_advertisement = 9,
+#         Router_solicitation = 10,
+#         Time_exceeded = 11,
+#         Parameter_problem = 12,
+#         Timestamp_request = 13,
+#         Timestamp_reply = 14,
+#         Information_request = 15,
+#         Information_reply = 16,
+#         Address_mask_request = 17,
+#         Address_mask_reply = 18,
+#         _default_ = Pass,
+#     ),
+#     Switch("code", lambda ctx: ctx.type, 
+#         {
+#             "Destination_unreachable" : dest_unreachable_code,
+#         },
+#         default = Byte("code"),
+#     ),
+#     Int16ub("crc"),
+#     Switch("payload", lambda ctx: ctx.type, 
+#         {
+#             "Echo_reply" : echo_payload,
+#             "Echo_request" : echo_payload,
+#             "Destination_unreachable" : dest_unreachable_payload,
+#         }, 
+#         default = Pass
+#     )
+# )
+
+#===============================================================================
+# layer 3
+# Internet Group Management Protocol, Version 2
+#
+# http://www.ietf.org/rfc/rfc2236.txt
+# jesse@housejunkie.ca
+#===============================================================================
+
+# igmp_type = "igmp_type" / Enum(Byte, 
+#     MEMBERSHIP_QUERY = 0x11,
+#     MEMBERSHIP_REPORT_V1 = 0x12,
+#     MEMBERSHIP_REPORT_V2 = 0x16,
+#     LEAVE_GROUP = 0x17,
+# )
+
+# igmpv2_header = "igmpv2_header" / Struct(
+#     igmp_type,
+#     "max_resp_time" / Byte,
+#     "checksum" / Int16ub,
+#     "group_address" / IpAddress,
+# )
+
+#===============================================================================
+# layer 4
+# Dynamic Host Configuration Protocol for IPv4
+#
+# http://www.networksorcery.com/enp/protocol/dhcp.htm
+# http://www.networksorcery.com/enp/protocol/bootp/options.htm
+#===============================================================================
+
+# dhcp_option = Struct("dhcp_option",
+#     Enum(Byte("code"),
+#         Pad = 0,
+#         Subnet_Mask = 1,
+#         Time_Offset = 2,
+#         Router = 3,
+#         Time_Server = 4,
+#         Name_Server = 5,
+#         Domain_Name_Server = 6,
+#         Log_Server = 7,
+#         Quote_Server = 8,
+#         LPR_Server = 9,
+#         Impress_Server = 10,
+#         Resource_Location_Server = 11,
+#         Host_Name = 12,
+#         Boot_File_Size = 13,
+#         Merit_Dump_File = 14,
+#         Domain_Name = 15,
+#         Swap_Server = 16,
+#         Root_Path = 17,
+#         Extensions_Path = 18,
+#         IP_Forwarding_enabledisable = 19,
+#         Nonlocal_Source_Routing_enabledisable = 20,
+#         Policy_Filter = 21,
+#         Maximum_Datagram_Reassembly_Size = 22,
+#         Default_IP_TTL = 23,
+#         Path_MTU_Aging_Timeout = 24,
+#         Path_MTU_Plateau_Table = 25,
+#         Interface_MTU = 26,
+#         All_Subnets_are_Local = 27,
+#         Broadcast_Address = 28,
+#         Perform_Mask_Discovery = 29,
+#         Mask_supplier = 30,
+#         Perform_router_discovery = 31,
+#         Router_solicitation_address = 32,
+#         Static_routing_table = 33,
+#         Trailer_encapsulation = 34,
+#         ARP_cache_timeout = 35,
+#         Ethernet_encapsulation = 36,
+#         Default_TCP_TTL = 37,
+#         TCP_keepalive_interval = 38,
+#         TCP_keepalive_garbage = 39,
+#         Network_Information_Service_domain = 40,
+#         Network_Information_Servers = 41,
+#         NTP_servers = 42,
+#         Vendor_specific_information = 43,
+#         NetBIOS_over_TCPIP_name_server = 44,
+#         NetBIOS_over_TCPIP_Datagram_Distribution_Server = 45,
+#         NetBIOS_over_TCPIP_Node_Type = 46,
+#         NetBIOS_over_TCPIP_Scope = 47,
+#         X_Window_System_Font_Server = 48,
+#         X_Window_System_Display_Manager = 49,
+#         Requested_IP_Address = 50,
+#         IP_address_lease_time = 51,
+#         Option_overload = 52,
+#         DHCP_message_type = 53,
+#         Server_identifier = 54,
+#         Parameter_request_list = 55,
+#         Message = 56,
+#         Maximum_DHCP_message_size = 57,
+#         Renew_time_value = 58,
+#         Rebinding_time_value = 59,
+#         Class_identifier = 60,
+#         Client_identifier = 61,
+#         NetWareIP_Domain_Name = 62,
+#         NetWareIP_information = 63,
+#         Network_Information_Service_Domain = 64,
+#         Network_Information_Service_Servers = 65,
+#         TFTP_server_name = 66,
+#         Bootfile_name = 67,
+#         Mobile_IP_Home_Agent = 68,
+#         Simple_Mail_Transport_Protocol_Server = 69,
+#         Post_Office_Protocol_Server = 70,
+#         Network_News_Transport_Protocol_Server = 71,
+#         Default_World_Wide_Web_Server = 72,
+#         Default_Finger_Server = 73,
+#         Default_Internet_Relay_Chat_Server = 74,
+#         StreetTalk_Server = 75,
+#         StreetTalk_Directory_Assistance_Server = 76,
+#         User_Class_Information = 77,
+#         SLP_Directory_Agent = 78,
+#         SLP_Service_Scope = 79,
+#         Rapid_Commit = 80,
+#         Fully_Qualified_Domain_Name = 81,
+#         Relay_Agent_Information = 82,
+#         Internet_Storage_Name_Service = 83,
+#         NDS_servers = 85,
+#         NDS_tree_name = 86,
+#         NDS_context = 87,
+#         BCMCS_Controller_Domain_Name_list = 88,
+#         BCMCS_Controller_IPv4_address_list = 89,
+#         Authentication = 90,
+#         Client_last_transaction_time = 91,
+#         Associated_ip = 92,
+#         Client_System_Architecture_Type = 93,
+#         Client_Network_Interface_Identifier = 94,
+#         Lightweight_Directory_Access_Protocol = 95,
+#         Client_Machine_Identifier = 97,
+#         Open_Group_User_Authentication = 98,
+#         Autonomous_System_Number = 109,
+#         NetInfo_Parent_Server_Address = 112,
+#         NetInfo_Parent_Server_Tag = 113,
+#         URL = 114,
+#         Auto_Configure = 116,
+#         Name_Service_Search = 117,
+#         Subnet_Selection = 118,
+#         DNS_domain_search_list = 119,
+#         SIP_Servers_DHCP_Option = 120,
+#         Classless_Static_Route_Option = 121,
+#         CableLabs_Client_Configuration = 122,
+#         GeoConf = 123,
+#     ),
+#     Switch("value", lambda ctx: ctx.code,
+#         {
+#             # codes without any value
+#             "Pad" : Pass,
+#         },
+#         # codes followed by length and value fields
+#         default = Struct("value",
+#             Byte("length"),
+#             Field("data", lambda ctx: ctx.length),
+#         )
+#     )
+# )
+
+# dhcp_header = Struct("dhcp_header",
+#     Enum(Byte("opcode"),
+#         BootRequest = 1,
+#         BootReply = 2,
+#     ),
+#     Enum(Byte("hardware_type"),
+#         Ethernet = 1,
+#         Experimental_Ethernet = 2,
+#         ProNET_Token_Ring = 4,
+#         Chaos = 5,
+#         IEEE_802 = 6,
+#         ARCNET = 7,
+#         Hyperchannel = 8,
+#         Lanstar = 9,        
+#     ),
+#     Byte("hardware_address_length"),
+#     Byte("hop_count"),
+#     UBInt32("transaction_id"),
+#     Int16ub("elapsed_time"),
+#     BitStruct("flags",
+#         Flag("boardcast"),
+#         Padding(15),
+#     ),
+#     IpAddress("client_addr"),
+#     IpAddress("your_addr"),
+#     IpAddress("server_addr"),
+#     IpAddress("relay_addr"),
+#     Bytes("client_hardware_addr", 16),
+#     Bytes("server_host_name", 64),
+#     Bytes("boot_filename", 128),
+#     # BOOTP/DHCP options
+#     # "The first four bytes contain the (decimal) values 99, 130, 83 and 99"
+#     Const("magic", b"\x63\x82\x53\x63"),
+#     Rename("options", OptionalGreedyRange(dhcp_option)),
+# )
+
+#===============================================================================
+# layer 4
+# Dynamic Host Configuration Protocol for IPv6
+#
+# http://www.networksorcery.com/enp/rfc/rfc3315.txt
+#===============================================================================
+
+# dhcp_option = Struct("dhcp_option",
+#     Enum(Int16ub("code"),
+#         OPTION_CLIENTID = 1,
+#         OPTION_SERVERID = 2,
+#         OPTION_IA_NA = 3,
+#         OPTION_IA_TA = 4,
+#         OPTION_IAADDR = 5,
+#         OPTION_ORO = 6,
+#         OPTION_PREFERENCE = 7,
+#         OPTION_ELAPSED_TIME = 8,
+#         OPTION_RELAY_MSG = 9,
+#         OPTION_AUTH = 11,
+#         OPTION_UNICAST = 12,
+#         OPTION_STATUS_CODE = 13,
+#         OPTION_RAPID_COMMIT = 14,
+#         OPTION_USER_CLASS = 15,
+#         OPTION_VENDOR_CLASS = 16,
+#         OPTION_VENDOR_OPTS = 17,
+#         OPTION_INTERFACE_ID = 18,
+#         OPTION_RECONF_MSG = 19,
+#         OPTION_RECONF_ACCEPT = 20,
+#         SIP_SERVERS_DOMAIN_NAME_LIST = 21,
+#         SIP_SERVERS_IPV6_ADDRESS_LIST = 22,
+#         DNS_RECURSIVE_NAME_SERVER = 23,
+#         DOMAIN_SEARCH_LIST = 24,
+#         OPTION_IA_PD = 25,
+#         OPTION_IAPREFIX = 26,
+#         OPTION_NIS_SERVERS = 27,
+#         OPTION_NISP_SERVERS = 28,
+#         OPTION_NIS_DOMAIN_NAME = 29,
+#         OPTION_NISP_DOMAIN_NAME = 30,
+#         SNTP_SERVER_LIST = 31,
+#         INFORMATION_REFRESH_TIME = 32,
+#         BCMCS_CONTROLLER_DOMAIN_NAME_LIST = 33,
+#         BCMCS_CONTROLLER_IPV6_ADDRESS_LIST = 34,
+#         OPTION_GEOCONF_CIVIC = 36,
+#         OPTION_REMOTE_ID = 37,
+#         RELAY_AGENT_SUBSCRIBER_ID = 38,
+#         OPTION_CLIENT_FQDN = 39,        
+#     ),
+#     Int16ub("length"),
+#     Field("data", lambda ctx: ctx.length),
+# )
+
+# client_message = Struct("client_message",
+#     Bitwise(BitField("transaction_id", 24)),
+# )
+
+# relay_message = Struct("relay_message",
+#     Byte("hop_count"),
+#     Ipv6Address("linkaddr"),
+#     Ipv6Address("peeraddr"),
+# )
+
+# dhcp_message = Struct("dhcp_message",
+#     Enum(Byte("msgtype"),
+#         # these are client-server messages
+#         SOLICIT = 1,
+#         ADVERTISE = 2,
+#         REQUEST = 3,
+#         CONFIRM = 4,
+#         RENEW = 5,
+#         REBIND = 6,
+#         REPLY = 7,
+#         RELEASE_ = 8,
+#         DECLINE_ = 9,
+#         RECONFIGURE = 10,
+#         INFORMATION_REQUEST = 11,
+#         # these two are relay messages
+#         RELAY_FORW = 12,
+#         RELAY_REPL = 13,
+#     ),
+#     # relay messages have a different structure from client-server messages
+#     Switch("params", lambda ctx: ctx.msgtype,
+#         {
+#             "RELAY_FORW" : relay_message,
+#             "RELAY_REPL" : relay_message,
+#         },
+#         default = client_message,
+#     ),
+#     Rename("options", GreedyRange(dhcp_option)),
+# )
+
+#===============================================================================
+# layer 4
+# ISDN User Part (SS7 protocol stack)
+#===============================================================================
+
+isup_header = "isup_header" / Struct(
+    "routing_label" / Bytes(5),
+    "cic" / Int16ub,
+    "message_type" / Int8ub,
+    # mandatory fixed parameters
+    # mandatory variable parameters
+    # optional parameters
+)
+
+#===============================================================================
+# layer 4
+# Transmission Control Protocol (TCP/IP protocol stack)
+#===============================================================================
+
+tcp_header = "tcp_header" / Struct(
+    "source" / Int16ub,
+    "destination" / Int16ub,
+    "seq" / Int32ub,
+    "ack" / Int32ub,
+    EmbeddedBitStruct(
+        "header_length" / ExprAdapter(Nibble, 
+            encoder = lambda obj, ctx: obj / 4,
+            decoder = lambda obj, ctx: obj * 4,
+        ),
+        Padding(3),
+        "flags" / Struct(
+            "ns"  / Flag,
+            "cwr" / Flag,
+            "ece" / Flag,
+            "urg" / Flag,
+            "ack" / Flag,
+            "psh" / Flag,
+            "rst" / Flag,
+            "syn" / Flag,
+            "fin" / Flag,
+        ),
+    ),
+    "window" / Int16ub,
+    "checksum" / Int16ub,
+    "urgent" / Int16ub,
+    "options" / Bytes(this.header_length - 20),
+)
+
+
+#===============================================================================
+# layer 4
+# User Datagram Protocol (TCP/IP protocol stack)
+#===============================================================================
+
+udp_header = "udp_header" / Struct(
+    "header_length" / Computed(lambda ctx: 8),
+    "source" / Int16ub,
+    "destination" / Int16ub,
+    "payload_length" / ExprAdapter(Int16ub, 
+        encoder = lambda obj, ctx: obj + 8,
+        decoder = lambda obj, ctx: obj - 8,
+    ),
+    "checksum" / Int16ub,
+)
+
+#===============================================================================
+# layer 4
+# Domain Name System (TCP/IP protocol stack)
+#===============================================================================
+
+# class DnsStringAdapter(Adapter):
+#     def _encode(self, obj, context):
+#         parts = obj.split(".")
+#         parts.append("")
+#         return parts
+#     def _decode(self, obj, context):
+#         return ".".join(obj[:-1])
+
+
+# dns_record_class = Enum(Int16ub("class"),
+#     RESERVED = 0,
+#     INTERNET = 1,
+#     CHAOS = 3,
+#     HESIOD = 4,
+#     NONE = 254,
+#     ANY = 255,
+# )
+
+# dns_record_type = Enum(Int16ub("type"),
+#     IPv4 = 1,
+#     AUTHORITIVE_NAME_SERVER = 2,
+#     CANONICAL_NAME = 5,
+#     NULL = 10,
+#     MAIL_EXCHANGE = 15,
+#     TEXT = 16,
+#     X25 = 19,
+#     ISDN = 20,
+#     IPv6 = 28,
+#     UNSPECIFIED = 103,
+#     ALL = 255,
+# )
+
+# query_record = Struct("query_record",
+#     DnsStringAdapter(
+#         RepeatUntil(lambda obj,ctx: obj == "",
+#             PascalString("name")
+#         )
+#     ),
+#     dns_record_type,
+#     dns_record_class,
+# )
+
+# rdata = Field("rdata", this.rdata_length)
+
+# resource_record = Struct("resource_record",
+#     CString("name", terminators = b"\xc0\x00"),
+#     Padding(1),
+#     dns_record_type,
+#     dns_record_class,
+#     UBInt32("ttl"),
+#     Int16ub("rdata_length"),
+#     IfThenElse("data", this.type == "IPv4",
+#         IpAddressAdapter(rdata),
+#         rdata
+#     )
+# )
+
+# dns = Struct("dns",
+#     Int16ub("id"),
+#     BitStruct("flags",
+#         Enum(Bit("type"),
+#             QUERY = 0,
+#             RESPONSE = 1,
+#         ),
+#         Enum(Nibble("opcode"),
+#             STANDARD_QUERY = 0,
+#             INVERSE_QUERY = 1,
+#             SERVER_STATUS_REQUEST = 2,
+#             NOTIFY = 4,
+#             UPDATE = 5,
+#         ),
+#         Flag("authoritive_answer"),
+#         Flag("truncation"),
+#         Flag("recurssion_desired"),
+#         Flag("recursion_available"),
+#         Padding(1),
+#         Flag("authenticated_data"),
+#         Flag("checking_disabled"),
+#         Enum(Nibble("response_code"),
+#             SUCCESS = 0,
+#             FORMAT_ERROR = 1,
+#             SERVER_FAILURE = 2,
+#             NAME_DOES_NOT_EXIST = 3,
+#             NOT_IMPLEMENTED = 4,
+#             REFUSED = 5,
+#             NAME_SHOULD_NOT_EXIST = 6,
+#             RR_SHOULD_NOT_EXIST = 7,
+#             RR_SHOULD_EXIST = 8,
+#             NOT_AUTHORITIVE = 9,
+#             NOT_ZONE = 10,
+#         ),
+#     ),
+#     Int16ub("question_count"),
+#     Int16ub("answer_count"),
+#     Int16ub("authority_count"),
+#     Int16ub("additional_count"),
+#     Array(lambda ctx: ctx.question_count,
+#         Rename("questions", query_record),
+#     ),
+#     Rename("answers", 
+#         Array(lambda ctx: ctx.answer_count, resource_record)
+#     ),
+#     Rename("authorities",
+#         Array(lambda ctx: ctx.authority_count, resource_record)
+#     ),
+#     Array(lambda ctx: ctx.additional_count,
+#         Rename("additionals", resource_record),
+#     ),
+# )
+
+#===============================================================================
+# entire IP stack
+#===============================================================================
+
+layer4_tcp = "layer4_tcp" / Struct(
+    "header" / tcp_header,
+    "next" / HexDump(Bytes(this._.header.payload_length - this.header.header_length)),
+)
+
+layer4_udp = "layer4_udp" / Struct(
+    "header" / udp_header,
+    "next" / HexDump(Bytes(this.header.payload_length)),
+)
+
+layer3_payload = "next" / Switch(this.header.protocol,
     {
         "TCP" : layer4_tcp,
         "UDP" : layer4_udp,
@@ -38,42 +767,27 @@ layer3_payload = Switch("next", lambda ctx: ctx["header"].protocol,
     default = Pass
 )
 
-layer3_ipv4 = Struct("layer3_ipv4",
-    Rename("header", ipv4_header),
+layer3_ipv4 = "layer3_ipv4" / Struct(
+    "header" / ipv4_header,
     layer3_payload,
 )
 
-layer3_ipv6 = Struct("layer3_ipv6",
-    Rename("header", ipv6_header),
+layer3_ipv6 = "layer3_ipv6" / Struct(
+    "header" / ipv6_header,
     layer3_payload,
 )
 
-layer2_ethernet = Struct("layer2_ethernet",
-    Rename("header", ethernet_header),
-    Switch("next", lambda ctx: ctx["header"].type,
+layer2_ethernet = "layer2_ethernet" / Struct(
+    "header" / ethernet_header,
+    "next" / Switch(this.header.type,
         {
             "IPv4" : layer3_ipv4,
             "IPv6" : layer3_ipv6,
         },
         default = Pass,
-    )
+    ),
 )
 
-ip_stack = Rename("ip_stack", layer2_ethernet)
-
-
-
-
-
-if __name__ == "__main__":
-	# in file dumps
-
-    obj = ip_stack.parse(cap1)
-    print (obj)
-    print (repr(ip_stack.build(obj)))
-
-    obj = ip_stack.parse(cap2)
-    print (obj)
-    print (repr(ip_stack.build(obj)))
+ip_stack = "ip_stack" / layer2_ethernet
 
 
