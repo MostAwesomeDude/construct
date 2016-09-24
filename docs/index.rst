@@ -110,6 +110,7 @@ Sections marked with ** are stale and broken.
    :maxdepth: 2
 
    intro
+   transition
    basics
    advanced
    bitwise
