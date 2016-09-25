@@ -1003,9 +1003,8 @@ class TestCore(unittest.TestCase):
             ))),
         )
         blob = b"\x00\x22\x82\x00\xCD\x80\x80\x10"
-        print(attributes.parse(blob))
         assert attributes.parse(blob) == Container(attr=[
-            Container(attrCode=34,attrValue=130),
-            Container(attrCode=205,attrValue=2),
-            Container(attrCode=512,attrValue=1), ])
+            Container(attrCode=34)(attrValue=130),
+            Container(attrCode=205)(attrValue=2),
+            Container(attrCode=512)(attrValue=1), ])
 
