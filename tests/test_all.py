@@ -815,7 +815,7 @@ class TestCore(unittest.TestCase):
 
     def test_from_issue_76(self):
         assert Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).parse(b"\x02\xab\xcd\x00") == Container(a=2)(f=b"\xab\xcd")
-        assert Aligned(4,   Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).build(Container(a=2)(f=b"\xab\xcd")) == b"\x02\xab\xcd\x00"
+        assert Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).build(Container(a=2)(f=b"\xab\xcd")) == b"\x02\xab\xcd\x00"
 
     def test_flag(self):
         assert Flag.parse(b"\x00") == False
