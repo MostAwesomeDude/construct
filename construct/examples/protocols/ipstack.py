@@ -40,80 +40,80 @@ ethernet_header = "ethernet_header" / Struct(
 # layer 2, ARP
 #===============================================================================
 
-# def HwAddress(name):
-#     return IfThenElse(this.hardware_type == "ETHERNET",
-#         MacAddressAdapter(Field("data", lambda ctx: ctx.hwaddr_length)),
-#         Field("data", lambda ctx: ctx.hwaddr_length)
-#     )
-
-# def ProtoAddress(name):
-#     return IfThenElse(name, lambda ctx: ctx.protocol_type == "IP",
-#         IpAddressAdapter(Field("data", lambda ctx: ctx.protoaddr_length)),
-#         Field("data", lambda ctx: ctx.protoaddr_length)
-#     )
-
-# arp_header = "arp_header" / Struct(
-#     "hardware_type" / Enum(Int16ub,
-#         ETHERNET = 1,
-#         EXPERIMENTAL_ETHERNET = 2,
-#         ProNET_TOKEN_RING = 4,
-#         CHAOS = 5,
-#         IEEE802 = 6,
-#         ARCNET = 7,
-#         HYPERCHANNEL = 8,
-#         ULTRALINK = 13,
-#         FRAME_RELAY = 15,
-#         FIBRE_CHANNEL = 18,
-#         IEEE1394 = 24,
-#         HIPARP = 28,
-#         ISO7816_3 = 29,
-#         ARPSEC = 30,
-#         IPSEC_TUNNEL = 31,
-#         INFINIBAND = 32,
-#     ),
-#     "protocol_type" / Enum(Int16ub,
-#         IP = 0x0800,
-#     ),
-#     "hwaddr_length" / Int8ub,
-#     "protoaddr_length" / Int8ub,
-#     Enum(Int16ub("opcode"),
-#         REQUEST = 1,
-#         REPLY = 2,
-#         REQUEST_REVERSE = 3,
-#         REPLY_REVERSE = 4,
-#         DRARP_REQUEST = 5,
-#         DRARP_REPLY = 6,
-#         DRARP_ERROR = 7,
-#         InARP_REQUEST = 8,
-#         InARP_REPLY = 9,
-#         ARP_NAK = 10
-        
-#     ),
-#     HwAddress("source_hwaddr"),
-#     ProtoAddress("source_protoaddr"),
-#     HwAddress("dest_hwaddr"),
-#     ProtoAddress("dest_protoaddr"),
+# HwAddress = IfThenElse(this.hardware_type == "ETHERNET",
+#     MacAddressAdapter(Bytes(this.hwaddr_length)),
+#     Bytes(this.hwaddr_length)
 # )
 
-# rarp_header = Rename("rarp_header", arp_header)
+HwAddress = Bytes(this.hwaddr_length)
+
+# ProtoAddress = IfThenElse(this.protocol_type == "IP",
+#     IpAddressAdapter(Bytes(this.protoaddr_length)),
+#     Bytes(this.protoaddr_length)
+# )
+
+ProtoAddress = Bytes(this.protoaddr_length)
+
+arp_header = "arp_header" / Struct(
+    "hardware_type" / Enum(Int16ub,
+        ETHERNET = 1,
+        EXPERIMENTAL_ETHERNET = 2,
+        ProNET_TOKEN_RING = 4,
+        CHAOS = 5,
+        IEEE802 = 6,
+        ARCNET = 7,
+        HYPERCHANNEL = 8,
+        ULTRALINK = 13,
+        FRAME_RELAY = 15,
+        FIBRE_CHANNEL = 18,
+        IEEE1394 = 24,
+        HIPARP = 28,
+        ISO7816_3 = 29,
+        ARPSEC = 30,
+        IPSEC_TUNNEL = 31,
+        INFINIBAND = 32,
+    ),
+    "protocol_type" / Enum(Int16ub,
+        IP = 0x0800,
+    ),
+    "hwaddr_length" / Int8ub,
+    "protoaddr_length" / Int8ub,
+    "opcode" / Enum(Int16ub,
+        REQUEST = 1,
+        REPLY = 2,
+        REQUEST_REVERSE = 3,
+        REPLY_REVERSE = 4,
+        DRARP_REQUEST = 5,
+        DRARP_REPLY = 6,
+        DRARP_ERROR = 7,
+        InARP_REQUEST = 8,
+        InARP_REPLY = 9,
+        ARP_NAK = 10
+        
+    ),
+    "source_hwaddr" / HwAddress,
+    "source_protoaddr" / ProtoAddress,
+    "dest_hwaddr" / HwAddress,
+    "dest_protoaddr" / ProtoAddress,
+)
 
 #===============================================================================
 # layer 2, Message Transport Part 2 (SS7 protocol stack)
 # (untested)
 #===============================================================================
 
-# mtp2_header = BitStruct("mtp2_header",
-#     Octet("flag1"),
-#     Bits("bsn", 7),
-#     Bit("bib"),
-#     Bits("fsn", 7),
-#     Bit("sib"),
-#     Octet("length"),
-#     Octet("service_info"),
-#     Octet("signalling_info"),
-#     Bits("crc", 16),
-#     Octet("flag2"),
-# )
+mtp2_header = "mtp2_header" / BitStruct(
+    "flag1" / Octet,
+    "bsn" / BitsInteger(7),
+    "bib" / Bit,
+    "fsn" / BitsInteger(7),
+    "sib" / Bit,
+    "length" / Octet,
+    "service_info" / Octet,
+    "signalling_info" / Octet,
+    "crc" / BitsInteger(16),
+    "flag2" / Octet,
+)
 
 #===============================================================================
 # layer 3, IP v4
@@ -292,19 +292,19 @@ mtp3_header = "mtp3_header" / BitStruct(
 # jesse@housejunkie.ca
 #===============================================================================
 
-# igmp_type = "igmp_type" / Enum(Byte, 
-#     MEMBERSHIP_QUERY = 0x11,
-#     MEMBERSHIP_REPORT_V1 = 0x12,
-#     MEMBERSHIP_REPORT_V2 = 0x16,
-#     LEAVE_GROUP = 0x17,
-# )
+igmp_type = "igmp_type" / Enum(Byte, 
+    MEMBERSHIP_QUERY = 0x11,
+    MEMBERSHIP_REPORT_V1 = 0x12,
+    MEMBERSHIP_REPORT_V2 = 0x16,
+    LEAVE_GROUP = 0x17,
+)
 
-# igmpv2_header = "igmpv2_header" / Struct(
-#     igmp_type,
-#     "max_resp_time" / Byte,
-#     "checksum" / Int16ub,
-#     "group_address" / IpAddress,
-# )
+igmpv2_header = "igmpv2_header" / Struct(
+    igmp_type,
+    "max_resp_time" / Byte,
+    "checksum" / Int16ub,
+    "group_address" / IpAddress,
+)
 
 #===============================================================================
 # layer 4
