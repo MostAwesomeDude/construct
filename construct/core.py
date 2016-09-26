@@ -4,7 +4,7 @@ import struct as packer
 from struct import Struct as Packer
 from struct import error as PackerError
 from io import BytesIO, StringIO
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 import sys
 import collections
 import codecs
