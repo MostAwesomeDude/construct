@@ -2649,7 +2649,7 @@ class FlagsEnum(Adapter):
 
 
 #===============================================================================
-# adapters
+# adapters and validators
 #===============================================================================
 class ExprAdapter(Adapter):
     r"""
@@ -2780,10 +2780,7 @@ class Indexing(Adapter):
         return obj[self.index]
 
 
-#===============================================================================
-# validators
-#===============================================================================
-class OneOf(Validator):
+def OneOf(subcon, valids):
     r"""
     Validates that the object is one of the listed values, both during parsing and building.
 
@@ -2807,15 +2804,10 @@ class OneOf(Validator):
         >>> OneOf(Bytes(2), b"1234567890").parse(b"19")
         construct.core.ValidationError: ('invalid object', b'19')
     """
-    __slots__ = ["valids"]
-    def __init__(self, subcon, valids):
-        super(OneOf, self).__init__(subcon)
-        self.valids = valids
-    def _validate(self, obj, context):
-        return obj in self.valids
+    return ExprValidator(subcon, lambda obj,ctx: obj in valids)
 
 
-class NoneOf(Validator):
+def NoneOf(subcon, invalids):
     r"""
     Validates that the object is none of the listed values, both during parsing and building.
 
@@ -2825,12 +2817,7 @@ class NoneOf(Validator):
     .. seealso:: Look at :func:`~construct.core.OneOf` for examples, works the same.
 
     """
-    __slots__ = ["invalids"]
-    def __init__(self, subcon, invalids):
-        super(NoneOf, self).__init__(subcon)
-        self.invalids = invalids
-    def _validate(self, obj, context):
-        return obj not in self.invalids
+    return ExprValidator(subcon, lambda obj,ctx: obj not in invalids)
 
 
 #===============================================================================
