@@ -86,3 +86,13 @@ The two most common cases already exist as builtins.
 
 Notice that `OneOf(dtype, [value])` is essentially equivalent to `Const(dtype, value)`.
 
+Using expressions instead of classes
+------------------------------------
+
+Validators can be created declaratively using ExprValidator:
+
+>>> OneOf = ExprValidator(Byte, 
+... 	validator = lambda obj,ctx: obj in [1,3,5])
+
+
+

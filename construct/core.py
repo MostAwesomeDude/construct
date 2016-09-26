@@ -336,7 +336,7 @@ class Validator(SymmetricAdapter):
     """
     def _decode(self, obj, context):
         if not self._validate(obj, context):
-            raise ValidationError("invalid object", obj)
+            raise ValidationError("object failed validation", obj)
         return obj
     def _validate(self, obj, context):
         raise NotImplementedError()
@@ -2653,7 +2653,7 @@ class FlagsEnum(Adapter):
 #===============================================================================
 class ExprAdapter(Adapter):
     r"""
-    A generic adapter that takes 'encoder' and 'decoder' as parameters. You can use ExprAdapter instead of writing a full-blown class when only a simple expression is needed.
+    A generic adapter that takes ``encoder`` and ``decoder`` as parameters. You can use ExprAdapter instead of writing a full-blown class when only a simple expression is needed.
 
     :param subcon: the subcon to adapt
     :param encoder: a function that takes (obj, context) and returns an encoded version of obj, or None for identity
@@ -2671,6 +2671,23 @@ class ExprAdapter(Adapter):
         ident = lambda obj,ctx: obj
         self._encode = encoder if callable(encoder) else ident
         self._decode = decoder if callable(decoder) else ident
+
+
+class ExprValidator(Validator):
+    r"""
+    A generic adapter that takes ``validator`` as parameter. You can use ExprValidator instead of writing a full-blown class when only a simple expression is needed.
+
+    :param subcon: the subcon to adapt
+    :param encoder: a function that takes (obj, context) and returns a bool
+
+    Example::
+
+        OneOf = ExprValidator(Byte, 
+            validator = lambda obj,ctx: obj in [1,3,5])
+    """
+    def __init__(self, subcon, validator):
+        super(ExprValidator, self).__init__(subcon)
+        self._validate = validator
 
 
 class HexDump(Adapter):
