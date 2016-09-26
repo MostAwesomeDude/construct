@@ -100,6 +100,8 @@ Requirements
 --------------
 Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 and pypy pypy3 implementation.
 
+Best should be 3.6 and pypy because they both support ordered keyword arguments which comes handy when declaring Struct members or manually crafting Containers.
+
 
 User Guide
 ==========
