@@ -98,7 +98,7 @@ Construct's main documentation is at `construct.readthedocs.org <http://construc
 
 Requirements
 --------------
-Construct should run on any Python 2.7 3.3 3.4 3.5 and pypy pypy3 implementation.
+Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 and pypy pypy3 implementation.
 
 
 User Guide
