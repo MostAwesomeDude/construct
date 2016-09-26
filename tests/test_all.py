@@ -275,6 +275,12 @@ class TestCore(unittest.TestCase):
         assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(c=3)(d=4)
         assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build(Container(a=1)(b=2)(c=3)(d=4)) == b"\x01\x00\x02\x03\x04"
 
+    @pytest.mark.xfail(not PY36, reason="ordered kw was introduced in 3.6")
+    def test_struct_kwctor(self):
+        st = Struct(a=Byte, b=Byte, c=Byte, d=Byte)
+        assert st.parse(b"\x01\x02\x03\x04") == Container(a=1,b=2,c=3,d=4)
+        assert st.build(dict(a=1,b=2,c=3,d=4)) == b"\x01\x02\x03\x04"
+
     def test_sequence(self):
         assert Sequence(Int8ub, Int16ub).parse(b"\x01\x00\x02") == [1,2]
         assert Sequence(Int8ub, Int16ub).build([1,2]) == b"\x01\x00\x02"

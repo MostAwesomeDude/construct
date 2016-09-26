@@ -10,6 +10,7 @@ PY3 = sys.version_info[0] == 3
 PY26 = sys.version_info[:2] == (2,6)
 PY32 = sys.version_info[:2] == (3,2)
 PY33 = sys.version_info[:2] == (3,3)
+PY36 = sys.version_info[:2] == (3,6)
 PYPY = '__pypy__' in sys.builtin_module_names
 
 

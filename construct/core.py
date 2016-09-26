@@ -9,11 +9,7 @@ import sys
 import collections
 import codecs
 
-from construct.lib.container import Container, FlagsContainer, ListContainer, LazyContainer, LazyRangeContainer, LazySequenceContainer
-from construct.lib.binary import integer2bits, integer2bytes, onebit2integer, bits2integer, bytes2integer, bytes2bits, bits2bytes, swapbytes
-from construct.lib.bitstream import RestreamedBytesIO, RebufferedBytesIO
-from construct.lib.hex import HexString, hexdump, hexundump
-from construct.lib.py3compat import PY2, PY3, PY26, PY32, PY33, PYPY, stringtypes, int2byte, byte2int, str2bytes, bytes2str, str2unicode, unicode2str, iteratebytes, iterateints
+from construct.lib import *
 
 
 #===============================================================================
@@ -801,7 +797,7 @@ class Struct(Construct):
 
     Some fields do not need to be named, since they are built from None anyway. See Const Padding Pass Terminator.
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges fields into parent's fields.
+    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges members into parent's members.
 
     :param subcons: a sequence of subconstructs that make up this structure
 
@@ -820,9 +816,15 @@ class Struct(Construct):
         Container()
         >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminator).sizeof()
         4
+
+        Note that this syntax does NOT work before python 3.6 due to unordered keyword arguments:
+        >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
     """
     __slots__ = ["subcons"]
-    def __init__(self, *subcons):
+    def __init__(self, *subcons, **kw):
+        subcons = list(subcons)
+        for k,v in kw.items():
+            subcons.append(k / v)
         super(Struct, self).__init__()
         self.subcons = subcons
     def _parse(self, stream, context):

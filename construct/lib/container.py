@@ -33,7 +33,7 @@ class Container(dict):
         
         Container(name="anonymous")(age=21)
 
-        # This will NOT preserve order, although equality does check order. But pretty-printing will be affected.
+        # Note that this syntax does NOT work before python 3.6 due to unordered keyword arguments:
         Container(name="anonymous", age=21)
 
         Container(container2)
