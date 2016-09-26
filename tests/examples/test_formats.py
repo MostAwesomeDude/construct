@@ -28,6 +28,7 @@ class TestFormats(unittest.TestCase):
         data = format.build(obj)
         print(data)
 
+
     def test_png(self):
         self.common(png_file, "sample.png")
 
@@ -43,11 +44,9 @@ class TestFormats(unittest.TestCase):
     def test_mbr(self):
         self.common(mbr_format, "mbr1")
 
-    @pytest.mark.xfail(reason="parses fine but building fails")
     def test_cap(self):
         self.common(cap_file, "cap2.cap")
 
     def test_snoop(self):
         self.common(snoop_file, "snoop1")
-
 
