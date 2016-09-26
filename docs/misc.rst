@@ -39,6 +39,16 @@ Computed
 
 Represents a computed value. Value does not read or write anything to the stream. It only returns its computed value as the result. Usually Computed fields are used for computations on the context. Look at the previous chapter. However, Computed can also produce values based on external environment, random module, or constants. For example:
 
+>>> st = Struct(
+...     "width" / Byte,
+...     "height" / Byte,
+...     "total" / Computed(this.width * this.height),
+... )
+>>> st.parse(b"12")
+Container(width=49)(height=50)(total=2450)
+>>> st.build(dict(width=4,height=5))
+b'\x04\x05'
+
 >>> Computed(lambda ctx: os.urandom(10)).parse(b"")
 b'[\x86\xcc\xf1b\xd9\x10\x0f?\x1a'
 

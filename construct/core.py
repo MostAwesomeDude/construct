@@ -1823,9 +1823,18 @@ class Computed(Construct):
     :param func: a function that takes context and returns the computed value
 
     Example::
-
-        >>> Struct("width"/Byte, "height"/Byte, "total"/Computed(this.width*this.height)).parse(b"12")
+        >>> st = Struct(
+        ...     "width" / Byte,
+        ...     "height" / Byte,
+        ...     "total" / Computed(this.width * this.height),
+        ... )
+        >>> st.parse(b"12")
         Container(width=49)(height=50)(total=2450)
+        >>> st.build(dict(width=4,height=5))
+        b'\x04\x05'
+
+        >>> Computed(lambda ctx: os.urandom(10)).parse(b"")
+        b'[\x86\xcc\xf1b\xd9\x10\x0f?\x1a'
     """
     __slots__ = ["func"]
     def __init__(self, func):
