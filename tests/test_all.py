@@ -877,12 +877,12 @@ class TestCore(unittest.TestCase):
         assert Restreamed(Bytes(2), None, None, lambda b: b*2, 1, None).parse(b"a") == b"aa"
         assert Restreamed(Bytes(1), lambda b: b*2, 1, None, None, None).build(b"a") == b"aa"
         assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
-        print("Note: tested mosty as Bitwise and Bytewise")
 
     def test_rebuffered(self):
         data = b"0" * 1000
         assert Rebuffered(Array(1000,Byte)).parse_stream(BytesIO(data)) == [48]*1000
         assert Rebuffered(Array(1000,Byte), tailcutoff=50).parse_stream(BytesIO(data)) == [48]*1000
+        assert raises(Rebuffered(Byte).sizeof) == SizeofError
 
     def test_expradapter(self):
         MulDiv = ExprAdapter(Byte,

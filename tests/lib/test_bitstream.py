@@ -11,7 +11,6 @@ import os, random
 
 class TestBitstream(unittest.TestCase):
 
-    @pytest.mark.xfail(reason="not implemented")
     def test_restreamed(self):
         pass
 
