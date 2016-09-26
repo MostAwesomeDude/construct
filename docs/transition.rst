@@ -1,5 +1,5 @@
 =================
-Transition to 2.8 **
+Transition to 2.8
 =================
 
 Overall
@@ -76,13 +76,13 @@ Ranges and Arrays
 
 Array uses syntax like ``Byte[10]`` and ``Array(10, Byte)``.
 
+PrefixedArray takes explicit `lengthfield` before subcon
+
 Range uses syntax like ``Byte[0:]`` ``Byte[:10]`` ``Byte[0:10]`` and ``Range(min=?, max=?, Byte)``
 
 OpenRange and GreedyRange were dropped
 
 OptionalGreedyRange was renamed to GreedyRange
-
-PrefixedArray takes explicit `lengthfield` before subcon
 
 RepeatUntil remains
 
@@ -136,7 +136,7 @@ Value was made Computed
 
 Embed was made Embedded
 
-Const taken over Magic
+Const incorporated Magic field
 
 Pass Terminator remain
 
