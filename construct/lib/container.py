@@ -75,9 +75,7 @@ class Container(dict):
     __setattr__ = __setitem__
 
     def __call__(self, **kw):
-        """
-        Chains adding new entries to the same container. See ctor.
-        """
+        """Chains adding new entries to the same container. See ctor."""
         for k,v in kw.items():
             self.__setitem__(k, v)
         return self
@@ -87,17 +85,13 @@ class Container(dict):
         del self.__keys_order__[:]
 
     def pop(self, key, *default):
-        """
-        Removes and returns the value for a given key, raises KeyError if not found.
-        """
+        """Removes and returns the value for a given key, raises KeyError if not found."""
         val = dict.pop(self, key, *default)
         self.__keys_order__.remove(key)
         return val
 
     def popitem(self):
-        """
-        Removes and returns the last key and value from order.
-        """
+        """Removes and returns the last key and value from order."""
         k = self.__keys_order__.pop()
         v = dict.pop(k)
         return k, v
@@ -112,30 +106,24 @@ class Container(dict):
         dict.update(self, kw)
 
     def copy(self):
-        return Container(self.iteritems())
+        return Container(self.items())
 
     __update__ = update
     __copy__ = copy
 
-    def iterkeys(self):
-        return iter(self.__keys_order__)
-
-    def itervalues(self):
-        return (self[k] for k in self.__keys_order__)
-
-    def iteritems(self):
-        return ((k, self[k]) for k in self.__keys_order__)
+    def __len__(self):
+        return len(self.__keys_order__)
 
     def keys(self):
-        return self.__keys_order__
+        return iter(self.__keys_order__)
 
     def values(self):
-        return list(self.itervalues())
+        return (self[k] for k in self.__keys_order__)
 
     def items(self):
-        return list(self.iteritems())
+        return ((k, self[k]) for k in self.__keys_order__)
 
-    __iter__ = iterkeys
+    __iter__ = keys
 
     def __eq__(self, other):
         if not isinstance(other, dict):
@@ -182,7 +170,7 @@ class Container(dict):
     @recursion_lock()
     def __repr__(self):
         parts = ["Container"]
-        for k,v in self.iteritems():
+        for k,v in self.items():
             if isinstance(k,str) and not k.startswith("_"):
                 parts.extend(["(",str(k),"=",repr(v),")"])
         if len(parts) == 1:
@@ -192,7 +180,7 @@ class Container(dict):
     @recursion_lock()
     def __str__(self, indentation="\n    "):
         text = ["Container: "]
-        for k,v in self.iteritems():
+        for k,v in self.items():
             if isinstance(k,str) and not k.startswith("_"):
                 text.extend([indentation, str(k), " = "])
                 text.append(indentation.join(str(v).split("\n")))
@@ -207,7 +195,7 @@ class FlagsContainer(Container):
     @recursion_lock()
     def __str__(self, indentation="\n    "):
         text = ["FlagsContainer: "]
-        for k,v in self.iteritems():
+        for k,v in self.items():
             if not k.startswith("_") and v:
                 text.extend([indentation, k, " = "])
                 lines = str(v).split("\n")
@@ -287,13 +275,13 @@ class LazyContainer(object):
         return len(self.keysbackend)
 
     def keys(self):
-        return self.keysbackend
+        return iter(self.keysbackend)
 
     def values(self):
-        return list(v for k,v in self.items())
+        return (self[name] for name in self.keysbackend)
 
     def items(self):
-        return [(name,self[name]) for name in self.keysbackend]
+        return ((name,self[name]) for name in self.keysbackend)
 
     __iter__ = keys
 

@@ -832,7 +832,7 @@ class Struct(Construct):
         context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
-                subobj = sc._parse(stream, context).items()
+                subobj = list(sc._parse(stream, context).items())
                 obj.update(subobj)
                 context.update(subobj)
             else:
@@ -1325,7 +1325,7 @@ class Union(Construct):
         context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
-                subobj = sc._parse(stream, context).items()
+                subobj = list(sc._parse(stream, context).items())
                 obj.update(subobj)
                 context.update(subobj)
             else:
@@ -2159,7 +2159,7 @@ class LazyStruct(Construct):
                     self.offsetmap[sc.name] = (at, sc)
                 at += sc.sizeof()
             self.totalsize = at
-            self.keys = keys.keys()
+            self.keys = list(keys.keys())
         except SizeofError:
             self.offsetmap = None
             self.totalsize = None
@@ -2183,7 +2183,7 @@ class LazyStruct(Construct):
         position = stream.tell()
         for i,(sc,size) in enumerate(zip(self.subcons, self.subsizes)):
             if sc.flagembedded:
-                subobj = sc._parse(stream, context).items()
+                subobj = list(sc._parse(stream, context).items())
                 keys.update(subobj)
                 values.update(subobj)
                 context.update(subobj)
@@ -2199,7 +2199,7 @@ class LazyStruct(Construct):
                     keys[sc.name] = None
                     offsetmap[sc.name] = (stream.tell(), sc)
                 stream.seek(size, 1)
-        return LazyContainer(keys.keys(), offsetmap, values, stream, 0, context)
+        return LazyContainer(list(keys.keys()), offsetmap, values, stream, 0, context)
 
     def _build(self, obj, stream, context):
         context = Container(_ = context)

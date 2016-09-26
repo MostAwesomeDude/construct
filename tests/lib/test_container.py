@@ -56,7 +56,7 @@ class TestContainer(unittest.TestCase):
         assert d.c == 3
         assert d.d == 4
         assert c == d
-        assert c.items() == d.items()
+        assert list(c.items()) == list(d.items())
 
         c = Container(a=1)(b=2)(c=3)(d=4)
         d = Container()
@@ -66,19 +66,16 @@ class TestContainer(unittest.TestCase):
         assert d.c == 3
         assert d.d == 4
         assert c == d
-        assert c.items() == d.items()
+        assert list(c.items()) == list(d.items())
 
         # issue #130
         # test pop popitem clear
 
         c = Container(a=1)(b=2)(c=3)(d=4)
-        assert c.keys() == ["a","b","c","d"]
-        assert c.values() == [1,2,3,4]
-        assert c.items() == [("a",1),("b",2),("c",3),("d",4)]
-        assert list(c.iterkeys()) == ["a","b","c","d"]
-        assert list(c.itervalues()) == [1,2,3,4]
-        assert list(c.iteritems()) == [("a",1),("b",2),("c",3),("d",4)]
-        assert list(c) == c.keys()
+        assert list(c.keys()) == ["a","b","c","d"]
+        assert list(c.values()) == [1,2,3,4]
+        assert list(c.items()) == [("a",1),("b",2),("c",3),("d",4)]
+        assert list(c) == list(c.keys())
 
         c = Container(a=1)(b=2)(c=3)(d=4)(e=5)
         d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
