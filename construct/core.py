@@ -2395,6 +2395,8 @@ class OnDemandPointer(Subconstruct):
     r"""
     An on-demand pointer. Is both lazy and jumps to a position before reading.
 
+    Note that the context is given immediately during parsing but the offset is computed lazily only when returned lambda is called. This is different from a straightforward implementation `Pointer(offset, OnDemand(subcon))`.
+
     .. seealso:: Base :func:`~construct.core.OnDemand` and :func:`~construct.core.Pointer` construct.
 
     :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place, can return negative integer as position from the end backwards
