@@ -2725,7 +2725,7 @@ def Hex(subcon):
         b'\x01\x02\x03\x04'
     """
     return ExprAdapter(subcon,
-        encoder = lambda obj,ctx: unhexlify(obj),
+        encoder = lambda obj,ctx: None if subcon.flagbuildnone else unhexlify(obj),
         decoder = lambda obj,ctx: hexlify(obj),)
 
 
@@ -2742,7 +2742,7 @@ def HexDump(subcon, linesize=16):
         '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/       \n'
     """
     return ExprAdapter(subcon,
-        encoder = lambda obj,ctx: hexundump(obj, linesize=linesize),
+        encoder = lambda obj,ctx: None if subcon.flagbuildnone else hexundump(obj, linesize=linesize),
         decoder = lambda obj,ctx: hexdump(obj, linesize=linesize),)
 
 

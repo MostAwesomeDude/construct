@@ -741,11 +741,21 @@ class TestCore(unittest.TestCase):
         assert Hex(GreedyBytes).parse(b"") == b""
         assert Hex(GreedyBytes).build(b"") == b""
 
+    def test_hex_regression_188(self):
+        d = Struct(Hex(Const(b"MZ")))
+        assert d.parse(b"MZ") == Container()
+        assert d.build(dict()) == b"MZ"
+
     def test_hexdump(self):
         assert HexDump(GreedyBytes).parse(b'abcdef') == '0000   61 62 63 64 65 66                                 abcdef           \n'
         assert HexDump(GreedyBytes).build('0000   61 62 63 64 65 66                                 abcdef           \n') == b'abcdef'
         assert HexDump(GreedyBytes).parse(b"") == ""
         assert HexDump(GreedyBytes).build("") == b""
+
+    def test_hexdump_regression_188(self):
+        d = Struct(HexDump(Const(b"MZ")))
+        assert d.parse(b"MZ") == Container()
+        assert d.build(dict()) == b"MZ"
 
     def test_lazystruct(self):
         assert LazyStruct().parse(b"") == Struct().parse(b"")
