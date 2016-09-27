@@ -140,11 +140,15 @@ Const incorporated Magic field
 
 Pass Terminator remain
 
+Error added
+
 OneOf Noneof remain
 
 Filter added
 
 LengthValueAdapter was replaced by Prefixed
+
+Hex added
 
 HexDumpAdapter was made HexDump
 
@@ -152,9 +156,9 @@ HexDump builds from hexdumped data, or from raw bytes if chosen
 
 SlicingAdapter and IndexingAdapter were made Slicing and Indexing
 
-Numpy was added
+Numpy added
 
-NamedTuple was added
+NamedTuple added
 
 
 
