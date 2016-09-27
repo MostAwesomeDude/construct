@@ -191,16 +191,16 @@ class TestCore(unittest.TestCase):
         assert Array(3,Byte).parse(b"\x01\x02\x03") == [1,2,3]
         assert Array(3,Byte).build([1,2,3]) == b"\x01\x02\x03"
         assert Array(3,Byte).parse(b"\x01\x02\x03additionalgarbage") == [1,2,3]
-        assert raises(Array(3,Byte).parse, b"") == ArrayError
-        assert raises(Array(3,Byte).build, [1,2]) == ArrayError
-        assert raises(Array(3,Byte).build, [1,2,3,4,5,6,7,8]) == ArrayError
+        assert raises(Array(3,Byte).parse, b"") == RangeError
+        assert raises(Array(3,Byte).build, [1,2]) == RangeError
+        assert raises(Array(3,Byte).build, [1,2,3,4,5,6,7,8]) == RangeError
         assert Array(3,Byte).sizeof() == 3
 
         assert Array(lambda ctx: 3, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
         assert Array(lambda ctx: 3, Byte).parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
-        assert raises(Array(lambda ctx: 3, Byte).parse, b"", n=3) == ArrayError
+        assert raises(Array(lambda ctx: 3, Byte).parse, b"", n=3) == RangeError
         assert Array(lambda ctx: 3, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
-        assert raises(Array(lambda ctx: 3, Byte).build, [1,2], n=3) == ArrayError
+        assert raises(Array(lambda ctx: 3, Byte).build, [1,2], n=3) == RangeError
         assert Array(lambda ctx: ctx.n, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
         assert Array(lambda ctx: ctx.n, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
         assert raises(Array(lambda ctx: ctx.n, Byte).sizeof) == AttributeError
@@ -235,9 +235,6 @@ class TestCore(unittest.TestCase):
         assert Range(0, 100, Struct("id"/Byte)).build([dict(id=i) for i in range(5)]) == b'\x00\x01\x02\x03\x04'
         assert raises(Range(0, 100, Struct("id"/Byte)).build, dict(id=1)) == RangeError
         assert raises(Range(0, 100, Struct("id"/Byte)).sizeof) == SizeofError
-        assert raises(Range, -2, +7, Byte) == RangeError
-        assert raises(Range, -2, -7, Byte) == RangeError
-        assert raises(Range, +2, -7, Byte) == RangeError
         assert Range(1, 1, Byte).sizeof() == 1
         assert raises(Range(1, 1, VarInt).sizeof) == SizeofError
 
@@ -251,8 +248,8 @@ class TestCore(unittest.TestCase):
     def test_repeatuntil(self):
         assert RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse(b"\x02\x03\x09garbage") == [2,3,9]
         assert RepeatUntil(lambda obj,ctx: obj == 9, Byte).build([2,3,9,1,1,1]) == b"\x02\x03\x09"
-        assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse, b"\x02\x03\x08") == ArrayError
-        assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).build, [2,3,8]) == ArrayError
+        assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse, b"\x02\x03\x08") == RangeError
+        assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).build, [2,3,8]) == RangeError
         assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).sizeof) == SizeofError
 
     def test_struct(self):
@@ -625,8 +622,8 @@ class TestCore(unittest.TestCase):
         assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]
         assert PrefixedArray(Byte, Byte).parse(b"\x00") == []
         assert PrefixedArray(Byte, Byte).build([1,2,3]) == b"\x03\x01\x02\x03"
-        assert raises(PrefixedArray(Byte, Byte).parse, b"") == ArrayError
-        assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == ArrayError
+        assert raises(PrefixedArray(Byte, Byte).parse, b"") == RangeError
+        assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == RangeError
         assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
 
     def test_prefixed(self):

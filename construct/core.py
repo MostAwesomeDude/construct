@@ -24,8 +24,6 @@ class SizeofError(ConstructError):
     pass
 class AdaptationError(ConstructError):
     pass
-class ArrayError(ConstructError):
-    pass
 class RangeError(ConstructError):
     pass
 class SwitchError(ConstructError):
@@ -925,9 +923,95 @@ class Sequence(Struct):
 #===============================================================================
 # arrays and repeaters
 #===============================================================================
-class Array(Subconstruct):
+class Range(Subconstruct):
     r"""
-    A homogenous array of elements. The array will iterate through exactly ``count`` elements. Will raise ArrayError if less elements are found.
+    A homogenous array of elements. The array will iterate through between ``min`` to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits cleanly. If less than ``min`` units have been successfully parsed, a RangeError is raised.
+
+    .. seealso:: Analog :func:`~construct.core.GreedyRange` that parses until end of stream.
+
+    .. note:: This object requires a seekable stream for parsing.
+
+    :param min: the minimal count
+    :param max: the maximal count
+    :param subcon: the subcon to process individual elements
+
+    Example::
+
+        >>> Range(3, 5, Byte).build([1,2,3,4])
+        b'\x01\x02\x03\x04'
+        >>> Range(3, 5, Byte).parse(_)
+        [1, 2, 3, 4]
+
+        >>> Range(3, 5, Byte).build([1,2])
+        construct.core.RangeError: expected from 3 to 5 elements, found 2
+        >>> Range(3, 5, Byte).build([1,2,3,4,5,6])
+        construct.core.RangeError: expected from 3 to 5 elements, found 6
+    """
+    __slots__ = ["min", "max"]
+    def __init__(self, min, max, subcon):
+        super(Range, self).__init__(subcon)
+        self.min = min
+        self.max = max
+    def _parse(self, stream, context):
+        min = self.min(context) if callable(self.min) else self.min
+        max = self.max(context) if callable(self.max) else self.max
+        if not 0 <= min <= max <= sys.maxsize:
+            raise RangeError("unsane min %s and max %s" % (min, max))
+        obj = ListContainer()
+        try:
+            while len(obj) < max:
+                fallback = stream.tell()
+                obj.append(self.subcon._parse(stream, context))
+                context[len(obj)-1] = obj[-1]
+        except ConstructError:
+            if len(obj) < min:
+                raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
+            stream.seek(fallback)
+        return obj
+    def _build(self, obj, stream, context):
+        min = self.min(context) if callable(self.min) else self.min
+        max = self.max(context) if callable(self.max) else self.max
+        if not 0 <= min <= max <= sys.maxsize:
+            raise RangeError("unsane min %s and max %s" % (min, max))
+        if not isinstance(obj, collections.Sequence):
+            raise RangeError("expected sequence type, found %s" % type(obj))
+        if not min <= len(obj) <= max:
+            raise RangeError("expected from %d to %d elements, found %d" % (min, max, len(obj)))
+        try:
+            for i,subobj in enumerate(obj):
+                context[i] = subobj
+                self.subcon._build(subobj, stream, context)
+        except ConstructError:
+            if len(obj) < self.min:
+                raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
+    def _sizeof(self, context):
+        min = self.min(context) if callable(self.min) else self.min
+        max = self.max(context) if callable(self.max) else self.max
+        if min == max:
+            return min * self.subcon._sizeof(context)
+        else:
+            raise SizeofError("cannot calculate size")
+
+
+def GreedyRange(subcon):
+    r"""
+    A homogenous array of elements that parses until end of stream and builds from all elements.
+
+    :param subcon: the subcon to process individual elements
+
+    Example::
+
+        >>> GreedyRange(Byte).build(range(10))
+        b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t'
+        >>> GreedyRange(Byte).parse(_)
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    """
+    return Range(0, sys.maxsize, subcon)
+
+
+def Array(count, subcon):
+    r"""
+    A homogenous array of elements. The array will iterate through exactly ``count`` elements. Will raise RangeError if less elements are found.
 
     .. seealso:: Base :func:`~construct.core.Range` construct.
 
@@ -945,34 +1029,8 @@ class Array(Subconstruct):
         b'\x00\x01\x02\x03\x04'
         >>> Array(5, Byte).parse(_)
         [0, 1, 2, 3, 4]
-        >>> Array(5, Byte).sizeof()
-        5
-
-        >>> Array(5, Byte).build(range(4))
-        construct.core.ArrayError: expected 5 elements, found 4
     """
-    __slots__ = ["count"]
-    def __init__(self, count, subcon):
-        super(Array, self).__init__(subcon)
-        self.count = count
-    def _parse(self, stream, context):
-        count = self.count(context) if callable(self.count) else self.count
-        try:
-            obj = ListContainer()
-            for i in range(count):
-                obj.append(self.subcon._parse(stream, context))
-            return obj
-        except ConstructError:
-            raise ArrayError("expected %d, found %d" % (count, len(obj)))
-    def _build(self, obj, stream, context):
-        count = self.count(context) if callable(self.count) else self.count
-        if len(obj) != count:
-            raise ArrayError("expected %d elements, found %d" % (count, len(obj)))
-        for subobj in obj:
-            self.subcon._build(subobj, stream, context)
-    def _sizeof(self, context):
-        count = self.count(context) if callable(self.count) else self.count
-        return self.subcon._sizeof(context) * count
+    return Range(count, count, subcon)
 
 
 class PrefixedArray(Construct):
@@ -1002,88 +1060,11 @@ class PrefixedArray(Construct):
             count = self.lengthfield._parse(stream, context)
             return list(self.subcon._parse(stream, context) for i in range(count))
         except Exception:
-            raise ArrayError("could not read prefix or enough elements, stream too short")
+            raise RangeError("could not read prefix or enough elements, stream too short")
     def _build(self, obj, stream, context):
         self.lengthfield._build(len(obj), stream, context)
         for element in obj:
             self.subcon._build(element, stream, context)
-
-
-class Range(Subconstruct):
-    r"""
-    A homogenous array of elements. The array will iterate through between ``min`` to ``max`` times. If an exception occurs (EOF, validation error), the repeater exits cleanly. If less than ``min`` units have been successfully parsed, a RangeError is raised.
-
-    .. seealso:: Analog :func:`~construct.core.GreedyRange` that parses until end of stream.
-
-    .. note:: This object requires a seekable stream for parsing.
-
-    :param min: the minimal count
-    :param max: the maximal count
-    :param subcon: the subcon to process individual elements
-
-    Example::
-
-        >>> Range(3, 5, Byte).build([1,2,3,4])
-        b'\x01\x02\x03\x04'
-        >>> Range(3, 5, Byte).parse(_)
-        [1, 2, 3, 4]
-        >>> Range(3, 5, Byte).build([1,2])
-        construct.core.RangeError: expected from 3 to 5 elements, found 2
-        >>> Range(3, 5, Byte).build([1,2,3,4,5,6])
-        construct.core.RangeError: expected from 3 to 5 elements, found 6
-    """
-    __slots__ = ["min", "max"]
-    def __init__(self, min, max, subcon):
-        if not 0 <= min <= max <= sys.maxsize:
-            raise RangeError("unsane min %s and max %s" % (min,max))
-        super(Range, self).__init__(subcon)
-        self.min = min
-        self.max = max
-    def _parse(self, stream, context):
-        obj = ListContainer()
-        try:
-            while len(obj) < self.max:
-                fallback = stream.tell()
-                obj.append(self.subcon._parse(stream, context))
-                context[len(obj)-1] = obj[-1]
-        except ConstructError:
-            if len(obj) < self.min:
-                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
-            stream.seek(fallback)
-        return obj
-    def _build(self, obj, stream, context):
-        if not isinstance(obj, collections.Sequence):
-            raise RangeError("expected sequence type, found %s" % type(obj))
-        if not self.min <= len(obj) <= self.max:
-            raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
-        try:
-            for i,subobj in enumerate(obj):
-                context[i] = subobj
-                self.subcon._build(subobj, stream, context)
-        except ConstructError:
-            if len(obj) < self.min:
-                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
-    def _sizeof(self, context):
-        if self.min == self.max:
-            return self.min * self.subcon._sizeof(context)
-        else:
-            raise SizeofError("cannot calculate size")
-
-
-def GreedyRange(subcon):
-    r"""
-    A homogenous array of elements that parses until end of stream and builds from all elements.
-
-    :param subcon: the subcon to process individual elements
-
-    Example::
-
-        >>> GreedyRange(Byte).build(range(10))
-        b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t'
-        >>> GreedyRange(Byte).parse(_)
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    """
-    return Range(0, sys.maxsize, subcon)
 
 
 class RepeatUntil(Subconstruct):
@@ -1115,7 +1096,7 @@ class RepeatUntil(Subconstruct):
                 if self.predicate(subobj, context):
                     break
         except ConstructError:
-            raise ArrayError("missing terminator")
+            raise RangeError("missing terminator")
         return obj
     def _build(self, obj, stream, context):
         for subobj in obj:
@@ -1123,7 +1104,7 @@ class RepeatUntil(Subconstruct):
             if self.predicate(subobj, context):
                 break
         else:
-            raise ArrayError("missing terminator")
+            raise RangeError("missing terminator")
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
 
