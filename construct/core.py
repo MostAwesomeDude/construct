@@ -2719,15 +2719,11 @@ class HexDump(Adapter):
         '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/       \n'
     """
     __slots__ = ["linesize"]
-    def __init__(self, subcon, linesize=16, buildraw=False):
+    def __init__(self, subcon, linesize=16):
         super(HexDump, self).__init__(subcon)
         self.linesize = linesize
-        self.buildraw = buildraw
     def _encode(self, obj, context):
-        if self.buildraw:
-            return obj
-        else:
-            return hexundump(obj, linesize=self.linesize)
+        return hexundump(obj, linesize=self.linesize)
     def _decode(self, obj, context):
         return hexdump(obj, linesize=self.linesize)
 
