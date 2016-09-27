@@ -726,6 +726,10 @@ class TestCore(unittest.TestCase):
         assert raises(OneOf(Byte,[4,5,6,7]).parse, b"\x08") == ValidationError
         assert raises(OneOf(Byte,[4,5,6,7]).build, 8) == ValidationError
 
+    def test_filter(self):
+        assert Filter(Byte[:], lambda obj,ctx: obj != 0).parse(b"\x00\x02\x00") == [2]
+        assert Filter(Byte[:], lambda obj,ctx: obj != 0).build([0,1,0,2,0]) == b"\x01\x02"
+
     def test_hexdump(self):
         assert HexDump(Bytes(6)).parse(b'abcdef') == '0000   61 62 63 64 65 66                                 abcdef           \n'
         assert HexDump(Bytes(6)).build('0000   61 62 63 64 65 66                                 abcdef           \n') == b'abcdef'

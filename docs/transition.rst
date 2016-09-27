@@ -142,6 +142,8 @@ Pass Terminator remain
 
 OneOf Noneof remain
 
+Filter added
+
 LengthValueAdapter was replaced by Prefixed
 
 HexDumpAdapter was made HexDump
