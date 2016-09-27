@@ -668,8 +668,11 @@ query_record = "query_record" / Struct(
 )
 
 resource_record = "resource_record" / Struct(
-    "name" / CString(terminators = b"\xc0\x00"),
-    Padding(1),
+    # this should be a PascalString, not a CString
+    # http://www.zytrax.com/books/dns/ch15/#qname
+    "name" / PascalString(Byte),
+    # "name" / CString(terminators = b"\xc0\x00"),
+    # Padding(1),
     dns_record_type,
     dns_record_class,
     "ttl" / Int32ub,
