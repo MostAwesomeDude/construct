@@ -53,7 +53,6 @@ class TestProtocols(unittest.TestCase):
     def test_ip6(self):
         self.commonhex(ipv6_header, b"6ff00000010206803031323334353637383941424344454646454443424139383736353433323130")
 
-    @pytest.mark.xfail
     def test_icmp(self):
         self.commonhex(icmp_header, b"0800305c02001b006162636465666768696a6b6c6d6e6f7071727374757677616263646566676869")
         self.commonhex(icmp_header, b"0000385c02001b006162636465666768696a6b6c6d6e6f7071727374757677616263646566676869")
@@ -62,8 +61,8 @@ class TestProtocols(unittest.TestCase):
     def test_igmp(self):
         self.commonhex(igmpv2_header, b"1600FA01EFFFFFFD")
 
-    @pytest.mark.xfail
-    def test_dhcp(self):
+    @pytest.mark.xfail(reason="array(4) fails, where what?")
+    def test_dhcp4(self):
         data = \
         b"0101060167c05f5a00000000"
         "0102030405060708090a0b0c"
@@ -83,10 +82,11 @@ class TestProtocols(unittest.TestCase):
         "382b45746865726e6574312f302f32340206f8f0827348f9ff"
         self.commonhex(dhcp_header, data)
 
+    def test_dhcp6(self):
         data = b"\x03\x11\x22\x33\x00\x17\x00\x03ABC\x00\x05\x00\x05HELLO"
-        self.commonbytes(dhcp_message, data)
+        self.commonbytes(dhcp_message6, data)
         test2 = b"\x0c\x040123456789abcdef0123456789abcdef\x00\x09\x00\x0bhello world\x00\x01\x00\x00"
-        self.commonbytes(dhcp_message, data)
+        self.commonbytes(dhcp_message6, data)
 
     def test_tcp(self):
         self.commonhex(tcp_header, b"0db5005062303fb21836e9e650184470c9bc0000")
@@ -94,7 +94,7 @@ class TestProtocols(unittest.TestCase):
     def test_udp(self):
         self.commonhex(udp_header, b"0bcc003500280689")
 
-    @pytest.mark.xfail
+    @pytest.mark.xfail(reason="rebuild is different from original data")
     def test_dns(self):
         self.commonhex(dns, b"2624010000010000000000000377777706676f6f676c6503636f6d0000010001")
         self.commonhex(dns, b"2624818000010005000600060377777706676f6f676c6503636f6d0000010001c00c0005000100089065000803777777016cc010c02c0001000100000004000440e9b768c02c0001000100000004000440e9b793c02c0001000100000004000440e9b763c02c0001000100000004000440e9b767c030000200010000a88600040163c030c030000200010000a88600040164c030c030000200010000a88600040165c030c030000200010000a88600040167c030c030000200010000a88600040161c030c030000200010000a88600040162c030c0c00001000100011d0c0004d8ef3509c0d0000100010000ca7c000440e9b309c080000100010000c4c5000440e9a109c0900001000100004391000440e9b709c0a0000100010000ca7c000442660b09c0b00001000100000266000440e9a709")
