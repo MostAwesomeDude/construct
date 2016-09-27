@@ -2878,6 +2878,8 @@ globalstringencoding = None
 def setglobalstringencoding(encoding):
     r"""
     Sets the encoding globally for all String PascalString CString GreedyString instances.
+
+    :param encoding: a string like "utf8" etc or None, which means working with bytes
     """
     global globalstringencoding
     globalstringencoding = encoding
