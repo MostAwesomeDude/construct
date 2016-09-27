@@ -463,9 +463,9 @@ dhcp_header = "dhcp_header" / Struct(
     "your_addr" / IpAddress,
     "server_addr" / IpAddress,
     "relay_addr" / IpAddress,
-    "client_hardware_addr" / Bytes(16),
-    "server_host_name" / Bytes(64),
-    "boot_filename" / Bytes(128),
+    "client_hardware_addr" / Hex(Bytes(16)),
+    "server_host_name" / Hex(Bytes(64)),
+    "boot_filename" / Hex(Bytes(128)),
     # BOOTP/DHCP options
     # "The first four bytes contain the (decimal) values 99, 130, 83 and 99"
     "signature" / Const(b"\x63\x82\x53\x63"),
