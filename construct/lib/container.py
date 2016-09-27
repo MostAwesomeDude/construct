@@ -93,7 +93,7 @@ class Container(dict):
     def popitem(self):
         """Removes and returns the last key and value from order."""
         k = self.__keys_order__.pop()
-        v = dict.pop(k)
+        v = dict.pop(self, k)
         return k, v
 
     def update(self, seqordict, **kw):

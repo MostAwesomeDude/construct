@@ -78,17 +78,27 @@ class TestContainer(unittest.TestCase):
         assert c == d
         assert list(c.items()) == list(d.items())
 
-    @pytest.mark.skip
     def test_pop(self):
-        pass
+        c = Container(a=1)(b=2)(c=3)(d=4)
+        assert c.pop("b") == 2
+        assert c.pop("d") == 4
+        assert c.pop("a") == 1
+        assert c.pop("c") == 3
+        assert raises(c.pop, "missing") == KeyError
+        assert c == Container()
 
-    @pytest.mark.skip
     def test_popitem(self):
-        pass
+        c = Container(a=1)(b=2)(c=3)(d=4)
+        assert c.popitem() == ("d",4)
+        assert c.popitem() == ("c",3)
+        assert c.popitem() == ("b",2)
+        assert c.popitem() == ("a",1)
+        assert raises(c.popitem) == IndexError
 
-    @pytest.mark.skip
     def test_clear(self):
-        pass
+        c = Container(a=1)(b=2)(c=3)(d=4)
+        c.clear()
+        assert c == Container()
 
     def test_items(self):
         c = Container(a=1)(b=2)(c=3)(d=4)
