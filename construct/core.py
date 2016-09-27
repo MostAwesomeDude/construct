@@ -2690,6 +2690,22 @@ class ExprValidator(Validator):
         self._validate = validator
 
 
+def Hex(subcon):
+    r"""
+    Adapter for hex-dumping b-strings. It returns a hex dump when parsing, and un-dumps when building.
+
+    Example::
+
+        >>> Hex(GreedyBytes).parse(b"abcd")
+        b'61626364'
+        >>> Hex(GreedyBytes).build("01020304")
+        b'\x01\x02\x03\x04'
+    """
+    return ExprAdapter(subcon,
+        encoder = lambda obj,ctx: unhexlify(obj),
+        decoder = lambda obj,ctx: hexlify(obj),)
+
+
 class HexDump(Adapter):
     r"""
     Adapter for hex-dumping b-strings. It returns a hex dump when parsing, and un-dumps when building.

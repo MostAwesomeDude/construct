@@ -730,9 +730,17 @@ class TestCore(unittest.TestCase):
         assert Filter(Byte[:], lambda obj,ctx: obj != 0).parse(b"\x00\x02\x00") == [2]
         assert Filter(Byte[:], lambda obj,ctx: obj != 0).build([0,1,0,2,0]) == b"\x01\x02"
 
+    def test_hex(self):
+        assert Hex(GreedyBytes).parse(b"abcd") == b"61626364"
+        assert Hex(GreedyBytes).build(b"61626364") == b"abcd"
+        assert Hex(GreedyBytes).parse(b"") == b""
+        assert Hex(GreedyBytes).build(b"") == b""
+
     def test_hexdump(self):
-        assert HexDump(Bytes(6)).parse(b'abcdef') == '0000   61 62 63 64 65 66                                 abcdef           \n'
-        assert HexDump(Bytes(6)).build('0000   61 62 63 64 65 66                                 abcdef           \n') == b'abcdef'
+        assert HexDump(GreedyBytes).parse(b'abcdef') == '0000   61 62 63 64 65 66                                 abcdef           \n'
+        assert HexDump(GreedyBytes).build('0000   61 62 63 64 65 66                                 abcdef           \n') == b'abcdef'
+        assert HexDump(GreedyBytes).parse(b"") == ""
+        assert HexDump(GreedyBytes).build("") == b""
 
     def test_lazystruct(self):
         assert LazyStruct().parse(b"") == Struct().parse(b"")

@@ -673,7 +673,7 @@ resource_record = "resource_record" / Struct(
     dns_record_type,
     dns_record_class,
     "ttl" / Int32ub,
-    "rdata" / Prefixed(Int16ub, GreedyBytes),
+    "rdata" / Hex(Prefixed(Int16ub, GreedyBytes)),
 
     # "rdata_length" / Int16ub,
     # "rdata" / Bytes(this.rdata_length),

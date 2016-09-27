@@ -10,6 +10,7 @@ from construct.examples.protocols.ipstack import *
 
 from io import BytesIO
 import os, random, itertools, hashlib, binascii
+from binascii import hexlify, unhexlify
 ident = lambda x: x
 
 
@@ -25,8 +26,7 @@ class TestProtocols(unittest.TestCase):
             data = f.read()
         obj = format.parse(data)
         print(obj)
-        data = format.build(obj)
-        print(data)
+        print(hexlify(data))
 
     def commonhex(self, format, hexdata):
         self.commonbytes(format, binascii.unhexlify(hexdata))
@@ -35,8 +35,8 @@ class TestProtocols(unittest.TestCase):
         obj = format.parse(bytesdata)
         print(obj)
         data = format.build(obj)
-        print(data)
-        assert bytesdata == data
+        print(hexlify(data))
+        assert hexlify(bytesdata) == hexlify(data)
 
 
 
