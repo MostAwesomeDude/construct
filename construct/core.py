@@ -2716,7 +2716,7 @@ def Hex(subcon):
         decoder = lambda obj,ctx: hexlify(obj),)
 
 
-class HexDump(Adapter):
+def HexDump(subcon, linesize=16):
     r"""
     Adapter for hex-dumping b-strings. It returns a hex dump when parsing, and un-dumps when building.
 
@@ -2728,14 +2728,9 @@ class HexDump(Adapter):
         >>> HexDump(Bytes(10)).parse(b"12345abc;/")
         '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/       \n'
     """
-    __slots__ = ["linesize"]
-    def __init__(self, subcon, linesize=16):
-        super(HexDump, self).__init__(subcon)
-        self.linesize = linesize
-    def _encode(self, obj, context):
-        return hexundump(obj, linesize=self.linesize)
-    def _decode(self, obj, context):
-        return hexdump(obj, linesize=self.linesize)
+    return ExprAdapter(subcon,
+        encoder = lambda obj,ctx: hexundump(obj, linesize=linesize),
+        decoder = lambda obj,ctx: hexdump(obj, linesize=linesize),)
 
 
 class Slicing(Adapter):
