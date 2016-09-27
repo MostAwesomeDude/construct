@@ -1,31 +1,41 @@
-import unittest
+import unittest, pytest, os
 from declarativeunittest import raises
+ontravis = 'TRAVIS' in os.environ
 
 from construct import *
 from construct.lib import *
-from construct.lib.py3compat import *
 
 from copy import copy
 from random import randint, shuffle
-def shuffled(alist):
-    a = list(alist)
-    shuffle(a)
-    return a
 
 
 
 class TestContainer(unittest.TestCase):
-    def testall(self):
 
+    def test_ctor(self):
         c = Container(a=1)(b=2)(c=3)(d=4)
         assert c == Container(c)
 
+    def test_ctor_dict(self):
+        c = Container({'a': 1})
+        d = Container(a=1)
+        assert c == d
+
+    @pytest.mark.xfail(not PY36 and not PYPY, reason="ordered kw was introduced in 3.6 and somehow works on pypy")
+    def test_ctor_orderedkw(self):
+        c = Container(a=1)(b=2)(c=3)(d=4)
+        d = Container(a=1, b=2, c=3, d=4)
+        assert c == d
+        assert list(c.items()) == list(d.items())
+
+    def test_getitem(self):
         c = Container(a=1)
         assert c["a"] == 1
         assert c.a == 1
         assert raises(lambda: c.unknownkey) == AttributeError
         assert raises(lambda: c["unknownkey"]) == KeyError
 
+    def test_setitem(self):
         c = Container()
         c.a = 1
         assert c["a"] == 1
@@ -34,20 +44,19 @@ class TestContainer(unittest.TestCase):
         assert c["a"] == 2
         assert c.a == 2
 
-        c = Container(a=1)
+    def test_delitem(self):
+        c = Container(a=1, b=2)
         del c.a
         assert "a" not in c
         assert raises(lambda: c.a) == AttributeError
         assert raises(lambda: c["a"]) == KeyError
+        del c["b"]
+        assert "b" not in c
+        assert raises(lambda: c.b) == AttributeError
+        assert raises(lambda: c["b"]) == KeyError
         assert c == Container()
 
-        c = Container(a=1)
-        del c["a"]
-        assert "a" not in c
-        assert raises(lambda: c.a) == AttributeError
-        assert raises(lambda: c["a"]) == KeyError
-        assert c == Container()
-
+    def test_update_dict(self):
         c = Container(a=1)(b=2)(c=3)(d=4)
         d = Container()
         d.update(c)
@@ -58,6 +67,7 @@ class TestContainer(unittest.TestCase):
         assert c == d
         assert list(c.items()) == list(d.items())
 
+    def test_update_items(self):
         c = Container(a=1)(b=2)(c=3)(d=4)
         d = Container()
         d.update([("a",1),("b",2),("c",3),("d",4)])
@@ -68,47 +78,65 @@ class TestContainer(unittest.TestCase):
         assert c == d
         assert list(c.items()) == list(d.items())
 
-        # issue #130
-        # test pop popitem clear
+    @pytest.mark.skip
+    def test_pop(self):
+        pass
 
+    @pytest.mark.skip
+    def test_popitem(self):
+        pass
+
+    @pytest.mark.skip
+    def test_clear(self):
+        pass
+
+    def test_items(self):
         c = Container(a=1)(b=2)(c=3)(d=4)
         assert list(c.keys()) == ["a","b","c","d"]
         assert list(c.values()) == [1,2,3,4]
         assert list(c.items()) == [("a",1),("b",2),("c",3),("d",4)]
         assert list(c) == list(c.keys())
 
+    def test_eq(self):
         c = Container(a=1)(b=2)(c=3)(d=4)(e=5)
         d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
         assert c == c
         assert c == d
 
+    def test_ne(self):
         c = Container(a=1)(b=2)(c=3)
         d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
         assert c != d
         assert d != c
 
+    def test_ne_items(self):
         c = Container(a=1)
         d = [("a" == 1)]
         assert c != d
 
+    def test_ne_container(self):
         c = Container(a=1)
         d = Container(b=1)
         assert c != d
 
+    def test_ne_values(self):
         c = Container(a=1)
         d = Container(a=2)
         assert c != d
 
+    def test_copy(self):
         c = Container(a=1)
         d = c.copy()
         assert c == d
         assert c is not d
 
+    def test_copy2(self):
         c = Container(a=1)
         d = copy(c)
         assert c == d
         assert c is not d
 
+    def test_len_bool(self):
         c = Container(a=1)(b=2)(c=3)(d=4)
         assert len(c) == 4
         assert c
@@ -116,46 +144,41 @@ class TestContainer(unittest.TestCase):
         assert len(c) == 0
         assert not c
 
+    def test_in(self):
         c = Container(a=1)
         assert "a" in c
         assert "b" not in c
 
+    def test_regression_recursionlock(self):
         print("REGRESSION: recursion_lock() used to leave private keys.")
         c = Container()
         str(c); repr(c)
         assert not c
 
+    def test_str_repr_empty(self):
         c = Container()
         assert str(c) == "Container: "
         assert repr(c) == "Container()"
         assert eval(repr(c)) == c
 
+    def test_str_repr(self):
         c = Container(a=1)(b=2)(c=3)
         assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = 3"
         assert repr(c) == "Container(a=1)(b=2)(c=3)"
         assert eval(repr(c)) == c
 
+    def test_str_repr_nested(self):
         c = Container(a=1)(b=2)(c=Container())
         assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = Container: "
         assert repr(c) == "Container(a=1)(b=2)(c=Container())"
         assert eval(repr(c)) == c
 
+    def test_str_repr_recursive(self):
         c = Container(a=1)(b=2)
         c.c = c
         assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = <recursion detected>"
         assert repr(c) == "Container(a=1)(b=2)(c=<recursion detected>)"
 
-        c = Container({'a': 1})
-        d = Container(a=1)
-        assert c == d
-
-        c = Container({'a': 1, 'b': 42}, {'b': 2})
-        d = Container(a=1, b=2)
-        assert c == d
-
-        c = Container({'b': 42, 'c': 43}, {'a': 1, 'b': 2, 'c': 4}, c=3, d=4)
-        d = Container(a=1, b=2, c=3, d=4)
-        assert c == d
 
 
 class TestFlagsContainer(unittest.TestCase):
