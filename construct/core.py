@@ -1902,6 +1902,20 @@ class Terminator(Construct):
 
 
 @singleton
+class Error(Construct):
+    r"""
+    Raises an exception when being parsed or built. Can be used with IfThenElse.
+    """
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.flagbuildnone = True
+    def _parse(self, stream, context):
+        raise ConstructError("Error field cannot be parsed")
+    def _build(self, obj, stream, context):
+        raise ConstructError("Error field cannot be parsed")
+
+
+@singleton
 class Numpy(Construct):
     r"""
     Preserves numpy arrays (both shape, dtype and values).
