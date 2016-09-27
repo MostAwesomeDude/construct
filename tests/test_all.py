@@ -1059,4 +1059,81 @@ class TestCore(unittest.TestCase):
 
         assert test.parse(b'\x87\x0f').value == 34575
 
+    @pytest.mark.xfail
+    def test_from_issue_71(self):
+
+        class ValidatePayloadLength(Validator):
+            def _validate(self, obj, ctx):
+                return ctx.payload_end - ctx.payload_start == ctx.payload_len == len(ctx.raw_payload)
+        class ChecksumValidator(Validator):
+            def _validate(self, obj, ctx):
+                return hashlib.sha512(ctx.raw_payload).digest() == obj
+
+        Outer = Struct(
+            'struct_type' / Int16ub,
+            'payload_len' / Int16ub,
+            'payload_start' / Tell,
+            'raw_payload' / Peek(Bytes(lambda ctx: ctx.payload_len)),
+            'name' / PascalString(Byte),
+            'occupation' / PascalString(Byte),
+            'payload_end' / Tell,
+            'serial' / Int16ub,
+            'checksum' / ChecksumValidator(Bytes(64)),
+            ValidatePayloadLength(Pass),
+            Terminator,
+        )
+        Inner = Struct(
+            'name' / PascalString(Byte), 
+            'occupation' / PascalString(Byte),
+        )
+
+        payload = Inner.build(dict(name=b"unknown", occupation=b"worker"))
+        payload_len = len(payload)
+        checksum = hashlib.sha512(payload).digest()
+        Outer.build(dict(name=b"unknown", occupation=b"worker", raw_payload=payload, payload_len=payload_len, checksum=checksum, serial=12345, struct_type=9001))
+
+    def test_from_issue_28(self):
+
+        def vstring(name, embed=True, optional=True):
+            lfield = "_%s_length" % name.lower()
+            s = Struct(
+                lfield / Byte,
+                name / Bytes(lambda ctx: getattr(ctx, lfield)))
+            if optional:
+                s = Optional(s)
+            if embed:
+                s = Embedded(s)
+            return s
+
+        def build_struct(embed_g=True, embed_h=True):
+            s = "mystruct" / Struct(
+                "a" / Int32ul,
+                "b" / Int8ul,
+                "c" / Int8ul,
+                "d" / BitStruct("dx" / Bit[8]),
+                "e" / BitStruct("ex" / Bit[8]),
+                "f" / Float32b,
+                vstring("g", embed=embed_g),
+                vstring("h", embed=embed_h),
+                "i" / BitStruct("ix" / Bit[8]),
+                "j" / Int8sb,
+                "k" / Int8sb,
+                "l" / Int8sb,
+                "m" / Float32l,
+                "n" / Float32l,
+                vstring("o"),
+                vstring("p"),
+                vstring("q"),
+                vstring("r"))
+            return s
+
+        data = b'\xc3\xc0{\x00\x01\x00\x00\x00HOqA\x12some silly text...\x00\x0e\x00\x00\x00q=jAq=zA\x02dB\x02%f\x02%f\x02%f'
+        print("\n\nNo embedding for neither g and h, i is a container --> OK")
+        print(build_struct(embed_g=False, embed_h=False).parse(data))
+        print("Embed both g and h, i is not a container --> FAIL")
+        print(build_struct(embed_g=True, embed_h=True).parse(data))
+        print("\n\nEmbed g but not h --> EXCEPTION")
+        print(build_struct(embed_g=True, embed_h=False).parse(data))
+        # When setting optional to False in vstring method, all three tests above work fine.
+
 
