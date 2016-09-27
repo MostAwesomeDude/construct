@@ -8,6 +8,7 @@ from binascii import hexlify, unhexlify
 import sys
 import collections
 import codecs
+from declarativeunittest import raises
 
 from construct.lib import *
 
@@ -2056,10 +2057,19 @@ class Prefixed(Subconstruct):
         data = _read_stream(stream, length)
         return self.subcon.parse(data, context)
     def _build(self, obj, stream, context):
-        data = self.subcon.build(obj, context)
-        subobj = self.lengthfield._build(len(data), stream, context)
-        _write_stream(stream, len(data), data)
-        return subobj
+        if not raises(self.lengthfield.sizeof) and stream.seekable:
+            offset1 = stream.tell()
+            self.lengthfield._build(0, stream, context)
+            offset2 = stream.tell()
+            self.subcon._build(obj, stream, context)
+            offset3 = stream.tell()
+            stream.seek(offset1)
+            self.lengthfield._build(offset3-offset2, stream, context)
+            stream.seek(offset3)
+        else:
+            data = self.subcon.build(obj, context)
+            self.lengthfield._build(len(data), stream, context)
+            _write_stream(stream, len(data), data)
     def _sizeof(self, context):
         return self.lengthfield._sizeof(context) + self.subcon._sizeof(context)
 
