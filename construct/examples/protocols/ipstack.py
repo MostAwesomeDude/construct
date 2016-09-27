@@ -426,14 +426,7 @@ dhcp_option = "dhcp_option" / Struct(
         CableLabs_Client_Configuration = 122,
         GeoConf = 123,
     ),
-    "value" / Switch(this.code,
-        {
-            # codes without any value
-            "Pad" : Pass,
-        },
-        # codes followed by length and value fields
-        default = Prefixed(Byte, GreedyBytes)
-    )
+    "value" / If(this.code != "Pad", Prefixed(Byte, GreedyBytes)),
 )
 
 dhcp_header = "dhcp_header" / Struct(
@@ -678,15 +671,6 @@ resource_record = "resource_record" / Struct(
     dns_record_class,
     "ttl" / Int32ub,
     "rdata" / Hex(Prefixed(Int16ub, GreedyBytes)),
-
-    # "rdata_length" / Int16ub,
-    # "rdata" / Bytes(this.rdata_length),
-
-    # needs fixing, IpAddress works with Byte[4] not Bytes(4)
-    # "data" / IfThenElse(this.type == "IPv4",
-    #     IpAddressAdapter(rdata),
-    #     rdata
-    # ),
 )
 
 dns = "dns" / Struct(

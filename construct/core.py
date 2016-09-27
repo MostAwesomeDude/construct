@@ -1478,7 +1478,6 @@ class Switch(Construct):
     __slots__ = ["subcons", "keyfunc", "cases", "default", "includekey"]
     def __init__(self, keyfunc, cases, default=NoDefault, includekey=False):
         super(Switch, self).__init__()
-        self._inherit_flags(*cases.values())
         self.keyfunc = keyfunc
         self.cases = cases
         self.default = default

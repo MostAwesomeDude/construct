@@ -61,7 +61,6 @@ class TestProtocols(unittest.TestCase):
     def test_igmp(self):
         self.commonhex(igmpv2_header, b"1600FA01EFFFFFFD")
 
-    @pytest.mark.xfail(reason="array(4) fails, where what?")
     def test_dhcp4(self):
         data = \
         b"0101060167c05f5a00000000"+\
@@ -79,7 +78,7 @@ class TestProtocols(unittest.TestCase):
         b"63825363"+\
         b"3501083d0701DEADBEEFBEEF0c04417375733c084d53465420352e"+\
         b"30370d010f03062c2e2f1f2179f92bfc52210117566c616e333338"+\
-        b"382b45746865726e6574312f302f32340206f8f0827348f9ff"
+        b"382b45746865726e6574312f302f32340206f8f0827348f9"
         self.commonhex(dhcp_header, data)
 
     def test_dhcp6(self):
