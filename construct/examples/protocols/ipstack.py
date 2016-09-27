@@ -668,9 +668,10 @@ query_record = "query_record" / Struct(
 )
 
 resource_record = "resource_record" / Struct(
-    # this should be a PascalString, not a CString
+    # this should be a PascalString if label format or something if a pointer format
     # http://www.zytrax.com/books/dns/ch15/#qname
-    "name" / PascalString(Byte),
+    "firstbyte" / Peek(Byte),
+    "name" / IfThenElse(this.firstbyte & 0b11000000, Error, PascalString(Byte)),
     # "name" / CString(terminators = b"\xc0\x00"),
     # Padding(1),
     dns_record_type,
