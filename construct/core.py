@@ -2904,6 +2904,7 @@ class Check(Construct):
     Example::
 
         Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len)
+        Check(len_(this.payload.data) == this.payload_len)
     """
     def __init__(self, func):
         super(Check, self).__init__()

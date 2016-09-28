@@ -736,6 +736,9 @@ class TestCore(unittest.TestCase):
         assert Check(this.x == 255).build(None, Container(x=255)) == b""
         assert Check(this.x == 255).sizeof() == 0
 
+        assert Check(len_(this.a) == 3).parse(b"", Container(a=[1,2,3])) == None
+        assert Check(len_(this.a) == 3).build(None, Container(a=[1,2,3])) == b""
+
     def test_hex(self):
         assert Hex(GreedyBytes).parse(b"abcd") == b"61626364"
         assert Hex(GreedyBytes).build(b"61626364") == b"abcd"
@@ -1086,7 +1089,7 @@ class TestCore(unittest.TestCase):
             'payload' / RawCopy(Inner),
             'serial' / Int16ub,
             'checksum' / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), this.payload.data),
-            Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len),
+            Check(len_(this.payload.data) == this.payload_len),
             Terminator,
         )
 

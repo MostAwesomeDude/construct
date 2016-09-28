@@ -57,7 +57,7 @@ class ExprMixin(object):
         return BinExpr(operator.and_, self, other)
     def __or__(self, other):
         return BinExpr(operator.or_, self, other)
-    
+
     def __radd__(self, other):
         return BinExpr(operator.add, other, self)
     def __rsub__(self, other):
@@ -91,7 +91,7 @@ class ExprMixin(object):
     def __invert__(self):
         return UniExpr(operator.not_, self)
     __inv__ = __invert__
-    
+
     def __contains__(self, other):
         return BinExpr(operator.contains, self, other)
     def __gt__(self, other):
@@ -136,7 +136,7 @@ class BinExpr(ExprMixin):
 
 class Path(ExprMixin):
     __slots__ = ["__name", "__parent"]
-    def __init__(self, name, parent = None):
+    def __init__(self, name, parent=None):
         self.__name = name
         self.__parent = parent
     def __repr__(self):
@@ -152,5 +152,31 @@ class Path(ExprMixin):
         return Path(name, self)
 
 
+class FuncExprBuilder(ExprMixin):
+    def __init__(self, func):
+        self.func = func
+    def __repr__(self):
+        return "%s_" % (self.func.__name__)
+    def __call__(self, operand):
+        return FuncExpr(self.func, operand) if callable(operand) else operand
+
+
+class FuncExpr(ExprMixin):
+    def __init__(self, func, operand):
+        self.func = func
+        self.operand = operand
+    def __repr__(self):
+        return "%s_(%r)" % (self.func.__name__, self.operand)
+    def __call__(self, context):
+        operand = self.operand(context) if callable(self.operand) else self.operand
+        return self.func(operand)
+
+
 this = Path("this")
+
+len_ = FuncExprBuilder(len)
+sum_ = FuncExprBuilder(sum)
+min_ = FuncExprBuilder(min)
+max_ = FuncExprBuilder(max)
+abs_ = FuncExprBuilder(abs)
 
