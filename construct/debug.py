@@ -7,8 +7,8 @@ import traceback
 import pdb
 import inspect
 
-from construct.core import Construct, Subconstruct
-from construct.lib import HexString, Container, ListContainer
+from construct import *
+from construct.lib import *
 
 
 class Probe(Construct):
@@ -72,16 +72,17 @@ class Probe(Construct):
     __slots__ = ["printname", "show_stream", "show_context", "show_stack", "stream_lookahead"]
     counter = 0
     
-    def __init__(self, name=None, show_stream=True, show_context=True, show_stack=True, stream_lookahead=100):
+    def __init__(self, name=None, show_stream=True, show_context=True, show_stack=True, stream_lookahead=128):
         super(Probe, self).__init__()
         if name is None:
             Probe.counter += 1
-            name = "<unnamed %d>" % (Probe.counter,)
+            name = "<unnamed %d>" % Probe.counter
         self.printname = name
         self.show_stream = show_stream
         self.show_context = show_context
         self.show_stack = show_stack
         self.stream_lookahead = stream_lookahead
+        self.flagbuildnone = True
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.printname)
     def _parse(self, stream, context):
@@ -92,33 +93,33 @@ class Probe(Construct):
         return 0
     
     def printout(self, stream, context):
-        obj = Container()
+        print("================================================================================")
+        print("Probe %s" % self.printname)
+
         if self.show_stream:
-            obj.stream_position = stream.tell()
-            follows = stream.read(self.stream_lookahead)
-            if not follows:
-                obj.following_stream_data = "EOF reached"
+            fallback = stream.tell()
+            datafollows = stream.read(self.stream_lookahead)
+            stream.seek(fallback)
+            if not datafollows:
+                print("EOF reached")
             else:
-                stream.seek(-len(follows), 1)
-                obj.following_stream_data = HexString(follows)
-            print("")
+                print(hexdump(datafollows, 32))
         
         if self.show_context:
-            obj.context = context
+            print(context)
         
-        if self.show_stack:
-            obj.stack = ListContainer()
-            frames = [s[0] for s in inspect.stack()][1:-1]
-            frames.reverse()
-            for f in frames:
-                a = Container()
-                a.__update__(f.f_locals)
-                obj.stack.append(a)
+        # if self.show_stack:
+        #     stack = ListContainer()
+        #     print("Stack: ")
+        #     frames = [s[0] for s in inspect.stack()][1:-1]
+        #     for f in reversed(frames):
+        #         a = Container()
+        #         a.__update__(f.f_locals)
+        #         stack.append(a)
+        #         # print(f.f_locals)
+        #     print(stack)
         
-        print("=" * 80)
-        print("Probe %s" % (self.printname,))
-        print(obj)
-        print("=" * 80)
+        print("================================================================================")
 
 
 class Debugger(Subconstruct):

@@ -892,6 +892,12 @@ class TestCore(unittest.TestCase):
         assert Coord.build(coord(49,50,51)) == b"123"
         assert Coord.sizeof() == 3
 
+    def test_probe(self):
+        Probe().parse(b"")
+        Probe().build(None)
+        Struct("inserted"/Probe()).parse(b"")
+        Struct("inserted"/Probe()).build({})
+
     def test_restreamed(self):
         assert Restreamed(Int16ub, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
         assert Restreamed(Int16ub, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
