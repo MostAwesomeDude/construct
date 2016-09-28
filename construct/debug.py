@@ -120,6 +120,33 @@ class Debugger(Subconstruct):
         -> raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
         (Pdb) 
         ================================================================================
+
+        >>> format = Struct(
+        ...     "spam" / Debugger(Enum(Byte, A=1,B=2,C=3)),
+        ... )
+        >>> format.parse(b"\xff")
+        ================================================================================
+        Debugging exception of <Mapping: None>:
+          File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py", line 2578, in _decode
+            return self.decoding[obj]
+        KeyError: 255
+
+        During handling of the above exception, another exception occurred:
+
+        Traceback (most recent call last):
+          File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/debug.py", line 127, in _parse
+            return self.subcon._parse(stream, context)
+          File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py", line 308, in _parse
+            return self._decode(self.subcon._parse(stream, context), context)
+          File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py", line 2583, in _decode
+            raise MappingError("no decoding mapping for %r" % (obj,))
+        construct.core.MappingError: no decoding mapping for 255
+
+        (you can set the value of 'self.retval', which will be returned)
+        > /home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py(2583)_decode()
+        -> raise MappingError("no decoding mapping for %r" % (obj,))
+        (Pdb) self.retval = "???"
+        (Pdb) q
     """
     __slots__ = ["retval"]
     def _parse(self, stream, context):
