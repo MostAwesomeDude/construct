@@ -740,11 +740,19 @@ Double = Float64b
 
 @singletonfunction
 def Int24ub():
-    """A 3-byte big-endian integer, as used in ancient file formats."""
+    """A 3-byte big-endian unsigned integer, as used in ancient file formats."""
     return BytesInteger(3)
 @singletonfunction
 def Int24ul():
-    """A 3-byte little-endian integer, as used in ancient file formats."""
+    """A 3-byte little-endian unsigned integer, as used in ancient file formats."""
+    return BytesInteger(3, swapped=True)
+@singletonfunction
+def Int24sb():
+    """A 3-byte big-endian signed integer, as used in ancient file formats."""
+    return BytesInteger(3)
+@singletonfunction
+def Int24sl():
+    """A 3-byte little-endian signed integer, as used in ancient file formats."""
     return BytesInteger(3, swapped=True)
 
 
