@@ -86,6 +86,9 @@ The two most common cases already exist as builtins.
 
 Notice that `OneOf(dtype, [value])` is essentially equivalent to `Const(dtype, value)`.
 
+.. autoclass:: construct.Filter
+
+
 Using expressions instead of classes
 ------------------------------------
 
