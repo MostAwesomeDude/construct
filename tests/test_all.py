@@ -892,6 +892,14 @@ class TestCore(unittest.TestCase):
         assert Coord.build(coord(49,50,51)) == b"123"
         assert Coord.sizeof() == 3
 
+    @pytest.mark.xfail
+    def test_rebuild(self):
+        d = Struct("count"/Rebuild(Byte, lambda ctx: len(ctx.items)), "items"/Byte[this.count])
+        # d = Struct("count"/Rebuild(Byte, lambda ctx: len(ctx.items)), "items"/Array(this.count,Byte))
+        assert d.parse(b"\x02ab") == Container(count=2)(items=[97,98])
+        assert d.build(dict(count=1,items=[255])) == b"\x01\xff"
+        assert d.build(dict(items=[255])) == b"\x01\xff"
+
     def test_probe(self):
         Probe().parse(b"")
         Probe().build(None)

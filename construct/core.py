@@ -1951,6 +1951,24 @@ class NamedTuple(Adapter):
         raise AdaptationError("can only decode and encode from lists and dicts")
 
 
+class Rebuild(Subconstruct):
+    r"""
+    Parses the field like normal, but computes the value for building from a function. Useful for length and count fields when Prefixed and PrefixedArray cannot be used.
+
+    Example::
+
+        ???
+    """
+    __slots__ = ["func"]
+    def __init__(self, subcon, func):
+        super(Rebuild, self).__init__(subcon)
+        self.func = func
+        self.flagbuildnone = True
+    def _build(self, obj, stream, context):
+        obj = self.func(context)
+        return self.subcon._build(obj, stream, context)
+
+
 #===============================================================================
 # tunneling and swapping
 #===============================================================================
