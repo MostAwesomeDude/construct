@@ -2008,17 +2008,17 @@ class RawCopy(Subconstruct):
         offset2 = stream.tell()
         stream.seek(offset1)
         data = _read_stream(stream, offset2-offset1)
-        return dict(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+        return Container(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
     def _build(self, obj, stream, context):
         if 'data' in obj:
             data = obj['data']
             _write_stream(stream, len(data), data)
-            return dict(data=data, length=len(data))
+            return Container(data=data, length=len(data))
         elif 'value' in obj:
             value = obj['value']
             data = self.subcon.build(value, context)
             _write_stream(stream, len(data), data)
-            return dict(data=data, value=value, length=len(data))
+            return Container(data=data, value=value, length=len(data))
         else:
             raise ConstructError('both data and value keys are missing')
 

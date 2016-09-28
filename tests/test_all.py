@@ -1076,38 +1076,24 @@ class TestCore(unittest.TestCase):
 
         assert test.parse(b'\x87\x0f').value == 34575
 
-    @pytest.mark.xfail
     def test_from_issue_71(self):
-
-        class ValidatePayloadLength(Validator):
-            def _validate(self, obj, ctx):
-                return ctx.payload_end - ctx.payload_start == ctx.payload_len == len(ctx.raw_payload)
-        class ChecksumValidator(Validator):
-            def _validate(self, obj, ctx):
-                return hashlib.sha512(ctx.raw_payload).digest() == obj
-
+        Inner = Struct(
+            'name' / PascalString(Byte),
+            'occupation' / PascalString(Byte),
+        )
         Outer = Struct(
             'struct_type' / Int16ub,
             'payload_len' / Int16ub,
-            'payload_start' / Tell,
-            'raw_payload' / Peek(Bytes(lambda ctx: ctx.payload_len)),
-            'name' / PascalString(Byte),
-            'occupation' / PascalString(Byte),
-            'payload_end' / Tell,
+            'payload' / RawCopy(Inner),
             'serial' / Int16ub,
-            'checksum' / ChecksumValidator(Bytes(64)),
-            ValidatePayloadLength(Pass),
+            'checksum' / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), "payload"),
+            Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len),
             Terminator,
-        )
-        Inner = Struct(
-            'name' / PascalString(Byte), 
-            'occupation' / PascalString(Byte),
         )
 
         payload = Inner.build(dict(name=b"unknown", occupation=b"worker"))
         payload_len = len(payload)
-        checksum = hashlib.sha512(payload).digest()
-        Outer.build(dict(name=b"unknown", occupation=b"worker", raw_payload=payload, payload_len=payload_len, checksum=checksum, serial=12345, struct_type=9001))
+        Outer.build(Container(payload=Container(data=payload), payload_len=payload_len, serial=12345, struct_type=9001))
 
     def test_from_issue_28(self):
 
