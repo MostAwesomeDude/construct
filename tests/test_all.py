@@ -734,6 +734,7 @@ class TestCore(unittest.TestCase):
     def test_check(self):
         assert Check(this.x == 255).parse(b"", Container(x=255)) == None
         assert Check(this.x == 255).build(None, Container(x=255)) == b""
+        assert Check(this.x == 255).sizeof() == 0
 
     def test_hex(self):
         assert Hex(GreedyBytes).parse(b"abcd") == b"61626364"

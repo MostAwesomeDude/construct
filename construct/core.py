@@ -2910,6 +2910,8 @@ class Check(Construct):
     def _build(self, obj, stream, context):
         if not self.func(context):
             raise ValidationError("check failed during building")
+    def _sizeof(self, context):
+        return 0
 
 
 #===============================================================================
