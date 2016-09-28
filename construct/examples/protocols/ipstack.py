@@ -625,11 +625,16 @@ udp_header = "udp_header" / Struct(
 #===============================================================================
 
 class DnsStringAdapter(Adapter):
-    def _encode(self, obj, context):
-        return obj.split(".") + [""]
     def _decode(self, obj, context):
         return ".".join(obj[:-1])
+    def _encode(self, obj, context):
+        return obj.split(".") + [""]
 
+class DnsNamesAdapter(Adapter):
+    def _decode(self, obj, context):
+        return [x.label if x.islabel else x.pointer & 0x3fff for x in obj]
+    def _encode(self, obj, context):
+        return [dict(ispointer=1,pointer=x|0xc000) if isinstance(x,int) else dict(islabel=1,label=x) for x in obj]
 
 dns_record_class = "class" / Enum(Int16ub,
     RESERVED = 0,
@@ -655,18 +660,22 @@ dns_record_type = "type" / Enum(Int16ub,
 )
 
 query_record = "query_record" / Struct(
-    "name" / DnsStringAdapter(RepeatUntil(lambda obj,ctx: obj == "", PascalString(Byte, encoding="ascii"))),
+    "name" / DnsStringAdapter(RepeatUntil(lambda obj,ctx: len(obj)==0, PascalString(Byte, encoding="ascii"))),
     dns_record_type,
     dns_record_class,
 )
 
-resource_record = "resource_record" / Struct(
-    # this should be a PascalString if label format or something if a pointer format
-    # http://www.zytrax.com/books/dns/ch15/#qname
+labelpointer = Struct(
     "firstbyte" / Peek(Byte),
-    "name" / IfThenElse(this.firstbyte & 0b11000000, Error, PascalString(Byte)),
-    # "name" / CString(terminators = b"\xc0\x00"),
-    # Padding(1),
+    "islabel" / Computed(this.firstbyte & 0b11000000 == 0),
+    "ispointer" / Computed(this.firstbyte & 0b11000000 == 0b11000000),
+    "label" / If(this.islabel, PascalString(Byte, encoding="ascii")),
+    "pointer" / If(this.ispointer, Int16ub),
+)
+
+resource_record = "resource_record" / Struct(
+    # http://www.zytrax.com/books/dns/ch15/#qname
+    "names" / DnsNamesAdapter(RepeatUntil(lambda obj,ctx: obj.ispointer or len(obj.label)==0, labelpointer)),
     dns_record_type,
     dns_record_class,
     "ttl" / Int32ub,
@@ -689,7 +698,7 @@ dns = "dns" / Struct(
         ),
         "authoritive_answer" / Flag,
         "truncation" / Flag,
-        "recurssion_desired" / Flag,
+        "recursion_desired" / Flag,
         "recursion_available" / Flag,
         Padding(1),
         "authenticated_data" / Flag,
