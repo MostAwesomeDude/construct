@@ -22,52 +22,29 @@ class Probe(Construct):
     :param stream_lookahead: the number of bytes to dump when show_stack is set. default is 100.
     
     Example::
-        >>> (Byte >> Probe() >> Byte).build([1,2])
-
+        >>>> Struct("count"/Byte, "items"/Byte[this.count], Probe()).parse(b"\x05abcde")
         ================================================================================
-        Probe <unnamed 2>
+        Probe <unnamed 3>
+        EOF reached
         Container: 
-            stream_position = 1
-            following_stream_data = EOF reached
-            context = Container: 
-            stack = ListContainer: 
-                Container: 
-                    obj = [1, 2]
-                    context = None
-                    stream = <_io.BytesIO object at 0x7f32d5fce990>
-                    self = <Sequence: None>
-                    kw = {}
-                Container: 
-                    obj = [1, 2]
-                    context = Container: 
-                    stream = <_io.BytesIO object at 0x7f32d5fce990>
-                    self = <Sequence: None>
-                    kw = {}
-                Container: 
-                    obj = [1, 2]
-                    context = Container: 
-                    subobj = 2
-                    i = 1
-                    buildret = None
-                    sc = Probe('<unnamed 2>')
-                    stream = <_io.BytesIO object at 0x7f32d5fce990>
-                    objiter = <list_iterator object at 0x7f32da018400>
-                    self = <Sequence: None>
-                Container: 
-                    obj = 2
-                    context = Container: 
-                    stream = <_io.BytesIO object at 0x7f32d5fce990>
-                    self = Probe('<unnamed 2>')
+            count = 5
+            items = ListContainer: 
+                97
+                98
+                99
+                100
+                101
         ================================================================================
-        Traceback (most recent call last):
-          File "<stdin>", line 1, in <module>
-          File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py", line 218, in build
-            self.build_stream(obj, stream, context, **kw)
-          File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py", line 230, in build_stream
-            self._build(obj, stream, context)
-          File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py", line 925, in _build
-            subobj = next(objiter)
-        StopIteration
+        Container(count=5)(items=[97, 98, 99, 100, 101])
+
+        >>>> (Byte >> Probe()).parse(b"?")
+        ================================================================================
+        Probe <unnamed 1>
+        EOF reached
+        Container: 
+            0 = 63
+        ================================================================================
+        [63, None]
     """
     __slots__ = ["printname", "show_stream", "show_context", "show_stack", "stream_lookahead"]
     counter = 0
