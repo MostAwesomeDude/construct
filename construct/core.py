@@ -50,6 +50,8 @@ class BitIntegerError(ConstructError):
     pass
 class MappingError(AdaptationError):
     pass
+class ExplicitError(Exception):
+    pass
 
 
 #===============================================================================
@@ -1884,15 +1886,15 @@ class Terminator(Construct):
 @singleton
 class Error(Construct):
     r"""
-    Raises an exception when being parsed or built. Can be used with IfThenElse.
+    Raises an exception when triggered by parse or build. Can be used for example with If, IfThenElse.
     """
     def __init__(self):
         super(self.__class__, self).__init__()
         self.flagbuildnone = True
     def _parse(self, stream, context):
-        raise ConstructError("Error field cannot be parsed")
+        raise ExplicitError("Error field was activated during parsing")
     def _build(self, obj, stream, context):
-        raise ConstructError("Error field cannot be parsed")
+        raise ExplicitError("Error field was activated during building")
 
 
 @singleton

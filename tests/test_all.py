@@ -335,9 +335,8 @@ class TestCore(unittest.TestCase):
         assert Struct(Terminator).build(dict()) == b""
 
     def test_error(self):
-        assert Error
-        assert raises(Error.parse, b"") == ConstructError
-        assert raises(Error.build, None) == ConstructError
+        assert raises(Error.parse, b"") == ExplicitError
+        assert raises(Error.build, None) == ExplicitError
 
     def test_pointer(self):
         assert Pointer(lambda ctx: 2, "pointer" / Int8ub).parse(b"\x00\x00\x07") == 7
