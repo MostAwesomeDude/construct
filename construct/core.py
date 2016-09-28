@@ -2064,6 +2064,8 @@ class Prefixed(Subconstruct):
 
     .. seealso:: The :func:`~construct.core.VarInt` encoding should be preferred over :func:`~construct.core.Byte` and fixed size fields. VarInt is more compact and does never overflow.
 
+    .. note:: If lengthfield is fixed size, Prefixed will seek back to write the length afterwards, which will break on non-seekable streams.
+
     :param lengthfield: a subcon used for storing the length
     :param subcon: the subcon used for storing the value
 
