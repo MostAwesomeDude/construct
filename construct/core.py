@@ -2890,6 +2890,26 @@ def Filter(subcon, predicate):
         decoder = lambda obj,ctx: list(filter(lambda x: predicate(x,ctx), obj)),)
 
 
+class Check(Construct):
+    r"""
+    Checks for a condition and raises ValidationError if the check fails.
+
+    Example::
+
+        Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len)
+    """
+    def __init__(self, func):
+        super(Check, self).__init__()
+        self.func = func
+        self.flagbuildnone = True
+    def _parse(self, stream, context):
+        if not self.func(context):
+            raise ValidationError("check failed during parsing")
+    def _build(self, obj, stream, context):
+        if not self.func(context):
+            raise ValidationError("check failed during building")
+
+
 #===============================================================================
 # strings
 #===============================================================================

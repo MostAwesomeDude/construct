@@ -95,4 +95,11 @@ Validators can be created declaratively using ExprValidator:
 ... 	validator = lambda obj,ctx: obj in [1,3,5])
 
 
+Checking
+========
+
+Checks can also be made using the context, being done just in the middle of parsing or building and not on a particular object.
+
+.. autoclass:: construct.Check
+
 

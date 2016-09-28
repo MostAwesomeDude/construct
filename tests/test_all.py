@@ -731,6 +731,10 @@ class TestCore(unittest.TestCase):
         assert Filter(Byte[:], lambda obj,ctx: obj != 0).parse(b"\x00\x02\x00") == [2]
         assert Filter(Byte[:], lambda obj,ctx: obj != 0).build([0,1,0,2,0]) == b"\x01\x02"
 
+    def test_check(self):
+        assert Check(this.x == 255).parse(b"", Container(x=255)) == None
+        assert Check(this.x == 255).build(None, Container(x=255)) == b""
+
     def test_hex(self):
         assert Hex(GreedyBytes).parse(b"abcd") == b"61626364"
         assert Hex(GreedyBytes).build(b"61626364") == b"abcd"
