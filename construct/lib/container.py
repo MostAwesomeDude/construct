@@ -171,7 +171,7 @@ class Container(dict):
     def __repr__(self):
         parts = ["Container"]
         for k,v in self.items():
-            if isinstance(k,str) and not k.startswith("_"):
+            if not isinstance(k,str) or not k.startswith("_"):
                 parts.extend(["(",str(k),"=",repr(v),")"])
         if len(parts) == 1:
             parts.append("()")
@@ -181,7 +181,7 @@ class Container(dict):
     def __str__(self, indentation="\n    "):
         text = ["Container: "]
         for k,v in self.items():
-            if isinstance(k,str) and not k.startswith("_"):
+            if not isinstance(k,str) or not k.startswith("_"):
                 text.extend([indentation, str(k), " = "])
                 text.append(indentation.join(str(v).split("\n")))
         return "".join(text)
