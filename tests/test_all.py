@@ -980,17 +980,15 @@ class TestCore(unittest.TestCase):
             "next" / LazyBound(lambda ctx: Node), )
 
     def test_checksum(self):
-        def sha512(b):
-            return hashlib.sha512(b).digest()
         d = Struct(
             "fields" / RawCopy(Struct(
                 "a" / Byte,
                 "b" / Byte,
             )),
-            "checksum" / Checksum(Bytes(64), sha512, "fields"),
+            "checksum" / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), this.fields.data),
         )
 
-        c = sha512(b"\x01\x02")
+        c = hashlib.sha512(b"\x01\x02").digest()
         assert d.parse(b"\x01\x02"+c) == Container(fields=dict(data=b"\x01\x02", value=Container(a=1)(b=2), offset1=0, offset2=2, length=2))(checksum=c)
         assert d.build(dict(fields=dict(data=b"\x01\x02"))) == b"\x01\x02"+c
         assert d.build(dict(fields=dict(value=dict(a=1,b=2)))) == b"\x01\x02"+c
@@ -1087,7 +1085,7 @@ class TestCore(unittest.TestCase):
             'payload_len' / Int16ub,
             'payload' / RawCopy(Inner),
             'serial' / Int16ub,
-            'checksum' / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), "payload"),
+            'checksum' / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), this.payload.data),
             Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len),
             Terminator,
         )
