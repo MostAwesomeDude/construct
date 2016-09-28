@@ -965,7 +965,7 @@ class Range(Subconstruct):
                 fallback = stream.tell()
                 obj.append(self.subcon._parse(stream, context))
                 context[len(obj)-1] = obj[-1]
-        except ConstructError:
+        except Exception:
             if len(obj) < min:
                 raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
             stream.seek(fallback)
@@ -983,8 +983,8 @@ class Range(Subconstruct):
             for i,subobj in enumerate(obj):
                 context[i] = subobj
                 self.subcon._build(subobj, stream, context)
-        except ConstructError:
-            if len(obj) < self.min:
+        except Exception:
+            if len(obj) < min:
                 raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
     def _sizeof(self, context):
         min = self.min(context) if callable(self.min) else self.min
@@ -1080,8 +1080,6 @@ class RepeatUntil(Subconstruct):
 
         >>> RepeatUntil(lambda x,ctx: x>7, Byte).build(range(20))
         b'\x00\x01\x02\x03\x04\x05\x06\x07\x08'
-        >>> RepeatUntil(lambda x,ctx: x>7, Byte).parse(_)
-        [0, 1, 2, 3, 4, 5, 6, 7, 8]
         >>> RepeatUntil(lambda x,ctx: x>7, Byte).parse(b"\x01\xff\x02")
         [1, 255]
     """
@@ -1096,17 +1094,16 @@ class RepeatUntil(Subconstruct):
                 subobj = self.subcon._parse(stream, context)
                 obj.append(subobj)
                 if self.predicate(subobj, context):
-                    break
+                    return obj
         except ConstructError:
-            raise RangeError("missing terminator")
-        return obj
+            raise RangeError("missing terminator when parsing")
     def _build(self, obj, stream, context):
         for subobj in obj:
             self.subcon._build(subobj, stream, context)
             if self.predicate(subobj, context):
                 break
         else:
-            raise RangeError("missing terminator")
+            raise RangeError("missing terminator when building")
     def _sizeof(self, context):
         raise SizeofError("cannot calculate size")
 
