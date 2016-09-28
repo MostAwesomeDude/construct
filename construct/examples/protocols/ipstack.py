@@ -314,7 +314,7 @@ igmpv2_header = "igmpv2_header" / Struct(
 # http://www.networksorcery.com/enp/protocol/bootp/options.htm
 #===============================================================================
 
-dhcp_option = "dhcp_option" / Struct(
+dhcp4_option = "dhcp_option" / Struct(
     "code" / Enum(Byte,
         Pad = 0,
         Subnet_Mask = 1,
@@ -429,7 +429,7 @@ dhcp_option = "dhcp_option" / Struct(
     "value" / If(this.code != "Pad", Prefixed(Byte, GreedyBytes)),
 )
 
-dhcp_header = "dhcp_header" / Struct(
+dhcp4_header = "dhcp_header" / Struct(
     "opcode" / Enum(Byte,
         BootRequest = 1,
         BootReply = 2,
@@ -462,7 +462,7 @@ dhcp_header = "dhcp_header" / Struct(
     # BOOTP/DHCP options
     # "The first four bytes contain the (decimal) values 99, 130, 83 and 99"
     "signature" / Const(b"\x63\x82\x53\x63"),
-    "options" / GreedyRange(dhcp_option),
+    "options" / GreedyRange(dhcp4_option),
 )
 
 #===============================================================================
@@ -472,7 +472,7 @@ dhcp_header = "dhcp_header" / Struct(
 # http://www.networksorcery.com/enp/rfc/rfc3315.txt
 #===============================================================================
 
-dhcp_option6 = "dhcp_option" / Struct(
+dhcp6_option = "dhcp_option" / Struct(
     "code" / Enum(Int16ub,
         OPTION_CLIENTID = 1,
         OPTION_SERVERID = 2,
@@ -515,17 +515,17 @@ dhcp_option6 = "dhcp_option" / Struct(
     "data" / Prefixed(Int16ub, GreedyBytes),
 )
 
-client_message6 = "client_message" / BitStruct(
+client_message = "client_message" / BitStruct(
     "transaction_id" / BitsInteger(24),
 )
 
-relay_message6 = "relay_message" / Struct(
+relay_message = "relay_message" / Struct(
     "hop_count" / Byte,
     "linkaddr" / Ipv6Address,
     "peeraddr" / Ipv6Address,
 )
 
-dhcp_message6 = "dhcp_message" / Struct(
+dhcp6_message = "dhcp_message" / Struct(
     "msgtype" / Enum(Byte,
         # these are client-server messages
         SOLICIT = 1,
@@ -546,12 +546,12 @@ dhcp_message6 = "dhcp_message" / Struct(
     # relay messages have a different structure from client-server messages
     "params" / Switch(this.msgtype,
         {
-            "RELAY_FORW" : relay_message6,
-            "RELAY_REPL" : relay_message6,
+            "RELAY_FORW" : relay_message,
+            "RELAY_REPL" : relay_message,
         },
-        default = client_message6,
+        default = client_message,
     ),
-    "options" / GreedyRange(dhcp_option6),
+    "options" / GreedyRange(dhcp6_option),
 )
 
 #===============================================================================
