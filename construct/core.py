@@ -965,6 +965,8 @@ class Range(Subconstruct):
                 fallback = stream.tell()
                 obj.append(self.subcon._parse(stream, context))
                 context[len(obj)-1] = obj[-1]
+        except ExplicitError:
+            raise
         except Exception:
             if len(obj) < min:
                 raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
@@ -983,6 +985,8 @@ class Range(Subconstruct):
             for i,subobj in enumerate(obj):
                 context[i] = subobj
                 self.subcon._build(subobj, stream, context)
+        except ExplicitError:
+            raise
         except Exception:
             if len(obj) < min:
                 raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
@@ -1061,6 +1065,8 @@ class PrefixedArray(Construct):
         try:
             count = self.lengthfield._parse(stream, context)
             return list(self.subcon._parse(stream, context) for i in range(count))
+        except ExplicitError:
+            raise
         except Exception:
             raise RangeError("could not read prefix or enough elements, stream too short")
     def _build(self, obj, stream, context):
@@ -1095,6 +1101,8 @@ class RepeatUntil(Subconstruct):
                 obj.append(subobj)
                 if self.predicate(subobj, context):
                     return obj
+        except ExplicitError:
+            raise
         except ConstructError:
             raise RangeError("missing terminator when parsing")
     def _build(self, obj, stream, context):
@@ -1383,6 +1391,8 @@ class Select(Construct):
             fallback = stream.tell()
             try:
                 obj = sc._parse(stream, context)
+            except ExplicitError:
+                raise
             except ConstructError:
                 stream.seek(fallback)
             else:
@@ -1398,6 +1408,8 @@ class Select(Construct):
             for sc in self.subcons:
                 try:
                     data = sc.build(obj, context)
+                except ExplicitError:
+                    raise
                 except Exception:
                     pass
                 else:
@@ -1587,6 +1599,8 @@ class Peek(Subconstruct):
         fallback = stream.tell()
         try:
             return self.subcon._parse(stream, context)
+        except ExplicitError:
+            raise
         except FieldError:
             pass
         finally:
@@ -2548,6 +2562,8 @@ class Mapping(Adapter):
     def _encode(self, obj, context):
         try:
             return self.encoding[obj]
+        except ExplicitError:
+            raise
         except (KeyError, TypeError):
             if self.encdefault is NotImplemented:
                 raise MappingError("no encoding mapping for %r" % (obj,))
@@ -2557,6 +2573,8 @@ class Mapping(Adapter):
     def _decode(self, obj, context):
         try:
             return self.decoding[obj]
+        except ExplicitError:
+            raise
         except (KeyError, TypeError):
             if self.decdefault is NotImplemented:
                 raise MappingError("no decoding mapping for %r" % (obj,))
@@ -2657,6 +2675,8 @@ class FlagsEnum(Adapter):
             for name, value in obj.items():
                 if value:
                     flags |= self.flags[name]
+        except ExplicitError:
+            raise
         except AttributeError:
             raise MappingError("not a mapping type: %r" % (obj,))
         except KeyError:
