@@ -848,10 +848,10 @@ class Struct(Construct):
                 if sc.name is not None:
                     obj[sc.name] = subobj
                     context[sc.name] = subobj
-            context[i] = subobj
         return obj
     def _build(self, obj, stream, context):
         context = Container(_ = context)
+        context.update(obj)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
                 subobj = obj
@@ -859,15 +859,12 @@ class Struct(Construct):
                 subobj = None
             else:
                 subobj = obj[sc.name]
-                context[sc.name] = subobj
-            context[i] = subobj
             buildret = sc._build(subobj, stream, context)
             if buildret is not None:
                 if sc.flagembedded:
                     context.update(buildret)
                 if sc.name is not None:
                     context[sc.name] = buildret
-                context[i] = buildret
         return context
     def _sizeof(self, context):
         return sum(sc._sizeof(context) for sc in self.subcons)
@@ -1987,7 +1984,8 @@ class Rebuild(Subconstruct):
         self.flagbuildnone = True
     def _build(self, obj, stream, context):
         obj = self.func(context)
-        return self.subcon._build(obj, stream, context)
+        self.subcon._build(obj, stream, context)
+        return obj
 
 
 #===============================================================================
