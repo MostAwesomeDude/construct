@@ -134,7 +134,7 @@ A repeater that repeats until a condition is met. The perfect example is null-te
 
 .. note:: For null-terminated strings, use :func:`~construct.CString`.
 
->>> loop = RepeatUntil(lambda obj,ctx: obj == 0, Byte)
+>>> loop = RepeatUntil(obj_ == 0, Byte)
 >>> loop.parse(b"aioweqnjkscs\x00")
 [97, 105, 111, 119, 101, 113, 110, 106, 107, 115, 99, 115, 0]
 
