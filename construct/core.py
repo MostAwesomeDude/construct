@@ -1842,9 +1842,9 @@ class Computed(Construct):
         self.func = func
         self.flagbuildnone = True
     def _parse(self, stream, context):
-        return self.func(context)
+        return self.func(context) if callable(self.func) else self.func
     def _build(self, obj, stream, context):
-        return self.func(context)
+        return self.func(context) if callable(self.func) else self.func
     def _sizeof(self, context):
         return 0
 

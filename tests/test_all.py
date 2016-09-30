@@ -299,6 +299,11 @@ class TestCore(unittest.TestCase):
         assert raises(Computed(lambda ctx: ctx.missing).parse, b"") == AttributeError
         assert raises(Computed(lambda ctx: ctx["missing"]).parse, b"") == KeyError
 
+        assert Computed(255).parse(b"") == 255
+        assert Computed(255).build(None) == b""
+        assert Struct(c=Computed(255)).parse(b"") == dict(c=255)
+        assert Struct(c=Computed(255)).build({}) == b""
+
     def test_rawcopy(self):
         assert RawCopy(Byte).parse(b"\xff") == dict(data=b"\xff", value=255, offset1=0, offset2=1, length=1)
         assert RawCopy(Byte).build(dict(data=b"\xff")) == b"\xff"
