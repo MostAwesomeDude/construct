@@ -2428,15 +2428,21 @@ class OnDemand(Subconstruct):
     def __init__(self, subcon):
         super(OnDemand, self).__init__(subcon)
     def _parse(self, stream, context):
-        data = _read_stream(stream, self.subcon._sizeof(context))
-        return lambda: self.subcon.parse(data, context)
+        offset = stream.tell()
+        stream.seek(self.subcon._sizeof(context), 1)
+        def effectuate():
+            fallback = stream.tell()
+            stream.seek(offset)
+            obj = self.subcon._parse(stream, context)
+            stream.seek(fallback)
+            return obj
+        return effectuate
     def _build(self, obj, stream, context):
-        if callable(obj):
-            obj = obj()
+        obj = obj() if callable(obj) else obj
         return self.subcon._build(obj, stream, context)
 
 
-class OnDemandPointer(Subconstruct):
+def OnDemandPointer(offset, subcon):
     r"""
     An on-demand pointer. Is both lazy and jumps to a position before reading.
 
@@ -2447,28 +2453,7 @@ class OnDemandPointer(Subconstruct):
     :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place, can return negative integer as position from the end backwards
     :param subcon: the subcon that will be parsed or built at the `offset` stream position
     """
-    __slots__ = ["offset"]
-    def __init__(self, offset, subcon):
-        super(OnDemandPointer, self).__init__(subcon)
-        self.offset = offset
-    def _parse(self, stream, context):
-        def effectuate():
-            offset = self.offset(context) if callable(self.offset) else self.offset
-            fallback = stream.tell()
-            stream.seek(offset)
-            obj = self.subcon._parse(stream, context)
-            stream.seek(fallback)
-            return obj
-        return effectuate
-    def _build(self, obj, stream, context):
-        offset = self.offset(context) if callable(self.offset) else self.offset
-        fallback = stream.tell()
-        stream.seek(offset)
-        buildret = self.subcon._build(obj, stream, context)
-        stream.seek(fallback)
-        return buildret
-    def _sizeof(self, context):
-        return 0
+    return OnDemand(Pointer(offset, subcon))
 
 
 class LazyBound(Construct):
