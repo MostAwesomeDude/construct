@@ -246,11 +246,11 @@ class TestCore(unittest.TestCase):
         assert raises(GreedyRange(Byte).sizeof) == SizeofError
 
     def test_repeatuntil(self):
-        assert RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse(b"\x02\x03\x09garbage") == [2,3,9]
-        assert RepeatUntil(lambda obj,ctx: obj == 9, Byte).build([2,3,9,1,1,1]) == b"\x02\x03\x09"
-        assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).parse, b"\x02\x03\x08") == RangeError
-        assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).build, [2,3,8]) == RangeError
-        assert raises(RepeatUntil(lambda obj,ctx: obj == 9, Byte).sizeof) == SizeofError
+        assert RepeatUntil(obj_ == 9, Byte).parse(b"\x02\x03\x09garbage") == [2,3,9]
+        assert RepeatUntil(obj_ == 9, Byte).build([2,3,9,1,1,1]) == b"\x02\x03\x09"
+        assert raises(RepeatUntil(obj_ == 9, Byte).parse, b"\x02\x03\x08") == RangeError
+        assert raises(RepeatUntil(obj_ == 9, Byte).build, [2,3,8]) == RangeError
+        assert raises(RepeatUntil(obj_ == 9, Byte).sizeof) == SizeofError
 
     def test_struct(self):
         assert Struct("a" / Int16ul, "b" / Byte).parse(b"\x01\x00\x02") == Container(a=1)(b=2)
@@ -733,8 +733,8 @@ class TestCore(unittest.TestCase):
         assert raises(OneOf(Byte,[4,5,6,7]).build, 8) == ValidationError
 
     def test_filter(self):
-        assert Filter(Byte[:], lambda obj,ctx: obj != 0).parse(b"\x00\x02\x00") == [2]
-        assert Filter(Byte[:], lambda obj,ctx: obj != 0).build([0,1,0,2,0]) == b"\x01\x02"
+        assert Filter(Byte[:], obj_ != 0).parse(b"\x00\x02\x00") == [2]
+        assert Filter(Byte[:], obj_ != 0).build([0,1,0,2,0]) == b"\x01\x02"
 
     def test_check(self):
         assert Check(this.x == 255).parse(b"", Container(x=255)) == None
@@ -933,18 +933,12 @@ class TestCore(unittest.TestCase):
         assert raises(Rebuffered(Byte).sizeof) == SizeofError
 
     def test_expradapter(self):
-        MulDiv = ExprAdapter(Byte,
-            encoder = lambda obj,ctx: obj // 7,
-            decoder = lambda obj,ctx: obj * 7, )
-
+        MulDiv = ExprAdapter(Byte, obj_ // 7, obj_ * 7)
         assert MulDiv.parse(b"\x06") == 42
         assert MulDiv.build(42) == b"\x06"
         assert MulDiv.sizeof() == 1
 
-        Ident = ExprAdapter(Byte,
-            encoder = lambda obj,ctx: obj+1,
-            decoder = lambda obj,ctx: obj-1, )
-
+        Ident = ExprAdapter(Byte, obj_+1, obj_-1)
         assert Ident.parse(b"\x02") == 1
         assert Ident.build(1) == b"\x02"
         assert Ident.sizeof() == 1

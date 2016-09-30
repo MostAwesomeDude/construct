@@ -74,7 +74,6 @@ Of course, `this` can be mixed with other calculations. When evaluating, each in
 
 >>> this.width * this.height - this.offset
 
-
 Using `len_` builtin alikes
 ===========================
 
@@ -97,6 +96,20 @@ Incidentally, when the count field is directly before the items field you can al
 
 >>> PrefixedArray(Byte, Byte).build([1,2,3])
 b'\x03\x01\x02\x03'
+
+Using `obj_` expression
+=======================
+
+There is also an analog that takes both (obj, context) unlike the `this` singleton which only takes a context:
+
+>>> obj_ > 0
+...
+>>> lambda obj,ctx: obj > 0
+
+These can be used in few classes that use (obj, context) lambdas:
+
+>>> RepeatUntil(obj_ == 0, Byte).build([1,2,0,1,0])
+b'\x01\x02\x00'
 
 
 
