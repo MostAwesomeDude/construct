@@ -75,6 +75,31 @@ Of course, `this` can be mixed with other calculations. When evaluating, each in
 >>> this.width * this.height - this.offset
 
 
+Using `len_` builtin alikes
+===========================
+
+There used to be a bit of a hassle when you used to builtin functions like `len sum min max` on context items. Builtin `len` takes a list and returns an int but `len_` analog takes a lambda and returns a lambda. This allows to use this kind of shorthand:
+
+>>> lambda ctx: len(ctx.items)
+...
+>>> len_(this.items)
+
+These can be used in newly added Rebuild wrappers that take compute count/length fields from another items-alike field:
+
+>>> st = Struct(
+...     "count" / Rebuild(Byte, len_(this.items)),
+...     "items" / Byte[this.count],
+... )
+>>> st.build(dict(items=[1,2,3,4,5]))
+b'\x05\x01\x02\x03\x04\x05'
+
+Incidentally, when the count field is directly before the items field you can also use PrefixedArray. However in some protocols these fields are separate and the other approach is good:
+
+>>> PrefixedArray(Byte, Byte).build([1,2,3])
+b'\x03\x01\x02\x03'
+
+
+
 
 Array
 -----
