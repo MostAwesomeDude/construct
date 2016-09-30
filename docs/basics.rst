@@ -85,7 +85,7 @@ b'XYZ\x00\x00'
 >>> test.parse(_)
 Container()
 
-Note that this syntax does NOT work before python 3.6 due to unordered keyword arguments:
+Note that this syntax does NOT work unless on python 3.6 or pypy due to unordered keyword arguments:
 
 >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
 

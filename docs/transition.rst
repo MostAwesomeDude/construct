@@ -152,13 +152,15 @@ Hex added
 
 HexDumpAdapter was made HexDump
 
-HexDump builds from hexdumped data, or from raw bytes if chosen
+HexDump builds from hexdumped data, not from raw bytes
 
 SlicingAdapter and IndexingAdapter were made Slicing and Indexing
 
 Numpy added
 
 NamedTuple added
+
+Check added
 
 
 
