@@ -622,6 +622,17 @@ class TestCore(unittest.TestCase):
         assert Union(Byte, VarInt, buildfrom=0).sizeof() == 1
         assert raises(Union(Byte, VarInt, buildfrom=1).sizeof) == SizeofError
 
+        assert (Union("b"/Int16ub) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x01]
+        assert (Union("b"/Int16ub, skipfrom=0)   >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
+        assert (Union("b"/Int16ub, skipfrom="b") >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
+        assert (Union("a"/Int8ub, "b"/Int16ub, skipfrom=min) >> Byte).parse(b"\x01\x02\x03\x04") == [Container(a=0x01)(b=0x0102),0x02]
+        assert (Union("a"/Int8ub, "b"/Int16ub, skipfrom=max) >> Byte).parse(b"\x01\x02\x03\x04") == [Container(a=0x01)(b=0x0102),0x03]
+        assert (Union("a"/Int8ub, "b"/Int16ub, skipfrom=sum) >> Byte).parse(b"\x01\x02\x03\x04") == [Container(a=0x01)(b=0x0102),0x04]
+
+    @pytest.mark.xfail(reason="skipfrom=this.jump fails")
+    def test_union2(self):
+        assert (Union(Pass, skipfrom=this.jump) >> Byte).parse(b"\x01\x02\x03\x04", jump=3) == [0x04]
+
     def test_prefixedarray(self):
         assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]
         assert PrefixedArray(Byte, Byte).parse(b"\x00") == []

@@ -1296,7 +1296,10 @@ class Union(Construct):
     When parsing, all fields read the same data bytes. When building, either the first subcon that can find an entry in given dict is allowed to put into the stream, or the subcon is selected by index or name. Can also build nothing.
 
     :param subcons: subconstructs (order and name sensitive)
-    :param buildfrom: the subcon used for building and calculating size, can be integer index or string name, default is None (then tries each subcon in sequence), or the Pass singleton
+    :param buildfrom: how to build, the subcon used for building and calculating size, can be integer index or string name selecting a subcon, default is None (then tries each subcon in sequence), or the Pass singleton
+    :param skipfrom: how to seek through the stream when parsing (default is None, no seek), can be an integer or string name selecting a subcon, or one of built-in functions (min max sum), or a context lambda
+
+    .. warning:: Currently skipfrom=lambda is broken.
 
     Example::
 
@@ -1308,11 +1311,12 @@ class Union(Construct):
         >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
     """
-    __slots__ = ["subcons","buildfrom"]
+    __slots__ = ["subcons","buildfrom","skipfrom"]
     def __init__(self, *subcons, **kw):
         super(Union, self).__init__()
         self.subcons = [Peek(sc) for sc in subcons]
         self.buildfrom = kw.get("buildfrom", None)
+        self.skipfrom = kw.get("skipfrom", None)
     def _parse(self, stream, context):
         ret = Container()
         context = Container(_ = context)
@@ -1326,7 +1330,19 @@ class Union(Construct):
                 if sc.name is not None:
                     ret[sc.name] = subobj
                     context[sc.name] = subobj
-            context[i] = subobj
+        if isinstance(self.skipfrom, int):
+            jump = self.subcons[self.skipfrom].subcon._sizeof(context)
+            stream.seek(jump, 1)
+        elif isinstance(self.skipfrom, str):
+            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.skipfrom)
+            jump = self.subcons[index].subcon._sizeof(context)
+            stream.seek(jump, 1)
+        elif self.skipfrom in (min, max, sum):
+            jump = self.skipfrom(sc.subcon._sizeof(context) for sc in self.subcons)
+            stream.seek(jump, 1)
+        elif callable(self.skipfrom):
+            jump = self.skipfrom(context)
+            stream.seek(jump, 1)
         return ret
     def _build(self, obj, stream, context):
         context = Container(_ = context)
@@ -1342,7 +1358,6 @@ class Union(Construct):
                             context.update(buildret)
                         if sc.name is not None:
                             context[sc.name] = buildret
-                        context[i] = buildret
                     return buildret
                 elif sc.name in obj:
                     context[sc.name] = obj[sc.name]
@@ -1352,7 +1367,6 @@ class Union(Construct):
                             context.update(buildret)
                         if sc.name is not None:
                             context[sc.name] = buildret
-                        context[i] = buildret
                     return buildret
             else:
                 raise UnionError("none of subcons %s were found in the dictionary %s" % (self.subcons, obj))
@@ -1363,12 +1377,18 @@ class Union(Construct):
             index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
             sc = self.subcons[index]
             return sc.subcon._build(obj[sc.name], stream, context)
-        raise UnionError("buildfrom should be either: None Pass int str")
+        raise UnionError("buildfrom should be either: None, Pass, an int, a str")
     def _sizeof(self, context):
+        if self.buildfrom is Pass:
+            return 0
         if self.buildfrom is None:
             raise SizeofError("cannot calculate size")
-        else:
+        if isinstance(self.buildfrom, int):
             return self.subcons[self.buildfrom].subcon._sizeof(context)
+        if isinstance(self.buildfrom, str):
+            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
+            return self.subcons[index].subcon._sizeof(context)
+        raise UnionError("buildfrom should be either: None, Pass, an int, a str")
 
 
 class Select(Construct):
