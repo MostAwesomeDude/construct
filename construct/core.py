@@ -2068,7 +2068,7 @@ class Prefixed(Subconstruct):
     r"""
     Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, data is prefixed by its length.
 
-    .. seealso:: The :func:`~construct.core.VarInt` encoding should be preferred over :func:`~construct.core.Byte` and fixed size fields. VarInt is more compact and does never overflow.
+    .. seealso:: The :class:`~construct.core.VarInt` encoding should be preferred over :class:`~construct.core.Byte` and fixed size fields. VarInt is more compact and does never overflow.
 
     .. note:: If lengthfield is fixed size, Prefixed will seek back to write the length afterwards, which will break on non-seekable streams.
 
@@ -2888,6 +2888,7 @@ class Check(Construct):
     Example::
 
         Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len)
+        
         Check(len_(this.payload.data) == this.payload_len)
     """
     def __init__(self, func):
