@@ -156,6 +156,8 @@ HexDump builds from hexdumped data, not from raw bytes
 
 SlicingAdapter and IndexingAdapter were made Slicing and Indexing
 
+SeqOfOne was replaced by Focused
+
 Numpy added
 
 NamedTuple added

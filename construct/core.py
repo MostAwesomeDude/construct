@@ -31,6 +31,8 @@ class SelectError(ConstructError):
     pass
 class UnionError(ConstructError):
     pass
+class FocusedError(ConstructError):
+    pass
 class TerminatorError(ConstructError):
     pass
 class OverwriteError(ConstructError):
@@ -2855,6 +2857,65 @@ class Indexing(Adapter):
         return output
     def _decode(self, obj, context):
         return obj[self.index]
+
+
+class FocusedSeq(Construct):
+    r"""
+    Parses and builds a sequence where only one subcon value is returned or taken, other fields are parsed and discarder or built from nothing. This is a replaced for SeqOfOne.
+
+    :param parsebuildfrom: which subcon to use, an int or str, or a context lambda returning an int or str
+
+    Excample::
+
+        >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator)
+        >>> d = FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator)
+
+        >>> d.parse(b"MZ\xff")
+        255
+        >>> d.build(255)
+        b'MZ\xff'
+    """
+    def __init__(self, parsebuildfrom, *subcons, **kw):
+        subcons = list(subcons)
+        for k,v in kw.items():
+            subcons.append(k / v)
+        super(FocusedSeq, self).__init__()
+        self.parsebuildfrom = parsebuildfrom
+        self.subcons = subcons
+    def _parse(self, stream, context):
+        if callable(self.parsebuildfrom):
+            self.parsebuildfrom = self.parsebuildfrom(context)
+        if isinstance(self.parsebuildfrom, int):
+            index = self.parsebuildfrom
+        if isinstance(self.parsebuildfrom, str):
+            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom)
+        for i,sc in enumerate(self.subcons):
+            if i == index:
+                parseret = sc._parse(stream, context)
+            else:
+                sc._parse(stream, context)
+        return parseret
+    def _build(self, obj, stream, context):
+        if callable(self.parsebuildfrom):
+            self.parsebuildfrom = self.parsebuildfrom(context)
+        if isinstance(self.parsebuildfrom, int):
+            index = self.parsebuildfrom
+        if isinstance(self.parsebuildfrom, str):
+            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom)
+        for i,sc in enumerate(self.subcons):
+            if i == index:
+                buildret = sc._build(obj, stream, context)
+            else:
+                sc._build(None, stream, context)
+        return buildret
+    def _sizeof(self, context):
+        if callable(self.parsebuildfrom):
+            self.parsebuildfrom = self.parsebuildfrom(context)
+        if isinstance(self.parsebuildfrom, int):
+            index = self.parsebuildfrom
+        if isinstance(self.parsebuildfrom, str):
+            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom)
+        return self.subcons[index]._sizeof(context)
 
 
 def OneOf(subcon, valids):

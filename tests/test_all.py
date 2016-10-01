@@ -572,6 +572,20 @@ class TestCore(unittest.TestCase):
         assert Indexing(Array(4,Byte), 4, 2, empty=0).build(3) == b"\x00\x00\x03\x00"
         assert Indexing(Array(4,Byte), 4, 2, empty=0).sizeof() == 4
 
+    def test_focusedseq(self):
+        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff") == 255
+        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator).build(255) == b"MZ\xff"
+        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator).sizeof() == 1
+        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff") == 255
+        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator).build(255) == b"MZ\xff"
+        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator).sizeof() == 1
+
+        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff", s=1) == 255
+        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).sizeof(s=1) == 1
+        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff", s="num") == 255
+        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).sizeof(s="num") == 1
+
+
     def test_select(self):
         assert raises(Select(Int32ub, Int16ub).parse, b"\x07") == SelectError
         assert Select(Int32ub, Int16ub, Int8ub).parse(b"\x07") == 7
