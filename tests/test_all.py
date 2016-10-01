@@ -733,8 +733,8 @@ class TestCore(unittest.TestCase):
         assert raises(OneOf(Byte,[4,5,6,7]).build, 8) == ValidationError
 
     def test_filter(self):
-        assert Filter(Byte[:], obj_ != 0).parse(b"\x00\x02\x00") == [2]
-        assert Filter(Byte[:], obj_ != 0).build([0,1,0,2,0]) == b"\x01\x02"
+        assert Filter(obj_ != 0, Byte[:]).parse(b"\x00\x02\x00") == [2]
+        assert Filter(obj_ != 0, Byte[:]).build([0,1,0,2,0]) == b"\x01\x02"
 
     def test_check(self):
         assert Check(this.x == 255).parse(b"", Container(x=255)) == None

@@ -2861,7 +2861,7 @@ def NoneOf(subcon, invalids):
     return ExprValidator(subcon, lambda obj,ctx: obj not in invalids)
 
 
-def Filter(subcon, predicate):
+def Filter(predicate, subcon):
     r"""
     Filters a list leaving only the elements that passed through the validator.
 
@@ -2870,9 +2870,9 @@ def Filter(subcon, predicate):
 
     Example::
 
-        >>> Filter(Byte[:], lambda obj,ctx: obj != 0).parse(b"\x00\x02\x00")
+        >>> Filter(obj_ != 0, Byte[:]).parse(b"\x00\x02\x00")
         [2]
-        >>> Filter(Byte[:], lambda obj,ctx: obj != 0).build([0,1,0,2,0])
+        >>> Filter(obj_ != 0, Byte[:]).build([0,1,0,2,0])
         b'\x01\x02'
     """
     return ExprAdapter(subcon,
