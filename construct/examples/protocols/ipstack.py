@@ -660,7 +660,7 @@ dns_record_type = "type" / Enum(Int16ub,
 )
 
 query_record = "query_record" / Struct(
-    "name" / DnsStringAdapter(RepeatUntil(lambda obj,ctx: len(obj)==0, PascalString(Byte, encoding="ascii"))),
+    "name" / DnsStringAdapter(RepeatUntil(len_(obj_)==0, PascalString(Byte, encoding="ascii"))),
     dns_record_type,
     dns_record_class,
 )
@@ -675,7 +675,7 @@ labelpointer = Struct(
 
 resource_record = "resource_record" / Struct(
     # http://www.zytrax.com/books/dns/ch15/#qname
-    "names" / DnsNamesAdapter(RepeatUntil(lambda obj,ctx: obj.ispointer or len(obj.label)==0, labelpointer)),
+    "names" / DnsNamesAdapter(RepeatUntil(obj_.ispointer or len_(obj_.label)==0, labelpointer)),
     dns_record_type,
     dns_record_class,
     "ttl" / Int32ub,

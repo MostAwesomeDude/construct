@@ -1065,14 +1065,14 @@ class TestCore(unittest.TestCase):
             Container(attrCode=512)(attrValue=1), ])
 
     def test_from_issue_175(self):
-        def comp(num_array):
+        @PathFunc
+        def comp_(num_array):
             return sum(x << ((len(num_array)-1-i)*8) for i,x in enumerate(num_array))
 
         test = Struct(
-            "numArray" / RepeatUntil(lambda x, ctx: x < 128, Byte),
-            "value" / Computed(lambda ctx: comp(ctx.numArray))
+            "numArray" / RepeatUntil(obj_ < 128, Byte),
+            "value" / Computed(comp_(this.numArray))
         )
-
         assert test.parse(b'\x87\x0f').value == 34575
 
     def test_from_issue_71(self):
