@@ -325,6 +325,8 @@ class TestCore(unittest.TestCase):
         assert Seek(5).build(None) == b""
         assert raises(Seek(5).sizeof) == SizeofError
 
+        assert (Seek(10,1) >> Seek(-5,1) >> Bytes(1)).parse(b"0123456789") == [10,5,b"5"]
+
     def test_pass(self):
         assert Pass.parse(b"") == None
         assert Pass.build(None) == b""

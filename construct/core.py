@@ -1668,6 +1668,9 @@ class Seek(Construct):
 
     .. seealso:: Analog :func:`~construct.core.Pointer` wrapper that has same side effect but also processed a subcon.
 
+    :param at: where to jump to, can ne an int or a context lambda
+    :param whence: is the offset from beginning (0) or from current position (1) or from ending (2), can be an int or a context lambda, default is 0
+
     Example::
 
         >>> (Seek(5) >> Byte).parse(b"01234x")
@@ -1675,15 +1678,19 @@ class Seek(Construct):
         >>> (Bytes(10) >> Seek(5) >> Byte).build([b"0123456789", None, 255])
         b'01234\xff6789'
     """
-    def __init__(self, at):
+    __slots__ = ["at","whence"]
+    def __init__(self, at, whence=0):
         super(Seek, self).__init__()
         self.at = at
+        self.whence = whence
     def _parse(self, stream, context):
         at = self.at(context) if callable(self.at) else self.at
-        return stream.seek(at)
+        whence = self.whence(context) if callable(self.whence) else self.whence
+        return stream.seek(at, whence)
     def _build(self, obj, stream, context):
         at = self.at(context) if callable(self.at) else self.at
-        return stream.seek(at)
+        whence = self.whence(context) if callable(self.whence) else self.whence
+        return stream.seek(at, whence)
 
 
 class Restreamed(Subconstruct):
