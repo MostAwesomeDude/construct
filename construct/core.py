@@ -2116,6 +2116,7 @@ class Checksum(Construct):
 
     :param checksumfield: a subcon field that reads the checksum, usually Bytes(int)
     :param hashfunc: a function taking bytes and returning whatever checksumfield takes when building
+    :param bytesfunc: a function taking context and returning the bytes to be hashed, usually this.rawcopy1.data alike
 
     Example::
 
