@@ -8,7 +8,7 @@ class TestPy3compat(unittest.TestCase):
 
     def test_version(self):
         assert atmostone(PY2, PY3)
-        assert atmostone(PY26, PY32, PY33, PY36)
+        assert atmostone(PY27, PY33, PY34, PY35, PY36)
 
     def test_int_byte(self):
         assert int2byte(5) == b"\x05"

@@ -22,11 +22,6 @@ class TestCore(unittest.TestCase):
         assert Byte.build(255) == b"\xff"
         assert Byte.sizeof() == 1
 
-    @pytest.mark.xfail(PY26, reason="struct.pack has silent overflow")
-    def test_byte_overflow(self):
-        assert raises(Byte.build, 300) == FieldError
-        assert raises(Byte.build, 65536) == FieldError
-
     def test_ints(self):
         assert Int8ub.parse(b"\x01") == 0x01
         assert Int8ub.build(0x01) == b"\x01"
@@ -150,6 +145,8 @@ class TestCore(unittest.TestCase):
         assert raises(FormatField("<","L").parse, b"\x12\x34\x56") == FieldError
         assert raises(FormatField("<","L").build, "string not int") == FieldError
         assert FormatField("<","L").sizeof() == 4
+        assert raises(FormatField("<","L").build, 2**100) == FieldError
+        assert raises(FormatField("<","L").build, 9e9999) == FieldError
 
     def test_formatfield_ints_randomized(self):
         for endianess,dtype in itertools.product("<>=","bhlqBHLQ"):
@@ -178,11 +175,6 @@ class TestCore(unittest.TestCase):
                 b = os.urandom(d.sizeof())
                 if not math.isnan(d.parse(b)):
                     assert d.build(d.parse(b)) == b
-
-    @pytest.mark.xfail(PY26, reason="struct.pack has silent overflow")
-    def test_formatfield_overflow(self):
-        assert raises(FormatField("<","L").build, 2**100) == FieldError
-        assert raises(FormatField("<","L").build, 9e9999) == FieldError
 
     def test_array(self):
         assert Byte[4].parse(b"1234") == [49, 50, 51, 52]
@@ -272,7 +264,7 @@ class TestCore(unittest.TestCase):
         assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(c=3)(d=4)
         assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build(Container(a=1)(b=2)(c=3)(d=4)) == b"\x01\x00\x02\x03\x04"
 
-    @pytest.mark.xfail(not PY36 and not PYPY, reason="ordered kw was introduced in 3.6 and pypy")
+    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
     def test_struct_kwctor(self):
         st = Struct(a=Byte, b=Byte, c=Byte, d=Byte)
         assert st.parse(b"\x01\x02\x03\x04") == Container(a=1,b=2,c=3,d=4)
@@ -652,7 +644,7 @@ class TestCore(unittest.TestCase):
         assert Prefixed(Byte, Int64ub).sizeof() == 9
         assert raises(Prefixed(VarInt, GreedyBytes).sizeof) == SizeofError
 
-    @pytest.mark.xfail(PY32 or PY33, reason="codecs module missing on some versions")
+    @pytest.mark.xfail(PY32 or PY33, raises=LookupError, reason="codecs module missing on some versions")
     def test_compressed(self):
         zeros = b"0" * 1000
         compressor = Compressed(GreedyBytes, "zlib")
