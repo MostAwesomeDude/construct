@@ -1313,6 +1313,10 @@ class Union(Construct):
     """
     __slots__ = ["subcons","buildfrom","skipfrom"]
     def __init__(self, *subcons, **kw):
+        subcons = list(subcons)
+        for k,v in kw.items():
+            if k not in ("buildfrom","skipfrom"):
+                subcons.append(k / v)
         super(Union, self).__init__()
         self.subcons = [Peek(sc) for sc in subcons]
         self.buildfrom = kw.get("buildfrom", None)
@@ -1407,6 +1411,10 @@ class Select(Construct):
     """
     __slots__ = ["subcons", "includename"]
     def __init__(self, *subcons, **kw):
+        subcons = list(subcons)
+        for k,v in kw.items():
+            if k not in ("includename",):
+                subcons.append(k / v)
         super(Select, self).__init__()
         self.subcons = subcons
         self.includename = kw.pop("includename", False)

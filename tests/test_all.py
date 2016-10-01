@@ -581,6 +581,12 @@ class TestCore(unittest.TestCase):
         assert raises(Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).build, (("d", 7))) == SelectError
         assert raises(Select(Byte).sizeof) == SizeofError
 
+    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
+    def test_select_kwctor(self):
+        st = Select(a=Int8ub, b=Int16ub, c=Int32ub)
+        assert st.parse(b"\x01\x02\x03\x04") == 0x01
+        assert st.build(0x01020304) == b"\x01\x02\x03\x04"
+
     def test_peek(self):
         assert Peek(Int8ub).parse(b"\x01") == 1
         assert Peek(Int8ub).parse(b"") == None
@@ -626,6 +632,12 @@ class TestCore(unittest.TestCase):
     @pytest.mark.xfail(reason="skipfrom=this.jump fails")
     def test_union2(self):
         assert (Union(Pass, skipfrom=this.jump) >> Byte).parse(b"\x01\x02\x03\x04", jump=3) == [0x04]
+
+    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
+    def test_union_kwctor(self):
+        st = Union(a=Int8ub, b=Int16ub, c=Int32ub)
+        assert st.parse(b"\x01\x02\x03\x04") == Container(a=0x01,b=0x0102,c=0x01020304)
+        assert st.build(Container(c=0x01020304)) == b"\x01\x02\x03\x04"
 
     def test_prefixedarray(self):
         assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]
