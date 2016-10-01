@@ -9,6 +9,8 @@ from construct.lib import *
 class TestThis(unittest.TestCase):
     
     def test_this(self):
+        assert repr(this) == "this"
+
         this_example = Struct(
             # straight-forward usage: instead of passing (lambda ctx: ctx["length"]) use this.length
             "length" / Int8ub,
@@ -36,6 +38,14 @@ class TestThis(unittest.TestCase):
         assert repr(x) == 'not ((((path.foo * 2) + 3) >> 2) % 11)'
         assert not x(dict(foo=7))
 
+    def test_obj(self):
+        assert repr(obj_) == "obj_"
+        assert repr(obj_ + 1 == 12) == "((obj_ + 1) == 12)"
+        assert (obj_)(1,{}) == 1
+        assert (obj_ + 10)(1,{}) == 11
+        assert (obj_ == 12)(12,{})
+        assert (obj_ != 12)(13,{})
+
     def test_functions(self):
         assert repr(len_(this.x)) == "len_(this.x)"
         assert repr(sum_(this.x)) == "sum_(this.x)"
@@ -55,10 +65,9 @@ class TestThis(unittest.TestCase):
         assert example.parse(b"\x03\x07\xff") == dict(items=[3,7], nega=-1)
         assert example.build(dict(items=[3,7], nega=-1)) == b"\x03\x07\xff"
 
-    def test_obj(self):
-        assert repr(obj_ + 1 == 12) == "((obj_ + 1) == 12)"
-        assert (obj_)(1,{}) == 1
-        assert (obj_ + 10)(1,{}) == 11
-        assert (obj_ == 12)(12,{})
-        assert (obj_ != 12)(13,{})
+        example = Struct(
+            "items" / RepeatUntil(obj_ == 255, Byte),
+        )
+        assert example.parse(b"\x03\x07\xff") == dict(items=[3,7,255])
+        assert example.build(dict(items=[3,7,255])) == b"\x03\x07\xff"
 
