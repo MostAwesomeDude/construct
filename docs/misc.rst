@@ -100,20 +100,55 @@ coord(x=49, y=50, z=51)
 coord(x=49, y=50, z=51)
 
 
-Rebuild **
+Rebuild
 -------
 
-<<< currently broken >>>
+When there is an array separated from its length field, the Rebuild wrapped can be used to measure the len of the list at building. Note that both the `len_` and `this` expressions are used as discussed in meta chapter.
 
-Check **
+>>> st = Struct(
+...     "count" / Rebuild(Byte, len_(this.items)),
+...     "items" / Byte[this.count],
+... )
+>>> st.build(dict(items=[1,2,3]))
+b'\x03\x01\x02\x03'
+
+When the length field is directly before the items, `PrefixedArray` can be used instead:
+
+>>> d = PrefixedArray(Byte, Byte)
+>>> d.build([1,2,3])
+b'\x03\x01\x02\x03'
+
+
+Check
 -----
 
-<<< currently broken >>>
+When fields are expected to be coherent in some way but integrity cannot be checked easily using Const or otherwise, then a Check field can be put in place that will compute from the context if the integrity is preserved. For example, maybe there is a count field (implied being non-negative but the field is signed):
 
-Focused **
--------
+>>>> st = Struct(num=Int8sb, integrity1=Check(this.num > 0))
+>>>> st.parse(b"\xff")
+ValidationError: check failed during parsing
 
-<<< currently broken >>>
+Or there is a collection and a count provided and the count is expected to match the collection length (which might go out of sync by mistake). Note that Rebuild is more appropriate but the check is also possible:
+
+>>>> st = Struct(count=Byte, items=Byte[this.count])
+FieldError: packer '>B' error during building, given value 9090
+...
+>>>> st = Struct(integrity=Check(this.count == len_(this.items)), count=Byte, items=Byte[this.count])
+ValidationError: check failed during building
+
+
+FocusedSeq
+----------
+
+When a sequence is has some fields that could be ommited like Const and Terminator, user can focus on the particular fields that are useful:
+
+>>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator)
+>>> d = FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator)
+...
+>>> d.parse(b"MZ\xff")
+255
+>>> d.build(255)
+b'MZ\xff'
 
 
 

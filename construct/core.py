@@ -2018,7 +2018,12 @@ class Rebuild(Subconstruct):
 
     Example::
 
-        ???
+        >>> st = Struct(
+        ...     "count" / Rebuild(Byte, len_(this.items)),
+        ...     "items" / Byte[this.count],
+        ... )
+        >>> st.build(dict(items=[1,2,3]))
+        b'\x03\x01\x02\x03'
     """
     __slots__ = ["func"]
     def __init__(self, subcon, func):
