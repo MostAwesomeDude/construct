@@ -7,7 +7,6 @@ from io import BytesIO, StringIO
 from binascii import hexlify, unhexlify
 import sys
 import collections
-import codecs
 
 from construct.lib import *
 
@@ -2206,7 +2205,8 @@ class Compressed(Tunnel):
     .. seealso:: This construct should either be used with :func:`~construct.core.Prefixed` or on entire stream.
 
     :param subcon: the subcon used for storing the value
-    :param encoding: any of the codecs module bytes<->bytes encodings, like zlib
+    :param encoding: any of the module names like zlib/gzip/bzip2/lzma, otherwise any of codecs module bytes<->bytes encodings
+    :param level: optinal, an int between 0..9, lzma discards that
 
     Example::
 
@@ -2217,13 +2217,37 @@ class Compressed(Tunnel):
 
         Compressed(Struct(...), "zlib")
    """
-    def __init__(self, subcon, encoding):
+    __slots__ = ["encoding", "level", "lib"]
+    def __init__(self, subcon, encoding, level=None):
         super(Compressed, self).__init__(subcon)
         self.encoding = encoding
+        self.level = level
+        if self.encoding == "zlib":
+            import zlib
+            self.lib = zlib
+        elif self.encoding == "gzip":
+            import gzip
+            self.lib = gzip
+        elif self.encoding == "bzip2":
+            import bz2
+            self.lib = bz2
+        elif self.encoding == "lzma":
+            import lzma
+            self.lib = lzma
+        else:
+            import codecs
+            self.lib = codecs
     def _decode(self, data, context):
-        return codecs.decode(data, self.encoding)
+        if self.encoding in ("zlib", "gzip", "bzip2", "lzma"):
+            return self.lib.decompress(data)
+        return self.lib.decode(data, self.encoding)
     def _encode(self, data, context):
-        return codecs.encode(data, self.encoding)
+        if self.encoding in ("zlib", "gzip", "bzip2", "lzma"):
+            if self.level is None or self.encoding == "lzma":
+                return self.lib.compress(data)
+            else:
+                return self.lib.compress(data, self.level)
+        return self.lib.encode(data, self.encoding)
 
 
 #===============================================================================

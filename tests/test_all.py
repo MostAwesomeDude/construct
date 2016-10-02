@@ -670,25 +670,57 @@ class TestCore(unittest.TestCase):
         assert Prefixed(Byte, Int64ub).sizeof() == 9
         assert raises(Prefixed(VarInt, GreedyBytes).sizeof) == SizeofError
 
-    @pytest.mark.xfail(PY32 or PY33, raises=LookupError, reason="codecs module missing on some versions")
-    def test_compressed(self):
+    def test_compressed_zlib(self):
         zeros = bytes(10000)
         d = Compressed(GreedyBytes, "zlib")
         assert d.parse(d.build(zeros)) == zeros
         assert len(d.build(zeros)) < 50
         assert raises(d.sizeof) == SizeofError
+        d = Compressed(GreedyBytes, "zlib", level=9)
+        assert d.parse(d.build(zeros)) == zeros
+        assert len(d.build(zeros)) < 50
+        assert raises(d.sizeof) == SizeofError
 
+    @pytest.mark.xfail(PY < (3,2), reason="gzip was added in 3.2")
+    def test_compressed_gzip(self):
+        zeros = bytes(10000)
+        d = Compressed(GreedyBytes, "gzip")
+        assert d.parse(d.build(zeros)) == zeros
+        assert len(d.build(zeros)) < 50
+        assert raises(d.sizeof) == SizeofError
+        d = Compressed(GreedyBytes, "gzip", level=9)
+        assert d.parse(d.build(zeros)) == zeros
+        assert len(d.build(zeros)) < 50
+        assert raises(d.sizeof) == SizeofError
+
+    def test_compressed_bzip2(self):
+        zeros = bytes(10000)
+        d = Compressed(GreedyBytes, "bzip2")
+        assert d.parse(d.build(zeros)) == zeros
+        assert len(d.build(zeros)) < 50
+        assert raises(d.sizeof) == SizeofError
+        d = Compressed(GreedyBytes, "bzip2", level=9)
+        assert d.parse(d.build(zeros)) == zeros
+        assert len(d.build(zeros)) < 50
+        assert raises(d.sizeof) == SizeofError
+
+    @pytest.mark.xfail(PY < (3,3), reason="lzma module was added in 3.3")
+    def test_compressed_lzma(self):
+        zeros = bytes(10000)
+        d = Compressed(GreedyBytes, "lzma")
+        assert d.parse(d.build(zeros)) == zeros
+        assert len(d.build(zeros)) < 200
+        assert raises(d.sizeof) == SizeofError
+        d = Compressed(GreedyBytes, "lzma", level=9)
+        assert d.parse(d.build(zeros)) == zeros
+        assert len(d.build(zeros)) < 200
+        assert raises(d.sizeof) == SizeofError
+
+    def test_compressed_prefixed(self):
+        zeros = bytes(10000)
         d = Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
         st = Struct("one"/d, "two"/d)
         assert st.parse(st.build(Container(one=zeros,two=zeros))) == Container(one=zeros,two=zeros)
-        assert raises(d.sizeof) == SizeofError
-
-        d = Compressed(PrefixedArray(VarInt, Byte), "zlib")
-        assert d.parse(d.build([255]*100)) == [255]*100
-        assert raises(d.sizeof) == SizeofError
-
-        d = Compressed(Struct("num"/Byte), "zlib")
-        assert d.parse(d.build(dict(num=255))) == Container(num=255)
         assert raises(d.sizeof) == SizeofError
 
     def test_string(self):
