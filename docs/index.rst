@@ -10,6 +10,10 @@
     <li><a href="https://github.com/construct/construct/issues">Questions and Issues</a></li>
     </ul>
     <hr/>
+    <a href="https://arekbulski.github.io/" target="_blank">
+    <img style="display: block; margin-left: auto; margin-right: auto" 
+    src="_static/constructocatab120p.png" title="Arkadiusz'es personal site"/></a>
+    <br/>
     <a href="http://tomerfiliba.com" target="_blank">
     <img style="display: block; margin-left: auto; margin-right: auto" 
     src="_static/fish-text-black.png" title="Tomer's Blog"/></a>
