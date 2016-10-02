@@ -24,9 +24,7 @@ class TestProtocols(unittest.TestCase):
             filename = "tests/examples/protocols/" + filename
         with open(filename,'rb') as f:
             data = f.read()
-        obj = format.parse(data)
-        print(obj)
-        print(hexlify(data))
+        self.commonbytes(format, data)
 
     def commonhex(self, format, hexdata):
         self.commonbytes(format, binascii.unhexlify(hexdata))
