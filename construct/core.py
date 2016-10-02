@@ -2199,10 +2199,12 @@ class Compressed(Tunnel):
 
     Example::
 
-        >>> Compressed(GreedyBytes, "zlib").build(b"0"*10000)
-        b'x\x9c\xed\xc1\x01\r\x00\x00\x00\xc2\xa0J\xef\x9f\xce\x1cn@\x01\x00\x00\x00\x00\x00\x00\x00\x00\xc0\xbf\x01K\x07Sj'
-        >>> Compressed(GreedyBytes, "zlib").parse(_)
-        b'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...'
+        Compressed(GreedyBytes, "zlib")
+
+        Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
+        Struct("inner"/above)
+
+        Compressed(Struct(...), "zlib")
    """
     def __init__(self, subcon, encoding):
         super(Compressed, self).__init__(subcon)

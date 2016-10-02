@@ -672,14 +672,24 @@ class TestCore(unittest.TestCase):
 
     @pytest.mark.xfail(PY32 or PY33, raises=LookupError, reason="codecs module missing on some versions")
     def test_compressed(self):
-        zeros = b"0" * 1000
-        compressor = Compressed(GreedyBytes, "zlib")
-        assert compressor.parse(compressor.build(zeros)) == zeros
-        assert len(compressor.build(zeros)) == 17
-        assert raises(compressor.sizeof) == SizeofError
+        zeros = bytes(10000)
+        d = Compressed(GreedyBytes, "zlib")
+        assert d.parse(d.build(zeros)) == zeros
+        assert len(d.build(zeros)) < 50
+        assert raises(d.sizeof) == SizeofError
 
-        compressor = Compressed(Bytes(1000), "zlib")
-        assert raises(compressor.sizeof) == SizeofError
+        d = Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
+        st = Struct("one"/d, "two"/d)
+        assert st.parse(st.build(Container(one=zeros,two=zeros))) == Container(one=zeros,two=zeros)
+        assert raises(d.sizeof) == SizeofError
+
+        d = Compressed(PrefixedArray(VarInt, Byte), "zlib")
+        assert d.parse(d.build([255]*100)) == [255]*100
+        assert raises(d.sizeof) == SizeofError
+
+        d = Compressed(Struct("num"/Byte), "zlib")
+        assert d.parse(d.build(dict(num=255))) == Container(num=255)
+        assert raises(d.sizeof) == SizeofError
 
     def test_string(self):
         assert String(5).parse(b"hello") == b"hello"
