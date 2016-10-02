@@ -133,6 +133,9 @@ b'\x00\x01\x02\x03\x04\x05\x06\x07'
 >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
 b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
+Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+>>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], buildfrom=3)
+
 Select
 ------
 
@@ -142,6 +145,9 @@ Attempts to parse or build each of the subcons, in order they were provided.
 b'\x00\x00\x00\x01'
 >>> Select(Int32ub, CString(encoding="utf8")).build("Афон")
 b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
+
+Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+>>> Select(num=Int32ub, text=CString(encoding="utf8"))
 
 Optional
 --------
