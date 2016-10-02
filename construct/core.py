@@ -2046,12 +2046,13 @@ class RawCopy(Subconstruct):
 
     Example::
 
-        >>> RawCopy(VarInt).build(dict(value=255))
-        b'\xff\x01'
-        >>> RawCopy(VarInt).build(dict(data=b"\xff\x01"))
-        b'\xff\x01'
-        >>> RawCopy(VarInt).parse(_)
-        {'length': 2, 'offset2': 2, 'offset1': 0, 'data': b'\xff\x01', 'value': 255}
+        >>>> RawCopy(Byte).parse(b"\xff")
+        Container(data='\xff')(value=255)(offset1=0L)(offset2=1L)(length=1L)
+        ...
+        >>>> RawCopy(Byte).build(dict(data=b"\xff"))
+        '\xff'
+        >>>> RawCopy(Byte).build(dict(value=255))
+        '\xff'
     """
     def __init__(self, subcon):
         super(RawCopy, self).__init__(subcon)
@@ -2100,10 +2101,10 @@ def BitsSwapped(subcon):
 
     Example::
 
-        >>> Bitwise(Bytes(8)).parse(b"\xa8")
-        b'\x01\x00\x01\x00\x01\x00\x00\x00'
-        >>> BitsSwapped(Bitwise(Bytes(8))).parse(b"\xa8")
-        b'\x00\x00\x00\x01\x00\x01\x00\x01'
+        >>>> Bitwise(Bytes(8)).parse(b"\x01")
+        '\x00\x00\x00\x00\x00\x00\x00\x01'
+        >>>> BitsSwapped(Bitwise(Bytes(8))).parse(b"\x01")
+        '\x01\x00\x00\x00\x00\x00\x00\x00'
     """
     return Restreamed(subcon,
         lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
@@ -2126,6 +2127,9 @@ class Prefixed(Subconstruct):
 
         >>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello????remainins")
         b'hello'
+
+        >>>> Prefixed(VarInt, Byte[:]).parse(b"\x03\x01\x02\x03following")
+        [1, 2, 3]
     """
     __slots__ = ["name", "lengthfield", "subcon"]
     def __init__(self, lengthfield, subcon):
