@@ -2786,6 +2786,14 @@ class ExprAdapter(Adapter):
         self._decode = decoder if callable(decoder) else ident
 
 
+class ExprSymmetricAdapter(ExprAdapter):
+    def __init__(self, subcon, encoder):
+        super(ExprAdapter, self).__init__(subcon)
+        ident = lambda obj,ctx: obj
+        self._encode = encoder if callable(encoder) else ident
+        self._decode = self._encode
+
+
 class ExprValidator(Validator):
     r"""
     A generic adapter that takes ``validator`` as parameter. You can use ExprValidator instead of writing a full-blown class when only a simple expression is needed.
@@ -3013,9 +3021,7 @@ def Filter(predicate, subcon):
         >>> Filter(obj_ != 0, Byte[:]).build([0,1,0,2,0])
         b'\x01\x02'
     """
-    return ExprAdapter(subcon,
-        encoder = lambda obj,ctx: list(filter(lambda x: predicate(x,ctx), obj)),
-        decoder = lambda obj,ctx: list(filter(lambda x: predicate(x,ctx), obj)),)
+    return ExprSymmetricAdapter(subcon, lambda obj,ctx: list(filter(lambda x: predicate(x,ctx), obj)) )
 
 
 class Check(Construct):

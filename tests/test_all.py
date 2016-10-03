@@ -1016,15 +1016,23 @@ class TestCore(unittest.TestCase):
         assert Ident.build(1) == b"\x02"
         assert Ident.sizeof() == 1
 
-    def test_exprvalidator(self):
-        One = ExprValidator(Byte, 
-            validator = lambda obj,ctx: obj in [1,3,5])
+        self.test_hex()
+        self.test_hexdump()
+        self.test_cstring()
 
+    def test_exprsymmetricadapter(self):
+        self.test_filter()
+
+    def test_exprvalidator(self):
+        One = ExprValidator(Byte, lambda obj,ctx: obj in [1,3,5])
         assert One.parse(b"\x01") == 1
         assert raises(One.parse, b"\xff") == ValidationError
         assert One.build(5) == b"\x05"
         assert raises(One.build, 255) == ValidationError
         assert One.sizeof() == 1
+
+        self.test_oneof()
+        self.test_noneof()
 
     def test_ipaddress(self):
         class IpAddressAdapter(Adapter):
