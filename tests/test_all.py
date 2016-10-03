@@ -1034,7 +1034,7 @@ class TestCore(unittest.TestCase):
         self.test_oneof()
         self.test_noneof()
 
-    def test_ipaddress(self):
+    def test_ipaddress_from_issue_95(self):
         class IpAddressAdapter(Adapter):
             def _encode(self, obj, context):
                 return list(map(int, obj.split(".")))

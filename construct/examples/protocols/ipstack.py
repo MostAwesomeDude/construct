@@ -13,14 +13,9 @@ from construct.lib import *
 # layer 2, Ethernet
 #===============================================================================
 
-class MacAddressAdapter(Adapter):
-    def _encode(self, obj, context):
-        return [int(part, 16) for part in obj.split("-")]
-    def _decode(self, obj, context):
-        return "-".join("%02x" % b for b in obj)
-
-MacAddress = MacAddressAdapter(Byte[6])
-
+MacAddress = ExprAdapter(Byte[6],
+    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split("-")],
+    decoder = lambda obj,ctx: "-".join("%02x" % b for b in obj), )
 
 ethernet_header = "ethernet_header" / Struct(
     "destination" / MacAddress,
@@ -119,12 +114,10 @@ mtp2_header = "mtp2_header" / BitStruct(
 # layer 3, IP v4
 #===============================================================================
 
-class IpAddressAdapter(Adapter):
-    def _encode(self, obj, context):
-        return list(map(int, obj.split(".")))
-    def _decode(self, obj, context):
-        return "{0}.{1}.{2}.{3}".format(*obj)
-IpAddress = IpAddressAdapter(Byte[4])
+IpAddress = ExprAdapter(Byte[4],
+    encoder = lambda obj,ctx: list(map(int, obj.split("."))),
+    decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj), )
+
 
 def ProtocolEnum(code):
     return Enum(code,
@@ -178,14 +171,9 @@ def ProtocolEnum(code):
         UDP = 17,
     )
 
-class Ipv6AddressAdapter(Adapter):
-    def _encode(self, obj, context):
-        return [int(part, 16) for part in obj.split(":")]
-    def _decode(self, obj, context):
-        return ":".join("%02x" % b for b in obj)
-
-Ipv6Address = Ipv6AddressAdapter(Byte[16])
-
+Ipv6Address = ExprAdapter(Byte[16],
+    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split(":")],
+    decoder = lambda obj,ctx: ":".join("%02x" % b for b in obj), )
 
 ipv6_header = "ip_header" / Struct(
     EmbeddedBitStruct(
