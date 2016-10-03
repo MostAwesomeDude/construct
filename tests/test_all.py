@@ -13,14 +13,36 @@ ident = lambda x: x
 
 
 
+def common(format, data=NotImplemented, obj=NotImplemented, size=NotImplemented, eq=True):
+    if data is not NotImplemented and obj is not NotImplemented:
+        assert format.parse(data) == obj
+        assert format.build(obj) == data
+    else:
+        # following are guaranteed by the above
+        if obj is not NotImplemented:
+            if eq:
+                assert format.parse(format.build(obj)) == obj
+            else:
+                assert format.parse(format.build(obj))
+
+        if data is not NotImplemented:
+            if eq:
+                assert format.build(format.parse(data)) == data
+            else:
+                assert format.build(format.parse(data))
+    if size is not NotImplemented:
+        if isinstance(size, int):
+            assert format.sizeof() == size
+        else:
+            assert raises(format.sizeof) == size
+
+
+
 class TestCore(unittest.TestCase):
 
     def test_byte(self):
-        assert Byte.parse(b"\x00") == 0
-        assert Byte.parse(b"\xff") == 255
-        assert Byte.build(0) == b"\x00"
-        assert Byte.build(255) == b"\xff"
-        assert Byte.sizeof() == 1
+        common(Byte, b"\x00", 0, 1)
+        common(Byte, b"\xff", 255, 1)
 
     def test_ints(self):
         assert Int8ub.parse(b"\x01") == 0x01
@@ -73,38 +95,25 @@ class TestCore(unittest.TestCase):
         assert Int64sl.sizeof() == 8
 
     def test_ints24(self):
-        assert Int24ub.parse(b"\x01\x02\x03") == 0x010203
-        assert Int24ub.build(0x010203) == b"\x01\x02\x03"
-        assert Int24ub.sizeof() == 3
-        assert Struct('int24' / Int24ub).parse(b"\x01\x02\x03") == Container(int24=0x010203)
-        assert Struct('int24' / Int24ub).build(Container(int24=0x010203)) == b"\x01\x02\x03"
-        assert Struct('int24' / Int24ub).sizeof() == 3
-
-        assert Int24ul.parse(b"\x01\x02\x03") == 0x030201
-        assert Int24ul.build(0x030201) == b"\x01\x02\x03"
-        assert Int24ul.sizeof() == 3
-        assert Struct('int24' / Int24ul).parse(b"\x01\x02\x03") == Container(int24=0x030201)
-        assert Struct('int24' / Int24ul).build(Container(int24=0x030201)) == b"\x01\x02\x03"
-        assert Struct('int24' / Int24ul).sizeof() == 3
+        common(Int24ub, b"\x01\x02\x03", 0x010203, 3)
+        common(Int24ul, b"\x01\x02\x03", 0x030201, 3)
+        common(Struct(int24=Int24ub), b"\x01\x02\x03", Container(int24=0x010203), 3)
+        common(Struct(int24=Int24ul), b"\x01\x02\x03", Container(int24=0x030201), 3)
 
     def test_varint(self):
         for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
-            assert VarInt.parse(VarInt.build(n)) == n
+            common(VarInt, obj=n)
             assert len(VarInt.build(n)) >= len("%x" % n)//2
         for n in range(0, 127):
-            assert VarInt.build(n) == int2byte(n)
+            common(VarInt, int2byte(n), n, SizeofError)
 
         assert raises(VarInt.parse, b"") == FieldError
         assert raises(VarInt.build, -1) == ValueError
-        assert raises(VarInt.sizeof) == SizeofError
 
     def test_varint_randomized(self):
         for i in range(100):
-            x = random.randrange(0, 2**1024)
-            assert VarInt.parse(VarInt.build(x)) == x
-            b = os.urandom(1024) + b"\x00\xff"
-            b = VarInt.build(VarInt.parse(b))
-            assert b.startswith(VarInt.build(VarInt.parse(b)))
+            common(VarInt, obj=random.randrange(0, 2**1024), size=SizeofError)
+            common(VarInt, data=os.urandom(1024) + b"\x00\xff", eq=False, size=SizeofError)
 
     def test_floats(self):
         assert Single.build(1.2) == b"?\x99\x99\x9a"
@@ -134,9 +143,7 @@ class TestCore(unittest.TestCase):
         assert raises(Bytes(lambda ctx: ctx.n).sizeof) == AttributeError
 
     def test_greedybytes(self):
-        assert GreedyBytes.parse(b"1234") == b"1234"
-        assert GreedyBytes.build(b"1234") == b"1234"
-        assert raises(GreedyBytes.sizeof) == SizeofError
+        common(GreedyBytes, b"1234", b"1234", SizeofError)
 
     def test_formatfield(self):
         assert FormatField("<","L").parse(b"\x12\x34\x56\x78") == 0x78563412
@@ -150,13 +157,10 @@ class TestCore(unittest.TestCase):
 
     def test_formatfield_ints_randomized(self):
         for endianess,dtype in itertools.product("<>=","bhlqBHLQ"):
-            d = FormatField(endianess, dtype)
+            d = FormatField(endianess,dtype)
             for i in range(100):
-                x = random.randrange(0, 256**d.sizeof()//2)
-                assert d.parse(d.build(x)) == x
-            for i in range(100):
-                b = os.urandom(d.sizeof())
-                assert d.build(d.parse(b)) == b
+                common(d, obj=random.randrange(0, 256**d.sizeof()//2))
+                common(d, data=os.urandom(d.sizeof()))
 
     def test_formatfield_floats_randomized(self):
         # there is a roundoff eror because Python float is a C double
@@ -199,9 +203,7 @@ class TestCore(unittest.TestCase):
         assert Array(lambda ctx: ctx.n, Byte).sizeof(n=4) == 4
 
     def test_prefixedarray(self):
-        assert PrefixedArray(Byte,Byte).parse(b"\x02\x0a\x0b") == [10,11]
-        assert PrefixedArray(Byte,Byte).build([10,11]) == b"\x02\x0a\x0b"
-        assert raises(PrefixedArray(Byte,Byte).sizeof) == SizeofError
+        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
 
     def test_range(self):
         assert Byte[2:4].parse(b"1234567890") == [49, 50, 51, 52]
@@ -231,11 +233,10 @@ class TestCore(unittest.TestCase):
         assert raises(Range(1, 1, VarInt).sizeof) == SizeofError
 
     def test_greedyrange(self):
-        assert GreedyRange(Byte).parse(b"") == []
-        assert GreedyRange(Byte).build([]) == b""
-        assert GreedyRange(Byte).parse(b"\x01\x02") == [1,2]
-        assert GreedyRange(Byte).build([1,2]) == b"\x01\x02"
-        assert raises(GreedyRange(Byte).sizeof) == SizeofError
+        common(GreedyRange(Byte), b"", [], SizeofError)
+        common(GreedyRange(Byte), b"\x01\x02", [1,2], SizeofError)
+        common(Byte[:], b"", [], SizeofError)
+        common(Byte[:], b"\x01\x02", [1,2], SizeofError)
 
     def test_repeatuntil(self):
         assert RepeatUntil(obj_ == 9, Byte).parse(b"\x02\x03\x09garbage") == [2,3,9]
@@ -266,19 +267,15 @@ class TestCore(unittest.TestCase):
 
     @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
     def test_struct_kwctor(self):
-        st = Struct(a=Byte, b=Byte, c=Byte, d=Byte)
-        assert st.parse(b"\x01\x02\x03\x04") == Container(a=1,b=2,c=3,d=4)
-        assert st.build(dict(a=1,b=2,c=3,d=4)) == b"\x01\x02\x03\x04"
+        common(Struct(a=Byte, b=Byte, c=Byte, d=Byte), b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 4)
 
     def test_sequence(self):
-        assert Sequence(Int8ub, Int16ub).parse(b"\x01\x00\x02") == [1,2]
-        assert Sequence(Int8ub, Int16ub).build([1,2]) == b"\x01\x00\x02"
+        common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
+        common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
 
     def test_sequence_nested_embedded(self):
-        assert Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
-        assert Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"
-        assert Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))).parse(b"\x01\x00\x02\x03\x04") == [1,2,3,4]
-        assert Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))).build([1,2,3,4]) == b"\x01\x00\x02\x03\x04"
+        common(Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)), b"\x01\x00\x02\x03\x04", [1,2,[3,4]], 5)
+        common(Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))), b"\x01\x00\x02\x03\x04", [1,2,3,4], 5)
 
     def test_computed(self):
         assert Computed(lambda ctx: "moo").parse(b"") == "moo"
@@ -320,18 +317,14 @@ class TestCore(unittest.TestCase):
         assert (Seek(10,1) >> Seek(-5,1) >> Bytes(1)).parse(b"0123456789") == [10,5,b"5"]
 
     def test_pass(self):
-        assert Pass.parse(b"") == None
-        assert Pass.build(None) == b""
-        assert Pass.sizeof() == 0
-        assert Struct("pass"/Pass).build(dict()) == b""
+        common(Pass, b"", None, 0)
+        common(Struct("empty"/Pass), b"", Container(empty=None), 0)
 
     def test_terminator(self):
-        assert Terminator.parse(b"") == None
+        common(Terminator, b"", None, 0)
+        common(Struct("end"/Terminator), b"", Container(end=None), 0)
         assert raises(Terminator.parse, b"x") == TerminatorError
-        assert Terminator.build(None) == b""
-        assert Terminator.sizeof() == 0
-        assert Struct("end"/Terminator).build(dict()) == b""
-        assert Struct(Terminator).build(dict()) == b""
+        assert raises(Struct("end"/Terminator).parse, b"x") == TerminatorError
 
     def test_error(self):
         assert raises(Error.parse, b"") == ExplicitError
@@ -343,25 +336,14 @@ class TestCore(unittest.TestCase):
         assert Pointer(lambda ctx: 2, "pointer" / Int8ub).sizeof() == 0
 
     def test_const(self):
-        assert Const(b"MZ").parse(b"MZ") == b"MZ"
-        assert Const(b"MZ").build(None) == b"MZ"
-        assert Const(b"MZ").build(b"MZ") == b"MZ"
-        assert Const(b"MZ").sizeof() == 2
-        assert Const(Bytes(4), b"****").parse(b"****") == b"****"
-        assert Const(Bytes(4), b"****").build(None) == b"****"
-        assert Const(Bytes(4), b"****").build(b"****") == b"****"
-        assert Const(Bytes(4), b"****").sizeof() == 4
-        assert Const(Int32ul, 255).parse(b"\xff\x00\x00\x00") == 255
-        assert Const(Int32ul, 255).build(None) == b"\xff\x00\x00\x00"
-        assert Const(Int32ul, 255).build(255) == b"\xff\x00\x00\x00"
-        assert Const(Int32ul, 255).sizeof() == 4
+        common(Const(b"MZ"), b"MZ", b"MZ", 2)
+        common(Const(Bytes(4), b"****"), b"****", b"****", 4)
+        common(Const(Int32ul, 255), b"\xff\x00\x00\x00", 255, 4)
         assert raises(Const(b"MZ").parse, b"ELF") == ConstError
         assert raises(Const(b"MZ").build, b"???") == ConstError
         assert raises(Const(Int32ul, 255).parse, b"\x00\x00\x00\x00") == ConstError
-        assert Struct("sig" / Const(b"MZ")).parse(b"MZ") == Container(sig=b"MZ")
-        assert Struct("sig" / Const(b"MZ")).build(Container(sig=b"MZ")) == b"MZ"
-        assert Struct("sig" / Const(b"MZ")).build(Container()) == b"MZ"
-        assert Struct("sig" / Const(b"MZ")).sizeof() == 2
+        common(Struct(sig=Const(b"MZ")), b"MZ", Container(sig=b"MZ"), 2)
+        assert Struct(sig=Const(b"MZ")).build({}) == b"MZ"
 
     def test_switch(self):
         assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).parse(b"\x00\x02") == 2
@@ -376,18 +358,12 @@ class TestCore(unittest.TestCase):
         assert raises(Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).sizeof) == SizeofError
 
     def test_ifthenelse(self):
-        assert IfThenElse(lambda ctx: True,  Int8ub, Int16ub).parse(b"\x01") == 1
-        assert IfThenElse(lambda ctx: False, Int8ub, Int16ub).parse(b"\x00\x01") == 1
-        assert IfThenElse(lambda ctx: True,  Int8ub, Int16ub).build(1) == b"\x01"
-        assert IfThenElse(lambda ctx: False, Int8ub, Int16ub).build(1) == b"\x00\x01"
-        assert raises(IfThenElse(lambda ctx: False, Int8ub, Int16ub).sizeof) == SizeofError
+        common(IfThenElse(lambda ctx: True,  Int8ub, Int16ub), b"\x01", 1, SizeofError)
+        common(IfThenElse(lambda ctx: False, Int8ub, Int16ub), b"\x00\x01", 1, SizeofError)
 
     def test_if(self):
-        assert If(lambda ctx: True,  Int8ub).parse(b"\x01") == 1
-        assert If(lambda ctx: False, Int8ub).parse(b"") == None
-        assert If(lambda ctx: True,  Int8ub).build(1) == b"\x01"
-        assert If(lambda ctx: False, Int8ub).build(None) == b""
-        assert raises(If(lambda ctx: False, Int8ub).sizeof) == SizeofError
+        common(If(lambda ctx: True,  Int8ub), b"\x01", 1, SizeofError)
+        common(If(lambda ctx: False, Int8ub), b"", None, SizeofError)
 
     def test_padding(self):
         assert Padding(4).parse(b"\x00\x00\x00\x00") == None
@@ -455,8 +431,7 @@ class TestCore(unittest.TestCase):
         assert (Int8ub[2] >> Int16ub[2]).parse(b"\x01\x02\x00\x03\x00\x04") == [[1,2],[3,4]]
 
     def test_renamed(self):
-        assert Struct(Renamed("new", Renamed("old", Byte))).parse(b"\x01") == Container(new=1)
-        assert Struct(Renamed("new", Renamed("old", Byte))).build(Container(new=1)) == b"\x01"
+        common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)
 
     def test_alias(self):
         assert Alias("b","a").parse(b"",Container(a=1)) == 1
@@ -584,7 +559,6 @@ class TestCore(unittest.TestCase):
         assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).sizeof(s=1) == 1
         assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff", s="num") == 255
         assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).sizeof(s="num") == 1
-
 
     def test_select(self):
         assert raises(Select(Int32ub, Int16ub).parse, b"\x07") == SelectError
