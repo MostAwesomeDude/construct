@@ -20,9 +20,6 @@ before_script:
     - "uname -a"
     - "cd tests"
 
-before_install:
-    - pip install pytest
-
 script:
     - py.test --verbose
 
