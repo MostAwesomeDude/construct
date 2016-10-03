@@ -761,9 +761,13 @@ class TestCore(unittest.TestCase):
         setglobalstringencoding(None)
 
     def test_lazybound(self):
-        assert LazyBound(lambda ctx: Byte).parse(b"\x01") == 1
-        assert LazyBound(lambda ctx: Byte).build(1) == b"\x01"
-        assert LazyBound(lambda ctx: Byte).sizeof() == 1
+        common(LazyBound(lambda ctx: Byte), b"\x01", 1, 1)
+
+        st = Struct(
+            "value"/Byte,
+            "next"/If(this.value > 0, LazyBound(lambda ctx: st)),
+        )
+        common(st, b"\x05\x09\x00", Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None))), SizeofError)
 
     def test_unknown(self):
         assert Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).parse(b"\x03\x02helloXXX") == Container(length=3)(inner=Container(inner_length=2)(data=b"hello"))

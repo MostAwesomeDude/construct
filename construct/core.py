@@ -2352,7 +2352,7 @@ class LazyStruct(Construct):
 
 class LazyRange(Construct):
     r"""
-    Equivalent to Range construct, members are parsed on demend. Works only with fixed size subcon.
+    Equivalent to Range construct, but members are parsed on demand. Works only with fixed size subcon.
 
     .. seealso:: Equivalent to :func:`~construct.core.Range`.
 
@@ -2537,11 +2537,28 @@ def OnDemandPointer(offset, subcon):
 
 class LazyBound(Construct):
     r"""
-    Lazily bound construct, useful for constructs that need to make cyclic references (linked-lists, expression trees).
+    A lazy-bound construct that binds to the construct only at runtime. Useful for recursive data structures (like linked lists or trees), where a construct needs to refer to itself (while it doesn't exist yet).
 
-    Note: there are no obvious examples on how to use it. Might be unusable.
+    :param subconfunc: a context function returning a Construct (derived) instance, can also return Pass or itself
 
-    :param subconfunc: function taking context and returning a Construct, which can also return Pass or itself
+    Example::
+
+        >>> st = Struct(
+        ...     "value"/Byte,
+        ...     "next"/If(this.value > 0, LazyBound(lambda ctx: st)),
+        ... )
+        ...
+        >>> st.parse(b"\x05\x09\x00")
+        Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None)))
+        ...
+        >>> print(st.parse(b"\x05\x09\x00"))
+        Container: 
+            value = 5
+            next = Container: 
+                value = 9
+                next = Container: 
+                    value = 0
+                    next = None
     """
     __slots__ = ["subconfunc"]
     def __init__(self, subconfunc):
