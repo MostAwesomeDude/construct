@@ -46,10 +46,10 @@ class Probe(Construct):
         ================================================================================
         [63, None]
     """
-    __slots__ = ["printname", "show_stream", "show_context", "show_stack", "stream_lookahead"]
+    __slots__ = ["printname", "show_stream", "show_context", "show_stack", "stream_lookahead", "func"]
     counter = 0
     
-    def __init__(self, name=None, show_stream=True, show_context=True, show_stack=True, stream_lookahead=128):
+    def __init__(self, name=None, show_stream=True, show_context=True, show_stack=True, stream_lookahead=128, func=None):
         super(Probe, self).__init__()
         if name is None:
             Probe.counter += 1
@@ -59,9 +59,10 @@ class Probe(Construct):
         self.show_context = show_context
         self.show_stack = show_stack
         self.stream_lookahead = stream_lookahead
+        self.func = func
         self.flagbuildnone = True
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.printname)
+        return "<%s: %s>" % (self.__class__.__name__, self.printname)
     def _parse(self, stream, context):
         self.printout(stream, context)
     def _build(self, obj, stream, context):
@@ -83,7 +84,14 @@ class Probe(Construct):
                 print(hexdump(datafollows, 32))
         
         if self.show_context:
-            print(context)
+            if self.func:
+                try:
+                    context = self.func(context)
+                    print(context)
+                except Exception as e:
+                    print("Failed to compute `%r` on the context" % self.func)
+            else:
+                print(context)
         
         # if self.show_stack:
         #     stack = ListContainer()
@@ -97,6 +105,13 @@ class Probe(Construct):
         #     print(stack)
         
         print("================================================================================")
+
+
+def ProbeInto(func):
+    r"""
+    Analog to Probe but a context lambda to extract a sub-context.
+    """
+    return Probe(func=func)
 
 
 class Debugger(Subconstruct):

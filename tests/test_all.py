@@ -968,6 +968,12 @@ class TestCore(unittest.TestCase):
         Struct("inserted"/Probe()).parse(b"")
         Struct("inserted"/Probe()).build({})
 
+    def test_probeinto(self):
+        Struct("inner"/Struct("nums"/Byte[:]), ProbeInto(this.inner)).parse(b"\x01\xff")
+        Struct("inner"/Struct("nums"/Byte[:]), ProbeInto(this.inner)).build(dict(inner=dict(nums=[1,255])))
+        Struct(ProbeInto(this.inner)).parse(b"")
+        Struct(ProbeInto(this.inner)).build({})
+
     def test_restreamed(self):
         assert Restreamed(Int16ub, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
         assert Restreamed(Int16ub, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
