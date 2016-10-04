@@ -1073,7 +1073,7 @@ class PrefixedArray(Construct):
         except ExplicitError:
             raise
         except Exception:
-            raise RangeError("could not read prefix or enough elements, stream too short")
+            raise RangeError("could not read prefix or enough elements, stream too short?")
     def _build(self, obj, stream, context):
         self.lengthfield._build(len(obj), stream, context)
         for element in obj:
@@ -2128,7 +2128,7 @@ class Prefixed(Subconstruct):
         >>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello????remainins")
         b'hello'
 
-        >>>> Prefixed(VarInt, Byte[:]).parse(b"\x03\x01\x02\x03following")
+        >>>> Prefixed(VarInt, Byte[:]).parse(b"\x03\x01\x02\x03????following")
         [1, 2, 3]
     """
     __slots__ = ["name", "lengthfield", "subcon"]
@@ -2137,8 +2137,8 @@ class Prefixed(Subconstruct):
         self.lengthfield = lengthfield
     def _parse(self, stream, context):
         length = self.lengthfield._parse(stream, context)
-        data = _read_stream(stream, length)
-        return self.subcon.parse(data, context)
+        stream2 = BoundBytesIO(stream, length)
+        return self.subcon._parse(stream2, context)
     def _build(self, obj, stream, context):
         try:
             # needs to be both fixed size, seekable and tellable (third not checked)

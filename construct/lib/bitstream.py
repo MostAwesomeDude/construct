@@ -1,4 +1,5 @@
 from time import sleep
+from sys import maxsize
 
 
 
@@ -122,5 +123,35 @@ class RebufferedBytesIO:
 
     def cachedto(self):
         return self.moved + len(self.rwbuffer)
+
+
+
+class BoundBytesIO:
+    __slots__ = ["substream","offset","available"]
+
+    def __init__(self, substream, available):
+        self.substream = substream
+        self.offset = substream.tell()
+        self.available = available
+
+    def read(self, count=maxsize):
+        if self.available == 0:
+            return b""
+        count = min(count, self.available)
+        self.offset += count
+        self.available -= count
+        data = self.substream.read(count)
+        if len(data) < count:
+            raise IOError("could only read %s bytes, requested %s" % (len(data),count))
+        return data
+
+    def seekable(self):
+        return False
+
+    def tell(self):
+        return self.offset
+
+    def tellable(self):
+        return True
 
 
