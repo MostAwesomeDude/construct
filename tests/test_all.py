@@ -619,7 +619,7 @@ class TestCore(unittest.TestCase):
 
     @pytest.mark.xfail(reason="skipfrom=this.jump fails")
     def test_union2(self):
-        assert (Union(Pass, skipfrom=this.jump) >> Byte).parse(b"\x01\x02\x03\x04", jump=3) == [0x04]
+        assert (Union("empty"/Pass, skipfrom=this.jump) >> Byte).parse(b"\x01\x02\x03\x04", jump=3) == [Container(empty=None),0x04]
 
     @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
     def test_union_kwctor(self):
