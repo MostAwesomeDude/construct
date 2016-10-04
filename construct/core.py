@@ -32,7 +32,7 @@ class UnionError(ConstructError):
     pass
 class FocusedError(ConstructError):
     pass
-class TerminatorError(ConstructError):
+class TerminatedError(ConstructError):
     pass
 class OverwriteError(ConstructError):
     pass
@@ -804,7 +804,7 @@ class Struct(Construct):
     r"""
     A sequence of usually named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
 
-    Some fields do not need to be named, since they are built from None anyway. See Const Padding Pass Terminator.
+    Some fields do not need to be named, since they are built from None anyway. See Const Padding Pass Terminated.
 
     .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges members into parent's members.
 
@@ -819,11 +819,11 @@ class Struct(Construct):
         >>> Struct("a"/Int8ul, "data"/Bytes(2), "data2"/Bytes(this.a)).build(dict(a=5, data=b"??", data2=b"hello"))
         b'\x05??hello'
 
-        >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminator).build({})
+        >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminated).build({})
         b'MZ\x00\x00'
-        >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminator).parse(_)
+        >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminated).parse(_)
         Container()
-        >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminator).sizeof()
+        >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminated).sizeof()
         4
 
         Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
@@ -1916,7 +1916,7 @@ class Pass(Construct):
 
 
 @singleton
-class Terminator(Construct):
+class Terminated(Construct):
     r"""
     Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows.
 
@@ -1924,16 +1924,16 @@ class Terminator(Construct):
 
     Example::
 
-        >>> Terminator.parse(b"")
-        >>> Terminator.parse(b"remaining")
-        construct.core.TerminatorError: expected end of stream
+        >>> Terminated.parse(b"")
+        >>> Terminated.parse(b"remaining")
+        construct.core.TerminatedError: expected end of stream
     """
     def __init__(self):
         super(self.__class__, self).__init__()
         self.flagbuildnone = True
     def _parse(self, stream, context):
         if stream.read(1):
-            raise TerminatorError("expected end of stream")
+            raise TerminatedError("expected end of stream")
     def _build(self, obj, stream, context):
         pass
     def _sizeof(self, context):
@@ -2933,8 +2933,8 @@ class FocusedSeq(Construct):
 
     Excample::
 
-        >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator)
-        >>> d = FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator)
+        >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
+        >>> d = FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated)
 
         >>> d.parse(b"MZ\xff")
         255

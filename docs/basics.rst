@@ -78,7 +78,7 @@ Usually members are named but there are some classes that build from nothing and
 ...     Const(b"XYZ"),
 ...     Padding(2),
 ...     Pass,
-...     Terminator,
+...     Terminated,
 ... )
 >>> test.build({})
 b'XYZ\x00\x00'

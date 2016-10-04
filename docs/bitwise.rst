@@ -73,7 +73,7 @@ Octet
 Fields that do both
 ===================
 
-Most simple fields (such as Flag, Padding, Terminator, etc.) are ignorant to the granularity of the data they operate on. The actual granularity depends on the enclosing layers.
+Most simple fields (such as Flag, Padding, Terminated, etc.) are ignorant to the granularity of the data they operate on. The actual granularity depends on the enclosing layers.
 
 Here's a snippet of code that operates on bytes:
 

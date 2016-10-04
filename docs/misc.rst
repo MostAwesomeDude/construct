@@ -65,16 +65,16 @@ A do-nothing construct, useful in Switches and Enums.
 b''
 
 
-Terminator
+Terminated
 ----------
 
 Asserts the end of the stream has been reached (so that no more trailing data is left unparsed).
 
-.. note:: Terminator is a singleton object. Do not try to instantiate it, ``Terminator()`` will not work.
+.. note:: Terminated is a singleton object. Do not try to instantiate it, ``Terminated()`` will not work.
 
->>> Terminator.parse(b"")
->>> Terminator.parse(b"x")
-construct.core.TerminatorError: expected end of stream
+>>> Terminated.parse(b"")
+>>> Terminated.parse(b"x")
+construct.core.TerminatedError: expected end of stream
 
 
 Numpy
@@ -140,10 +140,10 @@ ValidationError: check failed during building
 FocusedSeq
 ----------
 
-When a sequence is has some fields that could be ommited like Const and Terminator, user can focus on the particular fields that are useful:
+When a sequence is has some fields that could be ommited like Const and Terminated, user can focus on the particular fields that are useful:
 
->>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator)
->>> d = FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator)
+>>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
+>>> d = FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated)
 ...
 >>> d.parse(b"MZ\xff")
 255

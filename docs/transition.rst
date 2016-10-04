@@ -138,7 +138,7 @@ Embed was made Embedded
 
 Const incorporated Magic field
 
-Pass Terminator remain
+Pass remains but Terminator was renamed Terminated
 
 Error added
 

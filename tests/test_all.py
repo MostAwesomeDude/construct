@@ -320,11 +320,11 @@ class TestCore(unittest.TestCase):
         common(Pass, b"", None, 0)
         common(Struct("empty"/Pass), b"", Container(empty=None), 0)
 
-    def test_terminator(self):
-        common(Terminator, b"", None, 0)
-        common(Struct("end"/Terminator), b"", Container(end=None), 0)
-        assert raises(Terminator.parse, b"x") == TerminatorError
-        assert raises(Struct("end"/Terminator).parse, b"x") == TerminatorError
+    def test_terminated(self):
+        common(Terminated, b"", None, 0)
+        common(Struct("end"/Terminated), b"", Container(end=None), 0)
+        assert raises(Terminated.parse, b"x") == TerminatedError
+        assert raises(Struct("end"/Terminated).parse, b"x") == TerminatedError
 
     def test_error(self):
         assert raises(Error.parse, b"") == ExplicitError
@@ -548,17 +548,17 @@ class TestCore(unittest.TestCase):
         assert Indexing(Array(4,Byte), 4, 2, empty=0).sizeof() == 4
 
     def test_focusedseq(self):
-        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff") == 255
-        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator).build(255) == b"MZ\xff"
-        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminator).sizeof() == 1
-        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff") == 255
-        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator).build(255) == b"MZ\xff"
-        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminator).sizeof() == 1
+        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff") == 255
+        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated).build(255) == b"MZ\xff"
+        assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated).sizeof() == 1
+        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff") == 255
+        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).build(255) == b"MZ\xff"
+        assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).sizeof() == 1
 
-        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff", s=1) == 255
-        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).sizeof(s=1) == 1
-        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).parse(b"MZ\xff", s="num") == 255
-        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminator).sizeof(s="num") == 1
+        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff", s=1) == 255
+        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminated).sizeof(s=1) == 1
+        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff", s="num") == 255
+        assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminated).sizeof(s="num") == 1
 
     def test_select(self):
         assert raises(Select(Int32ub, Int16ub).parse, b"\x07") == SelectError
@@ -825,8 +825,8 @@ class TestCore(unittest.TestCase):
         assert raises(LazyStruct("a"/Byte, "b"/CString()).sizeof) == SizeofError
         assert LazyStruct("a"/Byte).build(dict(a=1)) == b"\x01"
         assert LazyStruct("a"/Byte).sizeof() == 1
-        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).build(dict()) == b""
-        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).sizeof() == 0
+        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminated).build(dict()) == b""
+        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminated).sizeof() == 0
         assert LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).build(dict(a=1,b=dict(c=2))) == b"\x01\x02"
         assert LazyStruct().parse(b"") == dict()
         assert LazyStruct().build(dict()) == b""
@@ -835,8 +835,8 @@ class TestCore(unittest.TestCase):
         assert LazyStruct("a"/Byte).build(dict(a=1)) == b"\x01"
         assert dict(LazyStruct("a"/Byte,"b"/CString()).parse(b"\x01abc\x00")) == dict(a=1,b=b"abc")
         assert LazyStruct("a"/Byte,"b"/CString()).build(dict(a=1,b=b"abc")) == b"\x01abc\x00"
-        assert dict(LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).parse(b"")) == dict()
-        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminator).build(dict()) == b""
+        assert dict(LazyStruct(Pass, Computed(lambda ctx: 0), Terminated).parse(b"")) == dict()
+        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminated).build(dict()) == b""
 
     def test_lazystruct_nested_embedded(self):
         assert dict(LazyStruct("a"/Byte,"b"/LazyStruct("c"/Byte)).parse(b"\x01\x02")) == dict(a=1,b=dict(c=2))
@@ -1146,7 +1146,7 @@ class TestCore(unittest.TestCase):
             'serial' / Int16ub,
             'checksum' / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), this.payload.data),
             Check(len_(this.payload.data) == this.payload_len),
-            Terminator,
+            Terminated,
         )
 
         payload = Inner.build(dict(name=b"unknown", occupation=b"worker"))
