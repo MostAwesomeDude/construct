@@ -97,6 +97,15 @@ Incidentally, when the count field is directly before the items field you can al
 >>> PrefixedArray(Byte, Byte).build([1,2,3])
 b'\x03\x01\x02\x03'
 
+There are also analogs to True and False.
+
+>>> context = {}
+>>> True_(context)
+True
+>>> False_(context)
+False
+
+
 Using `obj_` expression
 =======================
 
