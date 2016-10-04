@@ -358,12 +358,12 @@ class TestCore(unittest.TestCase):
         assert raises(Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).sizeof) == SizeofError
 
     def test_ifthenelse(self):
-        common(IfThenElse(lambda ctx: True,  Int8ub, Int16ub), b"\x01", 1, SizeofError)
-        common(IfThenElse(lambda ctx: False, Int8ub, Int16ub), b"\x00\x01", 1, SizeofError)
+        common(IfThenElse(True_,  Int8ub, Int16ub), b"\x01", 1, SizeofError)
+        common(IfThenElse(False_, Int8ub, Int16ub), b"\x00\x01", 1, SizeofError)
 
     def test_if(self):
-        common(If(lambda ctx: True,  Int8ub), b"\x01", 1, SizeofError)
-        common(If(lambda ctx: False, Int8ub), b"", None, SizeofError)
+        common(If(True_,  Int8ub), b"\x01", 1, SizeofError)
+        common(If(False_, Int8ub), b"", None, SizeofError)
 
     def test_padding(self):
         assert Padding(4).parse(b"\x00\x00\x00\x00") == None
