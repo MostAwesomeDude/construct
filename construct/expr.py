@@ -192,3 +192,14 @@ class Path2(ExprMixin):
 obj_ = Path2()
 
 
+class PathConst(ExprMixin):
+    def __init__(self, value):
+        self.value = value
+    def __repr__(self):
+        return "%s_" % (self.value)
+    def __call__(self, operand, *args):
+        return self.value
+
+True_ = PathConst(True)
+False_ = PathConst(False)
+

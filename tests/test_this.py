@@ -71,3 +71,10 @@ class TestThis(unittest.TestCase):
         assert example.parse(b"\x03\x07\xff") == dict(items=[3,7,255])
         assert example.build(dict(items=[3,7,255])) == b"\x03\x07\xff"
 
+    def test_singletons(self):
+        assert repr(True_) == "True_"
+        assert repr(False_) == "False_"
+        assert True_({}) is True
+        assert False_({}) is False
+
+
