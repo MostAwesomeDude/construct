@@ -1203,4 +1203,12 @@ class TestCore(unittest.TestCase):
         print(build_struct(embed_g=True, embed_h=False).parse(data))
         # When setting optional to False in vstring method, all three tests above work fine.
 
+    def test_from_issue_231(self):
+        u = Union("raw"/Byte[8], "ints"/Int32ub[2], buildfrom="ints", skipfrom="ints")
+        s = Struct("u"/u, "d"/Byte[4])
+
+        buildret = s.build(dict(u=dict(ints=[1,2]),d=[0,1,2,3]))
+        assert buildret == b"\x00\x00\x00\x01\x00\x00\x00\x02\x00\x01\x02\x03"
+        assert s.build(s.parse(buildret)) == buildret
+
 
