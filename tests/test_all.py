@@ -611,11 +611,8 @@ class TestCore(unittest.TestCase):
         assert raises(Union(Byte, VarInt, buildfrom=1).sizeof) == SizeofError
 
         assert (Union("b"/Int16ub) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x01]
-        assert (Union("b"/Int16ub, skipfrom=0)   >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
-        assert (Union("b"/Int16ub, skipfrom="b") >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
-        assert (Union("a"/Int8ub, "b"/Int16ub, skipfrom=min) >> Byte).parse(b"\x01\x02\x03\x04") == [Container(a=0x01)(b=0x0102),0x02]
-        assert (Union("a"/Int8ub, "b"/Int16ub, skipfrom=max) >> Byte).parse(b"\x01\x02\x03\x04") == [Container(a=0x01)(b=0x0102),0x03]
-        assert (Union("a"/Int8ub, "b"/Int16ub, skipfrom=sum) >> Byte).parse(b"\x01\x02\x03\x04") == [Container(a=0x01)(b=0x0102),0x04]
+        assert (Union("b"/Int16ub, buildfrom=0)   >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
+        assert (Union("b"/Int16ub, buildfrom="b") >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
 
     @pytest.mark.xfail(reason="skipfrom=this.jump fails")
     def test_union2(self):
@@ -1204,7 +1201,7 @@ class TestCore(unittest.TestCase):
         # When setting optional to False in vstring method, all three tests above work fine.
 
     def test_from_issue_231(self):
-        u = Union("raw"/Byte[8], "ints"/Int32ub[2], buildfrom="ints", skipfrom="ints")
+        u = Union("raw"/Byte[8], "ints"/Int32ub[2], buildfrom="ints")
         s = Struct("u"/u, "d"/Byte[4])
 
         buildret = s.build(dict(u=dict(ints=[1,2]),d=[0,1,2,3]))
