@@ -3087,7 +3087,7 @@ class StringEncoded(Adapter):
         super(StringEncoded, self).__init__(subcon)
         self.encoding = encoding
     def _decode(self, obj, context):
-        encoding = globalstringencoding or self.encoding
+        encoding = self.encoding or globalstringencoding
         if encoding:
             if isinstance(encoding, str):
                 obj = obj.decode(encoding)
@@ -3095,7 +3095,7 @@ class StringEncoded(Adapter):
                 obj = encoding.decode(obj)
         return obj
     def _encode(self, obj, context):
-        encoding = globalstringencoding or self.encoding
+        encoding = self.encoding or globalstringencoding
         if not isinstance(obj, bytes):
             if not encoding:
                 raise StringError("no encoding provided when processing a unicode obj")
