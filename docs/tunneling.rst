@@ -20,7 +20,9 @@ Endianness
 
 When little endianness is needed, either use fields like Int*l or swap bytes of an arbitrary field:
 
-Int24ul <--> ByteSwapped(Int24ub)
+::
+
+    Int24ul <--> ByteSwapped(Int24ub)
 
 >>> ByteSwapped(Int32ub).build(0x01020304)
 '\x04\x03\x02\x01'

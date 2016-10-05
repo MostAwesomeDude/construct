@@ -124,16 +124,16 @@ Check
 
 When fields are expected to be coherent in some way but integrity cannot be checked easily using Const or otherwise, then a Check field can be put in place that will compute from the context if the integrity is preserved. For example, maybe there is a count field (implied being non-negative but the field is signed):
 
->>>> st = Struct(num=Int8sb, integrity1=Check(this.num > 0))
->>>> st.parse(b"\xff")
+>>> st = Struct(num=Int8sb, integrity1=Check(this.num > 0))
+>>> st.parse(b"\xff")
 ValidationError: check failed during parsing
 
 Or there is a collection and a count provided and the count is expected to match the collection length (which might go out of sync by mistake). Note that Rebuild is more appropriate but the check is also possible:
 
->>>> st = Struct(count=Byte, items=Byte[this.count])
+>>> st = Struct(count=Byte, items=Byte[this.count])
 FieldError: packer '>B' error during building, given value 9090
 ...
->>>> st = Struct(integrity=Check(this.count == len_(this.items)), count=Byte, items=Byte[this.count])
+>>> st = Struct(integrity=Check(this.count == len_(this.items)), count=Byte, items=Byte[this.count])
 ValidationError: check failed during building
 
 

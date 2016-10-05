@@ -2,9 +2,6 @@
 Debugging Construct
 ===================
 
-Intro
-=====
-
 Programming data structures in Construct is much easier than writing the equivalent procedural code, both in terms of RAD and correctness. However, sometimes things don't behave the way you expect them to. Yep, a bug.
 
 Most end-user bugs originate from handling the context wrong. Sometimes you forget what nesting level you are at, or you move things around without taking into account the nesting, thus breaking context-based expressions. The two utilities described below should help you out.
@@ -40,6 +37,9 @@ The Probe simply dumps information to the screen. It will help you inspect the c
     ================================================================================
     [63, None]
 
+There is also `ProbeInto` class that looks inside the context instead of printing the entire context.
+
+<<< missing an exaple >>>
 
 Debugger
 ========
