@@ -259,7 +259,7 @@ class LazyContainer(object):
         if key not in self.cached:
             at, sc = self.offsetmap[key]
             self.stream.seek(self.addoffset + at)
-            self.cached[key] = sc._parse(self.stream, self.context)
+            self.cached[key] = sc._parse(self.stream, self.context, "lazy container")
             if len(self.cached) == len(self):
                 self.offsetmap = None
                 self.stream = None
@@ -322,7 +322,7 @@ class LazyRangeContainer(ListContainer):
             raise ValueError("index %d out of range 0-%d" % (index,len(self)-1))
         if index not in self.cached:
             self.stream.seek(self.addoffset + index * self.subsize)
-            self.cached[index] = self.subcon._parse(self.stream, self.context)
+            self.cached[index] = self.subcon._parse(self.stream, self.context, "lazy range container")
             if len(self.cached) == len(self):
                 self.stream = None
         return self.cached[index]
@@ -361,7 +361,7 @@ class LazySequenceContainer(LazyRangeContainer):
         if index not in self.cached:
             at,sc = self.offsetmap[index]
             self.stream.seek(self.addoffset + at)
-            self.cached[index] = sc._parse(self.stream, self.context)
+            self.cached[index] = sc._parse(self.stream, self.context, "lazy sequence container")
             if len(self.cached) == len(self):
                 self.offsetmap = None
                 self.stream = None

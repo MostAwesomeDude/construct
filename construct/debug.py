@@ -63,16 +63,18 @@ class Probe(Construct):
         self.flagbuildnone = True
     def __repr__(self):
         return "<%s: %s>" % (self.__class__.__name__, self.printname)
-    def _parse(self, stream, context):
-        self.printout(stream, context)
-    def _build(self, obj, stream, context):
-        self.printout(stream, context)
-    def _sizeof(self, context):
+    def _parse(self, stream, context, path):
+        self.printout(stream, context, path)
+    def _build(self, obj, stream, context, path):
+        self.printout(stream, context, path)
+    def _sizeof(self, context, path):
+        self.printout(stream, context, path)
         return 0
     
-    def printout(self, stream, context):
+    def printout(self, stream, context, path):
         print("================================================================================")
         print("Probe %s" % self.printname)
+        print("path is %s" % path)
 
         if self.show_stream:
             fallback = stream.tell()
@@ -164,9 +166,10 @@ class Debugger(Subconstruct):
         (Pdb) q
     """
     __slots__ = ["retval"]
-    def _parse(self, stream, context):
+
+    def _parse(self, stream, context, path):
         try:
-            return self.subcon._parse(stream, context)
+            return self.subcon._parse(stream, context, path)
         except Exception:
             self.retval = NotImplemented
             self.handle_exc("(you can set the value of 'self.retval', which will be returned)")
@@ -174,14 +177,23 @@ class Debugger(Subconstruct):
                 raise
             else:
                 return self.retval
-    def _build(self, obj, stream, context):
+
+    def _build(self, obj, stream, context, path):
         try:
-            self.subcon._build(obj, stream, context)
+            self.subcon._build(obj, stream, context, path)
         except Exception:
             self.handle_exc()
+
+    def _sizeof(self, context, path):
+        try:
+            self.subcon._sizeof(context, path)
+        except Exception:
+            self.handle_exc()
+
     def handle_exc(self, msg = None):
         print("================================================================================")
-        print("Debugging exception of %s:" % (self.subcon,))
+        print("Debugging exception of %s:" % self.subcon)
+        print("path is %s" % path)
         print("".join(traceback.format_exception(*sys.exc_info())[1:]))
         if msg:
             print(msg)
