@@ -249,21 +249,20 @@ class Construct(object):
 
     def __getitem__(self, count):
         if isinstance(count, slice):
-            if count.step:
-                raise ValueError("slice must not contain a step: %r" % (count,))
+            if count.step is not None:
+                raise ValueError("slice must not contain a step: %r" % count)
             min = 0 if count.start is None else count.start
             max = sys.maxsize if count.stop is None else count.stop
             return Range(min, max, self)
         elif isinstance(count, int) or callable(count):
             return Range(count, count, self)
         else:
-            raise TypeError("Expected a number, a contextual expression or a slice thereof, got %r" % (count,))
+            raise TypeError("expected an int, a context lambda, or a slice thereof, but found %r" % count)
 
     def __rshift__(self, other):
-        if isinstance(self, Sequence):
-            return Sequence(*(list(self.subcons)+[other]))
-        else:
-            return Sequence(self, other)
+        lhs = self.subcons  if isinstance(self,  Sequence) else [self]
+        rhs = other.subcons if isinstance(other, Sequence) else [other]
+        return Sequence(*(lhs + rhs))
 
     def __rtruediv__(self, name):
         if name is not None:
@@ -271,6 +270,11 @@ class Construct(object):
                 raise TypeError("name must be b-string or u-string or None", name)
         return Renamed(name, self)
     __rdiv__ = __rtruediv__
+
+    def __add__(self, other):
+        lhs = self.subcons  if isinstance(self,  Struct) else [self]
+        rhs = other.subcons if isinstance(other, Struct) else [other]
+        return Struct(*(lhs + rhs))
 
 
 class Subconstruct(Construct):

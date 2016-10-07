@@ -415,20 +415,26 @@ class TestCore(unittest.TestCase):
         assert (None / Byte).parse(b"\x01") == 1
 
     def test_operators(self):
-        assert Struct("new" / ("old" / Byte)).parse(b"\x01") == Container(new=1)
-        assert Struct("new" / ("old" / Byte)).build(Container(new=1)) == b"\x01"
-        assert Byte[4].parse(b"\x01\x02\x03\x04") == [1,2,3,4]
-        assert Byte[4].build([1,2,3,4]) == b"\x01\x02\x03\x04"
+        common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)
+        common(Struct("new" / ("old" / Byte)), b"\x01", Container(new=1), 1)
+        common(Array(4, Byte), b"\x01\x02\x03\x04", [1,2,3,4], 4)
+        common(Byte[4], b"\x01\x02\x03\x04", [1,2,3,4], 4)
         assert raises(Byte[2:3].parse, b"\x01") == RangeError
         assert Byte[2:3].parse(b"\x01\x02") == [1,2]
         assert Byte[2:3].parse(b"\x01\x02\x03") == [1,2,3]
         assert Byte[2:3].parse(b"\x01\x02\x03") == [1,2,3]
         assert Byte[2:3].parse(b"\x01\x02\x03\x04") == [1,2,3]
-        assert Struct("nums" / Byte[4]).parse(b"\x01\x02\x03\x04") == Container(nums=[1,2,3,4])
-        assert Struct("nums" / Byte[4]).build(Container(nums=[1,2,3,4])) == b"\x01\x02\x03\x04"
-        assert (Int8ub >> Int16ub).parse(b"\x01\x00\x02") == [1,2]
-        assert (Int8ub >> Int16ub >> Int32ub).parse(b"\x01\x00\x02\x00\x00\x00\x03") == [1,2,3]
-        assert (Int8ub[2] >> Int16ub[2]).parse(b"\x01\x02\x00\x03\x00\x04") == [[1,2],[3,4]]
+        assert raises(lambda: Byte[2:3:1]) == ValueError
+        common(Struct("nums" / Byte[4]), b"\x01\x02\x03\x04", Container(nums=[1,2,3,4]), 4)
+        common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
+        common(Int8ub >> Int16ub >> Int32ub, b"\x01\x00\x02\x00\x00\x00\x03", [1,2,3], 7)
+        common(Int8ub[2] >> Int16ub[2], b"\x01\x02\x00\x03\x00\x04", [[1,2],[3,4]], 6)
+        common(Sequence(Embedded(Sequence(Int8ub)), Embedded(Sequence(Int16ub)) ), b"\x01\x00\x02", [1,2], 3)
+        common(Sequence(Int8ub) >> Sequence(Int16ub), b"\x01\x00\x02", [1,2], 3)
+        common(Struct("count"/Byte, "items"/Byte[this.count], Pass, Terminated), b"\x03\x01\x02\x03", Container(count=3)(items=[1,2,3]), KeyError)
+        common("count"/Byte + "items"/Byte[this.count] + Pass + Terminated, b"\x03\x01\x02\x03", Container(count=3)(items=[1,2,3]), KeyError)
+        common(Struct(Embedded(Struct(a=Byte)), Embedded(Struct(b=Byte)) ), b"\x01\x02", Container(a=1)(b=2), 2)
+        common(Struct(a=Byte) + Struct(b=Byte), b"\x01\x02", Container(a=1)(b=2), 2)
 
     def test_renamed(self):
         common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)
