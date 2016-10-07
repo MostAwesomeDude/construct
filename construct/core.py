@@ -970,10 +970,11 @@ class Range(Subconstruct):
         if not 0 <= min <= max <= sys.maxsize:
             raise RangeError("unsane min %s and max %s" % (min, max))
         obj = ListContainer()
+        context = Container(_ = context)
         try:
             while len(obj) < max:
                 fallback = stream.tell()
-                obj.append(self.subcon._parse(stream, context, path))
+                obj.append(self.subcon._parse(stream, context._, path))
                 context[len(obj)-1] = obj[-1]
         except ExplicitError:
             raise
@@ -991,10 +992,11 @@ class Range(Subconstruct):
             raise RangeError("expected sequence type, found %s" % type(obj))
         if not min <= len(obj) <= max:
             raise RangeError("expected from %d to %d elements, found %d" % (min, max, len(obj)))
+        context = Container(_ = context)
         try:
             for i,subobj in enumerate(obj):
                 context[i] = subobj
-                self.subcon._build(subobj, stream, context, path)
+                self.subcon._build(subobj, stream, context._, path)
         except ExplicitError:
             raise
         except Exception:
