@@ -205,6 +205,14 @@ class TestCore(unittest.TestCase):
     def test_prefixedarray(self):
         common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
 
+    @pytest.mark.xfail(raises=TypeError, reason="object of type 'instancemethod' has no len(), what??")
+    def test_prefixedarray_alternative(self):
+        def PrefixedArray(lengthfield, subcon):
+            return FocusedSeq(1, 
+                "count"/Rebuild(lengthfield, lambda ctx: len(ctx.items)), 
+                "items"/Array(lambda ctx: ctx.count, subcon), )
+        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
+
     def test_range(self):
         assert Byte[2:4].parse(b"1234567890") == [49, 50, 51, 52]
         assert Byte[2:4].build([49, 50, 51, 52]) == b"1234"

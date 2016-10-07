@@ -1087,6 +1087,13 @@ class PrefixedArray(Construct):
             self.subcon._build(element, stream, context, path)
 
 
+# def PrefixedArray(lengthfield, subcon):
+#     return FocusedSeq(1, 
+#         "count"/Rebuild(lengthfield, lambda ctx: len(ctx.items)), 
+#         "items"/Array(lambda ctx: ctx.count, subcon),
+#     )
+
+
 class RepeatUntil(Subconstruct):
     r"""
     An array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return value.
@@ -2959,9 +2966,11 @@ class Indexing(Adapter):
 
 class FocusedSeq(Construct):
     r"""
-    Parses and builds a sequence where only one subcon value is returned or taken, other fields are parsed and discarder or built from nothing. This is a replaced for SeqOfOne.
+    Parses and builds a sequence where only one subcon value is returned from parsing or taken into building, other fields are parsed and discarded or built from nothing. This is a replacement for SeqOfOne.
 
     :param parsebuildfrom: which subcon to use, an int or str, or a context lambda returning an int or str
+    :param \*subcons: a list of members
+    :param \*\*kw: a list of members (works ONLY on python 3.6 and pypy)
 
     Excample::
 
@@ -2988,11 +2997,13 @@ class FocusedSeq(Construct):
         if isinstance(self.parsebuildfrom, str):
             index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom)
         for i,sc in enumerate(self.subcons):
+            parseret = sc._parse(stream, context, path)
+            context[i] = parseret
+            if sc.name is not None:
+                context[sc.name] = parseret
             if i == index:
-                parseret = sc._parse(stream, context, path)
-            else:
-                sc._parse(stream, context, path)
-        return parseret
+                finalobj = parseret
+        return finalobj
     def _build(self, obj, stream, context, path):
         if callable(self.parsebuildfrom):
             self.parsebuildfrom = self.parsebuildfrom(context)
@@ -3002,10 +3013,18 @@ class FocusedSeq(Construct):
             index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom)
         for i,sc in enumerate(self.subcons):
             if i == index:
-                buildret = sc._build(obj, stream, context, path)
-            else:
-                sc._build(None, stream, context, path)
-        return buildret
+                context[i] = obj
+                if sc.name is not None:
+                    context[sc.name] = obj
+        for i,sc in enumerate(self.subcons):
+            buildret = sc._build(obj if i==index else None, stream, context, path)
+            if buildret is not None:
+                if sc.name is not None:
+                    context[sc.name] = buildret
+                context[i] = buildret
+            if i == index:
+                finalobj = buildret
+        return finalobj
     def _sizeof(self, context, path):
         if callable(self.parsebuildfrom):
             self.parsebuildfrom = self.parsebuildfrom(context)
