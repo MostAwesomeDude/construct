@@ -89,6 +89,16 @@ Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword
 
 >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
 
+Operator `+` can also be used to make Structs, and to merge (embed) them.
+
+>>> st = "count"/Byte + "items"/Byte[this.count] + Terminated
+>>> st.parse(b"\x03\x01\x02\x03")
+Container(count=3)(items=[1, 2, 3])
+
+>>> st = ("a"/Byte + "b"/Byte) + "c"/Byte
+>>> st.parse(b"abc")
+Container(a=97)(b=98)(c=99)
+
 
 Containers
 ----------
@@ -202,6 +212,8 @@ Sequences
 =========
 
 Sequences are very similar to Structs, but operate with lists rather than containers. Sequences are less commonly used than Structs, but are very handy in certain situations. Since a list is returned in place of an attribute container, the names of the sub-constructs are not important. Two constructs with the same name will not override or replace each other.
+
+Operator `>>` can be used to make Sequences, or to merge them.
 
 Building and parsing
 --------------------

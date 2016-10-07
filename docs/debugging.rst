@@ -13,9 +13,10 @@ The Probe simply dumps information to the screen. It will help you inspect the c
 
 ::
 
-    >>>> Struct("count"/Byte, "items"/Byte[this.count], Probe()).parse(b"\x05abcde")
+    >>> Struct("count"/Byte, "items"/Byte[this.count], Probe()).parse(b"\x05abcde")
     ================================================================================
     Probe <unnamed 3>
+    path is parsing, func is None
     EOF reached
     Container: 
         count = 5
@@ -28,18 +29,69 @@ The Probe simply dumps information to the screen. It will help you inspect the c
     ================================================================================
     Container(count=5)(items=[97, 98, 99, 100, 101])
 
-    >>>> (Byte >> Probe()).parse(b"?")
+    >>> (Byte >> Probe()).parse(b"?")
     ================================================================================
     Probe <unnamed 1>
+    path is parsing, func is None
     EOF reached
     Container: 
         0 = 63
     ================================================================================
     [63, None]
 
-There is also `ProbeInto` class that looks inside the context instead of printing the entire context.
+There is also `ProbeInto` looks inside the context and extracts a part of it using a lambda instead of printing the entire context.
 
-<<< missing an exaple >>>
+>>> st = "junk"/RepeatUntil(obj_ == 0,Byte) + "num"/Byte + Probe()
+>>> st.parse(b"xcnzxmbjskahuiwerhquiehnsdjk\x00\xff")
+================================================================================
+Probe <unnamed 5>
+path is parsing, func is None
+EOF reached
+Container: 
+    junk = ListContainer: 
+        120
+        99
+        110
+        122
+        120
+        109
+        98
+        106
+        115
+        107
+        97
+        104
+        117
+        105
+        119
+        101
+        114
+        104
+        113
+        117
+        105
+        101
+        104
+        110
+        115
+        100
+        106
+        107
+        0
+    num = 255
+================================================================================
+Container(junk=[120, 99, 110, 122, 120, 109, 98, 106, 115, 107, 97, 104, 117, 105, 119, 101, 114, 104, 113, 117, 105, 101, 104, 110, 115, 100, 106, 107, 0])(num=255)
+
+>>> st = "junk"/RepeatUntil(obj_ == 0,Byte) + "num"/Byte + ProbeInto(this.num)
+>>> st.parse(b"xcnzxmbjskahuiwerhquiehnsdjk\x00\xff")
+================================================================================
+Probe <unnamed 6>
+path is parsing, func is this.num
+EOF reached
+255
+================================================================================
+Container(junk=[120, 99, 110, 122, 120, 109, 98, 106, 115, 107, 97, 104, 117, 105, 119, 101, 114, 104, 113, 117, 105, 101, 104, 110, 115, 100, 106, 107, 0])(num=255)
+
 
 Debugger
 ========
@@ -90,4 +142,14 @@ When an exception occurs while parsing, you can go up (using u) to the level of 
     -> raise MappingError("no decoding mapping for %r" % (obj,))
     (Pdb) self.retval = "???"
     (Pdb) q
+
+Error
+=====
+
+Raises an exception when triggered by parse or build. Can be used as a sentinel that blows a whistle when a conditional branch goes the wrong way, or to raise an error explicitly the declarative way.
+
+>>> d = "x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)
+>>> d.parse(b"\xff\x05")
+construct.core.ExplicitError: Error field was activated during parsing
+
 

@@ -22,7 +22,8 @@ class Probe(Construct):
     :param stream_lookahead: the number of bytes to dump when show_stack is set. default is 100.
     
     Example::
-        >>>> Struct("count"/Byte, "items"/Byte[this.count], Probe()).parse(b"\x05abcde")
+
+        >>> Struct("count"/Byte, "items"/Byte[this.count], Probe()).parse(b"\x05abcde")
         ================================================================================
         Probe <unnamed 3>
         EOF reached
@@ -37,7 +38,7 @@ class Probe(Construct):
         ================================================================================
         Container(count=5)(items=[97, 98, 99, 100, 101])
 
-        >>>> (Byte >> Probe()).parse(b"?")
+        >>> (Byte >> Probe()).parse(b"?")
         ================================================================================
         Probe <unnamed 1>
         EOF reached
@@ -74,7 +75,7 @@ class Probe(Construct):
     def printout(self, stream, context, path):
         print("================================================================================")
         print("Probe %s" % self.printname)
-        print("path is %s" % path)
+        print("path is %s, func is %s" % (path, self.func))
 
         if self.show_stream:
             fallback = stream.tell()
@@ -111,7 +112,60 @@ class Probe(Construct):
 
 def ProbeInto(func):
     r"""
-    Analog to Probe but a context lambda to extract a sub-context.
+    ProbeInto looks inside the context and extracts a part of it using a lambda instead of printing the entire context.
+
+    Example::
+
+        >>> st = "junk"/RepeatUntil(obj_ == 0,Byte) + "num"/Byte + Probe()
+        >>> st.parse(b"xcnzxmbjskahuiwerhquiehnsdjk\x00\xff")
+        ================================================================================
+        Probe <unnamed 5>
+        path is parsing
+        EOF reached
+        Container: 
+            junk = ListContainer: 
+                120
+                99
+                110
+                122
+                120
+                109
+                98
+                106
+                115
+                107
+                97
+                104
+                117
+                105
+                119
+                101
+                114
+                104
+                113
+                117
+                105
+                101
+                104
+                110
+                115
+                100
+                106
+                107
+                0
+            num = 255
+        ================================================================================
+        Container(junk=[120, 99, 110, 122, 120, 109, 98, 106, 115, 107, 97, 104, 117, 105, 119, 101, 114, 104, 113, 117, 105, 101, 104, 110, 115, 100, 106, 107, 0])(num=255)
+
+        >>> st = "junk"/RepeatUntil(obj_ == 0,Byte) + "num"/Byte + ProbeInto(this.num)
+        >>> st.parse(b"xcnzxmbjskahuiwerhquiehnsdjk\x00\xff")
+        ================================================================================
+        Probe <unnamed 6>
+        path is parsing
+        EOF reached
+        255
+        ================================================================================
+        Container(junk=[120, 99, 110, 122, 120, 109, 98, 106, 115, 107, 97, 104, 117, 105, 119, 101, 114, 104, 113, 117, 105, 101, 104, 110, 115, 100, 106, 107, 0])(num=255)
     """
     return Probe(func=func)
 
@@ -139,7 +193,7 @@ class Debugger(Subconstruct):
         ================================================================================
 
         >>> format = Struct(
-        ...     "spam" / Debugger(Enum(Byte, A=1,B=2,C=3)),
+        ...     "spam" / Debugger(Enum(Byte, A=1, B=2, C=3)),
         ... )
         >>> format.parse(b"\xff")
         ================================================================================

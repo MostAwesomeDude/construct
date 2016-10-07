@@ -337,6 +337,8 @@ class TestCore(unittest.TestCase):
     def test_error(self):
         assert raises(Error.parse, b"") == ExplicitError
         assert raises(Error.build, None) == ExplicitError
+        assert ("x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)).parse(b"\x01\x05") == [1,5]
+        assert raises(("x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)).parse, b"\xff\x05") == ExplicitError
 
     def test_pointer(self):
         assert Pointer(lambda ctx: 2, "pointer" / Int8ub).parse(b"\x00\x00\x07") == 7

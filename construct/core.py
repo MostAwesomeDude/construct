@@ -1953,7 +1953,13 @@ class Terminated(Construct):
 @singleton
 class Error(Construct):
     r"""
-    Raises an exception when triggered by parse or build. Can be used for example with If, IfThenElse.
+    Raises an exception when triggered by parse or build. Can be used as a sentinel that blows a whistle when a conditional branch goes the wrong way, or to raise an error explicitly the declarative way.
+
+    Example::
+
+        >>> d = "x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)
+        >>> d.parse(b"\xff\x05")
+        construct.core.ExplicitError: Error field was activated during parsing
     """
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -2538,12 +2544,17 @@ def OnDemandPointer(offset, subcon):
     r"""
     An on-demand pointer. Is both lazy and jumps to a position before reading.
 
-    Note that the context is given immediately during parsing but the offset is computed lazily only when returned lambda is called. This is different from a straightforward implementation `Pointer(offset, OnDemand(subcon))`.
-
     .. seealso:: Base :func:`~construct.core.OnDemand` and :func:`~construct.core.Pointer` construct.
 
-    :param offset: an int or a function that takes context and returns absolute stream position, where the construction would take place, can return negative integer as position from the end backwards
+    :param offset: an int or a context function that returns absolute stream position, where the construction would take place, can return negative integer as position from the end backwards
     :param subcon: the subcon that will be parsed or built at the `offset` stream position
+
+    Example::
+
+        >>> OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03garbage")
+        <function OnDemand._parse.<locals>.effectuate at 0x7f6f011ad510>
+        >>> _()
+        3
     """
     return OnDemand(Pointer(offset, subcon))
 
