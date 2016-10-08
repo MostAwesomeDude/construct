@@ -1359,7 +1359,8 @@ class Union(Construct):
         if self.buildfrom is None:
             for i,sc in enumerate(self.subcons):
                 if sc.subcon.flagbuildnone:
-                    buildret = sc.subcon._build(None, stream, context, path)
+                    subobj = obj.get(sc.name, None)
+                    buildret = sc.subcon._build(subobj, stream, context, path)
                     if buildret is not None:
                         if sc.flagembedded:
                             context.update(buildret)
@@ -2323,7 +2324,6 @@ class LazyStruct(Construct):
                     keys[sc.name] = None
                     values[sc.name] = subobj
                     context[sc.name] = subobj
-                context[i] = subobj
             else:
                 if sc.name is not None:
                     keys[sc.name] = None
@@ -2333,22 +2333,20 @@ class LazyStruct(Construct):
 
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
+        context.update(obj)
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
                 subobj = obj
             elif sc.flagbuildnone:
-                subobj = None
+                subobj = obj.get(sc.name, None)
             else:
                 subobj = obj[sc.name]
-                context[sc.name] = subobj
-            context[i] = subobj
             buildret = sc._build(subobj, stream, context, path)
             if buildret is not None:
                 if sc.flagembedded:
                     context.update(buildret)
                 if sc.name is not None:
                     context[sc.name] = buildret
-                context[i] = buildret
         return context
 
     def _sizeof(self, context, path):
