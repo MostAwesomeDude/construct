@@ -862,7 +862,7 @@ class Struct(Construct):
             if sc.flagembedded:
                 subobj = obj
             elif sc.flagbuildnone:
-                subobj = None
+                subobj = obj.get(sc.name, None)
             else:
                 subobj = obj[sc.name]
             buildret = sc._build(subobj, stream, context, path)
@@ -1425,6 +1425,7 @@ class Select(Construct):
                 subcons.append(k / v)
         super(Select, self).__init__()
         self.subcons = subcons
+        self._inherit_flags(*subcons)
         self.includename = kw.pop("includename", False)
     def _parse(self, stream, context, path):
         for sc in self.subcons:
