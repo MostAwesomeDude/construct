@@ -1055,9 +1055,7 @@ class PrefixedArray(Construct):
     r"""
     An array prefixed by a length field.
 
-    .. seealso::
-
-        Analog :func:`~construct.core.Array` construct.
+    .. seealso:: Analog :func:`~construct.core.Array` construct.
 
     :param lengthfield: a field parsing and building an integer
     :param subcon: the subcon to process individual elements
@@ -1085,13 +1083,6 @@ class PrefixedArray(Construct):
         self.lengthfield._build(len(obj), stream, context, path)
         for element in obj:
             self.subcon._build(element, stream, context, path)
-
-
-# def PrefixedArray(lengthfield, subcon):
-#     return FocusedSeq(1, 
-#         "count"/Rebuild(lengthfield, lambda ctx: len(ctx.items)), 
-#         "items"/Array(lambda ctx: ctx.count, subcon),
-#     )
 
 
 class RepeatUntil(Subconstruct):

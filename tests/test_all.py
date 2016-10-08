@@ -204,14 +204,38 @@ class TestCore(unittest.TestCase):
 
     def test_prefixedarray(self):
         common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
+        assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]
+        assert PrefixedArray(Byte, Byte).parse(b"\x00") == []
+        assert PrefixedArray(Byte, Byte).build([1,2,3]) == b"\x03\x01\x02\x03"
+        assert raises(PrefixedArray(Byte, Byte).parse, b"") == RangeError
+        assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == RangeError
+        assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
 
-    @pytest.mark.xfail(raises=TypeError, reason="object of type 'instancemethod' has no len(), what??")
-    def test_prefixedarray_alternative(self):
+    def test_prefixedarray_alternative2(self):
+        def PrefixedArray(lengthfield, subcon):
+            return FocusedSeq(1, 
+                "count"/Rebuild(lengthfield, len_(this.items)), 
+                "items"/subcon[this.count],
+            )
+        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], KeyError)
+
+    @pytest.mark.xfail(raises=TypeError, reason="object of type 'instancemethod' has no len()")
+    def test_prefixedarray_alternative3(self):
         def PrefixedArray(lengthfield, subcon):
             return FocusedSeq(1, 
                 "count"/Rebuild(lengthfield, lambda ctx: len(ctx.items)), 
-                "items"/Array(lambda ctx: ctx.count, subcon), )
-        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
+                "items"/Array(lambda ctx: ctx.count, subcon),
+            )
+        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], AttributeError)
+
+    def test_prefixedarray_alternative4(self):
+        def PrefixedArray(lengthfield, subcon):
+            return ExprAdapter(
+                "count"/lengthfield >> "items"/subcon[lambda ctx: ctx.count],
+                encoder = lambda obj,ctx: [len(obj), obj],
+                decoder = lambda obj,ctx: obj[1],
+            )
+        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], AttributeError)
 
     def test_range(self):
         assert Byte[2:4].parse(b"1234567890") == [49, 50, 51, 52]
@@ -635,14 +659,6 @@ class TestCore(unittest.TestCase):
         st = Union(a=Int8ub, b=Int16ub, c=Int32ub)
         assert st.parse(b"\x01\x02\x03\x04") == Container(a=0x01,b=0x0102,c=0x01020304)
         assert st.build(Container(c=0x01020304)) == b"\x01\x02\x03\x04"
-
-    def test_prefixedarray(self):
-        assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]
-        assert PrefixedArray(Byte, Byte).parse(b"\x00") == []
-        assert PrefixedArray(Byte, Byte).build([1,2,3]) == b"\x03\x01\x02\x03"
-        assert raises(PrefixedArray(Byte, Byte).parse, b"") == RangeError
-        assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == RangeError
-        assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
 
     def test_prefixed(self):
         assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xffgarbage") == 65535
