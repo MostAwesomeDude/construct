@@ -1236,4 +1236,28 @@ class TestCore(unittest.TestCase):
         assert buildret == b"\x00\x00\x00\x01\x00\x00\x00\x02\x00\x01\x02\x03"
         assert s.build(s.parse(buildret)) == buildret
 
+    def test_from_issue_241(self):
+
+        class Struct2(Struct):
+            def _build(self, obj, stream, context, path):
+                context = Container(_ = context)
+                context.update(obj)
+                for i,sc in enumerate(self.subcons):
+                    if sc.flagembedded:
+                        subobj = obj
+                    else:
+                        subobj = obj.get(sc.name, None)
+                    buildret = sc._build(subobj, stream, context, path)
+                    if buildret is not None:
+                        if sc.flagembedded:
+                            context.update(buildret)
+                        if sc.name is not None:
+                            context[sc.name] = buildret
+                return context
+
+
+        def Default(subcon, value):
+            return Select(subcon, Const(subcon, value))
+
+        assert Struct2("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1)) == b"\x01\x00"
 
