@@ -2433,7 +2433,7 @@ class LazyRange(Construct):
 
 class LazySequence(Construct):
     r"""
-    Equivalent to Sequence construct, however fixed size members are parsed on demend, others are parsed immediately. If entire sequence is fixed size then entire parse is essentially one seek.
+    Equivalent to Sequence construct, however fixed size members are parsed on demand, others are parsed immediately. If entire sequence is fixed size then entire parse is essentially one seek.
 
     .. seealso:: Equivalent to :func:`~construct.core.Sequence`.
 
