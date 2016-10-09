@@ -2390,8 +2390,6 @@ class LazyRange(Construct):
     """
     __slots__ = ["subcon", "min", "max", "subsize"]
     def __init__(self, min, max, subcon):
-        if not 0 <= min <= max <= sys.maxsize:
-            raise RangeError("unsane min %s and max %s" % (min,max))
         super(LazyRange, self).__init__()
         self.subcon = subcon
         self.min = min
@@ -2399,31 +2397,43 @@ class LazyRange(Construct):
         self.subsize = subcon.sizeof()
 
     def _parse(self, stream, context, path):
+        currentmin = self.min(context) if callable(self.min) else self.min
+        currentmax = self.max(context) if callable(self.max) else self.max
+        if not 0 <= currentmin <= currentmax <= sys.maxsize:
+            raise RangeError("unsane min %s and max %s" % (currentmin, currentmax))
         starts = stream.tell()
         ends = stream.seek(0,2)
         remaining = ends - starts
-        objcount = min(remaining//self.subsize, self.max)
-        if objcount < self.min:
-            raise RangeError("not enough bytes %d to read the min %d of %d bytes each" % (remaining,self.min,self.subsize))
+        objcount = min(remaining//self.subsize, currentmax)
+        if objcount < currentmin:
+            raise RangeError("not enough bytes %d to read the min %d of %d bytes each" % (remaining, currentmin, self.subsize))
         stream.seek(starts + objcount*self.subsize, 0)
         return LazyRangeContainer(self.subcon, self.subsize, objcount, stream, starts, context)
 
     def _build(self, obj, stream, context, path):
+        currentmin = self.min(context) if callable(self.min) else self.min
+        currentmax = self.max(context) if callable(self.max) else self.max
+        if not 0 <= currentmin <= currentmax <= sys.maxsize:
+            raise RangeError("unsane min %s and max %s" % (currentmin, currentmax))
         if not isinstance(obj, collections.Sequence):
             raise RangeError("expected sequence type, found %s" % type(obj))
-        if not self.min <= len(obj) <= self.max:
-            raise RangeError("expected from %d to %d elements, found %d" % (self.min, self.max, len(obj)))
+        if not currentmin <= len(obj) <= currentmax:
+            raise RangeError("expected from %d to %d elements, found %d" % (currentmin, currentmax, len(obj)))
         try:
             for i,subobj in enumerate(obj):
                 context[i] = subobj
                 self.subcon._build(subobj, stream, context, path)
         except ConstructError:
-            if len(obj) < self.min:
-                raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
+            if len(obj) < currentmin:
+                raise RangeError("expected %d to %d, found %d" % (currentmin, currentmax, len(obj)))
 
     def _sizeof(self, context, path):
         try:
-            if self.min == self.max:
+            currentmin = self.min(context) if callable(self.min) else self.min
+            currentmax = self.max(context) if callable(self.max) else self.max
+            if not 0 <= currentmin <= currentmax <= sys.maxsize:
+                raise RangeError("unsane min %s and max %s" % (currentmin, currentmax))
+            if currentmin == currentmax:
                 return self.min * self.subsize
             else:
                 raise SizeofError("cannot calculate size, min not equal to max")

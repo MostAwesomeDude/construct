@@ -907,9 +907,10 @@ class TestCore(unittest.TestCase):
         assert raises(LazyRange(0,100,Struct("id"/Byte)).build, dict(id=1)) == RangeError
         assert raises(LazyRange(0,100,Struct("id"/Byte)).sizeof) == SizeofError
         assert LazyRange(1,1,Byte).sizeof() == 1
-        assert raises(LazyRange, -2, +7, Byte) == RangeError
-        assert raises(LazyRange, -2, -7, Byte) == RangeError
-        assert raises(LazyRange, +2, -7, Byte) == RangeError
+
+        assert raises(LazyRange(-2, +7, Byte).parse, b"") == RangeError
+        assert raises(LazyRange(-2, +7, Byte).build, {}) == RangeError
+        assert raises(LazyRange(-2, +7, Byte).sizeof) == RangeError
         assert raises(LazyRange, 1, 1, VarInt) == SizeofError
 
         assert LazyRange(1,9,Byte).parse(b"12345") == Range(1,9,Byte).parse(b"12345")
