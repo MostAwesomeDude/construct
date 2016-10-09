@@ -401,7 +401,10 @@ class Bytes(Construct):
         _write_stream(stream, length, data)
         return data
     def _sizeof(self, context, path):
-        return self.length(context) if callable(self.length) else self.length
+        try:
+            return self.length(context) if callable(self.length) else self.length
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 @singleton
@@ -546,7 +549,10 @@ class BytesInteger(Construct):
             data = swapbytes(data, self.bytesize)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context, path):
-        return self.length(context) if callable(self.length) else self.length
+        try:
+            return self.length(context) if callable(self.length) else self.length
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 class BitsInteger(Construct):
@@ -589,7 +595,10 @@ class BitsInteger(Construct):
             data = swapbytes(data, self.bytesize)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context, path):
-        return self.length(context) if callable(self.length) else self.length
+        try:
+            return self.length(context) if callable(self.length) else self.length
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 #===============================================================================
@@ -870,7 +879,10 @@ class Struct(Construct):
                     context[sc.name] = buildret
         return context
     def _sizeof(self, context, path):
-        return sum(sc._sizeof(context, path) for sc in self.subcons)
+        try:
+            return sum(sc._sizeof(context, path) for sc in self.subcons)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 class Sequence(Struct):
@@ -1000,8 +1012,11 @@ class Range(Subconstruct):
             if len(obj) < min:
                 raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
     def _sizeof(self, context, path):
-        min = self.min(context) if callable(self.min) else self.min
-        max = self.max(context) if callable(self.max) else self.max
+        try:
+            min = self.min(context) if callable(self.min) else self.min
+            max = self.max(context) if callable(self.max) else self.max
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
         if min == max:
             return min * self.subcon._sizeof(context, path)
         else:
@@ -1176,7 +1191,10 @@ class Padded(Subconstruct):
         _write_stream(stream, padlen, self.pattern * padlen)
         return subobj
     def _sizeof(self, context, path):
-        return self.length(context) if callable(self.length) else self.length
+        try:
+            return self.length(context) if callable(self.length) else self.length
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 class Aligned(Subconstruct):
@@ -1220,9 +1238,12 @@ class Aligned(Subconstruct):
         _write_stream(stream, pad, self.pattern * pad)
         return subobj
     def _sizeof(self, context, path):
-        modulus = self.modulus(context) if callable(self.modulus) else self.modulus
-        sublen = self.subcon._sizeof(context, path)
-        return sublen + (-sublen % modulus)
+        try:
+            modulus = self.modulus(context) if callable(self.modulus) else self.modulus
+            sublen = self.subcon._sizeof(context, path)
+            return sublen + (-sublen % modulus)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 def AlignedStruct(modulus, *subcons, **kw):
@@ -1384,8 +1405,11 @@ class Union(Construct):
             return sc.subcon._build(obj[sc.name], stream, context, path)
         raise UnionError("buildfrom should be either: None, Pass, an int, a str")
     def _sizeof(self, context, path):
-        if callable(self.buildfrom):
-            self.buildfrom = self.buildfrom(context)
+        try:
+            if callable(self.buildfrom):
+                self.buildfrom = self.buildfrom(context)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
         if self.buildfrom is Pass:
             return 0
         if self.buildfrom is None:
@@ -1527,9 +1551,13 @@ class Switch(Construct):
             key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
         case = self.cases.get(key, self.default)
         case._build(obj, stream, context, path)
-    # def _sizeof(self, context, path):
-    #     case = self.cases.get(self.keyfunc(context), self.default)
-    #     return case._sizeof(context)
+    def _sizeof(self, context, path):
+        try:
+            key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
+            sc = self.cases.get(key, self.default)
+            return sc._sizeof(context, path)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 def IfThenElse(predicate, thensubcon, elsesubcon):
@@ -1706,6 +1734,8 @@ class Seek(Construct):
         at = self.at(context) if callable(self.at) else self.at
         whence = self.whence(context) if callable(self.whence) else self.whence
         return stream.seek(at, whence)
+    def _sizeof(self, context, path):
+        raise SizeofError("Seek seeks the stream, sizeof is not meaningful")
 
 
 class Restreamed(Subconstruct):
@@ -1775,8 +1805,6 @@ class Rebuffered(Subconstruct):
     def _build(self, obj, stream, context, path):
         self.stream2.substream = stream
         return self.subcon._build(obj, self.stream2, context, path)
-    def _sizeof(self, context, path):
-        raise SizeofError("cannot calculate size")
 
 
 #===============================================================================
@@ -2350,7 +2378,7 @@ class LazyStruct(Construct):
         if self.totalsize is not None:
             return self.totalsize
         else:
-            raise SizeofError("cannot calculate size")
+            raise SizeofError("cannot calculate size, not all members are fixed size")
 
 
 class LazyRange(Construct):
@@ -2394,10 +2422,13 @@ class LazyRange(Construct):
                 raise RangeError("expected %d to %d, found %d" % (self.min, self.max, len(obj)))
 
     def _sizeof(self, context, path):
-        if self.min == self.max:
-            return self.min * self.subsize
-        else:
-            raise SizeofError("cannot calculate size")
+        try:
+            if self.min == self.max:
+                return self.min * self.subsize
+            else:
+                raise SizeofError("cannot calculate size, min not equal to max")
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 class LazySequence(Construct):
@@ -2482,7 +2513,7 @@ class LazySequence(Construct):
         if self.totalsize is not None:
             return self.totalsize
         else:
-            raise SizeofError("cannot calculate size")
+            raise SizeofError("cannot calculate size, not all members are fixed size")
 
 
 class OnDemand(Subconstruct):
@@ -2580,7 +2611,10 @@ class LazyBound(Construct):
     def _build(self, obj, stream, context, path):
         return self.subconfunc(context)._build(obj, stream, context, path)
     def _sizeof(self, context, path):
-        return self.subconfunc(context)._sizeof(context, path)
+        try:
+            return self.subconfunc(context)._sizeof(context, path)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
 
 
 #===============================================================================
@@ -3024,8 +3058,11 @@ class FocusedSeq(Construct):
                 finalobj = buildret
         return finalobj
     def _sizeof(self, context, path):
-        if callable(self.parsebuildfrom):
-            self.parsebuildfrom = self.parsebuildfrom(context)
+        try:
+            if callable(self.parsebuildfrom):
+                self.parsebuildfrom = self.parsebuildfrom(context)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
         if isinstance(self.parsebuildfrom, int):
             index = self.parsebuildfrom
         if isinstance(self.parsebuildfrom, str):
