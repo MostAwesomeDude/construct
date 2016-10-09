@@ -2069,6 +2069,18 @@ class Rebuild(Subconstruct):
         return obj
 
 
+def Default(subcon, value):
+    r"""
+    Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys.
+
+    Example::
+
+        >>> Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1))
+        b'\x01\x00'
+    """
+    return Select(subcon, Const(subcon, value))
+
+
 #===============================================================================
 # tunneling and swapping
 #===============================================================================

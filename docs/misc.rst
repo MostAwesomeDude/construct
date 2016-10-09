@@ -151,6 +151,15 @@ When a sequence is has some fields that could be ommited like Const and Terminat
 b'MZ\xff'
 
 
+Default
+-------
+
+Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys.
+
+>>> Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1))
+b'\x01\x00'
+
+
 
 Conditional
 ===========

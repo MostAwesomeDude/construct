@@ -1258,10 +1258,7 @@ class TestCore(unittest.TestCase):
         assert buildret == b"\x00\x00\x00\x01\x00\x00\x00\x02\x00\x01\x02\x03"
         assert s.build(s.parse(buildret)) == buildret
 
-    def test_from_issue_241(self):
-        def Default(subcon, value):
-            return Select(subcon, Const(subcon, value))
-
+    def test_default(self):
         assert Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1)) == b"\x01\x00"
 
 
