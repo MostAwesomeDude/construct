@@ -356,7 +356,6 @@ class Tunnel(Subconstruct):
         data = self.subcon.build(obj, context)
         data = self._encode(data, context)
         _write_stream(stream, len(data), data)
-        return data
     def _sizeof(self, context, path):
         raise SizeofError("cannot calculate size")
     def _decode(self, data, context):
@@ -448,14 +447,12 @@ class FormatField(Bytes):
     __slots__ = ["fmtstr"]
     def __init__(self, endianity, format):
         if endianity not in (">", "<", "="):
-            raise ValueError("endianity must be one of: = < >",
-                endianity)
+            raise ValueError("endianity must be one of: = < >", endianity)
         if len(format) != 1:
             raise ValueError("must specify one and only one format character")
         super(FormatField, self).__init__(packer.calcsize(endianity + format))
         self.fmtstr = endianity + format
     def _parse(self, stream, context, path):
-        path += " -> %s" % (self.name)
         try:
             return packer.unpack(self.fmtstr, _read_stream(stream, self.sizeof()))[0]
         except Exception:
@@ -1517,7 +1514,7 @@ class Switch(Construct):
         self.default = default
         self.includekey = includekey
     def _parse(self, stream, context, path):
-        key = self.keyfunc(context)
+        key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
         obj = self.cases.get(key, self.default)._parse(stream, context, path)
         if self.includekey:
             return key, obj
@@ -1527,7 +1524,7 @@ class Switch(Construct):
         if self.includekey:
             key, obj = obj
         else:
-            key = self.keyfunc(context)
+            key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
         case = self.cases.get(key, self.default)
         case._build(obj, stream, context, path)
     # def _sizeof(self, context, path):
@@ -1621,7 +1618,7 @@ class Pointer(Subconstruct):
 
 class Peek(Subconstruct):
     r"""
-    Peeks at the stream. Parses without changing the stream position. If the end of the stream is reached when peeking, returns None. Size is defined as size of the subcon, even tho Peek's size is 0 by design. Building is no-op.
+    Peeks at the stream. Parses without changing the stream position. If the end of the stream is reached when peeking, returns None. Sizeof returns 0 by design because build does not put anything into the stream. Building is no-op.
 
     .. seealso:: The :func:`~construct.core.Union` class.
   
@@ -3240,8 +3237,7 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
     """
     return StringEncoded(
         StringPaddedTrimmed(
-            length, Bytes(length),
-            padchar, paddir, trimdir),
+            length, Bytes(length), padchar, paddir, trimdir),
         encoding)
 
 
