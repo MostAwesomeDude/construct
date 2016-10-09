@@ -600,13 +600,19 @@ class TestCore(unittest.TestCase):
         assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff") == 255
         assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).build(255) == b"MZ\xff"
         assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).sizeof() == 1
-
         assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff", s=1) == 255
         assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminated).sizeof(s=1) == 1
         assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff", s="num") == 255
         assert FocusedSeq(this.s, Const(b"MZ"), "num"/Byte, Terminated).sizeof(s="num") == 1
+
+        assert raises(FocusedSeq(123, Pass).parse, b"") == IndexError
+        assert raises(FocusedSeq("missing", Pass).parse, b"") == IndexError
+        assert raises(FocusedSeq(this.missing, Pass).parse, b"") == KeyError
+        assert raises(FocusedSeq(123, Pass).build, {}) == IndexError
+        assert raises(FocusedSeq("missing", Pass).build, {}) == IndexError
+        assert raises(FocusedSeq(this.missing, Pass).build, {}) == KeyError
         assert raises(FocusedSeq(123, Pass).sizeof) == IndexError
-        assert raises(FocusedSeq("missing", Pass).sizeof) == StopIteration
+        assert raises(FocusedSeq("missing", Pass).sizeof) == IndexError
         assert raises(FocusedSeq(this.missing, Pass).sizeof) == SizeofError
 
     def test_select(self):
@@ -653,13 +659,15 @@ class TestCore(unittest.TestCase):
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="a").build(dict(a=b"zz",b=5))  == b"zz"
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="b").build(dict(a=b"zz",b=5))  == b"\x00\x05"
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=Pass).build({}) == b""
+        assert raises(Union(Pass, buildfrom=123).parse, b"") == IndexError
+        assert raises(Union(Pass, buildfrom="missing").build, {}) == IndexError
 
         assert raises(Union(Byte).sizeof) == SizeofError
         assert raises(Union(VarInt).sizeof) == SizeofError
         assert Union(Byte, VarInt, buildfrom=0).sizeof() == 1
         assert raises(Union(Byte, VarInt, buildfrom=1).sizeof) == SizeofError
         assert raises(Union(Pass, buildfrom=123).sizeof) == IndexError
-        assert raises(Union(Pass, buildfrom="missing").sizeof) == StopIteration
+        assert raises(Union(Pass, buildfrom="missing").sizeof) == IndexError
         assert raises(Union(Pass, buildfrom=this.missing).sizeof) == SizeofError
 
         assert (Union("b"/Int16ub) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x01]

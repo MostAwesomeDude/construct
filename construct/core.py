@@ -1363,7 +1363,7 @@ class Union(Construct):
             jump = self.subcons[self.buildfrom].subcon._sizeof(context, path)
             stream.seek(jump, 1)
         if isinstance(self.buildfrom, str):
-            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom][0]
             jump = self.subcons[index].subcon._sizeof(context, path)
             stream.seek(jump, 1)
         return ret
@@ -1400,7 +1400,7 @@ class Union(Construct):
             sc = self.subcons[self.buildfrom]
             return sc.subcon._build(obj[sc.name], stream, context, path)
         if isinstance(self.buildfrom, str):
-            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom][0]
             sc = self.subcons[index]
             return sc.subcon._build(obj[sc.name], stream, context, path)
         raise UnionError("buildfrom should be either: None, Pass, an int, a str")
@@ -1417,7 +1417,7 @@ class Union(Construct):
         if isinstance(self.buildfrom, int):
             return self.subcons[self.buildfrom].subcon._sizeof(context, path)
         if isinstance(self.buildfrom, str):
-            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom)
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.buildfrom][0]
             return self.subcons[index].subcon._sizeof(context, path)
         raise UnionError("buildfrom should be either: None, Pass, an int, a str")
 
@@ -3026,8 +3026,9 @@ class FocusedSeq(Construct):
             self.parsebuildfrom = self.parsebuildfrom(context)
         if isinstance(self.parsebuildfrom, int):
             index = self.parsebuildfrom
+            self.subcons[index]  #IndexError check
         if isinstance(self.parsebuildfrom, str):
-            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom)
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
         for i,sc in enumerate(self.subcons):
             parseret = sc._parse(stream, context, path)
             context[i] = parseret
@@ -3041,8 +3042,9 @@ class FocusedSeq(Construct):
             self.parsebuildfrom = self.parsebuildfrom(context)
         if isinstance(self.parsebuildfrom, int):
             index = self.parsebuildfrom
+            self.subcons[index]  #IndexError check
         if isinstance(self.parsebuildfrom, str):
-            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom)
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
         for i,sc in enumerate(self.subcons):
             if i == index:
                 context[i] = obj
@@ -3065,8 +3067,9 @@ class FocusedSeq(Construct):
             raise SizeofError("cannot calculate size, key not found in context")
         if isinstance(self.parsebuildfrom, int):
             index = self.parsebuildfrom
+            self.subcons[index]  #IndexError check
         if isinstance(self.parsebuildfrom, str):
-            index = next(i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom)
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
         return self.subcons[index]._sizeof(context, path)
 
 
