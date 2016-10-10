@@ -2,9 +2,8 @@ from construct.lib.py3compat import byte2int, int2byte, bytes2str, iteratebytes,
 
 
 # Map an integer in the inclusive range 0-255 to its string byte representation
-_printable = dict((i, ".") for i in range(256))
-_printable.update((i, bytes2str(int2byte(i))) for i in range(32, 128))
-
+_printable = [bytes2str(int2byte(i)) if 32 <= i < 128 else '.' for i in range(256)]
+_hexprint = [format(i, '02X') for i in range(256)]
 
 def hexdump(data, linesize):
     r"""
@@ -19,16 +18,18 @@ def hexdump(data, linesize):
     0050   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
     0060   30 30 30 30                                       0000             
     """
+    if len(data) < 16**4:
+        fmt = "%%04X   %%-%ds   %%s" % (3 * linesize - 1,)
+    elif len(data) < 16**8:
+        fmt = "%%08X   %%-%ds   %%s" % (3 * linesize - 1,)
+    else:
+        raise ValueError("hexdump cannot process more than 16**8 or 4294967296 bytes")
     prettylines = []
-    fmt = "%%04X   %%-%ds   %%s" % (3 * linesize - 1,)
-    fmtlinesize = 7 + 3*linesize + 3 + linesize
     for i in range(0, len(data), linesize):
         line = data[i:i+linesize]
-        hextext = " ".join('%02x' % b for b in iterateints(line))
+        hextext = " ".join(_hexprint[b] for b in iterateints(line))
         rawtext = "".join(_printable[b] for b in iterateints(line))
         prettylines.append(fmt % (i, str(hextext), str(rawtext)))
-    if prettylines:
-        prettylines[-1] = prettylines[-1].ljust(fmtlinesize)
     prettylines.append("")
     return "\n".join(prettylines)
 
@@ -38,9 +39,9 @@ def hexundump(data, linesize):
     Reverse of ``hexdump()``.
     """
     raw = []
-    fmtlinesize = 7 + 3*linesize + 3 + linesize
     for line in data.split("\n"):
-        bytes = [int2byte(int(s,16)) for s in line[7:7+3*linesize].split()]
+        line = line[line.find(" "):].lstrip()
+        bytes = [int2byte(int(s,16)) for s in line[:3*linesize].split()]
         raw.extend(bytes)
     return b"".join(raw)
 
