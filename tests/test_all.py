@@ -1259,6 +1259,7 @@ class TestCore(unittest.TestCase):
         assert s.build(s.parse(buildret)) == buildret
 
     def test_default(self):
+        common(Struct("a"/Default(Byte,0), "b"/Default(Byte,0)), b"\x01\x02", Container(a=1)(b=2), 2)
         assert Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1)) == b"\x01\x00"
 
 
