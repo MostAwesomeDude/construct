@@ -101,6 +101,7 @@ class TestCore(unittest.TestCase):
         common(Struct(int24=Int24ul), b"\x01\x02\x03", Container(int24=0x030201), 3)
 
     def test_varint(self):
+        common(VarInt, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10", 2**123, SizeofError)
         for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
             common(VarInt, obj=n)
             assert len(VarInt.build(n)) >= len("%x" % n)//2
