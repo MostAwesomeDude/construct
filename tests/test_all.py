@@ -1263,4 +1263,15 @@ class TestCore(unittest.TestCase):
         common(Struct("a"/Default(Byte,0), "b"/Default(Byte,0)), b"\x01\x02", Container(a=1)(b=2), 2)
         assert Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1)) == b"\x01\x00"
 
+    def test_from_issue_244(self):
+        class AddIndexes(Adapter):
+            def __init__(self, subcon):
+                super(AddIndexes, self).__init__(subcon)
+            def _decode(self, obj, context):
+                for i,con in enumerate(obj):
+                    con.index = i
+                return obj
+
+        assert AddIndexes(Struct("num"/Byte)[4]).parse(b"abcd") == [Container(num=97)(index=0),Container(num=98)(index=1),Container(num=99)(index=2),Container(num=100)(index=3),]
+
 
