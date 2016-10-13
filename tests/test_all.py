@@ -1263,4 +1263,32 @@ class TestCore(unittest.TestCase):
         common(Struct("a"/Default(Byte,0), "b"/Default(Byte,0)), b"\x01\x02", Container(a=1)(b=2), 2)
         assert Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1)) == b"\x01\x00"
 
+    def test_from_issue_246(self):
+        NumVertices = Bitwise(Aligned(8, Struct(
+            'numVx4' / BitsInteger(4),
+            'numVx8' / If(this.numVx4 == 0, BitsInteger(8)),
+            'numVx16' / If(this.numVx4 == 0 and this.numVx8 == 255, BitsInteger(16)),
+        )))
+        common(NumVertices, b'\x02\x30', Container(numVx4=0, numVx8=35, numVx16=None))
+
+        testBit = BitStruct(
+            'a' / BitsInteger(8),
+            'b' / If(this.a == 97, BitsInteger(8))
+        )
+        testByte = Struct(
+            'a' / Byte,
+            'b' / If(this.a == 97, Byte)
+        )
+        common(testBit, b'ab', Container(a=97, b=98))
+        common(testByte, b'ab', Container(a=97, b=98))
+
+    @pytest.mark.xfail(raises=AssertionError, reason="makes no sense")
+    def test_from_issue_246_third(self):
+        NumVertices = Union(
+            'numVx4' /  Bitwise(Aligned(8, Struct('num'/ BitsInteger(4)))),
+            'numVx8' /  Bitwise(Aligned(8, Struct('num'/ BitsInteger(12)))),
+            'numVx16' / Bitwise(Aligned(8, Struct('num'/ BitsInteger(28)))),
+        )
+        common(NumVertices, b'\x01\x34\x56\x70', Container(numVx4=Container(num=0))(numVx8=Container(num=19))(numVx16=Container(num=1262951)))
+
 
