@@ -63,16 +63,22 @@ class RebufferedBytesIO:
         self.moved = 0
         self.tailcutoff = tailcutoff
 
-    def read(self, count):
+    def read(self, count=None):
+        if count is None:
+            raise ValueError("count must be an int, reading until EOF not supported")
         startsat = self.offset
         endsat = startsat + count
         if startsat < self.moved:
             raise IOError("could not read because tail was cut off")
         while self.moved + len(self.rwbuffer) < endsat:
-            newdata = self.substream.read(128*1024)
-            self.rwbuffer += newdata
+            try:
+                newdata = self.substream.read(128*1024)
+            except BlockingIOError:
+                newdata = None
             if not newdata:
                 sleep(0)
+                continue
+            self.rwbuffer += newdata
         data = self.rwbuffer[startsat-self.moved:endsat-self.moved]
         self.offset += count
         if self.tailcutoff is not None and self.moved < self.offset - self.tailcutoff:
