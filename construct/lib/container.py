@@ -71,17 +71,8 @@ class Container(dict):
         dict.__delitem__(self, key)
         self.__keys_order__.remove(key)
 
-    def __delattr__(self, key):
-        if key in self.__slots__:
-            object.__delattr__(self, key)
-        else:
-            del self[key]
-
-    def __setattr__(self, key, val):
-        if key in self.__slots__:
-            object.__setattr__(self, key, val)
-        else:
-            self[key] = val
+    __delattr__ = __delitem__
+    __setattr__ = __setitem__
 
     def __call__(self, **kw):
         """Chains adding new entries to the same container. See ctor."""
