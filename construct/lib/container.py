@@ -56,6 +56,13 @@ class Container(dict):
         for k, v in kw.items():
             self[k] = v
 
+    def __getstate__(self):
+        return list(self.items())
+
+    def __setstate__(self, state):
+        self.__init__(state)
+        self.update(state)
+
     def __getattr__(self, name):
         try:
             return self[name]
