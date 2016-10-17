@@ -3,7 +3,7 @@ from sys import maxsize
 
 
 
-class RestreamedBytesIO:
+class RestreamedBytesIO(object):
     __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer","sincereadwritten"]
 
     def __init__(self, substream, encoder, encoderunit, decoder, decoderunit):
@@ -53,7 +53,7 @@ class RestreamedBytesIO:
 
 
 
-class RebufferedBytesIO:
+class RebufferedBytesIO(object):
     __slots__ = ["substream","offset","rwbuffer","moved","tailcutoff"]
 
     def __init__(self, substream, tailcutoff=None):
@@ -126,7 +126,7 @@ class RebufferedBytesIO:
 
 
 
-class BoundBytesIO:
+class BoundBytesIO(object):
     __slots__ = ["substream","offset","available"]
 
     def __init__(self, substream, available):
