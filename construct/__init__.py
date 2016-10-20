@@ -44,3 +44,4 @@ __all__ = [
 
 ] + ["Int%s%s%s" % (n,us,bln) for n in (8,16,32,64) for us in "us" for bln in "bln"] + ["Int24ub","Int24ul","Int24sb","Int24sl"] + ["Float%s%s" % (n,bl) for n in (32,64) for bl in "bl"] + ["Single","Double"]
 
+

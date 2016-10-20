@@ -2,6 +2,26 @@
 Various containers exposed to the user.
 """
 
+from construct.lib.py3compat import *
+
+
+globalfullprinting = None
+
+
+def setglobalfullprinting(enabled):
+    r"""
+    Sets full printing for all Container instances. When enabled, Container str produces full content of bytes and strings, otherwise and by default, it produces truncated output.
+
+    :param enabled: bool to enable or disable full printing, or None to default
+    """
+    global globalfullprinting
+    globalfullprinting = enabled
+
+
+def getglobalfullprinting():
+    """Used internally."""
+    return bool(globalfullprinting)
+
 
 def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"):
     """Used internally."""
@@ -187,11 +207,19 @@ class Container(dict):
 
     @recursion_lock()
     def __str__(self, indentation="\n    "):
+        fullprinting = getglobalfullprinting()
+        printingcap = 64
         text = ["Container: "]
         for k,v in self.items():
             if not isinstance(k,str) or not k.startswith("_"):
                 text.extend([indentation, str(k), " = "])
-                text.append(indentation.join(str(v).split("\n")))
+                if isinstance(v, stringtypes) and fullprinting:
+                    if len(v) <= printingcap:
+                        text.append("%s (total %d)" % (v[:printingcap], len(v)))
+                    else:
+                        text.append("%s... (truncated, total %d)" % (v[:printingcap], len(v)))
+                else:
+                    text.append(indentation.join(str(v).split("\n")))
         return "".join(text)
 
 
