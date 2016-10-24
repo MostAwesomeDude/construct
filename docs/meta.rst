@@ -74,6 +74,8 @@ Of course, `this` can be mixed with other calculations. When evaluating, each in
 
 >>> this.width * this.height - this.offset
 
+
+
 Using `len_` builtin alikes
 ===========================
 
@@ -106,6 +108,7 @@ True
 False
 
 
+
 Using `obj_` expression
 =======================
 
@@ -119,7 +122,6 @@ These can be used in few classes that use (obj, context) lambdas:
 
 >>> RepeatUntil(obj_ == 0, Byte).build([1,2,0,1,0])
 b'\x01\x02\x00'
-
 
 
 
@@ -191,5 +193,17 @@ When you want to ignore/skip errors, you can use the Pass construct, which is a 
 ... )
 >>> st.parse(b"??????")
 Container(type=63)(data=None)
+
+
+
+Known deficiencies
+==================
+
+Logical ``and or not`` operators cannot be used in this expressions. You have to either use a lambda or equivalent bitwise operators:
+
+>>> ~this.flag1 | this.flag2 & this.flag3
+...
+>>> lambda ctx: not ctx.flag1 or ctx.flag2 and ctx.flag3
+
 
 

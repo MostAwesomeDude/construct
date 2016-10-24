@@ -2,8 +2,8 @@
 Tunneling tactics
 =================
 
-Obtaining raw bytes as well
----------------------------
+Obtaining raw bytes
+-------------------
 
 When some value needs to be processed as both a parsed object and raw bytes, both of these can be obtained using RawCopy. You can build from either the object or raw bytes as well.
 
@@ -18,7 +18,7 @@ Container(data='\xff')(value=255)(offset1=0L)(offset2=1L)(length=1L)
 Endianness
 ----------
 
-When little endianness is needed, either use fields like Int*l or swap bytes of an arbitrary field:
+When little endianness is needed, either use fields like ``Int*l`` or swap bytes of an arbitrary field:
 
 ::
 
