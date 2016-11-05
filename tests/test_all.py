@@ -1313,4 +1313,12 @@ class TestCore(unittest.TestCase):
 
         assert AddIndexes(Struct("num"/Byte)[4]).parse(b"abcd") == [Container(num=97)(index=0),Container(num=98)(index=1),Container(num=99)(index=2),Container(num=100)(index=3),]
 
+    def test_from_issue_269(self):
+        st = Struct("enabled" / Byte, If(this.enabled, Padding(2)))
+        assert st.build(dict(enabled=1)) == b"\x01\x00\x00"
+        assert st.build(dict(enabled=0)) == b"\x00"
+        st = Struct("enabled" / Byte, "pad" / If(this.enabled, Padding(2)))
+        assert st.build(dict(enabled=1)) == b"\x01\x00\x00"
+        assert st.build(dict(enabled=0)) == b"\x00"
+
 
