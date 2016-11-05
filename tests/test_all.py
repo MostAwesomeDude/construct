@@ -826,10 +826,6 @@ class TestCore(unittest.TestCase):
         )
         common(st, b"\x05\x09\x00", Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None))), SizeofError)
 
-    def test_unknown(self):
-        assert Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).parse(b"\x03\x02helloXXX") == Container(length=3)(inner=Container(inner_length=2)(data=b"hello"))
-        assert Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).sizeof(Container(inner_length=2)(_=Container(length=3))) == 7
-
     def test_noneof(self):
         assert NoneOf(Byte,[4,5,6,7]).parse(b"\x08") == 8
         assert raises(NoneOf(Byte,[4,5,6,7]).parse, b"\x06") == ValidationError
@@ -1320,5 +1316,28 @@ class TestCore(unittest.TestCase):
         st = Struct("enabled" / Byte, "pad" / If(this.enabled, Padding(2)))
         assert st.build(dict(enabled=1)) == b"\x01\x00\x00"
         assert st.build(dict(enabled=0)) == b"\x00"
+
+    @pytest.mark.xfail(reason="nesting is wrong, but passes regardless?")
+    def test_context_nesting(self):
+        assert Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).parse(b"\x03\x02helloXXX") == Container(length=3)(inner=Container(inner_length=2)(data=b"hello"))
+        assert Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).sizeof(Container(inner_length=2)(_=Container(length=3))) == 7
+
+    @pytest.mark.xfail(reason="nesting is wrong")
+    def test_context_nesting_issue_266(self):
+        st = Struct(
+            "a" / Byte,
+            "inner" / Struct(
+                "b" / Byte,
+                Probe(),
+                If(this._.a == 1, Byte),
+                If(this.b == 1, Byte),
+            ),
+            Probe(),
+            If(this.a == 0, Byte),
+            If(this.inner.b == 0, Byte),
+        )
+        assert st.sizeof(Container(a=1,inner=Container(b=1))) == 4
+        assert st.sizeof(Container(a=0,inner=Container(b=0))) == 4
+        assert st.sizeof(Container(a=255,inner=Container(b=255))) == 2
 
 
