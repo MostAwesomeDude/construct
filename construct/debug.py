@@ -69,7 +69,7 @@ class Probe(Construct):
     def _build(self, obj, stream, context, path):
         self.printout(stream, context, path)
     def _sizeof(self, context, path):
-        self.printout(stream, context, path)
+        self.printout(None, context, path)
         return 0
     
     def printout(self, stream, context, path):
@@ -77,7 +77,7 @@ class Probe(Construct):
         print("Probe %s" % self.printname)
         print("path is %s, func is %s" % (path, self.func))
 
-        if self.show_stream:
+        if self.show_stream and stream is not None:
             fallback = stream.tell()
             datafollows = stream.read(self.stream_lookahead)
             stream.seek(fallback)
