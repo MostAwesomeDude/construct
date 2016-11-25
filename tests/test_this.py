@@ -31,6 +31,14 @@ class TestThis(unittest.TestCase):
         assert this_example.parse(b"\x05helloABXXXX") == Container(length=5)(value=b'hello')(nested=Container(b1=65)(b2=66)(b3=4295))(condition=1482184792)
         assert this_example.build(dict(length=5, value=b'hello', nested=dict(b1=65, b2=66), condition=1482184792)) == b"\x05helloABXXXX"
 
+    def test_this_getitem(self):
+        gi = Struct(
+            "length of text" / Int8ub,
+            "text" / Bytes(this["length of text"]),
+        )
+        assert gi.parse(b"\x06World!") == Container({"length of text": 6, "text":b"World!"})
+        assert gi.build({"length of text": 6, "text":b"World!"}) == b"\x06World!"
+
     def test_path(self):
         path = Path("path")
         x = ~((path.foo * 2 + 3 << 2) % 11)

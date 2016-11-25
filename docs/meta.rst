@@ -62,13 +62,15 @@ Container(length1=49)(inner=Container(length2=50)(sum=99))
 Using `this` expression
 ===========================
 
-Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided even a better syntax. The `this` singleton object can be used to build a lambda expression. All three examples below are equivalent:
+Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided even a better syntax. The `this` singleton object can be used to build a lambda expression. All four examples below are equivalent:
 
 >>> lambda ctx: ctx["_"]["field"]
 ...
 >>> lambda ctx: ctx._.field
 ...
 >>> this._.field
+...
+>>> this["_"]["field"]
 
 Of course, `this` can be mixed with other calculations. When evaluating, each instance of this is replaced by ctx.
 

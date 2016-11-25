@@ -146,6 +146,8 @@ class Path(ExprMixin):
         return context2[self.__name]
     def __getattr__(self, name):
         return Path(name, self)
+    def __getitem__(self, name):
+    	return Path(name, self)
 
 this = Path("this")
 
