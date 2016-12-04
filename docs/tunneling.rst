@@ -37,7 +37,7 @@ When bits within each byte need to be swapped, there is another wrapper:
 Working with bytes subsets
 --------------------------
 
-Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending a count (see PrefixedArray) or by prepending a byte count:
+Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending an element count (see PrefixedArray) or by prepending a byte count:
 
 >>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello????remainins")
 b'hello'
@@ -75,5 +75,3 @@ and can also be compressed easily:
     Struct("inner"/above)
     ...
     Compressed(Struct(...), "zlib")
-
-
