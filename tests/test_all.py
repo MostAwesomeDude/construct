@@ -1356,3 +1356,9 @@ class TestCore(unittest.TestCase):
         print(st.build(st.parse(b"\x01\x02\xff\x00")))
         # this is not buildable, array is not passed and cannot be deduced from raw data anyway
         # print(st.build(dict(raw=dict(data=b"\x01\x02\xff\x00"))))
+
+    @pytest.mark.xfail(reason="should fail due to not enough bytes")
+    def test_hanging_280(self):
+        st = BitStruct('a' / BitsInteger(20), 'b' / BitsInteger(12))
+        # causes program to hang while taking 100% cpu
+        assert st.parse(b'\x00') == Container(a=0)(b=0)
