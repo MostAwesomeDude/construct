@@ -15,7 +15,7 @@ The library provides both simple, atomic constructs (such as integers of various
 * Meta-constructs: use the context (history) to compute the size of data
 * If/Switch: branch the computational path based on the context
 * On-demand (lazy) parsing: read and parse only what you require
-* Pointers: jump from here to there in the data stream 
+* Pointers: jump from here to there in the data stream
 
 
 Example
@@ -47,7 +47,7 @@ See more examples of `file formats <https://github.com/construct/construct/tree/
 
 Sticky
 --------
-Version 2.5.5 is the previous stable release. If you are maintaining a project that depended on this framework for a long time, you should probably use this version. This branch is not actively maintained. Only bugfixes will be added.
+Version 2.5.5 is the previous stable release. If you are maintaining a project that depended on this framework for a long time, you should probably use this version. This branch is not actively maintained. Even bugfixes are not being added.
 
 Version 2.8 was released September, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes were redesigned and reimplemented. You should read the documentation again.
 
@@ -66,5 +66,3 @@ Requirements
 Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 and pypy pypy3 implementation.
 
 Best should be 3.6 and pypy because they both support ordered keyword arguments which comes handy when declaring Struct members or manually crafting Containers.
-
-
