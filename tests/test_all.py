@@ -214,8 +214,8 @@ class TestCore(unittest.TestCase):
 
     def test_prefixedarray_alternative2(self):
         def PrefixedArray(lengthfield, subcon):
-            return FocusedSeq(1, 
-                "count"/Rebuild(lengthfield, len_(this.items)), 
+            return FocusedSeq(1,
+                "count"/Rebuild(lengthfield, len_(this.items)),
                 "items"/subcon[this.count],
             )
         common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
@@ -223,8 +223,8 @@ class TestCore(unittest.TestCase):
     @pytest.mark.xfail(raises=TypeError, reason="object of type 'instancemethod' has no len()")
     def test_prefixedarray_alternative3(self):
         def PrefixedArray(lengthfield, subcon):
-            return FocusedSeq(1, 
-                "count"/Rebuild(lengthfield, lambda ctx: len(ctx.items)), 
+            return FocusedSeq(1,
+                "count"/Rebuild(lengthfield, lambda ctx: len(ctx.items)),
                 "items"/Array(lambda ctx: ctx.count, subcon),
             )
         common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], AttributeError)
@@ -343,13 +343,17 @@ class TestCore(unittest.TestCase):
         assert Struct("a"/Tell, "b"/Byte, "c"/Tell).build(dict(b=255)) == b"\xff"
 
     def test_seek(self):
-        assert (Seek(5) >> Byte).parse(b"01234x") == [5,120]
-        assert (Bytes(10) >> Seek(5) >> Byte).build([b"0123456789",None,255]) == b"01234\xff6789"
         assert Seek(5).parse(b"") == 5
         assert Seek(5).build(None) == b""
-        assert raises(Seek(5).sizeof) == SizeofError
-
+        assert (Seek(5) >> Byte).parse(b"01234x") == [5,120]
+        assert (Seek(5) >> Byte).build([5,255]) == b"\x00\x00\x00\x00\x00\xff"
+        assert (Bytes(10) >> Seek(5) >> Byte).parse(b"0123456789") == [b"0123456789",5,ord('5')]
+        assert (Bytes(10) >> Seek(5) >> Byte).build([b"0123456789",None,255]) == b"01234\xff6789"
+        assert Struct("data"/Bytes(10), Seek(5), "addin"/Byte).parse(b"0123456789") == Container(data=b"0123456789")(addin=53)
+        assert Struct("data"/Bytes(10), Seek(5), "addin"/Byte).build(dict(data=b"0123456789",addin=53)) == b"01234\x356789"
         assert (Seek(10,1) >> Seek(-5,1) >> Bytes(1)).parse(b"0123456789") == [10,5,b"5"]
+        assert (Seek(10,1) >> Seek(-5,1) >> Bytes(1)).build([None,None,255]) == b"\x00\x00\x00\x00\x00\xff"
+        assert raises(Seek(5).sizeof) == SizeofError
 
     def test_pass(self):
         common(Pass, b"", None, 0)
@@ -537,7 +541,7 @@ class TestCore(unittest.TestCase):
 
     def test_embeddedbitstruct(self):
         d = Struct(
-            "len" / Byte, 
+            "len" / Byte,
             EmbeddedBitStruct("data" / BitsInteger(8)),
         )
         assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
@@ -546,7 +550,7 @@ class TestCore(unittest.TestCase):
 
     def test_bitstruct_from_issue_39(self):
         d = Struct(
-            "len" / Byte, 
+            "len" / Byte,
             EmbeddedBitStruct("data" / BitsInteger(lambda ctx: ctx._.len)),
         )
         assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
@@ -1085,7 +1089,7 @@ class TestCore(unittest.TestCase):
         assert IpAddress.build("127.1.2.3") == b"\x7f\x01\x02\x03"
         assert IpAddress.sizeof() == 4
 
-        IpAddress = ExprAdapter(Byte[4], 
+        IpAddress = ExprAdapter(Byte[4],
             encoder = lambda obj,ctx: list(map(int, obj.split("."))),
             decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj), )
 
@@ -1339,5 +1343,3 @@ class TestCore(unittest.TestCase):
         assert st.sizeof(Container(a=1,inner=Container(b=1))) == 4
         assert st.sizeof(Container(a=0,inner=Container(b=0))) == 4
         assert st.sizeof(Container(a=255,inner=Container(b=255))) == 2
-
-

@@ -334,7 +334,7 @@ class SymmetricAdapter(Adapter):
 class Validator(SymmetricAdapter):
     r"""
     Abstract class: validates a condition on the encoded/decoded object.
-    
+
     Needs to implement ``_validate()`` that returns bool.
 
     :param subcon: the subcon to validate
@@ -1667,7 +1667,7 @@ class Peek(Subconstruct):
     Peeks at the stream. Parses without changing the stream position. If the end of the stream is reached when peeking, returns None. Sizeof returns 0 by design because build does not put anything into the stream. Building is no-op.
 
     .. seealso:: The :func:`~construct.core.Union` class.
-  
+
     :param subcon: the subcon to peek at
 
     Example::
@@ -1744,6 +1744,7 @@ class Seek(Construct):
         super(Seek, self).__init__()
         self.at = at
         self.whence = whence
+        self.flagbuildnone = True
     def _parse(self, stream, context, path):
         at = self.at(context) if callable(self.at) else self.at
         whence = self.whence(context) if callable(self.whence) else self.whence
@@ -2277,7 +2278,7 @@ class Checksum(Construct):
 
 class Compressed(Tunnel):
     r"""
-    Compresses or decompresses underlying stream when processing the subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. 
+    Compresses or decompresses underlying stream when processing the subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end.
 
     .. seealso:: This construct should either be used with :func:`~construct.core.Prefixed` or on entire stream.
 
@@ -2643,11 +2644,11 @@ class LazyBound(Construct):
         Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None)))
         ...
         >>> print(st.parse(b"\x05\x09\x00"))
-        Container: 
+        Container:
             value = 5
-            next = Container: 
+            next = Container:
                 value = 9
-                next = Container: 
+                next = Container:
                     value = 0
                     next = None
     """
@@ -2749,7 +2750,7 @@ def Alias(newname, oldname):
 #===============================================================================
 class Mapping(Adapter):
     r"""
-    Adapter that maps objects to other objects. Translates objects before parsing and before 
+    Adapter that maps objects to other objects. Translates objects before parsing and before
 
     :param subcon: the subcon to map
     :param decoding: the decoding (parsing) mapping as a dict
@@ -2940,7 +2941,7 @@ class ExprValidator(Validator):
 
     Example::
 
-        OneOf = ExprValidator(Byte, 
+        OneOf = ExprValidator(Byte,
             validator = lambda obj,ctx: obj in [1,3,5])
     """
     def __init__(self, subcon, validator):
@@ -3186,7 +3187,7 @@ class Check(Construct):
     Example::
 
         Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len)
-        
+
         Check(len_(this.payload.data) == this.payload_len)
     """
     def __init__(self, func):
@@ -3398,4 +3399,3 @@ def GreedyString(encoding=None):
 #===============================================================================
 # end of file
 #===============================================================================
-
