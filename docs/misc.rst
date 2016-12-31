@@ -167,7 +167,9 @@ Conditional
 Union
 -----
 
-Treats the same data as multiple constructs (similar to C union statement). When parsing, each subconstruct parses the same data (so you can "look" at the data in multiple views).
+Treats the same data as multiple constructs (similar to C union statement). When parsing, each subconstruct parses the same data (so you can look at the data in multiple views).
+
+.. note:: You should provide the buildfrom parameter. If you skip it, parsing will NOT advance the stream.
 
 >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
 Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
@@ -177,8 +179,10 @@ b'\x00\x01\x02\x03\x04\x05\x06\x07'
 >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
 b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
-Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
->>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], buildfrom=3)
+::
+
+    Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+    >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], buildfrom=3)
 
 Select
 ------
@@ -190,8 +194,10 @@ b'\x00\x00\x00\x01'
 >>> Select(Int32ub, CString(encoding="utf8")).build("Афон")
 b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
-Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
->>> Select(num=Int32ub, text=CString(encoding="utf8"))
+::
+
+    Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+    >>> Select(num=Int32ub, text=CString(encoding="utf8"))
 
 Optional
 --------
@@ -286,5 +292,3 @@ Special Constructs
 Those are either used internally or have no practical use. They are referenced just for completeness.
 
 .. autoclass:: construct.Embedded
-
-
