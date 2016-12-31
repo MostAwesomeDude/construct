@@ -99,6 +99,8 @@ class TestCore(unittest.TestCase):
         common(Int24ul, b"\x01\x02\x03", 0x030201, 3)
         common(Struct(int24=Int24ub), b"\x01\x02\x03", Container(int24=0x010203), 3)
         common(Struct(int24=Int24ul), b"\x01\x02\x03", Container(int24=0x030201), 3)
+        common(Int24sb, b"\xff\xff\xff", -1, 3)
+        common(Int24sl, b"\xff\xff\xff", -1, 3)
 
     def test_varint(self):
         common(VarInt, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10", 2**123, SizeofError)

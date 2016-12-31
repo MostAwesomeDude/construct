@@ -761,11 +761,11 @@ def Int24ul():
 @singletonfunction
 def Int24sb():
     """A 3-byte big-endian signed integer, as used in ancient file formats."""
-    return BytesInteger(3)
+    return BytesInteger(3, signed=True)
 @singletonfunction
 def Int24sl():
     """A 3-byte little-endian signed integer, as used in ancient file formats."""
-    return BytesInteger(3, swapped=True)
+    return BytesInteger(3, signed=True, swapped=True)
 
 
 @singleton
