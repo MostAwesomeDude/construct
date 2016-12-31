@@ -22,7 +22,7 @@ b'\x00\x00\x00\x00\x00\x00\x00\x00x'
 Peek
 ----
 
-Parses the subconstruct but restores the stream position afterwards (it does "peeking").
+Parses the subconstruct but restores the stream position afterwards (it does peeking).
 
 >>> Sequence(Peek(Byte), Peek(Int16ub)).parse(b"\x01\x02")
 [1, 258]
@@ -47,5 +47,3 @@ Stream manipulation
 .. autofunction:: construct.core.Rebuffered
 
 .. autofunction:: construct.core.Restreamed
-
-

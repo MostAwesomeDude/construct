@@ -1765,7 +1765,7 @@ class Restreamed(Subconstruct):
 
     .. seealso:: Both :func:`~construct.core.Bitwise` and :func:`~construct.core.Bytewise` are implemented using Restreamed.
 
-    .. warning:: Do not use pointers inside.
+    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail after parsing/building. Also do NOT use pointers inside.
 
     :param subcon: the subcon which will operate on the buffer
     :param encoder: a function that takes a b-string and returns a b-string (used when building)
