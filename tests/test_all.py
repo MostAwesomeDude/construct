@@ -1345,3 +1345,14 @@ class TestCore(unittest.TestCase):
         assert st.sizeof(Container(a=1,inner=Container(b=1))) == 4
         assert st.sizeof(Container(a=0,inner=Container(b=0))) == 4
         assert st.sizeof(Container(a=255,inner=Container(b=255))) == 2
+
+    def test_rawcopy_issue_289(self):
+        st = Struct(
+        	"raw" / RawCopy(Struct("x" / Byte, "len" / Byte)),
+        	"array" / Byte[this.raw.value.len],
+        )
+        print(st.parse(b"\x01\x02\xff\x00"))
+        print(st.build(dict(raw=dict(value=dict(x=1, len=2)), array=[0xff, 0x01])))
+        print(st.build(st.parse(b"\x01\x02\xff\x00")))
+        # this is not buildable, array is not passed and cannot be deduced from raw data anyway
+        # print(st.build(dict(raw=dict(data=b"\x01\x02\xff\x00"))))

@@ -2141,12 +2141,12 @@ class RawCopy(Subconstruct):
         if 'data' in obj:
             data = obj['data']
             _write_stream(stream, len(data), data)
-            return Container(data=data, length=len(data))
+            return Container(obj, data=data, length=len(data))
         elif 'value' in obj:
             value = obj['value']
             data = self.subcon.build(value, context)
             _write_stream(stream, len(data), data)
-            return Container(data=data, value=value, length=len(data))
+            return Container(obj, data=data, value=value, length=len(data))
         else:
             raise ConstructError('both data and value keys are missing')
 
