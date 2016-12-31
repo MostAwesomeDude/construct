@@ -1323,12 +1323,13 @@ class TestCore(unittest.TestCase):
         assert st.build(dict(enabled=1)) == b"\x01\x00\x00"
         assert st.build(dict(enabled=0)) == b"\x00"
 
-    @pytest.mark.xfail(reason="nesting is wrong, but passes regardless?")
+    # @pytest.mark.xfail(reason="nesting is wrong, but passes regardless?")
     def test_context_nesting(self):
-        assert Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).parse(b"\x03\x02helloXXX") == Container(length=3)(inner=Container(inner_length=2)(data=b"hello"))
-        assert Struct("length" / Byte, "inner" / Struct("inner_length" / Byte, "data" / Bytes(lambda ctx: ctx._.length + ctx.inner_length))).sizeof(Container(inner_length=2)(_=Container(length=3))) == 7
+        st = Struct("length"/Byte, "inner"/Struct("inner_length"/Byte, "data"/Bytes(this._.length + this.inner_length)))
+        assert st.parse(b"\x03\x02helloXXX") == Container(length=3)(inner=Container(inner_length=2)(data=b"hello"))
+        assert st.sizeof(Container(inner_length=2)(_=Container(length=3))) == 7
 
-    @pytest.mark.xfail(reason="nesting is wrong")
+    @pytest.mark.xfail(reason="this requires much work")
     def test_context_nesting_issue_266(self):
         st = Struct(
             "a" / Byte,

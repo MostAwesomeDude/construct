@@ -880,16 +880,18 @@ class Struct(Construct):
         return context
     def _sizeof(self, context, path):
         try:
-            # def nest(context, sc):
-            #     # sc is a Renamed(Struct), good idea, wont work
-            #     if isinstance(sc, Struct) and sc.name in context:
-            #         context2 = context[sc.name]
-            #         context2._ = context
-            #         return context2
-            #     else:
-            #         return Container()
-            # return sum(sc._sizeof(nest(context,sc), path) for sc in self.subcons)
-
+        #     def isStruct(sc):
+        #         return isStruct(sc.subcon) if isinstance(sc, Renamed) else isinstance(sc.subcon, Struct)
+        #     def nest(context, sc):
+        #         if isStruct(sc) and sc.name in context:
+        #         # if isinstance(sc, Renamed) and isinstance(sc.subcon, Struct) and sc.name in context:
+        #         # if isinstance(sc, Struct) and sc.name in context:
+        #             context2 = context[sc.name]
+        #             context2._ = context
+        #             return context2
+        #         else:
+        #             return Container()
+        #     return sum(sc._sizeof(nest(context, sc), path) for sc in self.subcons)
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
