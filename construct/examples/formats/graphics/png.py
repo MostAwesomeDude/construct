@@ -97,7 +97,7 @@ srgb_info = "rendering_intent" / Enum(Byte,
 #===============================================================================
 text_info = "text_info" / Struct(
     "keyword" / CString(),
-    "text" / Bytes(lambda ctx: ctx._.length - len(ctx.keyword) + 1),
+    "text" / Bytes(lambda ctx: ctx._.length - (len(ctx.keyword) + 1)),
 )
 
 #===============================================================================
@@ -109,7 +109,7 @@ ztxt_info = "ztxt_info" / Struct(
     # As with iCCP, length is chunk length, minus length of
     # keyword, minus two: one byte for the null terminator,
     # and one byte for the compression method.
-    "compressed_text" / Bytes(lambda ctx: ctx._.length - len(ctx.keyword) + 2),
+    "compressed_text" / Bytes(lambda ctx: ctx._.length - (len(ctx.keyword) + 2)),
 )
 
 #===============================================================================
@@ -121,7 +121,7 @@ itxt_info = "itxt_info" / Struct(
     compression_method,
     "language_tag" / CString(),
     "translated_keyword" / CString(),
-    "text" / Bytes(lambda ctx: ctx._.length - len(ctx.keyword) + len(ctx.language_tag) + len(ctx.translated_keyword) + 5),
+    "text" / Bytes(lambda ctx: ctx._.length - (len(ctx.keyword) + len(ctx.language_tag) + len(ctx.translated_keyword) + 5)),
 )
 
 #===============================================================================
@@ -133,7 +133,7 @@ bkgd_info = "bkgd_info" / Switch(this._.image_header.color_type,
         "greywithalpha": Int16ub[1],
         "truecolor": Int16ub[3],
         "truewithalpha": Int16ub[3],
-        "indexed": Int16ub[1],
+        "indexed": Int8ub,
     }
 )
 
