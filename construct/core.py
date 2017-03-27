@@ -1333,6 +1333,8 @@ class Union(Construct):
 
     When parsing, all fields read the same data bytes, but stream remains at same offset by default, unless buildfrom selects a subcon. When building, either the first subcon that can find an entry in given dict is allowed to put into the stream, or the subcon is selected by index or name, or builds nothing.
 
+    WARNING: If you skip the `buildfrom` parameter then parsing will not advance the stream, because subcons can be of different sizes.
+
     :param subcons: subconstructs (order and name sensitive)
     :param buildfrom: optional, how to build, the subcon used for building and calculating size, can be integer index or string name selecting a subcon, None (then tries each subcon in sequence, the default), Pass (builds nothing), a context lambda returning either of previously mentioned
 

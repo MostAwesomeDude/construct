@@ -169,7 +169,7 @@ Union
 
 Treats the same data as multiple constructs (similar to C union statement). When parsing, each subconstruct parses the same data (so you can look at the data in multiple views).
 
-.. note:: You should provide the buildfrom parameter. If you skip it, parsing will NOT advance the stream.
+.. warning:: If you skip the `buildfrom` parameter then parsing will not advance the stream, because subcons can be of different sizes.
 
 >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
 Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
