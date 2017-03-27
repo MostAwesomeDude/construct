@@ -509,9 +509,9 @@ def Bytewise(subcon):
 
 class BytesInteger(Construct):
     r"""
-    A byte field, that parses into and builds from integers as opposed to b-strings. This is similar to Int* fields but can be much longer than 4 or 8 bytes.
+    A byte field, that parses into and builds from integers as opposed to b-strings. This is similar to Int* fields but can have arbitrary size.
 
-    .. seealso:: Analog :func:`~construct.core.BitsInteger` that operatoes on bits.
+    .. seealso:: Analog :func:`~construct.core.BitsInteger` that operates on bits.
 
     :param length: number of bytes in the field, or a function that takes context and returns int
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
@@ -557,9 +557,9 @@ class BytesInteger(Construct):
 
 class BitsInteger(Construct):
     r"""
-    A byte field, that parses into and builds from integers as opposed to b-strings. This is similar to Bit/Nibble/Octet fields but can be much longer than 1/4/8 bits. This must be encosed in Bitwise.
+    A byte field, that parses into and builds from integers as opposed to b-strings. This is similar to Bit/Nibble/Octet fields but can have arbitrary sizes. This must be enclosed in Bitwise.
 
-    :param length: number of bits in the field, or a function that takes context and returns int
+    :param length: number of bits in the field, or a context function that returns int
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
     :param swapped: whether to swap byte order (little endian), default is False (big endian)
     :param bytesize: size of byte as used for byte swapping (if swapped), default is 8
@@ -1527,8 +1527,8 @@ class Switch(Construct):
 
     .. seealso:: The :class:`~construct.core.Pass` singleton.
 
-    :param keyfunc: a function that takes the context and returns a key, which will be used to choose the relevant case
-    :param cases: a dictionary mapping keys to constructs. the keys can be any values that may be returned by keyfunc
+    :param keyfunc: a context function that returns a key which will choose a case, or a constant
+    :param cases: a dictionary mapping keys to subcons
     :param default: a default field to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. Pass can be used for do-nothing
     :param includekey: whether to include the key in the return value of parsing, defualt is False
 
