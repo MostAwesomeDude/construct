@@ -9,7 +9,7 @@ In order to see the context, let's try this snippet:
 >>> class PrintContext(Construct):
 ...     def _parse(self, stream, context):
 ...         print(context)
-... 
+...
 >>> st = Struct(
 ...     "a" / Byte,
 ...     PrintContext(),
@@ -17,9 +17,9 @@ In order to see the context, let's try this snippet:
 ...     PrintContext(),
 ... )
 >>> st.parse(b"\x01\x02")
-Container: 
+Container:
     a = 1
-Container: 
+Container:
     a = 1
     b = 2
 Container(a=1)(b=2)
@@ -101,13 +101,6 @@ Incidentally, when the count field is directly before the items field you can al
 >>> PrefixedArray(Byte, Byte).build([1,2,3])
 b'\x03\x01\x02\x03'
 
-There are also analogs to True and False.
-
->>> context = {}
->>> True_(context)
-True
->>> False_(context)
-False
 
 
 
@@ -206,6 +199,3 @@ Logical ``and or not`` operators cannot be used in this expressions. You have to
 >>> ~this.flag1 | this.flag2 & this.flag3
 ...
 >>> lambda ctx: not ctx.flag1 or ctx.flag2 and ctx.flag3
-
-
-

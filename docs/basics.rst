@@ -59,7 +59,7 @@ construct.core.SizeofError: cannot calculate size
 Structs
 =======
 
-For those of you familiar with C, Structs are very intuitive, but here's a short explanation for the larger audience. A Struct is a sequenced collection of fields or other components, that are parsed/built in that order. 
+For those of you familiar with C, Structs are very intuitive, but here's a short explanation for the larger audience. A Struct is a sequenced collection of fields or other components, that are parsed/built in that order.
 
 >>> format = Struct(
 ...     "signature" / Const(b"BMP"),
@@ -114,7 +114,7 @@ Container(a=7)(b=256)(c=1.401298464324817e-45)
 >>> x["b"]
 256
 >>> print(x)
-Container: 
+Container:
     a = 7
     b = 256
     c = 1.401298464324817e-45
@@ -161,7 +161,7 @@ b'+\x02\x00\x00'
 >>> class Dummy:
 ...     def __getitem__(self, key):
 ...             return 1
-... 
+...
 >>> dummy = Dummy()
 >>> c.build(dummy)
 b'\x01\x00\x00\x00\x01'
@@ -180,8 +180,8 @@ Structs can be nested. Structs can contain other Structs, as well as any constru
 >>> st.parse(b"lala")
 Container(inner=Container(data=b'lala'))
 >>> print(_)
-Container: 
-    inner = Container: 
+Container:
+    inner = Container:
         data = b'lala'
 
 A Struct can be embedded into an enclosing Struct. This means all the fields of the embedded Struct will be merged into the fields of the enclosing Struct. This is useful when you want to split a big Struct into multiple parts, and then combine them all into one Struct. If names are duplicated, inner fields usually overtake the others.
@@ -199,7 +199,7 @@ Container(data=b'1234')
 ...     "data" / Byte,
 ...     Embedded(st),
 ... )
->>> 
+>>>
 >>> outer.parse(b"01234")
 Container(data=48)(inner=Container(data=b'1234'))
 
@@ -268,10 +268,12 @@ GreedyRange is essentially a Range from 0 to infinity.
 
 RepeatUntil is different than the others. Each element is tested by a lambda predicate. The predicate signals when a given element is the terminal element. The repeater inserts all previous items along with the terminal one, and returns just the same.
 
->>> RepeatUntil(lambda obj,ctx: obj > 10, Byte).parse(b"\x01\x05\x08\xff\x01\x02\x03")
+Note that all elements accumulated during parsing are provided as additional lambda parameter.
+
+>>> RepeatUntil(lambda obj,lst,ctx: obj > 10, Byte).parse(b"\x01\x05\x08\xff\x01\x02\x03")
 [1, 5, 8, 255]
->>> RepeatUntil(lambda obj,ctx: obj > 10, Byte).build(range(20))
+>>> RepeatUntil(lambda obj,lst,ctx: obj > 10, Byte).build(range(20))
 b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b'
 
-
-
+>>> RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).parse(b"\x01\x00\x00\xff")
+[1, 0, 0]

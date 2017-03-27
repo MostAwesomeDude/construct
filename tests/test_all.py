@@ -280,6 +280,7 @@ class TestCore(unittest.TestCase):
         assert raises(RepeatUntil(obj_ == 9, Byte).parse, b"\x02\x03\x08") == RangeError
         assert raises(RepeatUntil(obj_ == 9, Byte).build, [2,3,8]) == RangeError
         assert raises(RepeatUntil(obj_ == 9, Byte).sizeof) == SizeofError
+        assert RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).parse(b"\x01\x00\x00\xff") == [1,0,0]
 
     def test_struct(self):
         assert Struct("a" / Int16ul, "b" / Byte).parse(b"\x01\x00\x02") == Container(a=1)(b=2)
@@ -400,12 +401,12 @@ class TestCore(unittest.TestCase):
         assert raises(Switch(lambda ctx: 5, {}).sizeof) == SwitchError
 
     def test_ifthenelse(self):
-        common(IfThenElse(True_,  Int8ub, Int16ub), b"\x01", 1, 1)
-        common(IfThenElse(False_, Int8ub, Int16ub), b"\x00\x01", 1, 2)
+        common(IfThenElse(True,  Int8ub, Int16ub), b"\x01", 1, 1)
+        common(IfThenElse(False, Int8ub, Int16ub), b"\x00\x01", 1, 2)
 
     def test_if(self):
-        common(If(True_,  Int8ub), b"\x01", 1, 1)
-        common(If(False_, Int8ub), b"", None, 0)
+        common(If(True,  Int8ub), b"\x01", 1, 1)
+        common(If(False, Int8ub), b"", None, 0)
 
     def test_padding(self):
         assert Padding(4).parse(b"\x00\x00\x00\x00") == None

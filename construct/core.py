@@ -1115,15 +1115,17 @@ class RepeatUntil(Subconstruct):
     r"""
     An array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return value.
 
-    :param predicate: a predicate function that takes (obj, context) and returns True to break, or False to continue
+    :param predicate: a predicate function that takes (obj, list, context) and returns True to break or False to continue
     :param subcon: the subcon used to parse and build each element
 
     Example::
 
-        >>> RepeatUntil(lambda x,ctx: x>7, Byte).build(range(20))
+        >>> RepeatUntil(lambda x,lst,ctx: x>7, Byte).build(range(20))
         b'\x00\x01\x02\x03\x04\x05\x06\x07\x08'
-        >>> RepeatUntil(lambda x,ctx: x>7, Byte).parse(b"\x01\xff\x02")
+        >>> RepeatUntil(lambda x,lst,ctx: x>7, Byte).parse(b"\x01\xff\x02")
         [1, 255]
+        >>> RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).parse(b"\x01\x00\x00\xff")
+        [1, 0, 0]
     """
     __slots__ = ["predicate"]
     def __init__(self, predicate, subcon):
@@ -1131,12 +1133,12 @@ class RepeatUntil(Subconstruct):
         self.predicate = predicate
     def _parse(self, stream, context, path):
         try:
-            obj = ListContainer()
+            obj = []
             while True:
                 subobj = self.subcon._parse(stream, context, path)
                 obj.append(subobj)
-                if self.predicate(subobj, context):
-                    return obj
+                if self.predicate(subobj, obj, context):
+                    return ListContainer(obj)
         except ExplicitError:
             raise
         except ConstructError:
@@ -1144,7 +1146,7 @@ class RepeatUntil(Subconstruct):
     def _build(self, obj, stream, context, path):
         for subobj in obj:
             self.subcon._build(subobj, stream, context, path)
-            if self.predicate(subobj, context):
+            if self.predicate(subobj, obj, context):
                 break
         else:
             raise RangeError("missing terminator when building")
@@ -1598,7 +1600,7 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
         b'\xff'
     """
     return Switch(
-        lambda ctx: bool(predicate(ctx)),
+        lambda ctx: bool(predicate(ctx)) if callable(predicate) else predicate,
         {
             True : thensubcon,
             False : elsesubcon,
@@ -3376,7 +3378,7 @@ def CString(terminators=b"\x00", encoding=None):
     """
     return StringEncoded(
         ExprAdapter(
-            RepeatUntil(lambda obj,ctx: int2byte(obj) in terminators, Byte),
+            RepeatUntil(lambda obj,lst,ctx: int2byte(obj) in terminators, Byte),
             encoder = lambda obj,ctx: iterateints(obj+terminators),
             decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1])),
         encoding)

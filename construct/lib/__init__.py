@@ -14,5 +14,3 @@ __all__ = [
     'setglobalfullprinting','getglobalfullprinting',
 
 ]
-
-
