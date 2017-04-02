@@ -709,10 +709,10 @@ dns = "dns" / Struct(
     "answer_count" / Rebuild(Int16ub, len_(this.answers)),
     "authority_count" / Rebuild(Int16ub, len_(this.authorities)),
     "additional_count" / Rebuild(Int16ub, len_(this.additionals)),
-    "questions" / Array(this.question_count, query_record),
-    "answers" / Array(this.answer_count, resource_record),
-    "authorities" / Array(this.authority_count, resource_record),
-    "additionals" / Array(this.additional_count, resource_record),
+    "questions" / query_record[this.question_count],
+    "answers" / resource_record[this.answer_count],
+    "authorities" / resource_record[this.authority_count],
+    "additionals" / resource_record[this.additional_count],
 )
 
 #===============================================================================
