@@ -1,7 +1,7 @@
 """
 TCP/IP Protocol Stack
 
-WARNING: before parsing the application layer over a TCP stream, you must 
+WARNING: before parsing the application layer over a TCP stream, you must
 first combine all the TCP frames into a stream. See utils.tcpip for some solutions.
 """
 
@@ -84,7 +84,7 @@ arp_header = "arp_header" / Struct(
         InARP_REQUEST = 8,
         InARP_REPLY = 9,
         ARP_NAK = 10
-        
+
     ),
     "source_hwaddr" / HwAddress,
     "source_protoaddr" / ProtoAddress,
@@ -129,8 +129,8 @@ def ProtocolEnum(code):
 ipv4_header = "ip_header" / Struct(
     EmbeddedBitStruct(
         "version" / Const(Nibble, 4),
-        "header_length" / ExprAdapter(Nibble, 
-            decoder = lambda obj, ctx: obj * 4, 
+        "header_length" / ExprAdapter(Nibble,
+            decoder = lambda obj, ctx: obj * 4,
             encoder = lambda obj, ctx: obj / 4
         ),
     ),
@@ -255,19 +255,19 @@ icmp_header = "icmp_header" / Struct(
         Address_mask_reply = 18,
         default = Pass,
     ),
-    "code" / Switch(this.type, 
+    "code" / Switch(this.type,
         {
             "Destination_unreachable" : dest_unreachable_code,
         },
         default = Byte
     ),
     "crc" / Int16ub,
-    "payload" / Switch(this.type, 
+    "payload" / Switch(this.type,
         {
             "Echo_reply" : echo_payload,
             "Echo_request" : echo_payload,
             "Destination_unreachable" : dest_unreachable_payload,
-        }, 
+        },
         default = Pass
     )
 )
@@ -280,7 +280,7 @@ icmp_header = "icmp_header" / Struct(
 # jesse@housejunkie.ca
 #===============================================================================
 
-igmp_type = "igmp_type" / Enum(Byte, 
+igmp_type = "igmp_type" / Enum(Byte,
     MEMBERSHIP_QUERY = 0x11,
     MEMBERSHIP_REPORT_V1 = 0x12,
     MEMBERSHIP_REPORT_V2 = 0x16,
@@ -498,7 +498,7 @@ dhcp6_option = "dhcp_option" / Struct(
         OPTION_GEOCONF_CIVIC = 36,
         OPTION_REMOTE_ID = 37,
         RELAY_AGENT_SUBSCRIBER_ID = 38,
-        OPTION_CLIENT_FQDN = 39,        
+        OPTION_CLIENT_FQDN = 39,
     ),
     "data" / Prefixed(Int16ub, GreedyBytes),
 )
@@ -567,7 +567,7 @@ tcp_header = "tcp_header" / Struct(
     "seq" / Int32ub,
     "ack" / Int32ub,
     EmbeddedBitStruct(
-        "header_length" / ExprAdapter(Nibble, 
+        "header_length" / ExprAdapter(Nibble,
             encoder = lambda obj, ctx: obj / 4,
             decoder = lambda obj, ctx: obj * 4,
         ),
@@ -600,7 +600,7 @@ udp_header = "udp_header" / Struct(
     "header_length" / Computed(lambda ctx: 8),
     "source" / Int16ub,
     "destination" / Int16ub,
-    "payload_length" / ExprAdapter(Int16ub, 
+    "payload_length" / ExprAdapter(Int16ub,
         encoder = lambda obj, ctx: obj + 8,
         decoder = lambda obj, ctx: obj - 8,
     ),
@@ -663,7 +663,7 @@ labelpointer = Struct(
 
 resource_record = "resource_record" / Struct(
     # http://www.zytrax.com/books/dns/ch15/#qname
-    "names" / DnsNamesAdapter(RepeatUntil(obj_.ispointer or len_(obj_.label)==0, labelpointer)),
+    "names" / DnsNamesAdapter(RepeatUntil(obj_.ispointer | len_(obj_.label)==0, labelpointer)),
     dns_record_type,
     dns_record_class,
     "ttl" / Int32ub,
@@ -759,5 +759,3 @@ layer2_ethernet = "layer2_ethernet" / Struct(
 )
 
 ip_stack = "ip_stack" / layer2_ethernet
-
-
