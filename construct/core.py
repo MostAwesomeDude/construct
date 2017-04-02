@@ -2273,7 +2273,9 @@ class Checksum(Construct):
         hash1 = self.checksumfield._parse(stream, context, path)
         hash2 = self.hashfunc(self.bytesfunc(context))
         if hash1 != hash2:
-            raise ChecksumError("wrong checksum, read %r, computed %r" % (hexlify(hash1), hexlify(hash2)))
+            raise ChecksumError("wrong checksum, read %r, computed %r" % (
+                hash1 if not isinstance(hash1,bytes) else hexlify(hash1),
+                hash2 if not isinstance(hash2,bytes) else hexlify(hash2), ))
         return hash1
     def _build(self, obj, stream, context, path):
         hash2 = self.hashfunc(self.bytesfunc(context))

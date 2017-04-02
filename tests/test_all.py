@@ -1365,3 +1365,12 @@ class TestCore(unittest.TestCase):
         st = BitStruct('a' / BitsInteger(20), 'b' / BitsInteger(12))
         # causes program to hang while taking 100% cpu
         assert st.parse(b'\x00') == Container(a=0)(b=0)
+
+    def test_nonbytes_checksum_issue_323(self):
+        st = Struct(
+            "vals" / Byte[2],
+            "checksum" / Checksum(
+                Byte, lambda vals: sum(vals) & 0xFF, this.vals)
+        )
+        assert st.parse(b"\x00\x00\x00") == Container(vals=[0, 0])(checksum=0)
+        assert raises(st.parse, b"\x00\x00\x01") == ChecksumError
