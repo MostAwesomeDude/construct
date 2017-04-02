@@ -1929,7 +1929,7 @@ class Computed(Construct):
         b'\x04\x05'
 
         >>> Computed(lambda ctx: os.urandom(10)).parse(b"")
-        b'[\x86\xcc\xf1b\xd9\x10\x0f?\x1a'
+        b'\x98\xc2\xec\x10\x07\xf5\x8e\x98\xc2\xec'
     """
     __slots__ = ["func"]
     def __init__(self, func):
