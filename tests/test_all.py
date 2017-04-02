@@ -1282,7 +1282,7 @@ class TestCore(unittest.TestCase):
         NumVertices = Bitwise(Aligned(8, Struct(
             'numVx4' / BitsInteger(4),
             'numVx8' / If(this.numVx4 == 0, BitsInteger(8)),
-            'numVx16' / If(this.numVx4 == 0 and this.numVx8 == 255, BitsInteger(16)),
+            'numVx16' / If(this.numVx4 == 0 & this.numVx8 == 255, BitsInteger(16)),
         )))
         common(NumVertices, b'\x02\x30', Container(numVx4=0, numVx8=35, numVx16=None))
 
