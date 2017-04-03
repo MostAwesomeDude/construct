@@ -2274,13 +2274,11 @@ class Checksum(Construct):
 
 class Compressed(Tunnel):
     r"""
-    Compresses or decompresses underlying stream when processing the subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end.
-
-    .. seealso:: This construct should either be used with :func:`~construct.core.Prefixed` or on entire stream.
+    Compresses and decompresses underlying stream when processing the subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :func:`~construct.core.Prefixed` or entire stream.
 
     :param subcon: the subcon used for storing the value
     :param encoding: any of the module names like zlib/gzip/bzip2/lzma, otherwise any of codecs module bytes<->bytes encodings
-    :param level: optinal, an int between 0..9, lzma discards that
+    :param level: optional, an int between 0..9, lzma discards it
 
     Example::
 
