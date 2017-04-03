@@ -1348,11 +1348,9 @@ class TestCore(unittest.TestCase):
         assert st.sizeof(Container(a=0,inner=Container(b=0))) == 4
         assert st.sizeof(Container(a=255,inner=Container(b=255))) == 2
 
-    @pytest.mark.xfail(reason="should fail due to not enough bytes")
-    def test_hanging_280(self):
-        st = BitStruct('a' / BitsInteger(20), 'b' / BitsInteger(12))
-        # causes program to hang while taking 100% cpu
-        assert st.parse(b'\x00') == Container(a=0)(b=0)
+    def test_hanging_issue_280(self):
+        st = BitStruct('a'/BitsInteger(20), 'b'/BitsInteger(12))
+        assert raises(st.parse, b'\x00') == IOError
 
     def test_nonbytes_checksum_issue_323(self):
         st = Struct(
