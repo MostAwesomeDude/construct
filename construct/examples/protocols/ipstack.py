@@ -657,6 +657,7 @@ labelpointer = Struct(
     "firstbyte" / Peek(Byte),
     "islabel" / Computed(this.firstbyte & 0b11000000 == 0),
     "ispointer" / Computed(this.firstbyte & 0b11000000 == 0b11000000),
+    Check(this.islabel | this.ispointer),
     "label" / If(this.islabel, PascalString(Byte, encoding="ascii")),
     "pointer" / If(this.ispointer, Int16ub),
 )
