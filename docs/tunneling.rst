@@ -39,10 +39,10 @@ Working with bytes subsets
 
 Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending an element count (see PrefixedArray) or by prepending a byte count:
 
->>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello????remainins")
+>>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello?????")
 b'hello'
 ...
->>> Prefixed(VarInt, Byte[:]).parse(b"\x03\x01\x02\x03following")
+>>>> Prefixed(VarInt, Byte[:]).parse(b"\x03\x01\x02\x03?????")
 [1, 2, 3]
 
 Note that VarInt encoding should be preferred because it is both compact and never overflows.

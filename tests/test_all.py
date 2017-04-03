@@ -700,13 +700,13 @@ class TestCore(unittest.TestCase):
         assert st.build(Container(c=0x01020304)) == b"\x01\x02\x03\x04"
 
     def test_prefixed(self):
-        assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xffgarbage") == 65535
+        assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xff??????") == 65535
         assert Prefixed(Byte, Int16ul).build(65535) == b"\x02\xff\xff"
         assert Prefixed(Byte, Int16ul).sizeof() == 3
-        assert Prefixed(VarInt, GreedyBytes).parse(b"\x03abcgarbage") == b"abc"
+        assert Prefixed(VarInt, GreedyBytes).parse(b"\x03abc??????") == b"abc"
         assert Prefixed(VarInt, GreedyBytes).build(b"abc") == b'\x03abc'
         assert Prefixed(Byte, Int64ub).sizeof() == 9
-        assert Prefixed(Byte, Sequence(Peek(Byte), Int16ub, GreedyBytes)).parse(b"\x02\x00\xffgarbage") == [0,255,b'']
+        assert Prefixed(Byte, Sequence(Peek(Byte), Int16ub, GreedyBytes)).parse(b"\x02\x00\xff????????") == [0,255,b'']
         assert raises(Prefixed(VarInt, GreedyBytes).sizeof) == SizeofError
 
     def test_compressed_zlib(self):

@@ -2205,10 +2205,10 @@ class Prefixed(Subconstruct):
 
     Example::
 
-        >>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello????remainins")
+        >>> Prefixed(VarInt, GreedyBytes).parse(b"\x05hello?????")
         b'hello'
 
-        >>>> Prefixed(VarInt, Byte[:]).parse(b"\x03\x01\x02\x03????following")
+        >>>> Prefixed(VarInt, Byte[:]).parse(b"\x03\x01\x02\x03?????")
         [1, 2, 3]
     """
     __slots__ = ["name", "lengthfield", "subcon"]
@@ -2217,7 +2217,7 @@ class Prefixed(Subconstruct):
         self.lengthfield = lengthfield
     def _parse(self, stream, context, path):
         length = self.lengthfield._parse(stream, context, path)
-        stream2 = BoundBytesIO(stream, length)
+        stream2 = BytesIO(_read_stream(stream, length))
         return self.subcon._parse(stream2, context, path)
     def _build(self, obj, stream, context, path):
         try:
