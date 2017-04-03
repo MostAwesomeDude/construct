@@ -1288,14 +1288,12 @@ class TestCore(unittest.TestCase):
         common(testBit, b'ab', Container(a=97, b=98))
         common(testByte, b'ab', Container(a=97, b=98))
 
-    @pytest.mark.xfail(raises=AssertionError, reason="makes no sense")
-    def test_from_issue_246_third(self):
         NumVertices = Union(
-            'numVx4' /  Bitwise(Aligned(8, Struct('num'/ BitsInteger(4)))),
-            'numVx8' /  Bitwise(Aligned(8, Struct('num'/ BitsInteger(12)))),
-            'numVx16' / Bitwise(Aligned(8, Struct('num'/ BitsInteger(28)))),
+            'numVx4' / Bitwise(Aligned(8, Struct('num'/ BitsInteger(4) ))),
+            'numVx8' / Bitwise(Aligned(8, Struct('num'/ BitsInteger(12)))),
+            'numVx16'/ Bitwise(Aligned(8, Struct('num'/ BitsInteger(28)))),
         )
-        common(NumVertices, b'\x01\x34\x56\x70', Container(numVx4=Container(num=0))(numVx8=Container(num=19))(numVx16=Container(num=1262951)))
+        assert NumVertices.parse(b'\x01\x34\x56\x70') == Container(numVx4=Container(num=0))(numVx8=Container(num=19))(numVx16=Container(num=1262951))
 
     def test_from_issue_244(self):
         class AddIndexes(Adapter):
