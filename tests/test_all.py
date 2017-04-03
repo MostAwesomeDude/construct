@@ -1388,7 +1388,7 @@ class TestCore(unittest.TestCase):
         assert st.parse(b'bob\x00\x05') == Container(name='bob')(index=5)
         assert st.parse(b'\x00') == Container(name='')
 
-    @pytest.mark.xfail(reason="this cannot work, Struct cheks flagembedded before building")
+    @pytest.mark.xfail(reason="this cannot work, Struct checks flagembedded before building")
     def test_embeddedswitch_issue_312_cannotwork(self):
         st = Struct(
             'name'/CString(encoding="utf8"),
