@@ -2706,18 +2706,6 @@ class Renamed(Subconstruct):
             raise e.__class__("%s\n    %s" % (e, path))
 
 
-def Alias(newname, oldname):
-    r"""
-    Creates an alias for an existing element in a struct. When parsing, value is available under both keys. Building does nothing. Deprecated meaning there is no real use for it.
-
-    .. seealso:: Note that :func:`~construct.core.Computed` is more powerful.
-
-    :param newname: the new name
-    :param oldname: the name of an existing element, must be on same context level
-    """
-    return Renamed(newname, Computed(lambda ctx: ctx[oldname]))
-
-
 #===============================================================================
 # mappings
 #===============================================================================

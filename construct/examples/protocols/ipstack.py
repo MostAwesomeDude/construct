@@ -184,7 +184,7 @@ ipv6_header = "ip_header" / Struct(
     "payload_length" / Int16ub,
     "protocol" / ProtocolEnum(Int8ub),
     "hoplimit" / Int8ub,
-    Alias("ttl", "hoplimit"),
+    "ttl" / Computed(this.hoplimit),
     "source" / Ipv6Address,
     "destination" / Ipv6Address,
 )

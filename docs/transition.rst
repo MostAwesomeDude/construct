@@ -169,6 +169,8 @@ Check added
 
 Default added
 
+Alias was removed
+
 
 
 Stream manipulation

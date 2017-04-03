@@ -472,14 +472,6 @@ class TestCore(unittest.TestCase):
     def test_renamed(self):
         common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)
 
-    def test_alias(self):
-        assert Alias("b","a").parse(b"",Container(a=1)) == 1
-        assert Alias("b","a").build(None,Container(a=1)) == b""
-        assert Alias("b","a").sizeof() == 0
-        assert Struct("a"/Byte, Alias("b","a")).parse(b"\x01") == Container(a=1)(b=1)
-        assert Struct("a"/Byte, Alias("b","a")).build(dict(a=1)) == b"\x01"
-        assert Struct("a"/Byte, Alias("b","a")).sizeof() == 1
-
     def test_bitsinteger(self):
         assert BitsInteger(8).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == 255
         assert BitsInteger(8).build(255) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
