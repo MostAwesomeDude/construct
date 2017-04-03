@@ -1387,3 +1387,24 @@ class TestCore(unittest.TestCase):
         )
         p1 = st.parse(b'\x02\x03')
         p3 = st.parse(b'\x06')
+
+    def test_embeddedswitch_issue_312(self):
+        st = Struct(
+            'name'/CString(encoding="utf8"),
+            Embedded(If(len_(this.name) > 0,
+                Struct('index'/Byte),
+            )),
+        )
+        assert st.parse(b'bob\x00\x05') == Container(name='bob')(index=5)
+        assert st.parse(b'\x00') == Container(name='')
+
+    @pytest.mark.xfail(reason="this cannot work, Struct cheks flagembedded before building")
+    def test_embeddedswitch_issue_312_cannotwork(self):
+        st = Struct(
+            'name'/CString(encoding="utf8"),
+            If(len_(this.name) > 0,
+                Embedded(Struct('index'/Byte)),
+            ),
+        )
+        assert st.parse(b'bob\x00\x05') == Container(name='bob')(index=5)
+        assert st.parse(b'\x00') == Container(name='')

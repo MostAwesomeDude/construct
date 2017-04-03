@@ -1530,8 +1530,6 @@ class Switch(Construct):
     """
     @singleton
     class NoDefault(Construct):
-        def __init__(self):
-            self.flagbuildnone = True
         def _parse(self, stream, context, path):
             raise SwitchError("no default case defined")
         def _build(self, obj, stream, context, path):
@@ -1546,18 +1544,15 @@ class Switch(Construct):
         self.cases = cases
         self.default = default
         self.includekey = includekey
-        if all(sc.flagbuildnone for sc in cases.values()) and default.flagbuildnone:
-            self.flagbuildnone = True
+        self.flagbuildnone = all(sc.flagbuildnone for sc in cases.values())
+        self.flagembedded = all(sc.flagembedded for sc in cases.values())
     def _parse(self, stream, context, path):
         key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
         obj = self.cases.get(key, self.default)._parse(stream, context, path)
-        if self.includekey:
-            return key, obj
-        else:
-            return obj
+        return (key,obj) if self.includekey else obj
     def _build(self, obj, stream, context, path):
         if self.includekey:
-            key, obj = obj
+            key,obj = obj
         else:
             key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
         case = self.cases.get(key, self.default)
