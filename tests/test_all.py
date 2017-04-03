@@ -210,35 +210,9 @@ class TestCore(unittest.TestCase):
         assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]
         assert PrefixedArray(Byte, Byte).parse(b"\x00") == []
         assert PrefixedArray(Byte, Byte).build([1,2,3]) == b"\x03\x01\x02\x03"
-        assert raises(PrefixedArray(Byte, Byte).parse, b"") == RangeError
+        assert raises(PrefixedArray(Byte, Byte).parse, b"") == FieldError
         assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == RangeError
         assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
-
-    def test_prefixedarray_alternative2(self):
-        def PrefixedArray(lengthfield, subcon):
-            return FocusedSeq(1,
-                "count"/Rebuild(lengthfield, len_(this.items)),
-                "items"/subcon[this.count],
-            )
-        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
-
-    @pytest.mark.xfail(raises=TypeError, reason="object of type 'instancemethod' has no len()")
-    def test_prefixedarray_alternative3(self):
-        def PrefixedArray(lengthfield, subcon):
-            return FocusedSeq(1,
-                "count"/Rebuild(lengthfield, lambda ctx: len(ctx.items)),
-                "items"/Array(lambda ctx: ctx.count, subcon),
-            )
-        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], AttributeError)
-
-    def test_prefixedarray_alternative4(self):
-        def PrefixedArray(lengthfield, subcon):
-            return ExprAdapter(
-                "count"/lengthfield >> "items"/subcon[lambda ctx: ctx.count],
-                encoder = lambda obj,ctx: [len(obj), obj],
-                decoder = lambda obj,ctx: obj[1],
-            )
-        common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
 
     def test_range(self):
         assert Byte[2:4].parse(b"1234567890") == [49, 50, 51, 52]

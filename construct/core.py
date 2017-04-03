@@ -9,6 +9,7 @@ import sys
 import collections
 
 from construct.lib import *
+from construct.expr import *
 
 
 #===============================================================================
@@ -1077,11 +1078,9 @@ def Array(count, subcon):
     return Range(count, count, subcon)
 
 
-class PrefixedArray(Construct):
+def PrefixedArray(lengthfield, subcon):
     r"""
-    An array prefixed by a length field.
-
-    .. seealso:: Analog :func:`~construct.core.Array` construct.
+    An array prefixed by a length field (as opposed to preixed by byte count, see :func:`~construct.core.Array`).
 
     :param lengthfield: a field parsing and building an integer
     :param subcon: the subcon to process individual elements
@@ -1093,22 +1092,10 @@ class PrefixedArray(Construct):
         >>> PrefixedArray(Byte, Byte).parse(_)
         [0, 1, 2, 3, 4]
     """
-    def __init__(self, lengthfield, subcon):
-        super(PrefixedArray, self).__init__()
-        self.lengthfield = lengthfield
-        self.subcon = subcon
-    def _parse(self, stream, context, path):
-        try:
-            count = self.lengthfield._parse(stream, context, path)
-            return list(self.subcon._parse(stream, context, path) for i in range(count))
-        except ExplicitError:
-            raise
-        except Exception:
-            raise RangeError("could not read prefix or enough elements, stream too short?")
-    def _build(self, obj, stream, context, path):
-        self.lengthfield._build(len(obj), stream, context, path)
-        for element in obj:
-            self.subcon._build(element, stream, context, path)
+    return FocusedSeq(1,
+        "count"/Rebuild(lengthfield, len_(this.items)),
+        "items"/subcon[this.count],
+    )
 
 
 class RepeatUntil(Subconstruct):
