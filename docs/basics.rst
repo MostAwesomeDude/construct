@@ -72,7 +72,7 @@ b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
 >>> format.parse(b'BMP\x03\x02\x07\x08\t\x0b\x0c\r')
 Container(signature=b'BMP')(width=3)(height=2)(pixels=[7, 8, 9, 11, 12, 13])
 
-Usually members are named but there are some classes that build from nothing and return nothing on parsing, so they have no need for a name (they can stay anonymous). Duplicated names within same struct can have unknown sideefffects.
+Usually members are named but there are some classes that build from nothing and return nothing on parsing, so they have no need for a name (they can stay anonymous). Duplicated names within same struct can have unknown side effects.
 
 >>> test = Struct(
 ...     Const(b"XYZ"),
@@ -85,7 +85,7 @@ b'XYZ\x00\x00'
 >>> test.parse(_)
 Container()
 
-Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
 
 >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
 

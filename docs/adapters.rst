@@ -28,7 +28,7 @@ So, let's see our adapter in action:
 >>> IpAddress.build("192.168.2.3")
 b'\xc0\xa8\x02\x03'
 
-Having the representation separated from the actual parsing or building means an adapter is loosely coupled with its underlying construct. As we'll see with enums in a moment, we can use the same enum for ``Byte`` or ``Int32sl`` or ``Float64l``, as long as the underlying construct returns an object we can map. Moreover, we can stack several adapters on top of one another, to created a nested adapter.
+Having the representation separated from the actual parsing or building means an adapter is loosely coupled with its underlying construct. As we'll see with enums in a moment, we can use the same enum for ``Byte`` or ``Int32sl`` or ``Float64l``, as long as the underlying construct returns an object we can map. Moreover, we can stack several adapters on top of one another, to create a nested adapter.
 
 Enums
 -----
@@ -68,7 +68,7 @@ Using expressions instead of classes
 
 Adaters can be created declaratively using ExprAdapter:
 
->>> IpAddress = ExprAdapter(Byte[4], 
+>>> IpAddress = ExprAdapter(Byte[4],
 ...     encoder = lambda obj,ctx: list(map(int, obj.split("."))),
 ...     decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj), )
 
@@ -78,7 +78,7 @@ Validating
 
 Validating means making sure the parsed/built object meets a given condition. Validators simply raise the ``ValidatorError`` if the object is invalid. They are usually used to make sure a "magic number" is found, the correct version of the protocol, a file signature is matched. You can write custom validators by deriving from the Validator class and implementing the ``_validate`` method. This allows you to write validators for more complex things, such as making sure a CRC field (or even a cryptographic hash) is correct.
 
-The two most common cases already exist as builtins. 
+The two most common cases already exist as builtins.
 
 .. autoclass:: construct.NoneOf
 
@@ -94,7 +94,7 @@ Using expressions instead of classes
 
 Validators can be created declaratively using ExprValidator:
 
->>> OneOf = ExprValidator(Byte, 
+>>> OneOf = ExprValidator(Byte,
 ... 	validator = lambda obj,ctx: obj in [1,3,5])
 
 
@@ -104,5 +104,3 @@ Checking
 Checks can also be made using the context, being done just in the middle of parsing or building and not on a particular object.
 
 .. autoclass:: construct.Check
-
-

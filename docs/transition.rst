@@ -52,13 +52,13 @@ Strings
 
 String remains
 
-PascalString argument `length_field=UBInt8` was made `lengthfield` and requires explicit dtype
+PascalString argument `length_field=UBInt8` was made `lengthfield`
 
 CString dropped `char_field`
 
 GreedyString dropped `char_field`
 
-All above can use global encoding using ``setglobalstringencoding()``.
+All above use optional `encoding` or use global encoding (see ``setglobalstringencoding()``).
 
 
 
@@ -69,6 +69,7 @@ Struct uses syntax like ``Struct("num"/Int32ub, "text"/CString())``
 
 Sequence uses syntax like ``Byte >> Int16ul`` and ``Sequence(Byte, Int16ul)``
 
+On Python 3.6 you can use ``Struct(num=Int32ub, text=CString())``
 
 
 Ranges and Arrays
@@ -84,7 +85,7 @@ OpenRange and GreedyRange were dropped
 
 OptionalGreedyRange was renamed to GreedyRange
 
-RepeatUntil remains
+RepeatUntil takes 3-argument (last element, list, context) lambda
 
 
 
@@ -106,7 +107,9 @@ Padding and Alignment
 
 Aligned takes explicit `modulus` before the subcon
 
-Padded was added
+Padded was added, also takes explicit `modulus` before the subcon
+
+Padding remains
 
 
 
@@ -121,7 +124,7 @@ Switch remains
 
 Optional remains
 
-Union takes optional `buildfrom` that switches between trying each subcon, indexes by int or name
+Union takes optional `buildfrom` and seeks back on parsing otherwise, indexes by id or name
 
 Select remains
 
@@ -129,8 +132,6 @@ Select remains
 
 Miscellaneous and others
 ------------------------
-
-Padding remains
 
 Value was made Computed
 
@@ -156,13 +157,17 @@ HexDump builds from hexdumped data, not from raw bytes
 
 SlicingAdapter and IndexingAdapter were made Slicing and Indexing
 
-SeqOfOne was replaced by Focused
+ExprAdapter ExprSymmetricAdapter ExprValidator added or remain
+
+SeqOfOne was replaced by FocusedSeq
 
 Numpy added
 
 NamedTuple added
 
 Check added
+
+Default added
 
 
 
@@ -193,5 +198,3 @@ Prefixed was added, allows to put greedy fields inside structs and sequences
 ByteSwapped and BitsSwapped added
 
 Checksum and Compressed added
-
-

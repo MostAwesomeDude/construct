@@ -11,19 +11,19 @@
     </ul>
     <hr/>
     <a href="https://arekbulski.github.io/" target="_blank">
-    <img style="display: block; margin-left: auto; margin-right: auto" 
+    <img style="display: block; margin-left: auto; margin-right: auto"
     src="_static/constructocatab120p.png" title="Arkadiusz'es personal site"/></a>
     <br/>
     <a href="http://tomerfiliba.com" target="_blank">
-    <img style="display: block; margin-left: auto; margin-right: auto" 
+    <img style="display: block; margin-left: auto; margin-right: auto"
     src="_static/fish-text-black.png" title="Tomer's Blog"/></a>
     <br/>
     <a href="http://github.com/construct/construct" target="_blank">
-    <img style="display: block; margin-left: auto; margin-right: auto; opacity: 0.7; width: 70px;" 
+    <img style="display: block; margin-left: auto; margin-right: auto; opacity: 0.7; width: 70px;"
     src="_static/github-logo.png" title="Github Repo"/></a>
     <br/>
     <a href="http://travis-ci.org/construct/construct" target="_blank">
-    <img src="https://travis-ci.org/construct/construct.png?branch=master" 
+    <img src="https://travis-ci.org/construct/construct.png?branch=master"
     style="display: block; margin-left: auto; margin-right: auto;" title="Travis CI status"></a>
     </div>
 
@@ -32,7 +32,7 @@ Construct
 =========
 .. raw:: html
 
-    <div style="width:770px; margin: 1em 0 2em 0; display: block; padding: 1em; border: 1px dotted #DDD; 
+    <div style="width:770px; margin: 1em 0 2em 0; display: block; padding: 1em; border: 1px dotted #DDD;
     background-color: rgba(255, 255, 202, 0.69); border-radius: 5px;">
 
     <strong>Sticky</strong><br/>
@@ -61,7 +61,7 @@ The library provides both simple, atomic constructs (such as integers of various
 * Meta-constructs: use the context (history) to compute the size of data
 * If/Switch: branch the computational path based on the context
 * On-demand (lazy) parsing: read and parse only what you require
-* Pointers: jump from here to there in the data stream 
+* Pointers: jump from here to there in the data stream
 
 
 Example
@@ -104,13 +104,11 @@ Requirements
 --------------
 Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 and pypy pypy3 implementation.
 
-Best should be 3.6 and pypy because they both support ordered keyword arguments which comes handy when declaring Struct members or manually crafting Containers.
+Best should be 3.6 because it supports ordered keyword arguments which comes handy when declaring Struct members or manually crafting Containers.
 
 
 User Guide
 ==========
-
-Sections marked with ** are stale and broken.
 
 .. toctree::
    :maxdepth: 2
@@ -153,4 +151,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

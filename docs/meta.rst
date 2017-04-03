@@ -125,12 +125,11 @@ Array
 
 When creating an Array, rather than specifying a constant length, you can instead specify that it repeats a variable number of times.
 
->>> st = Struct(
-...     "num" / Byte,
-...     "data" / Array(lambda ctx: ctx.num, Byte),
-... )
->>> st.parse(b"\x05abcde")
-Container(num=5)(data=[97, 98, 99, 100, 101])
+::
+
+    PrefixedArray  <-->  FocusedSeq(1,
+        "count"/Rebuild(lengthfield, len_(this.items)),
+        "items"/subcon[this.count],
 
 
 RepeatUntil

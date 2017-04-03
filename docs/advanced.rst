@@ -15,14 +15,11 @@ b'\xe9\xff\xff\xff\xff\xff\xff\xff'
 
 Few fields have aliases, Byte among integers and Single/Double among floats.
 
->>> Byte.build(57)
-b'9'
->>> Int8ul.parse(_)
-57
->>> Float32b.build(123.456)
-b'B\xf6\xe9y'
->>> Single.parse(_)
-123.45600128173828
+::
+
+    Byte    <-->  Int8ub
+    Single  <-->  Float32b
+    Double  <-->  Flaot64b
 
 Integers can also be variable-length encoded for compactness. Google invented a popular encoding:
 
@@ -97,8 +94,12 @@ Last but not least, a GreedyString does the same thing that GreedyBytes does. It
 Other short fields
 ===================
 
+Booleans are flags:
+
 >>> Flag.parse(b"\x01")
 True
+
+Enums translate between string names and usually integer vaues:
 
 >>> Enum(Byte, g=8, h=11).parse(b"\x08")
 'g'
@@ -107,5 +108,3 @@ b'\x0b'
 
 >>> FlagsEnum(Byte, a=1, b=2, c=4, d=8).parse(b"\x03")
 Container(c=False)(b=True)(a=True)(d=False)
-
-

@@ -5,16 +5,14 @@ Miscellaneous
 Miscellaneous
 =============
 
-Padding
--------
+Embedded
+--------
 
-Padding is a sequence of bytes or bits that contains no data (its value is discarded), and is necessary only for padding, or it can be used simply to discard some amount of garbage data. Notice that Padding does not require a name, because it does not need a value to be built from. Struct detects that and does not even search the dictionary for a value mathing Padding's name.
+Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences.
 
->>> st = Struct(
-...     Padding(4),
-... )
->>> st.build({})
-b'\x00\x00\x00\x00'
+>>> Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte).parse(b"abc")
+Container(a=97)(b=98)(c=99)
+
 
 
 Const
@@ -22,7 +20,6 @@ Const
 
 A constant value that is required to exist in the data and match a given value. If the value is not matched, ConstError is raised. Useful for so called magic numbers, signatures, asserting correct protocol version, etc.
 
->>> Const(b"IHDR").build()
 >>> Const(b"IHDR").build(None)
 b'IHDR'
 >>> Const(b"IHDR").parse(b"JPEG")
@@ -68,7 +65,7 @@ b''
 Terminated
 ----------
 
-Asserts the end of the stream has been reached (so that no more trailing data is left unparsed).
+Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows.
 
 .. note:: Terminated is a singleton object. Do not try to instantiate it, ``Terminated()`` will not work.
 
@@ -90,7 +87,7 @@ b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), 
 NamedTuple
 ----------
 
-Both arrays, structs and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of strings. Just like the std library namedtuple does.
+Both arrays, structs and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of strings. Just like the stadard namedtuple does.
 
 >>> NamedTuple("coord", "x y z", Byte[3]).parse(b"123")
 coord(x=49, y=50, z=51)
@@ -143,7 +140,7 @@ FocusedSeq
 When a sequence is has some fields that could be ommited like Const and Terminated, user can focus on the particular fields that are useful:
 
 >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
->>> d = FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated)
+>>> d = FocusedSeq(1,     Const(b"MZ"), "num"/Byte, Terminated)
 ...
 >>> d.parse(b"MZ\xff")
 255
@@ -156,8 +153,10 @@ Default
 
 Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys.
 
->>> Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1))
-b'\x01\x00'
+>>> Struct("a"/Default(Byte,0)).build(dict(a=1))
+b'\x01'
+>>> Struct("a"/Default(Byte,0)).build(dict())
+b'\x00'
 
 
 
@@ -181,7 +180,7 @@ b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
 ::
 
-    Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+    Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
     >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], buildfrom=3)
 
 Select
@@ -196,7 +195,7 @@ b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
 ::
 
-    Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+    Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
     >>> Select(num=Int32ub, text=CString(encoding="utf8"))
 
 Optional
@@ -240,6 +239,8 @@ Switch
 
 Branches the construction based on a return value from a function. This is a more general version of IfThenElse.
 
+.. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
+
 >>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, dict(n=1))
 b'\x05'
 >>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, dict(n=2))
@@ -249,22 +250,6 @@ b'\x00\x00\x00\x05'
 
 Alignment and Padding
 =====================
-
-Aligned
--------
-
-Aligns the subconstruct to a given modulus boundary.
-
->>> Aligned(4, Int16ub).build(1)
-b'\x00\x01\x00\x00'
-
-AlignedStruct
--------------
-
-Automatically aligns all the fields of the Struct to the modulus boundary. It does NOT align entire Struct.
-
->>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5))
-b'\x01\x00\x00\x00\x00\x05\x00\x00'
 
 Padding
 -------
@@ -284,11 +269,18 @@ Appends additional null bytes to achieve a fixed length.
 >>> Padded(4, Byte).build(255)
 b'\xff\x00\x00\x00'
 
+Aligned
+-------
 
+Aligns the subconstruct to a given modulus boundary.
 
-Special Constructs
-==================
+>>> Aligned(4, Int16ub).build(1)
+b'\x00\x01\x00\x00'
 
-Those are either used internally or have no practical use. They are referenced just for completeness.
+AlignedStruct
+-------------
 
-.. autoclass:: construct.Embedded
+Automatically aligns all the fields of the Struct to the modulus boundary. It does NOT align entire Struct.
+
+>>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5))
+b'\x01\x00\x00\x00\x00\x05\x00\x00'

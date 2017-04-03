@@ -10,12 +10,12 @@ In a nutshell, Construct is a declarative binary parser and builder library. To 
 Declarative
 -----------
 
-Construct does not force users to write code in order to create parsers and builders. Instead, Construct gives users a **domain-specific language**, or DSL, for specifying their data structures.
+Construct does not force users to write code in order to create parsers and builders. Instead, Construct gives users a **domain-specific language** for specifying their data structures. Parsing and building procedures are already defined.
 
 Binary
 ------
 
-Construct operates on bytes, not strings, and is specialized for binary data. In the past, there was an experimental support for parsing text but it was dropped in version 2.5.
+Construct operates on bytes, not strings, and is specialized for binary data. In the past, there was an experimental support for parsing text but it was dropped in version 2.5. That does not mean you cant use fields like unicode CStrings.
 
 Parser and Builder
 ------------------
@@ -43,4 +43,3 @@ What isn't Construct good at?
 =============================
 
 As previously mentioned, Construct is not a good choice for parsing text, due to the typical complexity of text-based grammars and the relative difficulty of parsing Unicode correctly. In the past, there was an experimental support for parsing text but it was dropped in version 2.5.
-

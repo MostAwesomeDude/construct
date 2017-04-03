@@ -56,7 +56,7 @@ class ExplicitError(Exception):
 
 
 #===============================================================================
-# internal code
+# used internally
 #===============================================================================
 def singleton(cls):
     return cls()
@@ -838,7 +838,7 @@ class Struct(Construct):
         >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminated).sizeof()
         4
 
-        Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+        Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
         >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
     """
     __slots__ = ["subcons"]
@@ -1337,7 +1337,7 @@ class Union(Construct):
         >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
-        Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+        Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
         >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], buildfrom=3)
     """
     __slots__ = ["subcons","buildfrom"]
@@ -1443,7 +1443,7 @@ class Select(Construct):
         >>> Select(Int32ub, CString(encoding="utf8")).build("Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
-        Note that this syntax works ONLY on python 3.6 and pypy due to unordered keyword arguments:
+        Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
         >>> Select(num=Int32ub, text=CString(encoding="utf8"))
     """
     __slots__ = ["subcons", "includename"]
@@ -1514,7 +1514,7 @@ class Switch(Construct):
     r"""
     A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched, and no default value is given, SwitchError will be raised.
 
-    .. seealso:: The :class:`~construct.core.Pass` singleton.
+    .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
 
     :param keyfunc: a context function that returns a key which will choose a case, or a constant
     :param cases: a dictionary mapping keys to subcons
@@ -1763,11 +1763,8 @@ class Restreamed(Subconstruct):
 
     Example::
 
-        Bitwise is implemented as
-        Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
-
-        Bytewise is implemented as
-        Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
+        Bitwise  <--> Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
+        Bytewise <--> Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
     """
     __slots__ = ["stream2", "sizecomputer"]
     def __init__(self, subcon, encoder, encoderunit, decoder, decoderunit, sizecomputer):
@@ -1855,21 +1852,13 @@ class Const(Subconstruct):
 
     Example::
 
-        >>> Const(b"MZ").parse(b"MZ")
-        b'MZ'
-        >>> Const(b"MZ").parse(b"??")
-        construct.core.ConstError: expected b'MZ' but parsed b'??'
-        >>> Const(b"MZ").build(None)
-        b'MZ'
-        >>> Const(b"MZ").sizeof()
-        2
+        >>> Const(b"IHDR").build(None)
+        b'IHDR'
+        >>> Const(b"IHDR").parse(b"JPEG")
+        construct.core.ConstError: expected b'IHDR' but parsed b'JPEG'
 
         >>> Const(Int32ul, 16).build(None)
         b'\x10\x00\x00\x00'
-        >>> Const(Int32ul, 16).parse(_)
-        16
-        >>> Const(Int32ul, 16).sizeof()
-        4
     """
     __slots__ = ["value"]
     def __init__(self, subcon, value=None):
@@ -1934,6 +1923,7 @@ class Pass(Construct):
     Example::
 
         >>> Pass.parse(b"")
+        None
         >>> Pass.build(None)
         b''
         >>> Pass.sizeof()
@@ -1960,6 +1950,7 @@ class Terminated(Construct):
     Example::
 
         >>> Terminated.parse(b"")
+        None
         >>> Terminated.parse(b"remaining")
         construct.core.TerminatedError: expected end of stream
     """
@@ -2024,7 +2015,7 @@ class Numpy(Construct):
 
 class NamedTuple(Adapter):
     r"""
-    Both arrays, structs and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of strings. Just like the std library namedtuple does.
+    Both arrays, structs and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of strings. Just like the standard namedtuple does.
 
     Example::
 
@@ -2082,8 +2073,10 @@ class Default(Subconstruct):
 
     Example::
 
-        >>> Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1))
-        b'\x01\x00'
+        >>> Struct("a"/Default(Byte,0)).build(dict(a=1))
+        b'\x01'
+        >>> Struct("a"/Default(Byte,0)).build(dict())
+        b'\x00'
     """
     __slots__ = ["value"]
     def __init__(self, subcon, value):
@@ -3032,12 +3025,12 @@ class FocusedSeq(Construct):
 
     :param parsebuildfrom: which subcon to use, an int or str, or a context lambda returning an int or str
     :param \*subcons: a list of members
-    :param \*\*kw: a list of members (works ONLY on python 3.6 and pypy)
+    :param \*\*kw: a list of members (works ONLY on python 3.6)
 
     Excample::
 
         >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
-        >>> d = FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated)
+        >>> d = FocusedSeq(1,     Const(b"MZ"), "num"/Byte, Terminated)
 
         >>> d.parse(b"MZ\xff")
         255
@@ -3320,7 +3313,7 @@ def PascalString(lengthfield, encoding=None):
     The length field will not appear in the same dict, when parsing. Only the string will be returned. When building, actual length is prepended before the encoded string. The length field can be variable length (such as VarInt). Stored length is in bytes, not characters.
 
     :param lengthfield: a field used to parse and build the length
-    :param encoding: encoding (e.g. "utf8") or None for bytes
+    :param encoding: encoding (eg. "utf8") or None for bytes
 
     Example::
 
