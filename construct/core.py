@@ -2122,7 +2122,7 @@ class RawCopy(Subconstruct):
     r"""
     Returns a dict containing both parsed subcon, the raw bytes that were consumed by it, starting and ending offset in the stream, and the amount of bytes. Builds either from raw bytes or a value used by subcon.
 
-    Context does contain a dict with data (if built from raw bytes) or with both (if built from value) during building.
+    Context does contain a dict with data (if built from raw bytes) or with both (if built from value or parsed).
 
     Example::
 
@@ -2146,15 +2146,19 @@ class RawCopy(Subconstruct):
     def _build(self, obj, stream, context, path):
         if 'data' in obj:
             data = obj['data']
+            offset1 = stream.tell()
             _write_stream(stream, len(data), data)
-            return Container(obj, data=data, length=len(data))
-        elif 'value' in obj:
+            offset2 = stream.tell()
+            return Container(obj, data=data, offset1=offset1, offset2=offset2, length=len(data))
+        if 'value' in obj:
             value = obj['value']
-            data = self.subcon.build(value, context)
-            _write_stream(stream, len(data), data)
-            return Container(obj, data=data, value=value, length=len(data))
-        else:
-            raise ConstructError('both data and value keys are missing')
+            offset1 = stream.tell()
+            value = self.subcon._build(value, stream, context, path)
+            offset2 = stream.tell()
+            stream.seek(offset1)
+            data = _read_stream(stream, offset2-offset1)
+            return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+        raise ConstructError('both data and value keys are missing, cannot build')
 
 
 def ByteSwapped(subcon):
