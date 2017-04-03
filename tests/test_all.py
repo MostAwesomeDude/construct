@@ -972,6 +972,19 @@ class TestCore(unittest.TestCase):
         assert Enum(Byte, q=3,r=4,t=5, default=Pass).build(9) == b"\x09"
         assert Enum(Byte, q=3,r=4,t=5).sizeof() == 1
 
+    def test_from_issue_298(self):
+        st = Struct(
+            "ctrl"/Enum(Bytes(1),
+                default = b'\x02',
+                STX = b'\x02',
+                ACK = b'\x06',
+                NAK = b'\x15',
+            ),
+            "optional"/If(this.ctrl == "NAK", Byte),
+        )
+        assert st.parse(b"\x15\xff") == Container(ctrl='NAK')(optional=255)
+        assert st.parse(b"\x02") == Container(ctrl='STX')(optional=None)
+
     def test_flagsenum(self):
         assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
         assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).build(FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)) == b'\x81'
