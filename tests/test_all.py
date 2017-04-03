@@ -282,6 +282,29 @@ class TestCore(unittest.TestCase):
     def test_struct_kwctor(self):
         common(Struct(a=Byte, b=Byte, c=Byte, d=Byte), b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 4)
 
+    def test_struct_sizeof_context_nesting(self):
+        st = Struct(
+            "length"/Byte,
+            "inner"/Struct(
+                "inner_length"/Byte,
+                "data"/Bytes(this._.length + this.inner_length),
+        ))
+        assert st.parse(b"\x03\x02helloXXX") == Container(length=3)(inner=Container(inner_length=2)(data=b"hello"))
+        assert st.sizeof(Container(length=3)(inner=Container(inner_length=2))) == 7
+
+        st = Struct(
+            "a" / Byte,
+            "inner" / Struct(
+                "b" / Byte,
+                If(this._.a == 1, Byte),
+                If(this.b == 1, Byte),
+            ),
+            If(this.a == 1, Byte),
+            If(this.inner.b == 1, Byte),
+        )
+        assert st.sizeof(Container(a=0,inner=Container(b=0))) == 2
+        assert st.sizeof(Container(a=1,inner=Container(b=1))) == 6
+
     def test_sequence(self):
         common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
         common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
@@ -1313,30 +1336,6 @@ class TestCore(unittest.TestCase):
         st = Struct("enabled" / Byte, "pad" / If(this.enabled, Padding(2)))
         assert st.build(dict(enabled=1)) == b"\x01\x00\x00"
         assert st.build(dict(enabled=0)) == b"\x00"
-
-    # @pytest.mark.xfail(reason="nesting is wrong, but passes regardless?")
-    def test_context_nesting(self):
-        st = Struct("length"/Byte, "inner"/Struct("inner_length"/Byte, "data"/Bytes(this._.length + this.inner_length)))
-        assert st.parse(b"\x03\x02helloXXX") == Container(length=3)(inner=Container(inner_length=2)(data=b"hello"))
-        assert st.sizeof(Container(inner_length=2)(_=Container(length=3))) == 7
-
-    @pytest.mark.xfail(reason="this requires much work")
-    def test_context_nesting_issue_266(self):
-        st = Struct(
-            "a" / Byte,
-            "inner" / Struct(
-                "b" / Byte,
-                Probe(),
-                If(this._.a == 1, Byte),
-                If(this.b == 1, Byte),
-            ),
-            Probe(),
-            If(this.a == 0, Byte),
-            If(this.inner.b == 0, Byte),
-        )
-        assert st.sizeof(Container(a=1,inner=Container(b=1))) == 4
-        assert st.sizeof(Container(a=0,inner=Container(b=0))) == 4
-        assert st.sizeof(Container(a=255,inner=Container(b=255))) == 2
 
     def test_hanging_issue_280(self):
         st = BitStruct('a'/BitsInteger(20), 'b'/BitsInteger(12))
