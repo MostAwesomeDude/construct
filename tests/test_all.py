@@ -1375,3 +1375,17 @@ class TestCore(unittest.TestCase):
         )
         assert st.parse(b"\x00\x00\x00") == Container(vals=[0, 0])(checksum=0)
         assert raises(st.parse, b"\x00\x00\x01") == ChecksumError
+
+    def test_from_issue_324(self):
+        d = Struct(
+            "vals" / Prefixed(Byte, RawCopy(
+                Struct("a" / Byte[2]),
+            )),
+            "checksum" / Checksum(
+                Byte,
+                lambda data: sum(iterateints(data)) & 0xFF,
+                this.vals.data
+            ),
+        )
+        assert d.build(dict(vals=dict(value=dict(a=[0,1])))) == b"\x02\x00\x01\x01"
+        assert d.build(dict(vals=dict(data=b"\x00\x01"))) == b"\x02\x00\x01\x01"
