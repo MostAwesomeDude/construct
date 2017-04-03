@@ -2198,8 +2198,6 @@ class Prefixed(Subconstruct):
 
     .. seealso:: The :class:`~construct.core.VarInt` encoding should be preferred over :class:`~construct.core.Byte` and fixed size fields. VarInt is more compact and does never overflow.
 
-    .. note:: If lengthfield is fixed size, Prefixed will seek back to write the length afterwards, which will break on non-seekable streams.
-
     :param lengthfield: a subcon used for storing the length
     :param subcon: the subcon used for storing the value
 
@@ -2220,23 +2218,12 @@ class Prefixed(Subconstruct):
         stream2 = BytesIO(_read_stream(stream, length))
         return self.subcon._parse(stream2, context, path)
     def _build(self, obj, stream, context, path):
-        try:
-            # needs to be both fixed size, seekable and tellable (third not checked)
-            self.lengthfield.sizeof()
-            if not stream.seekable:
-                raise SizeofError
-            offset1 = stream.tell()
-            self.lengthfield._build(0, stream, context, path)
-            offset2 = stream.tell()
-            self.subcon._build(obj, stream, context, path)
-            offset3 = stream.tell()
-            stream.seek(offset1)
-            self.lengthfield._build(offset3-offset2, stream, context, path)
-            stream.seek(offset3)
-        except SizeofError:
-            data = self.subcon.build(obj, context)
-            self.lengthfield._build(len(data), stream, context, path)
-            _write_stream(stream, len(data), data)
+        stream2 = BytesIO()
+        obj = self.subcon._build(obj, stream2, context, path)
+        data = stream2.getvalue()
+        self.lengthfield._build(len(data), stream, context, path)
+        _write_stream(stream, len(data), data)
+        return obj
     def _sizeof(self, context, path):
         return self.lengthfield._sizeof(context, path) + self.subcon._sizeof(context, path)
 
