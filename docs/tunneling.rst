@@ -47,10 +47,10 @@ b'hello'
 
 Note that VarInt encoding should be preferred because it is both compact and never overflows.
 
-Working with compression and checksuming
+Compression and checksuming
 ----------------------------------------
 
-Data can be checksummed easily:
+Data can be checksummed easily. Note that checksum field does not need to be Bytes, and lambda may return an integer or otherwise.
 
 ::
 

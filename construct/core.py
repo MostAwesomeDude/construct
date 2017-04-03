@@ -2234,7 +2234,7 @@ class Checksum(Construct):
 
     :param checksumfield: a subcon field that reads the checksum, usually Bytes(int)
     :param hashfunc: a function taking bytes and returning whatever checksumfield takes when building
-    :param bytesfunc: a function taking context and returning the bytes to be hashed, usually this.rawcopy1.data alike
+    :param bytesfunc: a function taking context and returning the bytes or object to be hashed, usually this.rawcopy1.data alike
 
     Example::
 
@@ -2267,6 +2267,7 @@ class Checksum(Construct):
     def _build(self, obj, stream, context, path):
         hash2 = self.hashfunc(self.bytesfunc(context))
         self.checksumfield._build(hash2, stream, context, path)
+        return hash2
     def _sizeof(self, context, path):
         return self.checksumfield._sizeof(context, path)
 
