@@ -852,12 +852,12 @@ class Struct(Construct):
         obj = Container()
         context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
+            subobj = sc._parse(stream, context, path)
             if sc.flagembedded:
-                subobj = list(sc._parse(stream, context, path).items())
-                obj.update(subobj)
-                context.update(subobj)
+                if subobj is not None:
+                    obj.update(subobj.items())
+                    context.update(subobj.items())
             else:
-                subobj = sc._parse(stream, context, path)
                 if sc.name is not None:
                     obj[sc.name] = subobj
                     context[sc.name] = subobj

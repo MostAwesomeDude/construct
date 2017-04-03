@@ -1376,3 +1376,16 @@ class TestCore(unittest.TestCase):
         )
         assert d.build(dict(vals=dict(value=dict(a=[0,1])))) == b"\x02\x00\x01\x01"
         assert d.build(dict(vals=dict(data=b"\x00\x01"))) == b"\x02\x00\x01\x01"
+
+    def test_embeddedif_issue_296(self):
+        st = 'BuggedStruct' / Struct(
+            'ctrl' / Bytes(1),
+            Probe(),
+            Embedded(If(
+                this.ctrl == b'\x02',
+                Struct('etx' / Const(b'\x03')),
+            )),
+            Probe(),
+        )
+        p1 = st.parse(b'\x02\x03')
+        p3 = st.parse(b'\x06')
