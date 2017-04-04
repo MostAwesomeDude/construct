@@ -235,11 +235,11 @@ class Container(dict):
         for k,v in self.items():
             if not isinstance(k,str) or not k.startswith("_"):
                 text.extend([indentation, str(k), " = "])
-                if isinstance(v, stringtypes) and fullprinting:
-                    if len(v) <= printingcap:
-                        text.append("%s (total %d)" % (v[:printingcap], len(v)))
+                if isinstance(v, stringtypes):
+                    if len(v) <= printingcap or fullprinting:
+                        text.append("%s (total %d)" % (reprbytes(v), len(v)))
                     else:
-                        text.append("%s... (truncated, total %d)" % (v[:printingcap], len(v)))
+                        text.append("%s... (truncated, total %d)" % (reprbytes(v[:printingcap]), len(v)))
                 else:
                     text.append(indentation.join(str(v).split("\n")))
         return "".join(text)
@@ -431,5 +431,3 @@ class LazySequenceContainer(LazyRangeContainer):
 
     def __len__(self):
         return self.count
-
-

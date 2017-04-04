@@ -34,4 +34,3 @@ class TestPy3compat(unittest.TestCase):
     def test_iterateints(self):
         assert list(iterateints(b"abc")) == [97,98,99]
         assert all(list(iterateints(int2byte(i))) == [i] for i in range(256))
-
