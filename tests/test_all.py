@@ -278,7 +278,7 @@ class TestCore(unittest.TestCase):
         assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(c=3)(d=4)
         assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build(Container(a=1)(b=2)(c=3)(d=4)) == b"\x01\x00\x02\x03\x04"
 
-    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
+    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_struct_kwctor(self):
         common(Struct(a=Byte, b=Byte, c=Byte, d=Byte), b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 4)
 
@@ -634,7 +634,7 @@ class TestCore(unittest.TestCase):
         assert raises(Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).build, (("d", 7))) == SelectError
         assert raises(Select(Byte).sizeof) == SizeofError
 
-    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
+    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_select_kwctor(self):
         st = Select(a=Int8ub, b=Int16ub, c=Int32ub)
         assert st.parse(b"\x01\x02\x03\x04") == 0x01
@@ -694,7 +694,7 @@ class TestCore(unittest.TestCase):
         assert raises(Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=1).build, dict(b=0x01)) == KeyError
         assert raises(Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=1).build, dict()) == KeyError
 
-    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
+    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_union_kwctor(self):
         st = Union(a=Int8ub, b=Int16ub, c=Int32ub)
         assert st.parse(b"\x01\x02\x03\x04") == Container(a=0x01,b=0x0102,c=0x01020304)
@@ -721,7 +721,7 @@ class TestCore(unittest.TestCase):
         assert len(d.build(zeros)) < 50
         assert raises(d.sizeof) == SizeofError
 
-    @pytest.mark.xfail(PY < (3,2), reason="gzip was added in 3.2")
+    @pytest.mark.xfail(PY < (3,2), raises=AttributeError, reason="gzip was added in 3.2")
     def test_compressed_gzip(self):
         zeros = bytes(10000)
         d = Compressed(GreedyBytes, "gzip")
@@ -744,7 +744,7 @@ class TestCore(unittest.TestCase):
         assert len(d.build(zeros)) < 50
         assert raises(d.sizeof) == SizeofError
 
-    @pytest.mark.xfail(PY < (3,3), reason="lzma module was added in 3.3")
+    @pytest.mark.xfail(PY < (3,3), raises=ImportError, reason="lzma module was added in 3.3")
     def test_compressed_lzma(self):
         zeros = bytes(10000)
         d = Compressed(GreedyBytes, "lzma")
@@ -1387,7 +1387,7 @@ class TestCore(unittest.TestCase):
         assert st.parse(b'bob\x00\x05') == Container(name='bob')(index=5)
         assert st.parse(b'\x00') == Container(name='')
 
-    @pytest.mark.xfail(reason="this cannot work, Struct checks flagembedded before building")
+    @pytest.mark.xfail(strict=True, reason="this cannot work, Struct checks flagembedded before building")
     def test_embeddedswitch_issue_312_cannotwork(self):
         st = Struct(
             'name'/CString(encoding="utf8"),
