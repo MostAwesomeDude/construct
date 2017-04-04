@@ -109,10 +109,6 @@ class Construct(object):
      * ``_build()``
      * ``_sizeof()``
 
-    There is also a flag API:
-
-     * ``_inherit_flags()``
-
     And stateful copying:
 
      * ``__getstate__()``
@@ -121,9 +117,7 @@ class Construct(object):
     Attributes and Inheritance
     ==========================
 
-    All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can either be a string, or None if the name is not needed. A single underscore ("_") is a reserved name, and so are names starting with a less-than character ("<"). The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced.
-
-    The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are inherited by default, from inner subconstructs to outer constructs. The enclosing construct may set new flags or clear existing ones, as necessary.
+    All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can either be a string, or None if the name is not needed. A single underscore ("_") is a reserved name. The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced.The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are often inherited from inner subconstructs but that depends on each class behavior.
     """
 
     __slots__ = ["name", "flagbuildnone", "flagembedded"]
@@ -134,11 +128,6 @@ class Construct(object):
 
     def __repr__(self):
         return "<%s: %s%s%s>" % (self.__class__.__name__, self.name, " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "")
-
-    def _inherit_flags(self, *subcons):
-        for sc in subcons:
-            self.flagbuildnone |= sc.flagbuildnone
-            self.flagembedded |= sc.flagembedded
 
     def __getstate__(self):
         # Obtain a dictionary representing this construct's state.
@@ -293,7 +282,8 @@ class Subconstruct(Construct):
         super(Subconstruct, self).__init__()
         self.name = subcon.name
         self.subcon = subcon
-        self._inherit_flags(subcon)
+        self.flagbuildnone = subcon.flagbuildnone
+        self.flagembedded = subcon.flagembedded
     def _parse(self, stream, context, path):
         return self.subcon._parse(stream, context, path)
     def _build(self, obj, stream, context, path):
@@ -1470,7 +1460,8 @@ class Select(Construct):
                 subcons.append(k / v)
         super(Select, self).__init__()
         self.subcons = subcons
-        self._inherit_flags(*subcons)
+        self.flagbuildnone = all(sc.flagbuildnone for sc in subcons)
+        self.flagembedded = all(sc.flagembedded for sc in subcons)
         self.includename = kw.pop("includename", False)
     def _parse(self, stream, context, path):
         for sc in self.subcons:
