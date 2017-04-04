@@ -171,6 +171,8 @@ Default added
 
 Alias was removed
 
+StopIf added
+
 
 
 Stream manipulation

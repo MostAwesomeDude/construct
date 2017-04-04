@@ -247,6 +247,22 @@ b'\x05'
 b'\x00\x00\x00\x05'
 
 
+StopIf
+------
+
+Checks for a condition, and stops a Struct Sequence Range from parsing or building.
+
+.. warning:: May break sizeof methods. Unsure.
+
+::
+
+    Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+
+    Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+
+    GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
+
+
 
 Alignment and Padding
 =====================

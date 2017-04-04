@@ -852,34 +852,41 @@ class Struct(Construct):
         obj = Container()
         context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
-            subobj = sc._parse(stream, context, path)
-            if sc.flagembedded:
-                if subobj is not None:
-                    obj.update(subobj.items())
-                    context.update(subobj.items())
-            else:
-                if sc.name is not None:
-                    obj[sc.name] = subobj
-                    context[sc.name] = subobj
+            try:
+                subobj = sc._parse(stream, context, path)
+                if sc.flagembedded:
+                    if subobj is not None:
+                        obj.update(subobj.items())
+                        context.update(subobj.items())
+                else:
+                    if sc.name is not None:
+                        obj[sc.name] = subobj
+                        context[sc.name] = subobj
+            except StopIteration:
+                break
         return obj
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         context.update(obj)
         for i,sc in enumerate(self.subcons):
-            if sc.flagembedded:
-                subobj = obj
-            elif sc.flagbuildnone:
-                subobj = obj.get(sc.name, None)
-            else:
-                subobj = obj[sc.name]
-            buildret = sc._build(subobj, stream, context, path)
-            if buildret is not None:
+            try:
                 if sc.flagembedded:
-                    context.update(buildret)
-                if sc.name is not None:
-                    context[sc.name] = buildret
+                    subobj = obj
+                elif sc.flagbuildnone:
+                    subobj = obj.get(sc.name, None)
+                else:
+                    subobj = obj[sc.name]
+                buildret = sc._build(subobj, stream, context, path)
+                if buildret is not None:
+                    if sc.flagembedded:
+                        context.update(buildret)
+                    if sc.name is not None:
+                        context[sc.name] = buildret
+            except StopIteration:
+                break
         return context
     def _sizeof(self, context, path):
+        # WARNING: possibly broken by StopIf
         try:
             def isStruct(sc):
                 return isStruct(sc.subcon) if isinstance(sc, Renamed) else isinstance(sc, Struct)
@@ -921,34 +928,41 @@ class Sequence(Struct):
         obj = ListContainer()
         context = Container(_ = context)
         for i,sc in enumerate(self.subcons):
-            subobj = sc._parse(stream, context, path)
-            if sc.flagembedded:
-                obj.extend(subobj)
-                context[i] = subobj
-            else:
-                obj.append(subobj)
-                if sc.name is not None:
-                    context[sc.name] = subobj
-                context[i] = subobj
+            try:
+                subobj = sc._parse(stream, context, path)
+                if sc.flagembedded:
+                    obj.extend(subobj)
+                    context[i] = subobj
+                else:
+                    obj.append(subobj)
+                    if sc.name is not None:
+                        context[sc.name] = subobj
+                    context[i] = subobj
+            except StopIteration:
+                break
         return obj
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         objiter = iter(obj)
         for i,sc in enumerate(self.subcons):
-            if sc.flagembedded:
-                subobj = objiter
-            else:
-                subobj = next(objiter)
-                if sc.name is not None:
-                    context[sc.name] = subobj
-            context[i] = subobj
-            buildret = sc._build(subobj, stream, context, path)
-            if buildret is not None:
+            try:
                 if sc.flagembedded:
-                    context.update(buildret)
-                if sc.name is not None:
-                    context[sc.name] = buildret
-                context[i] = buildret
+                    subobj = objiter
+                else:
+                    subobj = next(objiter)
+                    if sc.name is not None:
+                        context[sc.name] = subobj
+                context[i] = subobj
+                buildret = sc._build(subobj, stream, context, path)
+                if buildret is not None:
+                    if sc.flagembedded:
+                        context.update(buildret)
+                    if sc.name is not None:
+                        context[sc.name] = buildret
+                    context[i] = buildret
+            except StopIteration:
+                break
+    # WARNING: Sizeof() possibly broken by StopIf
 
 
 #===============================================================================
@@ -995,6 +1009,8 @@ class Range(Subconstruct):
                 fallback = stream.tell()
                 obj.append(self.subcon._parse(stream, context._, path))
                 context[len(obj)-1] = obj[-1]
+        except StopIteration:
+            pass
         except ExplicitError:
             raise
         except Exception:
@@ -1016,6 +1032,8 @@ class Range(Subconstruct):
             for i,subobj in enumerate(obj):
                 context[i] = subobj
                 self.subcon._build(subobj, stream, context._, path)
+        except StopIteration:
+            pass
         except ExplicitError:
             raise
         except Exception:
@@ -1024,6 +1042,7 @@ class Range(Subconstruct):
             else:
                 raise
     def _sizeof(self, context, path):
+        # WARNING: possibly broken by StopIf
         try:
             min = self.min(context) if callable(self.min) else self.min
             max = self.max(context) if callable(self.max) else self.max
@@ -3140,7 +3159,7 @@ def Filter(predicate, subcon):
 
 class Check(Construct):
     r"""
-    Checks for a condition and raises ValidationError if the check fails.
+    Checks for a condition, and raises ValidationError if the check fails.
 
     Example::
 
@@ -3158,6 +3177,34 @@ class Check(Construct):
     def _build(self, obj, stream, context, path):
         if not self.func(context):
             raise ValidationError("check failed during building")
+    def _sizeof(self, context, path):
+        return 0
+
+
+class StopIf(Construct):
+    r"""
+    Checks for a condition, and stops a Struct Sequence Range from parsing or building.
+
+    .. warning:: May break sizeof methods. Unsure.
+
+    Example::
+
+        Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+
+        Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+
+        GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
+    """
+    def __init__(self, condfunc):
+        super(StopIf, self).__init__()
+        self.condfunc = condfunc
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        if self.condfunc(context):
+            raise StopIteration
+    def _build(self, obj, stream, context, path):
+        if self.condfunc(context):
+            raise StopIteration
     def _sizeof(self, context, path):
         return 0
 

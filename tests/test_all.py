@@ -14,11 +14,12 @@ ident = lambda x: x
 
 
 def common(format, data=NotImplemented, obj=NotImplemented, size=NotImplemented, eq=True):
+    if data is not NotImplemented:
+        data2 = data.strip(b"?")
     if data is not NotImplemented and obj is not NotImplemented:
         assert format.parse(data) == obj
         assert format.build(obj) == data
     else:
-        # following are guaranteed by the above
         if obj is not NotImplemented:
             if eq:
                 assert format.parse(format.build(obj)) == obj
@@ -853,9 +854,27 @@ class TestCore(unittest.TestCase):
         assert Check(this.x == 255).parse(b"", Container(x=255)) == None
         assert Check(this.x == 255).build(None, Container(x=255)) == b""
         assert Check(this.x == 255).sizeof() == 0
-
         assert Check(len_(this.a) == 3).parse(b"", Container(a=[1,2,3])) == None
         assert Check(len_(this.a) == 3).build(None, Container(a=[1,2,3])) == b""
+
+    def test_stopif(self):
+        st = Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+        common(st, b"\x00", Container(x=0))
+        common(st, b"\x01\x02", Container(x=1,y=2))
+
+        seq = Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+        common(seq, b"\x00", [0])
+        common(seq, b"\x01\x02", [1,None,2])
+
+        r = GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
+        assert r.parse(b"\x00???") == []
+        assert r.parse(b"\x01\x00???") == [1]
+        assert r.build([]) == b""
+        assert r.build([0]) == b"\x00"
+        assert r.build([1]) == b"\x01"
+        assert r.build([1,0,2]) == b"\x01\x00"
+        # common(r, b"\x00???", [], eq=0)
+        # common(r, b"\x01\x00???", [1], eq=0)
 
     def test_hex(self):
         assert Hex(GreedyBytes).parse(b"abcd") == b"61626364"
