@@ -18,6 +18,9 @@ Few fields have aliases, Byte among integers and Single/Double among floats.
 ::
 
     Byte    <-->  Int8ub
+    Short   <-->  Int16ub
+    Int     <-->  Int32ub
+    Long    <-->  Int64ub
     Single  <-->  Float32b
     Double  <-->  Flaot64b
 
@@ -31,7 +34,7 @@ Long integers (or those of particularly odd sizes) can be encoded using a fixed-
 >>> BytesInteger(16).build(255)
 b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff'
 
-Numbers are mostly implemented using `struct` module using:
+Numbers of processor sizes are implemented using `struct` module, others use a custom field.
 
 >>> FormatField("<","l").build(1)
 b'\x01\x00\x00\x00'

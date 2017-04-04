@@ -14,7 +14,7 @@ Integers and floats
 
 {U,S}{L,B,N}Int{8,16,24,32,64} was made Int{8,16,24,32,64}{u,s}{l,b,n}
 
-Byte was made an alias to Int8ub
+Byte, Short, Int, Long were made aliases to Int{8,16,32,64}ub
 
 {B,L,N}Float{32,64} was made Float{32,64}{b,l,n}
 
