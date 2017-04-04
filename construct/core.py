@@ -426,8 +426,8 @@ class FormatField(Bytes):
 
     See ``struct`` documentation for instructions on crafting format strings.
 
-    :param endianity: format endianness string as one of: < > =
-    :param format: single format character like: f d B H L Q b h l q
+    :param endianity: endianness character like: < > =
+    :param format: format character like: f d B H L Q b h l q
 
     Example::
 
@@ -441,9 +441,9 @@ class FormatField(Bytes):
     __slots__ = ["fmtstr"]
     def __init__(self, endianity, format):
         if endianity not in (">", "<", "="):
-            raise ValueError("endianity must be one of: = < >", endianity)
+            raise ValueError("endianity must be like: = < >", endianity)
         if len(format) != 1:
-            raise ValueError("must specify one and only one format character")
+            raise ValueError("format must be like: f d B H L Q b h l q")
         super(FormatField, self).__init__(packer.calcsize(endianity + format))
         self.fmtstr = endianity + format
     def _parse(self, stream, context, path):
@@ -1770,6 +1770,7 @@ class Restreamed(Subconstruct):
     :param encoderunit: ratio as int, encoder takes that many bytes at once
     :param decoder: a function that takes a b-string and returns a b-string (used when parsing)
     :param decoderunit: ratio as int, decoder takes that many bytes at once
+    :param sizecomputer: a function that computes amount of bytes outputed by some bytes
 
     Example::
 
@@ -1804,6 +1805,7 @@ class Rebuffered(Subconstruct):
     .. warning:: Experimental implementation. May not be mature enough.
 
     :param subcon: the subcon which will operate on the buffered stream
+    :param tailcutoff: optional, amount of bytes kept in buffer, by default buffers everything
 
     Example::
 
@@ -1853,7 +1855,7 @@ class Const(Subconstruct):
     r"""
     Constant field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
 
-    Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes, but depends on the subcon to read the appropriate amount. Consider for example, a field that eats null bytes and returns following byte. When parsing, both b"\x00\x00\x01" and b"\x01" will be parsed and checked OK.
+    Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes, but depends on the subcon to read the appropriate amount. Consider for example, a field that eats null bytes and returns following byte, then compares to one. When parsing, both b"\x00\x00\x01" and b"\x01" will be parsed and checked OK.
 
     :param subcon: the subcon used to build value from, or a b-string value itself
     :param value: optional, the expected value
