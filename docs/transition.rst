@@ -147,7 +147,7 @@ OneOf Noneof remain
 
 Filter added
 
-LengthValueAdapter was replaced by Prefixed
+LengthValueAdapter was replaced by Prefixed, and gained `includelength` option
 
 Hex added
 

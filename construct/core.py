@@ -2185,12 +2185,13 @@ def BitsSwapped(subcon):
 
 class Prefixed(Subconstruct):
     r"""
-    Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, data is prefixed by its length.
+    Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, data is prefixed by its length. Optionally, length field can include its own size.
 
     .. seealso:: The :class:`~construct.core.VarInt` encoding should be preferred over :class:`~construct.core.Byte` and fixed size fields. VarInt is more compact and does never overflow.
 
     :param lengthfield: a subcon used for storing the length
     :param subcon: the subcon used for storing the value
+    :param includelength: optional, whether length field should include own size
 
     Example::
 
@@ -2200,19 +2201,25 @@ class Prefixed(Subconstruct):
         >>>> Prefixed(VarInt, Byte[:]).parse(b"\x03\x01\x02\x03?????")
         [1, 2, 3]
     """
-    __slots__ = ["name", "lengthfield", "subcon"]
-    def __init__(self, lengthfield, subcon):
+    __slots__ = ["name", "lengthfield", "subcon", "includelength"]
+    def __init__(self, lengthfield, subcon, includelength=False):
         super(Prefixed, self).__init__(subcon)
         self.lengthfield = lengthfield
+        self.includelength = includelength
     def _parse(self, stream, context, path):
         length = self.lengthfield._parse(stream, context, path)
+        if self.includelength:
+            length -= self.lengthfield._sizeof(context, path)
         stream2 = BytesIO(_read_stream(stream, length))
         return self.subcon._parse(stream2, context, path)
     def _build(self, obj, stream, context, path):
         stream2 = BytesIO()
         obj = self.subcon._build(obj, stream2, context, path)
         data = stream2.getvalue()
-        self.lengthfield._build(len(data), stream, context, path)
+        length = len(data)
+        if self.includelength:
+            length += self.lengthfield._sizeof(context, path)
+        self.lengthfield._build(length, stream, context, path)
         _write_stream(stream, len(data), data)
         return obj
     def _sizeof(self, context, path):

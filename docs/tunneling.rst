@@ -2,6 +2,7 @@
 Tunneling tactics
 =================
 
+
 Obtaining raw bytes
 -------------------
 
@@ -14,6 +15,7 @@ Container(data='\xff')(value=255)(offset1=0L)(offset2=1L)(length=1L)
 '\xff'
 >>> RawCopy(Byte).build(dict(value=255))
 '\xff'
+
 
 Endianness
 ----------
@@ -34,6 +36,7 @@ When bits within each byte need to be swapped, there is another wrapper:
 >>> BitsSwapped(Bitwise(Bytes(8))).parse(b"\x01")
 '\x01\x00\x00\x00\x00\x00\x00\x00'
 
+
 Working with bytes subsets
 --------------------------
 
@@ -46,6 +49,9 @@ b'hello'
 [1, 2, 3]
 
 Note that VarInt encoding should be preferred because it is both compact and never overflows.
+
+Optionally, length field can include its own size. Then the length field must be of fixed size.
+
 
 Compression and checksuming
 ----------------------------------------
