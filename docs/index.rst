@@ -37,19 +37,19 @@ Construct
 
     <strong>Sticky</strong><br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the previous stable release. If you are maintaining a project that depended on this framework for a long time, you should probably use this version. This branch is not actively maintained. Only bugfixes will be added.<br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is the previous stable release. If you are maintaining a project that depended on this library for a long time, you should probably use this version. This branch is not actively maintained.<br/>
     <br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8</a> was released on September, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes were redesigned and reimplemented. You should read the documentation again.<br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8</a> was released on September, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes changed interface and behavior. You should read the documentation again.<br/>
     <br/>
 
-    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches.<br/>
+    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches. Good quality extensions to test suite are highly welcomed.<br/>
     </div>
 
 
 Construct is a powerful **declarative** parser (and builder) for binary data.
 
-Instead of writing *imperative code* to parse a piece of data, you declaratively define a *data structure* that describes your data. As this data structure is not code, you can use it in one direction to *parse* data into Pythonic objects, and in the other direction, build objects into binary data.
+Instead of writing *imperative code* to parse a piece of data, you declaratively define a *data structure* that describes your data. As this data structure is not code, you can use it in one direction to *parse* data into Pythonic objects, and in the other direction, to *build* objects into binary data.
 
 The library provides both simple, atomic constructs (such as integers of various sizes), as well as composite ones which allow you form hierarchical and sequential structures of increasing complexity. Construct features **bit and byte granularity**, easy debugging and testing, an **easy-to-extend subclass system**, and lots of primitive constructs to make your work easier:
 
@@ -97,7 +97,7 @@ Please use the `github issues <https://github.com/construct/construct/issues>`_ 
 
 Construct's main documentation is at `construct.readthedocs.org <http://construct.readthedocs.org>`_, where you can find all kinds of examples. The library itself is developed on `github <https://github.com/construct/construct>`_. Releases are also available on `pypi <https://pypi.python.org/pypi/construct>`_.
 
-`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a different project. It is a rewrite from scratch and belongs to another developer, it diverged from this project. As far as I can tell, it was not released yet.
+`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a different project. It is a rewrite from scratch and belongs to another developer, it diverged from this project. As far as I can tell, it was not released and abandoned.
 
 
 Requirements
