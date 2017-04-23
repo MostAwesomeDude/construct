@@ -671,15 +671,17 @@ class TestCore(unittest.TestCase):
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="a").build(dict(a=b"zz",b=5))  == b"zz"
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="b").build(dict(a=b"zz",b=5))  == b"\x00\x05"
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=Pass).build({}) == b""
-        assert raises(Union(Pass, buildfrom=123).parse, b"") == IndexError
-        assert raises(Union(Pass, buildfrom="missing").build, {}) == IndexError
+        assert raises(Union(Pass, buildfrom=123).parse, b"") == KeyError
+        assert raises(Union(Pass, buildfrom="missing").parse, b"") == KeyError
+        assert raises(Union(Pass, buildfrom=123).build, {}) == IndexError
+        assert raises(Union(Pass, buildfrom="missing").build, {}) == KeyError
 
         assert raises(Union(Byte).sizeof) == SizeofError
         assert raises(Union(VarInt).sizeof) == SizeofError
         assert Union(Byte, VarInt, buildfrom=0).sizeof() == 1
         assert raises(Union(Byte, VarInt, buildfrom=1).sizeof) == SizeofError
         assert raises(Union(Pass, buildfrom=123).sizeof) == IndexError
-        assert raises(Union(Pass, buildfrom="missing").sizeof) == IndexError
+        assert raises(Union(Pass, buildfrom="missing").sizeof) == KeyError
         assert raises(Union(Pass, buildfrom=this.missing).sizeof) == SizeofError
 
         assert (Union("b"/Int16ub) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x01]
@@ -700,6 +702,14 @@ class TestCore(unittest.TestCase):
         st = Union(a=Int8ub, b=Int16ub, c=Int32ub)
         assert st.parse(b"\x01\x02\x03\x04") == Container(a=0x01,b=0x0102,c=0x01020304)
         assert st.build(Container(c=0x01020304)) == b"\x01\x02\x03\x04"
+
+    def test_union_issue_348(self):
+        u = Union(
+            Int8=Prefixed(Int16ub, Int8ub[:]),
+            Int16=Prefixed(Int16ub, Int16ub[:]),
+            Int32=Prefixed(Int16ub, Int32ub[:]),
+            buildfrom=0)
+        assert u.parse(b'\x00\x04\x11\x22\x33\x44') == {'Int16': [4386, 13124], 'Int32': [287454020], 'Int8': [17, 34, 51, 68]}
 
     def test_prefixed(self):
         assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xff??????") == 65535
