@@ -135,9 +135,11 @@ API Reference
 
    api/bytes
    api/strings
-   api/structseq
+   api/structs
    api/repeaters
    api/lazy
+   api/misc
+   api/align
    api/streaming
    api/tunneling
    api/debugging
