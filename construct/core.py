@@ -1329,36 +1329,35 @@ class Union(Construct):
     r"""
     Treats the same data as multiple constructs (similar to C union statement) so you can "look" at the data in multiple views.
 
-    When parsing, all fields read the same data bytes, but stream remains at initial offset by default, unless parsefrom selects a subcon excplicitly. When building, either the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) builds into the stream, or buildfrom selects a subcon explicitly.
+    When parsing, all fields read the same data bytes, but stream remains at initial offset by default, unless parsefrom selects a subcon excplicitly. When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
 
-    .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset, as if each subcon parsed like Peek. Otherwise the stream seeks to where the selected subcon ended. If you skip the `buildfrom` parameter then any subcon can build, but sizeof does not work.
+    .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset. Many users fail to use this class properly.
 
+    :param parsefrom: how to leave stream after parsing, can be integer index or string name selecting a subcon, None (leaves stream at initial offset, the default), a context lambda returning either of previously mentioned
     :param subcons: subconstructs (order and name sensitive)
-    :param parsefrom: optional, how to leave stream after parsing, can be '*' to select first subcon, integer index or string name selecting a subcon, None (leaves stream at initial offset, the default), a context lambda returning either of previously mentioned
-    :param buildfrom: optional, how to build and calculate size, can be integer index or string name selecting a subcon, None (then tries each subcon in sequence, the default), a context lambda returning either of previously mentioned
 
     Example::
 
-        >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], parsefrom="*").parse(b"12345678")
+        >>> Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
         Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
 
-        >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
+        >>> Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).build(dict(chars=range(8)))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
         Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
-        >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], parsefrom='*')
-        >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], buildfrom=3)
+        >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
+        >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     """
-    __slots__ = ["subcons","parsefrom","buildfrom"]
-    def __init__(self, *subcons, **kw):
+    __slots__ = ["subcons","parsefrom"]
+    def __init__(self, parsefrom, *subcons, **kw):
+        if isinstance(parsefrom, Construct):
+            raise UnionError("parsefrom should be either: None, an int, a str, or context function")
         subcons = list(subcons)
         for k,v in kw.items():
-            if k not in ("parsefrom","buildfrom"):
-                subcons.append(k / v)
+            subcons.append(k / v)
         super(Union, self).__init__()
         self.subcons = subcons
-        self.parsefrom = kw.get("parsefrom")
-        self.buildfrom = kw.get("buildfrom")
+        self.parsefrom = parsefrom
     def _parse(self, stream, context, path):
         obj = Container()
         context = Container(_ = context)
@@ -1378,7 +1377,6 @@ class Union(Construct):
             if sc.name is not None:
                 forwards[sc.name] = stream.tell()
             stream.seek(fallback)
-        forwards["*"] = forwards[0]
         parsefrom = self.parsefrom
         if callable(parsefrom):
             parsefrom = parsefrom(context)
@@ -1388,60 +1386,43 @@ class Union(Construct):
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         context.update(obj)
-        buildfrom = self.buildfrom
-        if callable(buildfrom):
-            buildfrom = buildfrom(context)
-        if buildfrom is Pass:
-            return
-        if buildfrom is None:
-            for sc in self.subcons:
-                if sc.subcon.flagbuildnone:
-                    subobj = obj.get(sc.name, None)
-                    buildret = sc.subcon._build(subobj, stream, context, path)
-                    if buildret is not None:
-                        if sc.flagembedded:
-                            context.update(buildret)
-                        if sc.name is not None:
-                            context[sc.name] = buildret
-                    return buildret
-                elif sc.name in obj:
-                    context[sc.name] = obj[sc.name]
-                    buildret = sc.subcon._build(obj[sc.name], stream, context, path)
-                    if buildret is not None:
-                        if sc.flagembedded:
-                            context.update(buildret)
-                        if sc.name is not None:
-                            context[sc.name] = buildret
-                    return buildret
-            else:
-                raise UnionError("none of subcons %s were found in the dictionary %s" % (self.subcons, obj))
-        if isinstance(buildfrom, int):
-            sc = self.subcons[buildfrom]
-            obj2 = obj if sc.flagembedded else obj[sc.name]
-            return sc._build(obj2, stream, context, path)
-        if isinstance(self.buildfrom, str):
-            sc = {sc.name:sc for sc in self.subcons if sc.name is not None}[buildfrom]
-            obj2 = obj if sc.flagembedded else obj[sc.name]
-            return sc._build(obj2, stream, context, path)
-        raise UnionError("buildfrom should be either: None, Pass, an int, a str")
+        for sc in self.subcons:
+            if sc.flagbuildnone:
+                subobj = obj.get(sc.name, None)
+                buildret = sc._build(subobj, stream, context, path)
+                if buildret is not None:
+                    if sc.flagembedded:
+                        context.update(buildret)
+                    if sc.name is not None:
+                        context[sc.name] = buildret
+                return buildret
+            elif sc.name in obj:
+                context[sc.name] = obj[sc.name]
+                buildret = sc._build(obj[sc.name], stream, context, path)
+                if buildret is not None:
+                    if sc.flagembedded:
+                        context.update(buildret)
+                    if sc.name is not None:
+                        context[sc.name] = buildret
+                return buildret
+        else:
+            raise UnionError("cannot build, none of subcons %s were found in the dictionary %s" % ([sc.name for sc in self.subcons], obj))
     def _sizeof(self, context, path):
-        buildfrom = self.buildfrom
+        parsefrom = self.parsefrom
         try:
-            if callable(buildfrom):
-                buildfrom = buildfrom(context)
+            if callable(parsefrom):
+                parsefrom = parsefrom(context)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
-        if buildfrom is Pass:
-            return 0
-        if buildfrom is None:
+        if parsefrom is None:
             raise SizeofError("cannot calculate size")
-        if isinstance(buildfrom, int):
-            sc = self.subcons[buildfrom]
+        if isinstance(parsefrom, int):
+            sc = self.subcons[parsefrom]
             return sc._sizeof(context, path)
-        if isinstance(buildfrom, str):
-            sc = {sc.name:sc for sc in self.subcons if sc.name is not None}[buildfrom]
+        if isinstance(parsefrom, str):
+            sc = {sc.name:sc for sc in self.subcons if sc.name is not None}[parsefrom]
             return sc._sizeof(context, path)
-        raise UnionError("buildfrom should be either: None, Pass, an int, a str")
+        raise UnionError("parsefrom should be either: None, an int, a str, or context function")
 
 
 class Select(Construct):

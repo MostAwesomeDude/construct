@@ -662,54 +662,53 @@ class TestCore(unittest.TestCase):
         assert raises(Optional(Int32ul).sizeof) == SizeofError
 
     def test_union(self):
-        assert Union("a"/Bytes(2), "b"/Int16ub).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
-        assert Union("a"/Bytes(2), "b"/Int16ub).build(dict(a=b"zz"))  == b"zz"
-        assert Union("a"/Bytes(2), "b"/Int16ub).build(dict(b=0x0102)) == b"\x01\x02"
-        assert raises(Union("a"/Bytes(2), "b"/Int16ub).build, dict()) == UnionError
-        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=0).build(dict(a=b"zz",b=5))  == b"zz"
-        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=1).build(dict(a=b"zz",b=5))  == b"\x00\x05"
-        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="a").build(dict(a=b"zz",b=5))  == b"zz"
-        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="b").build(dict(a=b"zz",b=5))  == b"\x00\x05"
-        assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=Pass).build({}) == b""
-        assert raises(Union(Pass, parsefrom=123).parse, b"") == KeyError
-        assert raises(Union(Pass, parsefrom="missing").parse, b"") == KeyError
-        assert raises(Union(Pass, buildfrom=123).build, {}) == IndexError
-        assert raises(Union(Pass, buildfrom="missing").build, {}) == KeyError
+        assert Union(None, "a"/Bytes(2), "b"/Int16ub).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
+        assert raises(Union(123, Pass).parse, b"") == KeyError
+        assert raises(Union("missing", Pass).parse, b"") == KeyError
 
-        assert raises(Union(Byte).sizeof) == SizeofError
-        assert raises(Union(VarInt).sizeof) == SizeofError
-        assert Union(Byte, VarInt, buildfrom=0).sizeof() == 1
-        assert raises(Union(Byte, VarInt, buildfrom=1).sizeof) == SizeofError
-        assert raises(Union(Pass, buildfrom=123).sizeof) == IndexError
-        assert raises(Union(Pass, buildfrom="missing").sizeof) == KeyError
-        assert raises(Union(Pass, buildfrom=this.missing).sizeof) == SizeofError
+        assert Union(None, "a"/Bytes(2), "b"/Int16ub).build(dict(a=b"zz"))  == b"zz"
+        assert Union(None, "a"/Bytes(2), "b"/Int16ub).build(dict(b=0x0102)) == b"\x01\x02"
+        assert Union(None, "a"/Bytes(2), "b"/Int16ub, Pass).build(dict()) == b""
+        assert raises(Union(None, "a"/Bytes(2), "b"/Int16ub).build, dict()) == UnionError
 
-        assert (Union("b"/Int16ub) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x01]
-        assert (Union("b"/Int16ub, parsefrom=0) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
-        assert (Union("b"/Int16ub, parsefrom="b") >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
+        assert raises(Union(None, Byte).sizeof) == SizeofError
+        assert raises(Union(None, VarInt).sizeof) == SizeofError
+        assert Union(0, Byte, VarInt).sizeof() == 1
+        assert raises(Union(1, Byte, VarInt).sizeof) == SizeofError
+        assert raises(Union(123, Pass).sizeof) == IndexError
+        assert raises(Union("missing", Pass).sizeof) == KeyError
+        assert raises(Union(this.missing, Pass).sizeof) == SizeofError
 
-        assert (Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x01]
-        assert (Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), parsefrom=0) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
-        assert (Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), parsefrom="a") >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
-        assert Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom="a").build(dict(a=0x0102)) == b"\x01\x02"
-        assert Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=0).build(dict(a=0x0102)) == b"\x01\x02"
-        assert Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=1).build(dict(b=0x01, c=0x02)) == b"\x01\x02"
-        assert raises(Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=1).build, dict(b=0x01)) == KeyError
-        assert raises(Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=1).build, dict()) == KeyError
+        assert (Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x01]
+        assert (Union(0, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
+        assert (Union("a", "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
+
+        # regression check, so first subcon is not parsefrom by accident
+        assert raises(Union, Byte, VarInt) == UnionError
+
+    @pytest.mark.xfail(reason="building embedded not supported after redesign")
+    def test_union_embedded(self):
+        assert Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))).build(dict(a=0x0102)) == b"\x01\x02"
+        assert Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))).build(dict(a=0x0102)) == b"\x01\x02"
+        assert Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))).build(dict(b=0x01, c=0x02)) == b"\x01\x02"
+        assert raises(Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))).build, dict(b=0x01)) == KeyError
+        assert raises(Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))).build, dict()) == KeyError
 
     @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_union_kwctor(self):
-        st = Union(a=Int8ub, b=Int16ub, c=Int32ub)
+        st = Union(None, a=Int8ub, b=Int16ub, c=Int32ub)
         assert st.parse(b"\x01\x02\x03\x04") == Container(a=0x01,b=0x0102,c=0x01020304)
         assert st.build(Container(c=0x01020304)) == b"\x01\x02\x03\x04"
 
     def test_union_issue_348(self):
-        u = Union(
+        u = Union(None,
             Int8=Prefixed(Int16ub, Int8ub[:]),
             Int16=Prefixed(Int16ub, Int16ub[:]),
             Int32=Prefixed(Int16ub, Int32ub[:]),
-            buildfrom=0)
+        )
         assert u.parse(b'\x00\x04\x11\x22\x33\x44') == {'Int16': [4386, 13124], 'Int32': [287454020], 'Int8': [17, 34, 51, 68]}
+        assert u.build(dict(Int16=[4386, 13124])) == b'\x00\x04\x11\x22\x33\x44'
+        assert u.build(dict(Int32=[287454020])) == b'\x00\x04\x11\x22\x33\x44'
 
     def test_prefixed(self):
         assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xff??????") == 65535
@@ -1310,7 +1309,7 @@ class TestCore(unittest.TestCase):
         # When setting optional to False in vstring method, all three tests above work fine.
 
     def test_from_issue_231(self):
-        u = Union("raw"/Byte[8], "ints"/Int32ub[2], parsefrom="*")
+        u = Union(0, "raw"/Byte[8], "ints"/Int32ub[2])
         s = Struct("u"/u, "d"/Byte[4])
 
         buildret = s.build(dict(u=dict(ints=[1,2]),d=[0,1,2,3]))
@@ -1340,7 +1339,7 @@ class TestCore(unittest.TestCase):
         common(testBit, b'ab', Container(a=97, b=98))
         common(testByte, b'ab', Container(a=97, b=98))
 
-        NumVertices = Union(
+        NumVertices = Union(None,
             'numVx4' / Bitwise(Aligned(8, Struct('num'/ BitsInteger(4) ))),
             'numVx8' / Bitwise(Aligned(8, Struct('num'/ BitsInteger(12)))),
             'numVx16'/ Bitwise(Aligned(8, Struct('num'/ BitsInteger(28)))),
