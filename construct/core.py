@@ -1329,34 +1329,35 @@ class Union(Construct):
     r"""
     Treats the same data as multiple constructs (similar to C union statement) so you can "look" at the data in multiple views.
 
-    When parsing, all fields read the same data bytes, but stream remains at initial offset by default, unless buildfrom selects a subcon. When building, either the first subcon that can find an entry in given dict is allowed to put into the stream, or the subcon is selected by index or name, or builds nothing.
+    When parsing, all fields read the same data bytes, but stream remains at initial offset by default, unless parsefrom selects a subcon excplicitly. When building, either the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) builds into the stream, or buildfrom selects a subcon explicitly.
 
-    .. warning:: If you skip the `buildfrom` parameter then parsing will not advance the stream, because subcons can be of different sizes.
+    .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset, as if each subcon parsed like Peek. Otherwise the stream seeks to where the selected subcon ended. If you skip the `buildfrom` parameter then any subcon can build, but sizeof does not work.
 
     :param subcons: subconstructs (order and name sensitive)
-    :param buildfrom: optional, how to build, the subcon used for building and calculating size, can be integer index or string name selecting a subcon, None (then tries each subcon in sequence, the default), Pass (builds nothing), a context lambda returning either of previously mentioned
+    :param parsefrom: optional, how to leave stream after parsing, can be '*' to select first subcon, integer index or string name selecting a subcon, None (leaves stream at initial offset, the default), a context lambda returning either of previously mentioned
+    :param buildfrom: optional, how to build and calculate size, can be integer index or string name selecting a subcon, None (then tries each subcon in sequence, the default), a context lambda returning either of previously mentioned
 
     Example::
 
-        >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
+        >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], parsefrom="*").parse(b"12345678")
         Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
 
-        >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom=3).build(dict(chars=range(8)))
-        b'\x00\x01\x02\x03\x04\x05\x06\x07'
         >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
         Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
-        >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Int8ub[8], buildfrom=3)
+        >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], parsefrom='*')
+        >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], buildfrom=3)
     """
-    __slots__ = ["subcons","buildfrom"]
+    __slots__ = ["subcons","parsefrom","buildfrom"]
     def __init__(self, *subcons, **kw):
         subcons = list(subcons)
         for k,v in kw.items():
-            if k not in ["buildfrom"]:
+            if k not in ("parsefrom","buildfrom"):
                 subcons.append(k / v)
         super(Union, self).__init__()
         self.subcons = subcons
+        self.parsefrom = kw.get("parsefrom")
         self.buildfrom = kw.get("buildfrom")
     def _parse(self, stream, context, path):
         obj = Container()
@@ -1377,11 +1378,12 @@ class Union(Construct):
             if sc.name is not None:
                 forwards[sc.name] = stream.tell()
             stream.seek(fallback)
-        buildfrom = self.buildfrom
-        if callable(buildfrom):
-            buildfrom = buildfrom(context)
-        if isinstance(buildfrom, (int,str)):
-            stream.seek(forwards[buildfrom])
+        forwards["*"] = forwards[0]
+        parsefrom = self.parsefrom
+        if callable(parsefrom):
+            parsefrom = parsefrom(context)
+        if isinstance(parsefrom, (int,str)):
+            stream.seek(forwards[parsefrom])
         return obj
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
@@ -1392,7 +1394,7 @@ class Union(Construct):
         if buildfrom is Pass:
             return
         if buildfrom is None:
-            for i,sc in enumerate(self.subcons):
+            for sc in self.subcons:
                 if sc.subcon.flagbuildnone:
                     subobj = obj.get(sc.name, None)
                     buildret = sc.subcon._build(subobj, stream, context, path)

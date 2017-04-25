@@ -671,8 +671,8 @@ class TestCore(unittest.TestCase):
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="a").build(dict(a=b"zz",b=5))  == b"zz"
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom="b").build(dict(a=b"zz",b=5))  == b"\x00\x05"
         assert Union("a"/Bytes(2), "b"/Int16ub, buildfrom=Pass).build({}) == b""
-        assert raises(Union(Pass, buildfrom=123).parse, b"") == KeyError
-        assert raises(Union(Pass, buildfrom="missing").parse, b"") == KeyError
+        assert raises(Union(Pass, parsefrom=123).parse, b"") == KeyError
+        assert raises(Union(Pass, parsefrom="missing").parse, b"") == KeyError
         assert raises(Union(Pass, buildfrom=123).build, {}) == IndexError
         assert raises(Union(Pass, buildfrom="missing").build, {}) == KeyError
 
@@ -685,12 +685,12 @@ class TestCore(unittest.TestCase):
         assert raises(Union(Pass, buildfrom=this.missing).sizeof) == SizeofError
 
         assert (Union("b"/Int16ub) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x01]
-        assert (Union("b"/Int16ub, buildfrom=0) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
-        assert (Union("b"/Int16ub, buildfrom="b") >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
+        assert (Union("b"/Int16ub, parsefrom=0) >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
+        assert (Union("b"/Int16ub, parsefrom="b") >> Byte).parse(b"\x01\x02\x03") == [Container(b=0x0102),0x03]
 
         assert (Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x01]
-        assert (Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=0) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
-        assert (Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom="a") >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
+        assert (Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), parsefrom=0) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
+        assert (Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), parsefrom="a") >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
         assert Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom="a").build(dict(a=0x0102)) == b"\x01\x02"
         assert Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=0).build(dict(a=0x0102)) == b"\x01\x02"
         assert Union("a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)), buildfrom=1).build(dict(b=0x01, c=0x02)) == b"\x01\x02"
@@ -1310,7 +1310,7 @@ class TestCore(unittest.TestCase):
         # When setting optional to False in vstring method, all three tests above work fine.
 
     def test_from_issue_231(self):
-        u = Union("raw"/Byte[8], "ints"/Int32ub[2], buildfrom="ints")
+        u = Union("raw"/Byte[8], "ints"/Int32ub[2], parsefrom="*")
         s = Struct("u"/u, "d"/Byte[4])
 
         buildret = s.build(dict(u=dict(ints=[1,2]),d=[0,1,2,3]))

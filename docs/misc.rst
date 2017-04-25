@@ -168,19 +168,20 @@ Union
 
 Treats the same data as multiple constructs (similar to C union statement). When parsing, each subconstruct parses the same data (so you can look at the data in multiple views).
 
-.. warning:: If you skip the `buildfrom` parameter then parsing will not advance the stream, because subcons can be of different sizes.
+When parsing, all fields read the same data bytes, but stream remains at initial offset by default, unless parsefrom selects a subcon excplicitly. When building, either the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) builds into the stream, or buildfrom selects a subcon explicitly.
 
->>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
+.. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset, as if each subcon parsed like Peek. Otherwise the stream seeks to where the selected subcon ended. If you skip the `buildfrom` parameter then any subcon can build, but sizeof does not work.
+
+>>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], parsefrom="*").parse(b"12345678")
 Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
 
->>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom=3).build(dict(chars=range(8)))
-b'\x00\x01\x02\x03\x04\x05\x06\x07'
 >>> Union("raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8], buildfrom="chars").build(dict(chars=range(8)))
 b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
 ::
 
     Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
+    >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], parsefrom='*')
     >>> Union(raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8], buildfrom=3)
 
 Select
