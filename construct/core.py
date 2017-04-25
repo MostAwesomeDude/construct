@@ -1329,7 +1329,7 @@ class Union(Construct):
     r"""
     Treats the same data as multiple constructs (similar to C union statement) so you can "look" at the data in multiple views.
 
-    When parsing, all fields read the same data bytes, but stream remains at initial offset by default, unless parsefrom selects a subcon excplicitly. When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
+    When parsing, all fields read the same data bytes, but stream remains at initial offset if None, unless parsefrom selects a subcon by index or name. When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
 
     .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset. Many users fail to use this class properly.
 

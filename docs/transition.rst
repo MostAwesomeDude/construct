@@ -124,7 +124,7 @@ Switch remains
 
 Optional remains
 
-Union takes optional `buildfrom` and seeks back on parsing otherwise, indexes by id or name
+Union takes explicit `parsefrom` so parsing seeks stream by selected subcon or none
 
 Select remains
 

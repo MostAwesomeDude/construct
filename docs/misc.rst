@@ -168,14 +168,14 @@ Union
 
 Treats the same data as multiple constructs (similar to C union statement) so you can "look" at the data in multiple views.
 
-When parsing, all fields read the same data bytes, but stream remains at initial offset by default, unless parsefrom selects a subcon excplicitly. When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
+When parsing, all fields read the same data bytes, but stream remains at initial offset if None, unless parsefrom selects a subcon by index or name. When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
 
 .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset. Many users fail to use this class properly.
 
->>> Union(None, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
+>>> Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
 Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
 
->>> Union(None, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).build(dict(chars=range(8)))
+>>> Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).build(dict(chars=range(8)))
 b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
 ::
