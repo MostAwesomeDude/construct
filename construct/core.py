@@ -1688,7 +1688,7 @@ class Tell(Construct):
 
     Tells are useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute.
 
-    .. seealso:: Better to use :func:`~construct.core.CopyRaw` wrapper in almost any case.
+    .. seealso:: Better use :func:`~construct.core.RawCopy` instead of manually extracting bytes.
 
     Example::
 
