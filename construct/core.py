@@ -869,6 +869,12 @@ class Struct(Construct):
                     subobj = obj.get(sc.name, None)
                 else:
                     subobj = obj[sc.name]
+
+                if sc.flagembedded:
+                    context.update(subobj)
+                if sc.name is not None:
+                    context[sc.name] = subobj
+
                 buildret = sc._build(subobj, stream, context, path)
                 if buildret is not None:
                     if sc.flagembedded:
@@ -1553,7 +1559,7 @@ class Switch(Construct):
         else:
             key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
         case = self.cases.get(key, self.default)
-        case._build(obj, stream, context, path)
+        return case._build(obj, stream, context, path)
     def _sizeof(self, context, path):
         try:
             key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc

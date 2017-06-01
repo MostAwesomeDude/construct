@@ -1430,3 +1430,18 @@ class TestCore(unittest.TestCase):
         )
         assert st.parse(b'bob\x00\x05') == Container(name='bob')(index=5)
         assert st.parse(b'\x00') == Container(name='')
+
+    @pytest.mark.xfail
+    def test_from_issue_357(self):
+        inner = Struct(
+            "computed" / Computed(4),
+        )
+        st = Struct(
+            "a" / inner,
+            "b" / Switch(0, {}, inner),
+            Probe(),
+            Check(this.a.computed == 4),
+            Check(this.b.computed == 4),
+        )
+        assert st.parse(b"")
+        assert st.build(dict(a={}, b={})) == b""
