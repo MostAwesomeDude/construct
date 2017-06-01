@@ -348,6 +348,11 @@ class TestCore(unittest.TestCase):
         # this is not buildable, array is not passed and cannot be deduced from raw data anyway
         # print(st.build(dict(raw=dict(data=b"\x01\x02\xff\x00"))))
 
+    def test_rawcopy_issue_358(self):
+        # RawCopy overwritten context value with subcon return obj regardless of None
+        d = Struct("a"/RawCopy(Byte), "check"/Check(this.a.value == 255))
+        assert d.build(dict(a=dict(value=255))) == b"\xff"
+
     def test_tell(self):
         assert Tell.parse(b"") == 0
         assert Tell.build(None) == b""

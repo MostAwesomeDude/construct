@@ -2127,7 +2127,8 @@ class RawCopy(Subconstruct):
         if 'value' in obj:
             value = obj['value']
             offset1 = stream.tell()
-            value = self.subcon._build(value, stream, context, path)
+            ret = self.subcon._build(value, stream, context, path)
+            value = value if ret is None else ret
             offset2 = stream.tell()
             stream.seek(offset1)
             data = _read_stream(stream, offset2-offset1)
