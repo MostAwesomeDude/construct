@@ -1445,3 +1445,8 @@ class TestCore(unittest.TestCase):
         )
         assert st1.build(dict(a={})) == b""
         assert st2.build(dict(b={})) == b""
+
+    @pytest.mark.xfail(reason="why fails? abstract parse was fixed, Struct uses a Container anyway")
+    def test_context(self):
+        st = Struct(Check(lambda ctx: ctx is Container))
+        st.parse(b"", context=dict())

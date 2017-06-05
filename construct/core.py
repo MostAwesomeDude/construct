@@ -170,10 +170,12 @@ class Construct(object):
 
         Files, pipes, sockets, and other streaming sources of data are handled by this method.
         """
-        if context is None:
-            context = Container()
-        context.update(kw)
-        return self._parse(stream, context, "parsing")
+        context2 = Container()
+        if context is not None:
+            context2.update(context)
+        context2.update(kw)
+
+        return self._parse(stream, context2, "(parsing)")
 
     def _parse(self, stream, context, path):
         """
@@ -199,10 +201,12 @@ class Construct(object):
 
         :returns: None
         """
-        if context is None:
-            context = Container()
-        context.update(kw)
-        self._build(obj, stream, context, "building")
+        context2 = Container()
+        if context is not None:
+            context2.update(context)
+        context2.update(kw)
+
+        self._build(obj, stream, context2, "(building)")
 
     def _build(self, obj, stream, context, path):
         """
