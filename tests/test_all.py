@@ -1451,7 +1451,6 @@ class TestCore(unittest.TestCase):
         st = Struct(Check(lambda ctx: ctx is Container))
         st.parse(b"", context=dict())
 
-    @pytest.mark.xfail(reason="why fails? also disabling my_byte my_bits makes it pass")
     def test_from_issue_362(self):
         FORMAT = Struct(
             "my_tell" / Tell,
