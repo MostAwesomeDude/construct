@@ -1042,6 +1042,7 @@ class TestCore(unittest.TestCase):
         assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict()) == b'\x00'
         assert raises(FlagsEnum(Byte, feature=4,output=2,input=1).build, dict(unknown=True)) == MappingError
 
+    @pytest.mark.skipif(PY37, reason="Travis python-nightly numpy fails unconditionally recently")
     @pytest.mark.xfail(PYPY, raises=ImportError, reason="numpy not on Travis pypy")
     def test_numpy(self):
         import numpy

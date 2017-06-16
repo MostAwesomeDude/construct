@@ -4,7 +4,6 @@ Some Python 2 & 3 compatibility code.
 
 import sys
 
-
 PY = sys.version_info[:2]
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
@@ -14,6 +13,7 @@ PY33 = sys.version_info[:2] == (3,3)
 PY34 = sys.version_info[:2] == (3,4)
 PY35 = sys.version_info[:2] == (3,5)
 PY36 = sys.version_info[:2] == (3,6)
+PY37 = sys.version_info[:2] == (3,7)
 PYPY = '__pypy__' in sys.builtin_module_names
 supportskwordered = PY >= (3,6) or PYPY
 
