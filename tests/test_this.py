@@ -78,3 +78,20 @@ class TestThis(unittest.TestCase):
         )
         assert example.parse(b"\x03\x07\xff") == dict(items=[3,7,255])
         assert example.build(dict(items=[3,7,255])) == b"\x03\x07\xff"
+
+    @pytest.mark.xfail(reason="this does not support in operator")
+    def test_this_inoperator(self):
+        st = Struct(
+            "if"  / If(this.data     in [1,2,3], Const(b"4")),
+            "not" / If(this.data not in [1,2,3], Const(b"5")),
+        )
+        assert st.build(dict(data=1)) == b'4'
+        assert st.build(dict(data=7)) == b'5'
+
+    def test_lambda_inoperator(self):
+        st = Struct(
+             "if"  / If(lambda ctx: ctx.data     in [1,2,3], Const(b"4")),
+             "not" / If(lambda ctx: ctx.data not in [1,2,3], Const(b"5")),
+        )
+        assert st.build(dict(data=1)) == b'4'
+        assert st.build(dict(data=7)) == b'5'
