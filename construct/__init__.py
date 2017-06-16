@@ -8,8 +8,8 @@ Homepage:
 Hands-on example:
     >>> from construct import *
     >>> s = Struct(
-    ...     "a" / UBInt8,
-    ...     "b" / UBInt16,
+    ...     "a" / Byte,
+    ...     "b" / Short,
     ... )
     >>> print s.parse(b"\x01\x02\x03")
     Container:
