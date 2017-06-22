@@ -10,7 +10,7 @@ python:
     - "3.4"
     - "3.5"
     - "3.6-dev"
-    - "nightly" # currently points to 3.7 something
+    - "nightly" # currently points to 3.7
     - "pypy"
     - "pypy3"
 
@@ -24,5 +24,5 @@ script:
 
 notifications:
     email:
-        on_success: change
-        on_failure: change
+        receipients:
+            - arek.bulski@gmail.com
