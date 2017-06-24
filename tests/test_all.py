@@ -936,7 +936,7 @@ class TestCore(unittest.TestCase):
     @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_lazystruct_kwctor(self):
         common(LazyStruct(a=Byte, b=Byte, c=Byte, d=Byte), b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 4)
-        
+
     def test_lazystruct_nested_embedded(self):
         assert dict(LazyStruct("a"/Byte,"b"/LazyStruct("c"/Byte)).parse(b"\x01\x02")) == dict(a=1,b=dict(c=2))
         assert LazyStruct("a"/Byte,"b"/LazyStruct("c"/Byte)).build(dict(a=1,b=dict(c=2))) == b"\x01\x02"
@@ -984,7 +984,7 @@ class TestCore(unittest.TestCase):
     @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_lazysequence_kwctor(self):
         common(LazySequence(a=Byte, b=Byte, c=Byte, d=Byte), b"\x01\x02\x03\x04", [1,2,3,4], 4)
-        
+
     def test_lazysequence_nested_embedded(self):
         assert LazySequence(Int8ub, Int16ub, LazySequence(Int8ub, Int8ub)).parse(b"\x01\x00\x02\x03\x04") == [1,2,[3,4]]
         assert LazySequence(Int8ub, Int16ub, LazySequence(Int8ub, Int8ub)).build([1,2,[3,4]]) == b"\x01\x00\x02\x03\x04"
@@ -1050,7 +1050,6 @@ class TestCore(unittest.TestCase):
         assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict()) == b'\x00'
         assert raises(FlagsEnum(Byte, feature=4,output=2,input=1).build, dict(unknown=True)) == MappingError
 
-    @pytest.mark.skipif(PY37, reason="Travis python-nightly numpy fails unconditionally recently")
     @pytest.mark.xfail(PYPY, raises=ImportError, reason="numpy not on Travis pypy")
     def test_numpy(self):
         import numpy
