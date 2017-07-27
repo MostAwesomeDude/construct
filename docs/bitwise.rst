@@ -52,6 +52,7 @@ Important notes
 
 * Byte aligned - The total size of the elements of a BitStruct must be a multiple of 8 (due to alignment issues). RestreamedBytesIO will raise an error of the amount of bits and bytes does not align properly.
 * Pointers and OnDemand - Do not place Pointers or OnDemands inside bitwise because it uses an internal stream, so external stream offsets will turn out wrong, have side-effects or raise exceptions.
+* Advanced classes like tunneling may not work in bitwise context. Only basic fields like integers were throughly tested.
 
 
 Integers out of bits
