@@ -85,6 +85,8 @@ b'\x08\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'
 
 CString is an another variable length string, that always ends with a null \0 terminating byte at the end. This scheme was invented in C language and is known in the computer science community very well. One of the authors, Kernighan or Ritchie, admitted that it was one of the most regretable design decisions in history.
 
+.. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with CStrings.
+
 >>> CString(encoding="utf8").build(b"hello")
 b'hello\x00'
 

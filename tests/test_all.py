@@ -841,6 +841,15 @@ class TestCore(unittest.TestCase):
         assert GreedyString().build(u"Афон") == GreedyString(encoding="utf8").build(u"Афон")
         setglobalstringencoding(None)
 
+    @pytest.mark.xfail(raises=AssertionError, reason="CString cannot support UTF16/32")
+    def test_badly_encoded_strings_1(self):
+        assert CString(encoding="utf-16-le").build("abcd") == "abcd".encode("utf-16-le")
+
+    @pytest.mark.xfail(raises=UnicodeDecodeError, reason="CString cannot support UTF16/32")
+    def test_badly_encoded_strings_2(self):
+        s = "abcd".encode("utf-16-le") + b"\x00\x00"
+        CString(encoding="utf-16-le").parse(s)
+
     def test_lazybound(self):
         common(LazyBound(lambda ctx: Byte), b"\x01", 1, 1)
 

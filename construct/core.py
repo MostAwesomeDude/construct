@@ -3368,6 +3368,8 @@ def CString(terminators=b"\x00", encoding=None):
     :param terminators: sequence of valid terminators, first is used when building, all are used when parsing
     :param encoding: encoding (e.g. "utf8") or None for bytes
 
+    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with CStrings.
+
     Example::
 
         >>> CString(encoding="utf8").build("Афон")
