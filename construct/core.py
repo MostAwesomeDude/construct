@@ -833,7 +833,7 @@ class Struct(Construct):
         >>> Struct(Const(b"MZ"), Padding(2), Pass, Terminated).sizeof()
         4
 
-        Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
+        Note that this syntax works ONLY on python 3.6 due to ordered keyword arguments:
         >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
     """
     __slots__ = ["subcons"]
@@ -1349,7 +1349,7 @@ class Union(Construct):
         >>> Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).build(dict(chars=range(8)))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
-        Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
+        Note that this syntax works ONLY on python 3.6 due to ordered keyword arguments:
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     """
@@ -1444,7 +1444,7 @@ class Select(Construct):
         >>> Select(Int32ub, CString(encoding="utf8")).build("Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
-        Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
+        Note that this syntax works ONLY on python 3.6 due to ordered keyword arguments:
         >>> Select(num=Int32ub, text=CString(encoding="utf8"))
     """
     __slots__ = ["subcons", "includename"]
