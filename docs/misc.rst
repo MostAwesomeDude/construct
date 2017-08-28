@@ -36,7 +36,7 @@ b'\x01\x00\x00\x00'
 Computed
 --------
 
-Represents a computed value. Value does not read or write anything to the stream. It only returns its computed value as the result. Usually Computed fields are used for computations on the context. Look at the previous chapter. However, Computed can also produce values based on external environment, random module, or constants. For example:
+Represents a dynamically computed value from the context. Computed does not read or write anything to the stream. It only returns its computed value as the result. Usually Computed fields are used for computations on the context. Look at the previous chapter. However, Computed can also produce values based on external environment, random module, or constants. For example:
 
 >>> st = Struct(
 ...     "width" / Byte,
