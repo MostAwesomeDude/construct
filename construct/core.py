@@ -51,7 +51,7 @@ class BitIntegerError(ConstructError):
     pass
 class MappingError(AdaptationError):
     pass
-class ExplicitError(Exception):
+class ExplicitError(ConstructError):
     pass
 
 
