@@ -884,7 +884,6 @@ class Struct(Construct):
                 break
         return context
     def _sizeof(self, context, path):
-        # WARNING: possibly broken by StopIf
         try:
             def isStruct(sc):
                 return isStruct(sc.subcon) if isinstance(sc, Renamed) else isinstance(sc, Struct)
@@ -960,7 +959,6 @@ class Sequence(Struct):
                     context[i] = buildret
             except StopIteration:
                 break
-    # WARNING: Sizeof() possibly broken by StopIf
 
 
 #===============================================================================
@@ -1040,7 +1038,6 @@ class Range(Subconstruct):
             else:
                 raise
     def _sizeof(self, context, path):
-        # WARNING: possibly broken by StopIf
         try:
             min = self.min(context) if callable(self.min) else self.min
             max = self.max(context) if callable(self.max) else self.max
@@ -3211,7 +3208,7 @@ class StopIf(Construct):
         if self.condfunc(context):
             raise StopIteration
     def _sizeof(self, context, path):
-        return 0
+        return SizeofError("StopIf breaks Struct/Sequence/Range sizeof")
 
 
 #===============================================================================

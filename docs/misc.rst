@@ -253,8 +253,6 @@ StopIf
 
 Checks for a condition, and stops a Struct Sequence Range from parsing or building.
 
-.. warning:: May break sizeof methods. Unsure.
-
 ::
 
     Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
