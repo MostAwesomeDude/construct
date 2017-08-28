@@ -24,9 +24,9 @@ When little endianness is needed, either use fields like ``Int*l`` or swap bytes
 
 ::
 
-    Int24ul <--> ByteSwapped(Int24ub)
+    Int24ul <--> ByteSwapped(Int24ub) <--> BytesInteger(3, swapped=True)
 
->>> ByteSwapped(Int32ub).build(0x01020304)
+>>> Int24ul.build(0x01020304)
 '\x04\x03\x02\x01'
 
 When bits within each byte need to be swapped, there is another wrapper:

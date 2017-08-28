@@ -4,7 +4,7 @@ Streaming tactics
 
 .. note::
 
-    Certain constructs are available only for seekable streams (in-memory and files) and some require tellable streams (which in fact is a subset of seekability). Sockets and pipes do not support seeking, so you'll have to first read the data from the stream, and parse it in-memory, or use the :func:`~construct.core.Rebuffered` wrapper.
+    Certain constructs are available only for seekable or tellable streams (in-memory and files). Sockets and pipes do not support seeking, so you'll have to first read the data from the stream and parse it in-memory, or use experimental :func:`~construct.core.Rebuffered` wrapper.
 
 Wrappers
 ========
