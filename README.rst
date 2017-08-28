@@ -47,22 +47,22 @@ See more examples of `file formats <https://github.com/construct/construct/tree/
 
 Sticky
 --------
-Version 2.5.5 is the previous stable release. If you are maintaining a project that depended on this framework for a long time, you should probably use this version. This branch is not actively maintained.
+Version 2.5.5 is legacy. If you are maintaining a project that depended on this library for a long time, you should probably use this version. This branch is not actively maintained, not even bugfixes.
 
-Version 2.8 was released September, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> are used to construct Structs and Sequences. Most classes were redesigned and reimplemented. You should read the documentation again.
+Version 2.8 was released on September, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> [] are used to create Structs Sequences and Ranges. Most classes changed interface and behavior. You should read entire documentation again.
 
 
 Development and support
 -------------------------
-Please use the `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests, report issues and bugs, and to send in patches. There is also the `mailing list <https://groups.google.com/d/forum/construct3>`_ but GitHub should be preffered.
+Please use the `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests, report issues and bugs, and to send in patches. Good quality extensions to test suite are highly welcomed. There is also a `mailing list <https://groups.google.com/d/forum/construct3>`_ that was used for years but github issues should be preffered.
 
-Construct's main documentation is at `construct.readthedocs.org <http://construct.readthedocs.org>`_, where you can find all kinds of examples. The library itself is developed on `github <https://github.com/construct/construct>`_. Releases are also available on `pypi <https://pypi.python.org/pypi/construct>`_.
+Main documentation is at `construct.readthedocs.org <http://construct.readthedocs.org>`_, where you can find all kinds of examples. Source is on  `github <https://github.com/construct/construct>`_. Releases are available on `pypi <https://pypi.python.org/pypi/construct>`_.
 
-`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a different project. It is a rewrite from scratch and belongs to another developer, it diverged from this project. As far as I can tell, it was not released and abandonded.
+`Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a different project. It is a rewrite from scratch and belongs to another (previous) developer, it diverged from this project years ago. As far as I can tell, it was never released and abandoned.
 
 
 Requirements
 --------------
 Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 and pypy pypy3 implementation.
 
-Best should be 3.6 because it supports ordered keyword arguments which comes handy when declaring Struct members or manually crafting Containers.
+Best should be 3.6 because it supports ordered keyword arguments which comes handy when declaring Struct members or crafting Containers.

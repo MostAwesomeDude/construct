@@ -5,7 +5,7 @@ Transition to 2.8
 Overall
 =======
 
-All fields and complex constructs are now nameless. Look at Struct and Sequence, and also Range and Array.
+All fields and complex constructs are now nameless, you need to use / operator to name them. Look at Struct Sequence Range for how to use + >> [] operators to construct larger instances.
 
 
 
@@ -69,7 +69,9 @@ Struct uses syntax like ``Struct("num"/Int32ub, "text"/CString())``
 
 Sequence uses syntax like ``Byte >> Int16ul`` and ``Sequence(Byte, Int16ul)``
 
-On Python 3.6 you can use ``Struct(num=Int32ub, text=CString())``
+Range uses syntax like ``Byte[2]`` and ``Byte[:]``
+
+On Python 3.6 you can also use syntax like ``Struct(num=Int32ub, text=CString())`` and ``Sequence(num=Int32ub, text=CString()``
 
 
 Ranges and Arrays
@@ -79,7 +81,7 @@ Array uses syntax like ``Byte[10]`` and ``Array(10, Byte)``.
 
 PrefixedArray takes explicit `lengthfield` before subcon
 
-Range uses syntax like ``Byte[0:]`` ``Byte[:10]`` ``Byte[0:10]`` and ``Range(min=?, max=?, Byte)``
+Range uses syntax like ``Byte[0:10]`` ``Byte[:]`` and ``Range(min=?, max=?, Byte)``
 
 OpenRange and GreedyRange were dropped
 
@@ -139,7 +141,9 @@ Embed was made Embedded
 
 Const incorporated Magic field
 
-Pass remains but Terminator was renamed Terminated
+Pass remains
+
+Terminator was renamed Terminated
 
 Error added
 
