@@ -74,4 +74,5 @@ class TestFormats(unittest.TestCase):
 
     def test_pe32file(self):
         commondump(pe32_file, "python.exe")
-
+        commondump(pe32_file, "NOTEPAD.EXE")
+        commondump(pe32_file, "sqlite3.dll")

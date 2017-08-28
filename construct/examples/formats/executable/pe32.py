@@ -8,47 +8,18 @@ http://download.microsoft.com/download/1/6/1/161ba512-40e2-4cc9-843a-923143f3456
 2006 with updates relevant for .NET:
 http://download.microsoft.com/download/9/c/5/9c5b2167-8017-4bae-9fde-d599bac8184a/pecoff_v8.doc
 """
-import time
 
-from construct import (
-    Adapter,
-    Array,
-    Bytes,
-    Const,
-    Container,
-    Enum,
-    ExprAdapter,
-    FlagsEnum,
-    HexDump,
-    If,
-    IfThenElse,
-    Int16sl,
-    Int16ul,
-    Int32ul,
-    Int64ul,
-    Int8ul,
-    OnDemand,
-    OnDemandPointer,
-    Padding,
-    Pass,
-    Pointer,
-    String,
-    Struct,
-    Tell,
-    this,
-)
+import time
+from construct import *
 
 
 class UTCTimeStampAdapter(Adapter):
     def _decode(self, obj, context):
         return time.ctime(obj)
-
     def _encode(self, obj, context):
         return int(time.mktime(time.strptime(obj)))
 
-
-def UTCTimeStamp():
-    return UTCTimeStampAdapter(Int32ul)
+UTCTimeStamp = UTCTimeStampAdapter(Int32ul)
 
 
 class NamedSequence(Adapter):
@@ -117,11 +88,11 @@ msdos_header = "msdos_header" / Struct(
 )
 
 symbol_table = "symbol_table" / Struct(
-    "name" / String(8, padchar = b"\x00"),
+    "name" / String(8, padchar=b"\x00"),
     "value" / Int32ul,
     "section_number" / Enum(ExprAdapter(Int16sl,
-            encoder = lambda obj, ctx: obj + 1,
-            decoder = lambda obj, ctx: obj - 1,
+            encoder = lambda obj,ctx: obj + 1,
+            decoder = lambda obj,ctx: obj - 1,
         ),
         UNDEFINED = -1,
         ABSOLUTE = -2,
@@ -210,7 +181,7 @@ coff_header = "coff_header" / Struct(
         _default_ = Pass
     ),
     "number_of_sections" / Int16ul,
-    "time_stamp" / UTCTimeStamp(),
+    "time_stamp" / UTCTimeStamp,
     "symbol_table_pointer" / Int32ul,
     "number_of_symbols" / Int32ul,
     "optional_header_size" / Int16ul,
@@ -231,16 +202,10 @@ coff_header = "coff_header" / Struct(
         UNIPROCESSOR_ONLY = 0x4000,
         BIG_ENDIAN_MACHINE = 0x8000,
     ),
-
-    # symbol table
     "symbol_table" / Pointer(this.symbol_table_pointer, Array(this.number_of_symbols, symbol_table))
 )
 
-def PEPlusField():
-    return IfThenElse(this.pe_type == "PE32_plus",
-        Int64ul,
-        Int32ul,
-    )
+PEPlusField = IfThenElse(this.pe_type == "PE32_plus", Int64ul, Int32ul)
 
 optional_header = "optional_header" / Struct(
     # standard fields
@@ -260,7 +225,7 @@ optional_header = "optional_header" / Struct(
     "base_of_data" / If(this.pe_type == "PE32", Int32ul),
 
     # WinNT-specific fields
-    "image_base" / PEPlusField(),
+    "image_base" / PEPlusField,
     "section_aligment" / Int32ul,
     "file_alignment" / Int32ul,
     "major_os_version" / Int16ul,
@@ -292,10 +257,10 @@ optional_header = "optional_header" / Struct(
         WDM_DRIVER = 0x2000,
         TERMINAL_SERVER_AWARE = 0x8000,
     ),
-    "reserved_stack_size" / PEPlusField(),
-    "stack_commit_size" / PEPlusField(),
-    "reserved_heap_size" / PEPlusField(),
-    "heap_commit_size" / PEPlusField(),
+    "reserved_stack_size" / PEPlusField,
+    "stack_commit_size" / PEPlusField,
+    "reserved_heap_size" / PEPlusField,
+    "heap_commit_size" / PEPlusField,
     "loader_flags" / Int32ul,
     "number_of_data_directories" / Int32ul,
 
@@ -327,7 +292,7 @@ optional_header = "optional_header" / Struct(
 )
 
 section = "section" / Struct(
-    "name" / String(8, padchar = b"\x00"),
+    "name" / String(8, padchar=b"\x00"),
     "virtual_size" / Int32ul,
     "virtual_address" / Int32ul,
     "raw_data_size" / Int32ul,
@@ -403,24 +368,11 @@ section = "section" / Struct(
 )
 
 pe32_file = "pe32_file" / Struct(
-    # headers
     msdos_header,
     coff_header,
     "_start_of_optional_header" / Tell,
     optional_header,
     "_end_of_optional_header" / Tell,
-    Padding(lambda ctx: min(0,
-            ctx.coff_header.optional_header_size -
-            ctx._end_of_optional_header +
-            ctx._start_of_optional_header
-        )
-    ),
-
-    # sections
+    Padding(lambda ctx: min(0, ctx.coff_header.optional_header_size - ctx._end_of_optional_header + ctx._start_of_optional_header)),
     "sections" / Array(this.coff_header.number_of_sections, section)
 )
-
-
-if __name__ == "__main__":
-    print (pe32_file.parse_stream(open("../../../tests/NOTEPAD.EXE", "rb")))
-    print (pe32_file.parse_stream(open("../../../tests/sqlite3.dll", "rb")))
