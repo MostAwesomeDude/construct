@@ -381,8 +381,10 @@ class TestCore(unittest.TestCase):
     def test_terminated(self):
         common(Terminated, b"", None, 0)
         common(Struct("end"/Terminated), b"", Container(end=None), 0)
+        common(BitStruct("end"/Terminated), b"", Container(end=None), 0)
         assert raises(Terminated.parse, b"x") == TerminatedError
         assert raises(Struct("end"/Terminated).parse, b"x") == TerminatedError
+        assert raises(BitStruct("end"/Terminated).parse, b"x") == TerminatedError
 
     def test_error(self):
         assert raises(Error.parse, b"") == ExplicitError
@@ -1099,6 +1101,10 @@ class TestCore(unittest.TestCase):
         assert Restreamed(Bytes(2), None, None, lambda b: b*2, 1, "bytes", None).parse(b"a") == b"aa"
         assert Restreamed(Bytes(1), lambda b: b*2, 1, None, None, "bytes", None).build(b"a") == b"aa"
         assert Restreamed(Bytes(5), None, None, None, None, "bytes", lambda n: n*2).sizeof() == 10
+
+    def test_restreamed_partial_read(self):
+        d = Restreamed(Bytes(255), ident, 1, ident, 1, "bytes", ident)
+        assert raises(d.parse, b"") == IOError
 
     def test_rebuffered(self):
         data = b"0" * 1000
