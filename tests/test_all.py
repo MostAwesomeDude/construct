@@ -41,11 +41,11 @@ def common(format, data=NotImplemented, obj=NotImplemented, size=NotImplemented,
 
 class TestCore(unittest.TestCase):
 
-    def test_byte(self):
-        common(Byte, b"\x00", 0, 1)
-        common(Byte, b"\xff", 255, 1)
-
     def test_ints(self):
+        common(Byte, b"\xff", 255, 1)
+        common(Short, b"\x00\xff", 255, 2)
+        common(Int, b"\x00\x00\x00\xff", 255, 4)
+        common(Long, b"\x00\x00\x00\x00\x00\x00\x00\xff", 255, 8)
         assert Int8ub.parse(b"\x01") == 0x01
         assert Int8ub.build(0x01) == b"\x01"
         assert Int8ub.sizeof() == 1
@@ -138,13 +138,13 @@ class TestCore(unittest.TestCase):
         assert Bytes(4).build(0x01020304) == b"\x01\x02\x03\x04"
         assert Bytes(4).sizeof() == 4
 
-        assert Bytes(lambda ctx: ctx.n).parse(b"12345678",n=4) == b"1234"
-        assert Bytes(lambda ctx: ctx.n).build(b"1234",n=4) == b"1234"
-        assert Bytes(lambda ctx: ctx.n).sizeof(n=4) == 4
-        assert Bytes(lambda ctx: ctx.n).build(1, n=4) == b"\x00\x00\x00\x01"
-        assert raises(Bytes(lambda ctx: ctx.n).build, b"", n=4) == FieldError
-        assert raises(Bytes(lambda ctx: ctx.n).build, b"toolong", n=4) == FieldError
-        assert raises(Bytes(lambda ctx: ctx.n).sizeof) == SizeofError
+        assert Bytes(this.n).parse(b"12345678",n=4) == b"1234"
+        assert Bytes(this.n).build(b"1234",n=4) == b"1234"
+        assert Bytes(this.n).sizeof(n=4) == 4
+        assert Bytes(this.n).build(1, n=4) == b"\x00\x00\x00\x01"
+        assert raises(Bytes(this.n).build, b"", n=4) == FieldError
+        assert raises(Bytes(this.n).build, b"toolong", n=4) == FieldError
+        assert raises(Bytes(this.n).sizeof) == SizeofError
 
     def test_greedybytes(self):
         common(GreedyBytes, b"1234", b"1234", SizeofError)
@@ -185,8 +185,8 @@ class TestCore(unittest.TestCase):
                     assert d.build(d.parse(b)) == b
 
     def test_array(self):
-        assert Byte[4].parse(b"1234") == [49, 50, 51, 52]
-        assert Byte[4].build([49, 50, 51, 52]) == b"1234"
+        assert Byte[4].parse(b"1234") == [49,50,51,52]
+        assert Byte[4].build([49,50,51,52]) == b"1234"
 
         assert Array(3,Byte).parse(b"\x01\x02\x03") == [1,2,3]
         assert Array(3,Byte).build([1,2,3]) == b"\x01\x02\x03"
@@ -196,15 +196,15 @@ class TestCore(unittest.TestCase):
         assert raises(Array(3,Byte).build, [1,2,3,4,5,6,7,8]) == RangeError
         assert Array(3,Byte).sizeof() == 3
 
-        assert Array(lambda ctx: 3, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
-        assert Array(lambda ctx: 3, Byte).parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
-        assert raises(Array(lambda ctx: 3, Byte).parse, b"", n=3) == RangeError
-        assert Array(lambda ctx: 3, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
-        assert raises(Array(lambda ctx: 3, Byte).build, [1,2], n=3) == RangeError
-        assert Array(lambda ctx: ctx.n, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
-        assert Array(lambda ctx: ctx.n, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
-        assert raises(Array(lambda ctx: ctx.n, Byte).sizeof) == SizeofError
-        assert Array(lambda ctx: ctx.n, Byte).sizeof(n=4) == 4
+        assert Array(3, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
+        assert Array(3, Byte).parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
+        assert raises(Array(3, Byte).parse, b"", n=3) == RangeError
+        assert Array(3, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
+        assert raises(Array(3, Byte).build, [1,2], n=3) == RangeError
+        assert Array(this.n, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
+        assert Array(this.n, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
+        assert raises(Array(this.n, Byte).sizeof) == SizeofError
+        assert Array(this.n, Byte).sizeof(n=4) == 4
 
     def test_prefixedarray(self):
         common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
@@ -216,10 +216,10 @@ class TestCore(unittest.TestCase):
         assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
 
     def test_range(self):
-        assert Byte[2:4].parse(b"1234567890") == [49, 50, 51, 52]
-        assert Byte[2:4].build([49, 50, 51, 52]) == b"1234"
-        assert Byte[:4].parse(b"1234567890") == [49, 50, 51, 52]
-        assert Byte[:4].build([49, 50, 51, 52]) == b"1234"
+        assert Byte[2:4].parse(b"1234567890") == [49,50,51,52]
+        assert Byte[2:4].build([49,50,51,52]) == b"1234"
+        assert Byte[:4].parse(b"1234567890") == [49,50,51,52]
+        assert Byte[:4].build([49,50,51,52]) == b"1234"
         assert raises(Byte[2:].parse, b"") == RangeError
         assert raises(Byte[2:].build, []) == RangeError
 
@@ -315,13 +315,13 @@ class TestCore(unittest.TestCase):
         common(Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))), b"\x01\x00\x02\x03\x04", [1,2,3,4], 5)
 
     def test_computed(self):
-        assert Computed(lambda ctx: "moo").parse(b"") == "moo"
-        assert Computed(lambda ctx: "moo").build(None) == b""
-        assert Computed(lambda ctx: "moo").sizeof() == 0
-        assert Struct("c" / Computed(lambda ctx: "moo")).parse(b"") == Container(c="moo")
-        assert Struct("c" / Computed(lambda ctx: "moo")).build({}) == b""
-        assert Struct("c" / Computed(lambda ctx: "moo")).build(dict()) == b""
-        assert Struct("c" / Computed(lambda ctx: "moo")).build(Container()) == b""
+        assert Computed("moo").parse(b"") == "moo"
+        assert Computed("moo").build(None) == b""
+        assert Computed("moo").sizeof() == 0
+        assert Struct("c" / Computed("moo")).parse(b"") == Container(c="moo")
+        assert Struct("c" / Computed("moo")).build({}) == b""
+        assert Struct("c" / Computed("moo")).build(dict()) == b""
+        assert Struct("c" / Computed("moo")).build(Container()) == b""
         assert raises(Computed(lambda ctx: ctx.missing).parse, b"") == AttributeError
         assert raises(Computed(lambda ctx: ctx["missing"]).parse, b"") == KeyError
 
@@ -391,7 +391,7 @@ class TestCore(unittest.TestCase):
         assert raises(("x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)).parse, b"\xff\x05") == ExplicitError
 
     def test_pointer(self):
-        common(Pointer(lambda ctx: 2, "pointer"/Byte), b"\x00\x00\x07", 7, 0)
+        common(Pointer(2, "pointer"/Byte), b"\x00\x00\x07", 7, 0)
 
     def test_const(self):
         common(Const(b"MZ"), b"MZ", b"MZ", 2)
@@ -404,25 +404,25 @@ class TestCore(unittest.TestCase):
         assert Struct(sig=Const(b"MZ")).build({}) == b"MZ"
 
     def test_switch(self):
-        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).parse(b"\x00\x02") == 2
-        assert Switch(lambda ctx: 6, {1:Byte, 5:Int16ub}, default=Byte).parse(b"\x00\x02") == 0
-        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}, includekey=True).parse(b"\x00\x02") == (5,2)
-        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).build(2) == b"\x00\x02"
-        assert Switch(lambda ctx: 6, {1:Byte, 5:Int16ub}, default=Byte).build(9) == b"\x09"
-        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}, includekey=True).build((5,2)) == b"\x00\x02"
-        assert raises(Switch(lambda ctx: 6, {1:Byte, 5:Int16ub}).parse, b"\x00\x02") == SwitchError
-        assert raises(Switch(lambda ctx: 6, {1:Byte, 5:Int16ub}).build, 9) == SwitchError
-        assert raises(Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}, includekey=True).build, (89,2)) == SwitchError
-        assert Switch(lambda ctx: 5, {1:Byte, 5:Int16ub}).sizeof() == 2
-        assert raises(Switch(lambda ctx: 5, {}).sizeof) == SwitchError
+        assert Switch(5, {1:Byte, 5:Int16ub}).parse(b"\x00\x02") == 2
+        assert Switch(6, {1:Byte, 5:Int16ub}, default=Byte).parse(b"\x00\x02") == 0
+        assert Switch(5, {1:Byte, 5:Int16ub}, includekey=True).parse(b"\x00\x02") == (5,2)
+        assert Switch(5, {1:Byte, 5:Int16ub}).build(2) == b"\x00\x02"
+        assert Switch(6, {1:Byte, 5:Int16ub}, default=Byte).build(9) == b"\x09"
+        assert Switch(5, {1:Byte, 5:Int16ub}, includekey=True).build((5,2)) == b"\x00\x02"
+        assert raises(Switch(6, {1:Byte, 5:Int16ub}).parse, b"\x00\x02") == SwitchError
+        assert raises(Switch(6, {1:Byte, 5:Int16ub}).build, 9) == SwitchError
+        assert raises(Switch(5, {1:Byte, 5:Int16ub}, includekey=True).build, (89,2)) == SwitchError
+        assert Switch(5, {1:Byte, 5:Int16ub}).sizeof() == 2
+        assert raises(Switch(5, {}).sizeof) == SwitchError
 
     def test_ifthenelse(self):
         common(IfThenElse(True,  Int8ub, Int16ub), b"\x01", 1, 1)
         common(IfThenElse(False, Int8ub, Int16ub), b"\x00\x01", 1, 2)
 
     def test_if(self):
-        common(If(True,  Int8ub), b"\x01", 1, 1)
-        common(If(False, Int8ub), b"", None, 0)
+        common(If(True,  Byte), b"\x01", 1, 1)
+        common(If(False, Byte), b"", None, 0)
 
     def test_padding(self):
         assert Padding(4).parse(b"\x00\x00\x00\x00") == None
@@ -509,9 +509,6 @@ class TestCore(unittest.TestCase):
         assert BitsInteger(8, signed=True).build(-1) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
         assert BitsInteger(8, swapped=True, bytesize=4).parse(b"\x01\x01\x01\x01\x00\x00\x00\x00") == 0x0f
         assert BitsInteger(8, swapped=True, bytesize=4).build(0x0f) == b"\x01\x01\x01\x01\x00\x00\x00\x00"
-        assert BitsInteger(lambda ctx: 8).parse(b"\x01" * 8) == 255
-        assert BitsInteger(lambda ctx: 8).build(255) == b"\x01" * 8
-        assert BitsInteger(lambda ctx: 8).sizeof() == 8
         assert raises(BitsInteger(this.missing).sizeof) == SizeofError
 
     def test_bytesinteger(self):
@@ -522,18 +519,12 @@ class TestCore(unittest.TestCase):
         assert BytesInteger(4, signed=True).build(-1) == b"\xff\xff\xff\xff"
         assert BytesInteger(4, swapped=True, bytesize=2).parse(b"\x00\xff\x00\x00") == 255
         assert BytesInteger(4, swapped=True, bytesize=2).build(255) == b"\x00\xff\x00\x00"
-        assert BytesInteger(lambda ctx: 4).parse(b"\x00\x00\x00\xff") == 255
-        assert BytesInteger(lambda ctx: 4).build(255) == b"\x00\x00\x00\xff"
-        assert BytesInteger(lambda ctx: 4).sizeof() == 4
         assert raises(BytesInteger(this.missing).sizeof) == SizeofError
 
     def test_bitwise(self):
         assert Bitwise(Bytes(8)).parse(b"\xff") == b"\x01\x01\x01\x01\x01\x01\x01\x01"
         assert Bitwise(Bytes(8)).build(b"\x01\x01\x01\x01\x01\x01\x01\x01") == b"\xff"
         assert Bitwise(Bytes(8)).sizeof() == 1
-        assert Bitwise(Bytes(lambda ctx: 8)).parse(b"\xff") == b"\x01\x01\x01\x01\x01\x01\x01\x01"
-        assert Bitwise(Bytes(lambda ctx: 8)).build(b"\x01\x01\x01\x01\x01\x01\x01\x01") == b"\xff"
-        assert Bitwise(Bytes(lambda ctx: 8)).sizeof() == 1
 
         assert Bitwise(Array(8,Bit)).parse(b"\xff") == [1,1,1,1,1,1,1,1]
         assert Bitwise(Array(8,Bit)).build([1,1,1,1,1,1,1,1]) == b"\xff"
@@ -929,8 +920,8 @@ class TestCore(unittest.TestCase):
         assert raises(LazyStruct("a"/Byte, "b"/CString()).sizeof) == SizeofError
         assert LazyStruct("a"/Byte).build(dict(a=1)) == b"\x01"
         assert LazyStruct("a"/Byte).sizeof() == 1
-        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminated).build(dict()) == b""
-        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminated).sizeof() == 0
+        assert LazyStruct(Pass, Computed(0), Terminated).build(dict()) == b""
+        assert LazyStruct(Pass, Computed(0), Terminated).sizeof() == 0
         assert LazyStruct("a"/Byte, "b"/LazyStruct("c"/Byte)).build(dict(a=1,b=dict(c=2))) == b"\x01\x02"
         assert LazyStruct().parse(b"") == dict()
         assert LazyStruct().build(dict()) == b""
@@ -939,8 +930,8 @@ class TestCore(unittest.TestCase):
         assert LazyStruct("a"/Byte).build(dict(a=1)) == b"\x01"
         assert dict(LazyStruct("a"/Byte,"b"/CString()).parse(b"\x01abc\x00")) == dict(a=1,b=b"abc")
         assert LazyStruct("a"/Byte,"b"/CString()).build(dict(a=1,b=b"abc")) == b"\x01abc\x00"
-        assert dict(LazyStruct(Pass, Computed(lambda ctx: 0), Terminated).parse(b"")) == dict()
-        assert LazyStruct(Pass, Computed(lambda ctx: 0), Terminated).build(dict()) == b""
+        assert dict(LazyStruct(Pass, Computed(0), Terminated).parse(b"")) == dict()
+        assert LazyStruct(Pass, Computed(0), Terminated).build(dict()) == b""
 
     @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_lazystruct_kwctor(self):
@@ -1331,7 +1322,7 @@ class TestCore(unittest.TestCase):
         # When setting optional to False in vstring method, all three tests above work fine.
 
     def test_from_issue_231(self):
-        u = Union(0, "raw"/Byte[8], "ints"/Int32ub[2])
+        u = Union(0, "raw"/Byte[8], "ints"/Int[2])
         s = Struct("u"/u, "d"/Byte[4])
 
         buildret = s.build(dict(u=dict(ints=[1,2]),d=[0,1,2,3]))
@@ -1394,8 +1385,7 @@ class TestCore(unittest.TestCase):
     def test_nonbytes_checksum_issue_323(self):
         st = Struct(
             "vals" / Byte[2],
-            "checksum" / Checksum(
-                Byte, lambda vals: sum(vals) & 0xFF, this.vals)
+            "checksum" / Checksum(Byte, lambda vals: sum(vals) & 0xFF, this.vals),
         )
         assert st.parse(b"\x00\x00\x00") == Container(vals=[0, 0])(checksum=0)
         assert raises(st.parse, b"\x00\x00\x01") == ChecksumError
@@ -1463,10 +1453,9 @@ class TestCore(unittest.TestCase):
         assert st1.build(dict(a={})) == b""
         assert st2.build(dict(b={})) == b""
 
-    @pytest.mark.xfail(reason="why fails? abstract parse was fixed, Struct uses a Container anyway")
     def test_context(self):
-        st = Struct(Check(lambda ctx: ctx is Container))
-        st.parse(b"", context=dict())
+        st = Struct(Check(lambda ctx: type(ctx) is Container))
+        st.parse(b"")
 
     def test_from_issue_362(self):
         FORMAT = Struct(
