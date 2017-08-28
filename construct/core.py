@@ -2665,7 +2665,9 @@ class Embedded(Subconstruct):
     r"""
     Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences. Name is also inherited.
 
-    :param subcon: the struct to embed
+    .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
+
+    :param subcon: the inner struct to embed inside outer struct, or sequence
 
     Example::
 

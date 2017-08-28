@@ -10,6 +10,8 @@ Embedded
 
 Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences.
 
+.. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
+
 >>> Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte).parse(b"abc")
 Container(a=97)(b=98)(c=99)
 
