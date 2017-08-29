@@ -418,6 +418,25 @@ class TestCore(unittest.TestCase):
         assert Switch(5, {1:Byte, 5:Int16ub}).sizeof() == 2
         assert raises(Switch(5, {}).sizeof) == SwitchError
 
+    def test_switch_issue_357(self):
+        inner = Struct(
+            "computed" / Computed(4),
+        )
+        inner2 = Struct(
+            "computed" / Computed(7),
+        )
+        st1 = Struct(
+            "a" / inner,
+            "b" / Switch(5, {1: inner2}, inner),
+            Probe(),
+        )
+        st2 = Struct(
+            "a" / inner,
+            "b" / Switch(5, {}, inner),
+            Probe(),
+        )
+        assert st1.parse(b"") == st2.parse(b"")
+
     def test_ifthenelse(self):
         common(IfThenElse(True,  Int8ub, Int16ub), b"\x01", 1, 1)
         common(IfThenElse(False, Int8ub, Int16ub), b"\x00\x01", 1, 2)
