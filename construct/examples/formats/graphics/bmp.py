@@ -1,8 +1,8 @@
 """
 Windows/OS2 Bitmap (BMP) this could have been a perfect show-case file format, but they had to make it ugly (all sorts of alignments)
 """
-from construct import *
 
+from construct import *
 
 #===============================================================================
 # pixels: uncompressed
@@ -90,4 +90,3 @@ bitmap_file = "bitmap_file" / Struct(
         ),
     ),
 )
-

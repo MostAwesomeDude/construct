@@ -1,8 +1,8 @@
 """
 Enhanced Meta File
 """
-from construct import *
 
+from construct import *
 
 record_type = "record_type" / Enum(Int32ul,
     ABORTPATH = 68,
@@ -147,5 +147,3 @@ emf_file = "emf_file" / Struct(
     header_record,
     Array(this.header_record.num_of_records - 1, generic_record),
 )
-
-

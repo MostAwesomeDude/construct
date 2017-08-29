@@ -6,8 +6,8 @@ Original code contributed by Robin Munn (rmunn at pobox dot com)
 (although the code has been extensively reorganized to meet Construct's
 coding conventions)
 """
-from construct import *
 
+from construct import *
 
 #===============================================================================
 # utils
@@ -18,7 +18,6 @@ coord = Struct(
 )
 
 compression_method = "compression_method" / Enum(Byte, deflate = 0, default=Pass)
-
 
 #===============================================================================
 # 11.2.3: PLTE - Palette
@@ -248,7 +247,6 @@ image_header_chunk = "image_header" / Struct(
     "crc" / Int32ub,
 )
 
-
 #===============================================================================
 # the complete PNG file
 #===============================================================================
@@ -257,5 +255,3 @@ png_file = "png" / Struct(
     image_header_chunk,
     "chunks" / GreedyRange(chunk),
 )
-
-

@@ -1,8 +1,8 @@
 """
 Windows Meta File
 """
-from construct import *
 
+from construct import *
 
 wmf_record = Struct("records",
     ULInt32("size"), # size in words, including the size, function and params

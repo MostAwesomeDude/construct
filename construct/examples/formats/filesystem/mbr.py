@@ -4,8 +4,8 @@ The first sector on disk, contains the partition table, bootloader, et al.
 
 http://www.win.tue.nl/~aeb/partitions/partition_types-1.html
 """
-from construct import *
 
+from construct import *
 
 mbr_format = "mbr" / Struct(
     "bootloader_code" / HexDump(Bytes(446)),
@@ -44,4 +44,3 @@ mbr_format = "mbr" / Struct(
     )),
     "signature" / Const(b"\x55\xAA"),
 )
-

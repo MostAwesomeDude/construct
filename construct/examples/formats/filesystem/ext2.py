@@ -1,8 +1,8 @@
 """
 Extension 2 (ext2) used in Linux systems
 """
-from construct import *
 
+from construct import *
 
 Char = SLInt8
 UChar = ULInt8
@@ -132,6 +132,3 @@ directory_record = Struct("directory_entry",
 
 if __name__ == "__main__":
     print (superblock.sizeof())
-
-
-

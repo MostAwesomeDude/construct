@@ -1,25 +1,18 @@
-# Contributed by
-# Dany Zatuchna (danzat at gmail)
-""" Implementation of the following grammar for the GIF89a file format
-<GIF Data Stream> ::=     Header <Logical Screen> <Data>* Trailer
-
-<Logical Screen> ::=      Logical Screen Descriptor [Global Color Table]
-
-<Data> ::=                <Graphic Block>  |
-                          <Special-Purpose Block>
-
-<Graphic Block> ::=       [Graphic Control Extension] <Graphic-Rendering Block>
-
-<Graphic-Rendering Block> ::=  <Table-Based Image>  |
-                               Plain Text Extension
-
-<Table-Based Image> ::=   Image Descriptor [Local Color Table] Image Data
-
-<Special-Purpose Block> ::=    Application Extension  |
-                               Comment Extension
 """
-from construct import *
+Contributed by Dany Zatuchna (danzat at gmail)
 
+Implementation of the following grammar for the GIF89a file format
+
+<GIF Data Stream> ::=     Header <Logical Screen> <Data>* Trailer
+<Logical Screen> ::=      Logical Screen Descriptor [Global Color Table]
+<Data> ::=                <Graphic Block>  | <Special-Purpose Block>
+<Graphic Block> ::=       [Graphic Control Extension] <Graphic-Rendering Block>
+<Graphic-Rendering Block> ::=  <Table-Based Image>  | Plain Text Extension
+<Table-Based Image> ::=   Image Descriptor [Local Color Table] Image Data
+<Special-Purpose Block> ::=    Application Extension  | Comment Extension
+"""
+
+from construct import *
 
 data_sub_block = Struct("data_sub_block",
     ULInt8("size"),

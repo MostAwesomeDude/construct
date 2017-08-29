@@ -139,4 +139,3 @@ def swapbytes(data, linesize=8):
     if linesize < 1:
         raise ValueError("linesize must be a positive number")
     return b"".join(data[i:i+linesize] for i in reversed(range(0,len(data),linesize)))
-

@@ -1,12 +1,7 @@
-"""
-Various containers exposed to the user.
-"""
-
 from construct.lib.py3compat import *
 
 
 globalfullprinting = None
-
 
 def setglobalfullprinting(enabled):
     r"""
@@ -16,7 +11,6 @@ def setglobalfullprinting(enabled):
     """
     global globalfullprinting
     globalfullprinting = enabled
-
 
 def getglobalfullprinting():
     """Used internally."""
@@ -404,7 +398,6 @@ class LazyRangeContainer(ListContainer):
 
     def __repr__(self):
         return "<%s: %d possible items, %d cached>" % (self.__class__.__name__, len(self), len(self.cached))
-        # return "<%s: %s>" % (self.__class__.__name__, ",".join(repr(e) for e in self))
 
 
 class LazySequenceContainer(LazyRangeContainer):

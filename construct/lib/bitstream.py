@@ -3,7 +3,6 @@ from time import sleep
 from sys import maxsize
 
 
-
 class RestreamedBytesIO(object):
     __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "decoderunitname", "rbuffer", "wbuffer","sincereadwritten"]
 
@@ -54,8 +53,6 @@ class RestreamedBytesIO(object):
 
     def tellable(self):
         return True
-
-
 
 
 class RebufferedBytesIO(object):

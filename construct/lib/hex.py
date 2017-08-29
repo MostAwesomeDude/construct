@@ -5,6 +5,7 @@ from construct.lib.py3compat import byte2int, int2byte, bytes2str, iteratebytes,
 _printable = [bytes2str(int2byte(i)) if 32 <= i < 128 else '.' for i in range(256)]
 _hexprint = [format(i, '02X') for i in range(256)]
 
+
 def hexdump(data, linesize):
     r"""
     Turns bytes into a unicode string of the format:
@@ -62,4 +63,3 @@ class HexString(bytes):
         if not self:
             return "''"
         return "\n" + "\n".join(hexdump(self, self.linesize))
-

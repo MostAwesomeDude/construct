@@ -12,36 +12,36 @@ example:
        for rootdir in fs:
            print rootdir
 """
+
 import numbers
 from io import BytesIO, BufferedReader
-
-from construct import Struct, Byte, Bytes, ULInt16, ULInt32, Enum, Array, Padding, Embed, Pass, BitStruct, Flag, Const
-
+from construct import *
 
 def Fat16Header(name):
     return Struct(name,
-            Bytes("jumpInstruction", 3),
-            Bytes("creatingSystemId", 8),
-            ULInt16("sectorSize"),
-            Byte("sectorsPerCluster"),
-            ULInt16("reservedSectorCount"),
-            Byte("fatCount"),
-            ULInt16("rootdirEntryCount"),
-            ULInt16("sectorCount_small"),
-            Byte("mediaId"), 
-            ULInt16("sectorsPerFat"),
-            ULInt16("sectorsPerTrack"),
-            ULInt16("sideCount"),
-            ULInt32("hiddenSectorCount"),
-            ULInt32("sectorCount_large"),
-            Byte("physicalDriveNumber"),
-            Byte("currentHead"),
-            Byte("extendedBootSignature"),
-            Bytes("volumeId", 4),
-            Bytes("volumeLabel", 11),
-            Const(Bytes("fsType", 8), "FAT16   "),
-            Bytes("bootCode", 448),
-            Const(Bytes("bootSectorSignature", 2), "\x55\xaa"))
+        Bytes("jumpInstruction", 3),
+        Bytes("creatingSystemId", 8),
+        ULInt16("sectorSize"),
+        Byte("sectorsPerCluster"),
+        ULInt16("reservedSectorCount"),
+        Byte("fatCount"),
+        ULInt16("rootdirEntryCount"),
+        ULInt16("sectorCount_small"),
+        Byte("mediaId"), 
+        ULInt16("sectorsPerFat"),
+        ULInt16("sectorsPerTrack"),
+        ULInt16("sideCount"),
+        ULInt32("hiddenSectorCount"),
+        ULInt32("sectorCount_large"),
+        Byte("physicalDriveNumber"),
+        Byte("currentHead"),
+        Byte("extendedBootSignature"),
+        Bytes("volumeId", 4),
+        Bytes("volumeLabel", 11),
+        Const(Bytes("fsType", 8), "FAT16   "),
+        Bytes("bootCode", 448),
+        Const(Bytes("bootSectorSignature", 2), "\x55\xaa"),
+    )
 
 def BootSector(name):
     header = Fat16Header("header")
@@ -58,23 +58,24 @@ def FatEntry(name):
 
 def DirEntry(name):
     return Struct(name,
-            Bytes("name", 8),
-            Bytes("extension", 3),
-            BitStruct("attributes",
-                Flag("unused"),
-                Flag("device"),
-                Flag("archive"),
-                Flag("subDirectory"),
-                Flag("volumeLabel"),
-                Flag("system"),
-                Flag("hidden"),
-                Flag("readonly")),
-            # reserved
-            Padding(10),
-            ULInt16("timeRecorded"),
-            ULInt16("dateRecorded"),
-            ULInt16("firstCluster"),
-            ULInt32("fileSize"))
+        Bytes("name", 8),
+        Bytes("extension", 3),
+        BitStruct("attributes",
+            Flag("unused"),
+            Flag("device"),
+            Flag("archive"),
+            Flag("subDirectory"),
+            Flag("volumeLabel"),
+            Flag("system"),
+            Flag("hidden"),
+            Flag("readonly")),
+        # reserved
+        Padding(10),
+        ULInt16("timeRecorded"),
+        ULInt16("dateRecorded"),
+        ULInt16("firstCluster"),
+        ULInt32("fileSize"),
+    )
 
 def PreDataRegion(name):
     rde = DirEntry("rootdirs")
@@ -229,4 +230,3 @@ class FatFs(Directory):
     @property
     def name(self):
         return ""
-

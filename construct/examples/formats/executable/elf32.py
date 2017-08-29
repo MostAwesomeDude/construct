@@ -4,6 +4,7 @@ Used on *nix systems as a replacement of the older a.out format.
 
 Big-endian support kindly submitted by Craig McQueen (mcqueen-c#edsrd1!yzk!co!jp).
 """
+
 from construct import *
 
 
@@ -148,6 +149,3 @@ if __name__ == "__main__":
     obj = elf32_file.parse_stream(open("../../../tests/_ctypes_test.so", "rb"))
     #[s.data.value for s in obj.sections]
     print(obj)
-
-
-

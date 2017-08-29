@@ -1,7 +1,3 @@
-"""
-Some Python 2 & 3 compatibility code.
-"""
-
 import sys
 
 PY = sys.version_info[:2]
