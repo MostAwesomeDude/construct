@@ -1891,9 +1891,9 @@ class Const(Subconstruct):
 
 class Computed(Construct):
     r"""
-    A computed value. Underlying byte stream is unaffected. When parsing `func(context)` provides the value.
+    A computed value. Underlying byte stream is unaffected. When parsing, `func(context)` provides the value.
 
-    :param func: a function that takes context and returns the computed value
+    :param func: a context function that returns a computed value
 
     Example::
         >>> st = Struct(
@@ -1925,7 +1925,7 @@ class Computed(Construct):
 @singleton
 class Pass(Construct):
     r"""
-    A do-nothing construct, useful as the default case for Switch. Returns None on parsing, puts nothing on building.
+    No-op construct, useful as the default case for Switch. Returns None on parsing, puts nothing on building, size is 0.
 
     Example::
 
