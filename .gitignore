@@ -7,5 +7,6 @@ __pycache__
 dist/
 build/
 .pypirc
+.pypi*
 .cache
 .tox
