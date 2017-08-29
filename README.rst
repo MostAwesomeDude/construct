@@ -37,8 +37,8 @@ A ``Struct`` is a collection of ordered, named fields::
 A ``Sequence`` is a collection of ordered fields, and differs from a ``Range`` in that latter is homogenous::
 
     >>> format = PascalString(Byte, encoding="utf8") >> GreedyRange(Byte)
-    >>> format.build([u"lalalaland", [255,1,2]])
-    b'\nlalalaland\xff\x01\x02'
+    >>> format.build([u"lalaland", [255,1,2]])
+    b'\nlalaland\xff\x01\x02'
     >>> format.parse(b"\x004361789432197")
     ['', [52, 51, 54, 49, 55, 56, 57, 52, 51, 50, 49, 57, 55]]
 
