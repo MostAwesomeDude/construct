@@ -65,8 +65,6 @@ def singletonfunction(func):
     return func()
 
 def _read_stream(stream, length, unitname="bytes"):
-    # if not isinstance(length, int):
-    #     raise TypeError("expected length to be int")
     if length < 0:
         raise ValueError("length must be >= 0", length)
     data = stream.read(length)
@@ -75,8 +73,6 @@ def _read_stream(stream, length, unitname="bytes"):
     return data
 
 def _write_stream(stream, length, data, unitname="bytes"):
-    # if not isinstance(data, bytes):
-    #     raise TypeError("expected data to be a bytes")
     if length < 0:
         raise ValueError("length must be >= 0", length)
     if len(data) != length:
@@ -90,7 +86,7 @@ def _write_stream(stream, length, data, unitname="bytes"):
 # abstract constructs
 #===============================================================================
 class Construct(object):
-    r"""
+    """
     The mother of all constructs.
 
     This object is generally not directly instantiated, and it does not directly implement parsing and building, so it is largely only of interest to subclass implementors. There are also other abstract classes.
@@ -130,7 +126,7 @@ class Construct(object):
         return "<%s: %s%s%s>" % (self.__class__.__name__, self.name, " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "")
 
     def __getstate__(self):
-        # Obtain a dictionary representing this construct's state.
+        """Obtain a dictionary representing this construct's state."""
         attrs = {}
         if hasattr(self, "__dict__"):
             attrs.update(self.__dict__)
@@ -146,12 +142,12 @@ class Construct(object):
         return attrs
 
     def __setstate__(self, attrs):
-        # Set this construct's state to a given state.
+        """Set this construct's state to a given state."""
         for name, value in attrs.items():
             setattr(self, name, value)
 
     def __copy__(self):
-        # Returns a copy of this construct.
+        """Returns a copy of this construct."""
         self2 = object.__new__(self.__class__)
         self2.__setstate__(self, self.__getstate__())
         return self2
@@ -272,7 +268,7 @@ class Construct(object):
 
 
 class Subconstruct(Construct):
-    r"""
+    """
     Abstract subconstruct (wraps an inner construct, inheriting its name and flags). Parsing and building is by default deferred to subcon, so it sizeof.
 
     Subconstructs wrap an inner Construct, inheriting its name and flags.
@@ -297,7 +293,7 @@ class Subconstruct(Construct):
 
 
 class Adapter(Subconstruct):
-    r"""
+    """
     Abstract adapter parent class.
 
     Needs to implement ``_decode()`` and ``_encode()``.
@@ -315,7 +311,7 @@ class Adapter(Subconstruct):
 
 
 class SymmetricAdapter(Adapter):
-    r"""
+    """
     Abstract adapter parent class.
 
     Needs to implement ``_decode()`` only. Encoding is done by same method.
@@ -327,7 +323,7 @@ class SymmetricAdapter(Adapter):
 
 
 class Validator(SymmetricAdapter):
-    r"""
+    """
     Abstract class: validates a condition on the encoded/decoded object.
 
     Needs to implement ``_validate()`` that returns bool.
