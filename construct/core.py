@@ -763,7 +763,9 @@ def Int24sl():
 @singleton
 class VarInt(Construct):
     r"""
-    Varint encoded integer. Each 7 bits of the number are encoded in one byte in the stream, having leftmost bit not set when byte is terminal.
+    Varint encoded integer. Each 7 bits of the number are encoded in one byte of the stream, having leftmost bit unset when byte is terminal.
+
+    Can only encode non-negative numbers.
 
     Scheme defined at Google's site:
     https://developers.google.com/protocol-buffers/docs/encoding
@@ -1138,7 +1140,7 @@ class RepeatUntil(Subconstruct):
             if self.predicate(subobj, obj[:i+1], context):
                 break
         else:
-            raise RangeError("missing terminator when building")
+            raise RangeError("expected any item to match predicate, when building")
     def _sizeof(self, context, path):
         raise SizeofError("cannot calculate size")
 
@@ -1167,7 +1169,7 @@ class Padded(Subconstruct):
     __slots__ = ["length", "pattern", "strict"]
     def __init__(self, length, subcon, pattern=b"\x00", strict=False):
         if not isinstance(pattern, bytes) or len(pattern) != 1:
-            raise PaddingError("pattern expected to be b-string character")
+            raise PaddingError("pattern expected to be one b-string character")
         super(Padded, self).__init__(subcon)
         self.length = length
         self.pattern = pattern
@@ -1844,7 +1846,7 @@ def Padding(length, pattern=b"\x00", strict=False):
 
 class Const(Subconstruct):
     r"""
-    Constant field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
+    Field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
 
     Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes, but depends on the subcon to read the appropriate amount. Consider for example, a field that eats null bytes and returns following byte, then compares to one. When parsing, both b"\x00\x00\x01" and b"\x01" will be parsed and checked OK.
 
@@ -1887,7 +1889,7 @@ class Const(Subconstruct):
 
 class Computed(Construct):
     r"""
-    A computed value. Underlying byte stream is unaffected. When parsing, `func(context)` provides the value.
+    A computed value. Underlying byte stream is unaffected. When parsing, `func(context)` provides the value. Literal value (non callable) can also be provided.
 
     :param func: a context function that returns a computed value
 
