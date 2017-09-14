@@ -1260,8 +1260,8 @@ def AlignedStruct(modulus, *subcons, **kw):
     .. seealso:: Uses :func:`~construct.core.Aligned` and `~construct.core.Struct`.
 
     :param modulus: passed to each member
-    :param \*subcons: the subcons that make up this structure
-    :param pattern: optional, keyword parameter passed to each member
+    :param \*subcons: subcons that make up a Struct
+    :param \*\*kw: named subcons
 
     Example::
 
@@ -1272,7 +1272,8 @@ def AlignedStruct(modulus, *subcons, **kw):
         >>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).sizeof()
         8
     """
-    return Struct(*[Aligned(modulus, sc, **kw) for sc in subcons])
+    subcons = list(subcons) + list(k/v for k,v in kw.items())
+    return Struct(*[Aligned(modulus, sc) for sc in subcons])
 
 
 def BitStruct(*subcons):

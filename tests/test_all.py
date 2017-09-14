@@ -488,8 +488,8 @@ class TestCore(unittest.TestCase):
         assert raises(Aligned(this.m, Byte).sizeof) == SizeofError
 
     def test_alignedstruct(self):
-        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub, pattern=b"?").parse(b"\x01???\x00\x05??") == Container(a=1)(b=5)
-        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub, pattern=b"?").build(dict(a=1,b=5)) == b"\x01???\x00\x05??"
+        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).parse(b"\x01\x00\x00\x00\x00\x05\x00\x00") == Container(a=1)(b=5)
+        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5)) == b"\x01\x00\x00\x00\x00\x05\x00\x00"
 
     def test_from_issue_87(self):
         assert ("string_name" / Byte).parse(b"\x01") == 1
