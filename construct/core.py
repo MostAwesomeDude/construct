@@ -269,7 +269,7 @@ class Construct(object):
 
 class Subconstruct(Construct):
     """
-    Abstract subconstruct (wraps an inner construct, inheriting its name and flags). Parsing and building is by default deferred to subcon, so it sizeof.
+    Abstract subconstruct (wraps an inner construct, inheriting its name and flags). Parsing and building is by default deferred to subcon, same as sizeof.
 
     Subconstructs wrap an inner Construct, inheriting its name and flags.
 
@@ -480,9 +480,9 @@ def Bitwise(subcon):
 
 def Bytewise(subcon):
     r"""
-    Converts the stream from bits back to bytes. Needs to be used within Bitwise.
+    Converts the stream from bits back to bytes. Must be used within Bitwise.
 
-    :param subcon: any field that works with bytes like: Bytes BytesInteger Int* Struct
+    :param subcon: any field that works with bytes like: Bytes BytesInteger Int* Struct, or most classes
 
     Example::
 
@@ -498,7 +498,7 @@ def Bytewise(subcon):
 
 class BytesInteger(Construct):
     r"""
-    A byte field, that parses into and builds from integers as opposed to b-strings. This is similar to Int* fields but can have arbitrary size.
+    Field that builds from integers as opposed to b-strings. Similar to Int* fields but can have arbitrary size.
 
     .. seealso:: Analog :func:`~construct.core.BitsInteger` that operates on bits.
 
@@ -546,7 +546,7 @@ class BytesInteger(Construct):
 
 class BitsInteger(Construct):
     r"""
-    A byte field, that parses into and builds from integers as opposed to b-strings. This is similar to Bit/Nibble/Octet fields but can have arbitrary sizes. This must be enclosed in Bitwise.
+    File that builds from integers as opposed to b-strings. Similar to Bit/Nibble/Octet fields but can have arbitrary sizes. Must be enclosed in Bitwise.
 
     :param length: number of bits in the field, or a context function that returns int
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
@@ -595,15 +595,15 @@ class BitsInteger(Construct):
 #===============================================================================
 @singletonfunction
 def Bit():
-    """A 1-bit integer; must be enclosed in a BitStruct or similar"""
+    """A 1-bit integer, must be enclosed in a Bitwise (eg. BitStruct)"""
     return BitsInteger(1)
 @singletonfunction
 def Nibble():
-    """A 4-bit integer; must be enclosed in a BitStruct or similar"""
+    """A 4-bit integer, must be enclosed in a Bitwise (eg. BitStruct)"""
     return BitsInteger(4)
 @singletonfunction
 def Octet():
-    """An 8-bit integer; must be enclosed in a BitStruct or similar"""
+    """A 8-bit integer, must be enclosed in a Bitwise (eg. BitStruct)"""
     return BitsInteger(8)
 
 @singletonfunction

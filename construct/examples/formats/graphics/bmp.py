@@ -8,8 +8,7 @@ from construct import *
 # pixels: uncompressed
 #===============================================================================
 def UncompressedRows(subcon, align_to_byte = False):
-    """argh! lines must be aligned to a 4-byte boundary, and bit-pixel
-    lines must be aligned to full bytes..."""
+    """argh! lines must be aligned to a 4-byte boundary, and bit-pixel lines must be aligned to full bytes..."""
     if align_to_byte:
         line_pixels = Bitwise(Aligned(8, Array(this.width, subcon)))
     else:
@@ -41,18 +40,16 @@ rle8pixel = "rle8pixel" / RunLengthAdapter(Byte >> Byte)
 # file structure
 #===============================================================================
 bitmap_file = "bitmap_file" / Struct(
-    # header
     "signature" / Const(b"BM"),
     "file_size" / Int32ul,
     Padding(4),
     "data_offset" / Int32ul,
     "header_size" / Int32ul,
-    # Enum(Alias("version", "header_size"),
     "version" / Enum(Computed(this.header_size),
         v2 = 12,
         v3 = 40,
         v4 = 108,
-        default=Pass
+        default = Pass,
     ),
     "width" / Int32ul,
     "height" / Int32ul,
@@ -81,7 +78,6 @@ bitmap_file = "bitmap_file" / Struct(
         )
     ),
 
-    # pixels
     "pixels" / Pointer(this.data_offset,
         Switch(this.compression,
             {
