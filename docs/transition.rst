@@ -190,7 +190,7 @@ Anchor was made Tell and a singleton
 
 Seek was added
 
-Pointer remains
+Pointer remains, size cannot be computed
 
 Peek dropped `perform_build` parameter, never builds
 
