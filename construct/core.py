@@ -61,22 +61,22 @@ class ExplicitError(ConstructError):
 def singleton(arg):
     return arg()
 
-def _read_stream(stream, length, unitname="bytes"):
+def _read_stream(stream, length):
     if length < 0:
         raise ValueError("length must be >= 0", length)
     data = stream.read(length)
     if len(data) != length:
-        raise FieldError("could not read enough %s, expected %d, found %d" % (unitname, length, len(data)))
+        raise FieldError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
     return data
 
-def _write_stream(stream, length, data, unitname="bytes"):
+def _write_stream(stream, length, data):
     if length < 0:
         raise ValueError("length must be >= 0", length)
     if len(data) != length:
-        raise FieldError("could not write %s, expected %d, found %d" % (unitname, length, len(data)))
+        raise FieldError("could not write bytes, expected %d, found %d" % (length, len(data)))
     written = stream.write(data)
     if written is not None and written != length:
-        raise FieldError("could not write %s, written %d, should %d" % (unitname, written, length))
+        raise FieldError("could not write bytes, written %d, should %d" % (written, length))
 
 
 #===============================================================================
@@ -488,7 +488,7 @@ def Bitwise(subcon):
         >>> d.sizeof()
         1
     """
-    return Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, "bits", lambda n: n//8)
+    return Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
 
 
 def Bytewise(subcon):
@@ -507,7 +507,7 @@ def Bytewise(subcon):
         >>> d.sizeof()
         1
     """
-    return Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, "bytes", lambda n: n*8)
+    return Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
 
 
 class BytesInteger(Construct):
@@ -587,7 +587,7 @@ class BitsInteger(Construct):
         self.bytesize = bytesize
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
-        data = _read_stream(stream, length, "bits")
+        data = _read_stream(stream, length)
         if self.swapped:
             data = swapbytes(data, self.bytesize)
         return bits2integer(data, self.signed)
@@ -1818,7 +1818,6 @@ class Restreamed(Subconstruct):
     :param encoderunit: ratio as integer, encoder takes that many bytes at once
     :param decoder: a function that takes bytes and returns bytes (used when parsing)
     :param decoderunit: ratio as integer, decoder takes that many bytes at once
-    :param decoderunitname: English string that describes the units (plural) returned by the decoder. Used for error messages.
     :param sizecomputer: a function that computes amount of bytes outputed by some bytes
 
     Example::
@@ -1827,22 +1826,21 @@ class Restreamed(Subconstruct):
         Bytewise <--> Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
     """
 
-    __slots__ = ["sizecomputer", "encoder", "encoderunit", "decoder", "decoderunit", "decoderunitname"]
-    def __init__(self, subcon, encoder, encoderunit, decoder, decoderunit, decoderunitname, sizecomputer):
+    __slots__ = ["sizecomputer", "encoder", "encoderunit", "decoder", "decoderunit"]
+    def __init__(self, subcon, encoder, encoderunit, decoder, decoderunit, sizecomputer):
         super(Restreamed, self).__init__(subcon)
         self.encoder = encoder
         self.encoderunit = encoderunit
         self.decoder = decoder
         self.decoderunit = decoderunit
-        self.decoderunitname = decoderunitname
         self.sizecomputer = sizecomputer
     def _parse(self, stream, context, path):
-        stream2 = RestreamedBytesIO(stream, self.encoder, self.encoderunit, self.decoder, self.decoderunit, self.decoderunitname)
+        stream2 = RestreamedBytesIO(stream, self.encoder, self.encoderunit, self.decoder, self.decoderunit)
         obj = self.subcon._parse(stream2, context, path)
         stream2.close()
         return obj
     def _build(self, obj, stream, context, path):
-        stream2 = RestreamedBytesIO(stream, self.encoder, self.encoderunit, self.decoder, self.decoderunit, self.decoderunitname)
+        stream2 = RestreamedBytesIO(stream, self.encoder, self.encoderunit, self.decoder, self.decoderunit)
         buildret = self.subcon._build(obj, stream2, context, path)
         stream2.close()
         return buildret
@@ -2243,7 +2241,6 @@ def ByteSwapped(subcon):
     return Restreamed(subcon,
         lambda s: s[::-1], subcon.sizeof(),
         lambda s: s[::-1], subcon.sizeof(),
-        "bytes",
         lambda n: n)
 
 
@@ -2264,7 +2261,6 @@ def BitsSwapped(subcon):
     return Restreamed(subcon,
         lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
         lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
-        "bits",
         lambda n: n)
 
 
