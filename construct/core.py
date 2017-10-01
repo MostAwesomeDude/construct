@@ -429,45 +429,6 @@ class GreedyBytes(Construct):
         stream.write(obj)
 
 
-class FormatField(Bytes):
-    """
-    Field that uses ``struct`` module to pack and unpack data. This is used to implement basic Int* and Float* fields alongside BytesInteger.
-
-    See ``struct`` documentation for instructions on crafting format strings.
-
-    :param endianity: endianness character like < > =
-    :param format: format character like f d B H L Q b h l q
-
-    Example::
-
-        >>> d = FormatField(">", "H")
-        >>> d.parse(b"\x01\x00")
-        256
-        >>> d.build(256)
-        b"\x01\x00"
-        >>> d.sizeof()
-        2
-    """
-    __slots__ = ["fmtstr"]
-    def __init__(self, endianity, format):
-        if endianity not in (">", "<", "="):
-            raise ValueError("endianity must be like: = < >", endianity)
-        if len(format) != 1:
-            raise ValueError("format must be like: f d B H L Q b h l q")
-        super(FormatField, self).__init__(packer.calcsize(endianity + format))
-        self.fmtstr = endianity + format
-    def _parse(self, stream, context, path):
-        try:
-            return packer.unpack(self.fmtstr, _read_stream(stream, self.sizeof()))[0]
-        except Exception:
-            raise FieldError("packer %r error during parsing" % self.fmtstr)
-    def _build(self, obj, stream, context, path):
-        try:
-            _write_stream(stream, self.sizeof(), packer.pack(self.fmtstr, obj))
-        except Exception:
-            raise FieldError("packer %r error during building, given value %s" % (self.fmtstr, obj))
-
-
 def Bitwise(subcon):
     """
     Converts the stream from bytes to bits, and passes the bitstream to underlying subcon.
@@ -508,6 +469,48 @@ def Bytewise(subcon):
         1
     """
     return Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
+
+
+#===============================================================================
+# integers and floats
+#===============================================================================
+class FormatField(Bytes):
+    """
+    Field that uses ``struct`` module to pack and unpack data. This is used to implement basic Int* and Float* fields alongside BytesInteger.
+
+    See ``struct`` documentation for instructions on crafting format strings.
+
+    :param endianity: endianness character like < > =
+    :param format: format character like f d B H L Q b h l q
+
+    Example::
+
+        >>> d = FormatField(">", "H")
+        >>> d.parse(b"\x01\x00")
+        256
+        >>> d.build(256)
+        b"\x01\x00"
+        >>> d.sizeof()
+        2
+    """
+    __slots__ = ["fmtstr"]
+    def __init__(self, endianity, format):
+        if endianity not in (">", "<", "="):
+            raise ValueError("endianity must be like: = < >", endianity)
+        if len(format) != 1:
+            raise ValueError("format must be like: f d B H L Q b h l q")
+        super(FormatField, self).__init__(packer.calcsize(endianity + format))
+        self.fmtstr = endianity + format
+    def _parse(self, stream, context, path):
+        try:
+            return packer.unpack(self.fmtstr, _read_stream(stream, self.sizeof()))[0]
+        except Exception:
+            raise FieldError("packer %r error during parsing" % self.fmtstr)
+    def _build(self, obj, stream, context, path):
+        try:
+            _write_stream(stream, self.sizeof(), packer.pack(self.fmtstr, obj))
+        except Exception:
+            raise FieldError("packer %r error during building, given value %s" % (self.fmtstr, obj))
 
 
 class BytesInteger(Construct):
@@ -606,9 +609,6 @@ class BitsInteger(Construct):
             raise SizeofError("cannot calculate size, key not found in context")
 
 
-#===============================================================================
-# integers and floats
-#===============================================================================
 @singleton
 def Bit():
     """A 1-bit integer, must be enclosed in a Bitwise (eg. BitStruct)"""
