@@ -58,11 +58,8 @@ class ExplicitError(ConstructError):
 #===============================================================================
 # used internally
 #===============================================================================
-def singleton(cls):
-    return cls()
-
-def singletonfunction(func):
-    return func()
+def singleton(arg):
+    return arg()
 
 def _read_stream(stream, length, unitname="bytes"):
     if length < 0:
@@ -612,117 +609,117 @@ class BitsInteger(Construct):
 #===============================================================================
 # integers and floats
 #===============================================================================
-@singletonfunction
+@singleton
 def Bit():
     """A 1-bit integer, must be enclosed in a Bitwise (eg. BitStruct)"""
     return BitsInteger(1)
-@singletonfunction
+@singleton
 def Nibble():
     """A 4-bit integer, must be enclosed in a Bitwise (eg. BitStruct)"""
     return BitsInteger(4)
-@singletonfunction
+@singleton
 def Octet():
     """A 8-bit integer, must be enclosed in a Bitwise (eg. BitStruct)"""
     return BitsInteger(8)
 
-@singletonfunction
+@singleton
 def Int8ub():
     """Unsigned, big endian 8-bit integer"""
     return FormatField(">", "B")
-@singletonfunction
+@singleton
 def Int16ub():
     """Unsigned, big endian 16-bit integer"""
     return FormatField(">", "H")
-@singletonfunction
+@singleton
 def Int32ub():
     """Unsigned, big endian 32-bit integer"""
     return FormatField(">", "L")
-@singletonfunction
+@singleton
 def Int64ub():
     """Unsigned, big endian 64-bit integer"""
     return FormatField(">", "Q")
 
-@singletonfunction
+@singleton
 def Int8sb():
     """Signed, big endian 8-bit integer"""
     return FormatField(">", "b")
-@singletonfunction
+@singleton
 def Int16sb():
     """Signed, big endian 16-bit integer"""
     return FormatField(">", "h")
-@singletonfunction
+@singleton
 def Int32sb():
     """Signed, big endian 32-bit integer"""
     return FormatField(">", "l")
-@singletonfunction
+@singleton
 def Int64sb():
     """Signed, big endian 64-bit integer"""
     return FormatField(">", "q")
 
-@singletonfunction
+@singleton
 def Int8ul():
     """Unsigned, little endian 8-bit integer"""
     return FormatField("<", "B")
-@singletonfunction
+@singleton
 def Int16ul():
     """Unsigned, little endian 16-bit integer"""
     return FormatField("<", "H")
-@singletonfunction
+@singleton
 def Int32ul():
     """Unsigned, little endian 32-bit integer"""
     return FormatField("<", "L")
-@singletonfunction
+@singleton
 def Int64ul():
     """Unsigned, little endian 64-bit integer"""
     return FormatField("<", "Q")
 
-@singletonfunction
+@singleton
 def Int8sl():
     """Signed, little endian 8-bit integer"""
     return FormatField("<", "b")
-@singletonfunction
+@singleton
 def Int16sl():
     """Signed, little endian 16-bit integer"""
     return FormatField("<", "h")
-@singletonfunction
+@singleton
 def Int32sl():
     """Signed, little endian 32-bit integer"""
     return FormatField("<", "l")
-@singletonfunction
+@singleton
 def Int64sl():
     """Signed, little endian 64-bit integer"""
     return FormatField("<", "q")
 
-@singletonfunction
+@singleton
 def Int8un():
     """Unsigned, native endianity 8-bit integer"""
     return FormatField("=", "B")
-@singletonfunction
+@singleton
 def Int16un():
     """Unsigned, native endianity 16-bit integer"""
     return FormatField("=", "H")
-@singletonfunction
+@singleton
 def Int32un():
     """Unsigned, native endianity 32-bit integer"""
     return FormatField("=", "L")
-@singletonfunction
+@singleton
 def Int64un():
     """Unsigned, native endianity 64-bit integer"""
     return FormatField("=", "Q")
 
-@singletonfunction
+@singleton
 def Int8sn():
     """Signed, native endianity 8-bit integer"""
     return FormatField("=", "b")
-@singletonfunction
+@singleton
 def Int16sn():
     """Signed, native endianity 16-bit integer"""
     return FormatField("=", "h")
-@singletonfunction
+@singleton
 def Int32sn():
     """Signed, native endianity 32-bit integer"""
     return FormatField("=", "l")
-@singletonfunction
+@singleton
 def Int64sn():
     """Signed, native endianity 64-bit integer"""
     return FormatField("=", "q")
@@ -732,28 +729,28 @@ Short = Int16ub
 Int   = Int32ub
 Long  = Int64ub
 
-@singletonfunction
+@singleton
 def Float32b():
     """Big endian, 32-bit IEEE floating point number"""
     return FormatField(">", "f")
-@singletonfunction
+@singleton
 def Float32l():
     """Little endian, 32-bit IEEE floating point number"""
     return FormatField("<", "f")
-@singletonfunction
+@singleton
 def Float32n():
     """Native endianity, 32-bit IEEE floating point number"""
     return FormatField("=", "f")
 
-@singletonfunction
+@singleton
 def Float64b():
     """Big endian, 64-bit IEEE floating point number"""
     return FormatField(">", "d")
-@singletonfunction
+@singleton
 def Float64l():
     """Little endian, 64-bit IEEE floating point number"""
     return FormatField("<", "d")
-@singletonfunction
+@singleton
 def Float64n():
     """Native endianity, 64-bit IEEE floating point number"""
     return FormatField("=", "d")
@@ -761,19 +758,19 @@ def Float64n():
 Single = Float32b
 Double = Float64b
 
-@singletonfunction
+@singleton
 def Int24ub():
     """A 3-byte big-endian unsigned integer, as used in ancient file formats."""
     return BytesInteger(3)
-@singletonfunction
+@singleton
 def Int24ul():
     """A 3-byte little-endian unsigned integer, as used in ancient file formats."""
     return BytesInteger(3, swapped=True)
-@singletonfunction
+@singleton
 def Int24sb():
     """A 3-byte big-endian signed integer, as used in ancient file formats."""
     return BytesInteger(3, signed=True)
-@singletonfunction
+@singleton
 def Int24sl():
     """A 3-byte little-endian signed integer, as used in ancient file formats."""
     return BytesInteger(3, signed=True, swapped=True)
@@ -2882,7 +2879,7 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
     )
 
 
-@singletonfunction
+@singleton
 def Flag():
     """
     One byte (or one bit) field that maps to True or False. Other non-zero values are also considered True.
