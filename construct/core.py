@@ -83,7 +83,7 @@ def _write_stream(stream, length, data):
 # abstract constructs
 #===============================================================================
 class Construct(object):
-    """
+    r"""
     The mother of all constructs.
 
     This object is generally not directly instantiated, and it does not directly implement parsing and building, so it is largely only of interest to subclass implementors. There are also other abstract classes sitting on top of this one.
@@ -277,7 +277,7 @@ class Construct(object):
 
 
 class Subconstruct(Construct):
-    """
+    r"""
     Abstract subconstruct (wraps an inner construct, inheriting its name and flags). Parsing and building is by default deferred to subcon, same as sizeof.
 
     :param subcon: the construct to wrap
@@ -300,7 +300,7 @@ class Subconstruct(Construct):
 
 
 class Adapter(Subconstruct):
-    """
+    r"""
     Abstract adapter parent class.
 
     Needs to implement ``_decode()`` for parsing and ``_encode()`` for building.
@@ -318,7 +318,7 @@ class Adapter(Subconstruct):
 
 
 class SymmetricAdapter(Adapter):
-    """
+    r"""
     Abstract adapter parent class.
 
     Needs to implement ``_decode()`` only, for both parsing and building.
@@ -330,7 +330,7 @@ class SymmetricAdapter(Adapter):
 
 
 class Validator(SymmetricAdapter):
-    """
+    r"""
     Abstract class that validates a condition on the encoded/decoded object.
 
     Needs to implement ``_validate()`` that returns a bool (or a truthy value)
@@ -346,7 +346,7 @@ class Validator(SymmetricAdapter):
 
 
 class Tunnel(Subconstruct):
-    """
+    r"""
     Abstract class that reads entire stream when parsing, and writes all data when building, but serves as an adapter as well.
 
     Needs to implement ``_decode()`` for parsing and ``_encode()`` for building.
@@ -371,7 +371,7 @@ class Tunnel(Subconstruct):
 # bytes and bits
 #===============================================================================
 class Bytes(Construct):
-    """
+    r"""
     Field consisting of a specified number of bytes. Builds from a bytes, or an integer (although deprecated and BytesInteger should be used instead).
 
     .. seealso:: Analog :func:`~construct.core.BytesInteger` that parses and builds from integers, as opposed to bytes.
@@ -411,7 +411,7 @@ class Bytes(Construct):
 
 @singleton
 class GreedyBytes(Construct):
-    """
+    r"""
     Field that parses the stream to the end and builds into the stream as is.
 
     .. seealso:: Analog :func:`~construct.core.GreedyString` that parses and builds from strings using an encoding.
@@ -430,7 +430,7 @@ class GreedyBytes(Construct):
 
 
 def Bitwise(subcon):
-    """
+    r"""
     Converts the stream from bytes to bits, and passes the bitstream to underlying subcon.
 
     .. seealso:: Analog :func:`~construct.core.Bytewise` that transforms subset of bits back to bytes.
@@ -453,7 +453,7 @@ def Bitwise(subcon):
 
 
 def Bytewise(subcon):
-    """
+    r"""
     Converts the stream from bits back to bytes. Must be used within Bitwise.
 
     :param subcon: any field that works with bytes
@@ -475,7 +475,7 @@ def Bytewise(subcon):
 # integers and floats
 #===============================================================================
 class FormatField(Bytes):
-    """
+    r"""
     Field that uses ``struct`` module to pack and unpack data. This is used to implement basic Int* and Float* fields alongside BytesInteger.
 
     See ``struct`` documentation for instructions on crafting format strings.
@@ -514,7 +514,7 @@ class FormatField(Bytes):
 
 
 class BytesInteger(Construct):
-    """
+    r"""
     Field that builds from integers as opposed to bytes. Similar to Int* fields but can have arbitrary size.
 
     .. seealso:: Analog :func:`~construct.core.BitsInteger` that operates on bits.
@@ -561,7 +561,7 @@ class BytesInteger(Construct):
 
 
 class BitsInteger(Construct):
-    """
+    r"""
     Field that builds from integers as opposed to bytes. Similar to Bit/Nibble/Octet fields but can have arbitrary sizes. Must be enclosed in Bitwise.
 
     :param length: number of bits in the field, an integer or a context function that returns such an integer
@@ -774,7 +774,7 @@ def Int24sl():
 
 @singleton
 class VarInt(Construct):
-    """
+    r"""
     Varint encoded integer. Each 7 bits of the number are encoded in one byte of the stream, where leftmost (8th) bit is unset when byte is terminal.
 
     Can only encode non-negative numbers.
@@ -818,7 +818,7 @@ class VarInt(Construct):
 # structures and sequences
 #===============================================================================
 class Struct(Construct):
-    """
+    r"""
     Sequence of usually named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
 
     Some fields do not need to be named, since they are built without value anyway. See Const Padding Pass Terminated for examples of such fields.
@@ -919,7 +919,7 @@ class Struct(Construct):
 
 
 class Sequence(Struct):
-    """
+    r"""
     Sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
 
     Size is the sum of all subcon sizes.
@@ -996,7 +996,7 @@ class Sequence(Struct):
 # arrays and repeaters
 #===============================================================================
 class Range(Subconstruct):
-    """
+    r"""
     Homogenous array of elements. The array will iterate through between ``min`` to ``max`` times. If an exception occurs (EOF, validation error) then repeater exits cleanly. If less than ``min`` or more than ``max`` elements have been successfully processed, error is raised. 
 
     Operator [] can be used to make instances.
@@ -1085,7 +1085,7 @@ class Range(Subconstruct):
 
 
 def GreedyRange(subcon):
-    """
+    r"""
     Homogenous array of elements that parses until end of stream and builds from all elements. 
 
     Operator [] can be used to make instances.
@@ -1107,7 +1107,7 @@ def GreedyRange(subcon):
 
 
 def Array(count, subcon):
-    """
+    r"""
     Homogenous array of elements. The array will iterate through exactly ``count`` elements. This is just a macro around `Range`. 
 
     Operator [] can be used to make instances.
@@ -1130,7 +1130,7 @@ def Array(count, subcon):
 
 
 def PrefixedArray(lengthfield, subcon):
-    """
+    r"""
     Homogenous array prefixed by item count (as opposed to prefixed by byte count, see :func:`~construct.core.Prefixed`).
 
     :param lengthfield: field parsing and building an integer
@@ -1151,7 +1151,7 @@ def PrefixedArray(lengthfield, subcon):
 
 
 class RepeatUntil(Subconstruct):
-    """
+    r"""
     Homogenous array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return list.
 
     :param predicate: a predicate function that takes (obj, list, context) and returns True to break or False to continue (or a truthy value)
@@ -1195,7 +1195,7 @@ class RepeatUntil(Subconstruct):
 # subconstructs
 #===============================================================================
 class Padded(Subconstruct):
-    """
+    r"""
     Appends additional null bytes to achieve a fixed length. Fails if actual data is longer than specified length.
 
     :raises PaddingError: when parsed or build data is longer than the length
@@ -1255,7 +1255,7 @@ class Padded(Subconstruct):
 
 
 class Aligned(Subconstruct):
-    """
+    r"""
     Appends additional null bytes to achieve a length that is shortest multiple of a modulus.
 
     :param modulus: the modulus to final length, an integer or a context function returning such an integer
@@ -1303,7 +1303,7 @@ class Aligned(Subconstruct):
 
 
 def AlignedStruct(modulus, *subcons, **kw):
-    """
+    r"""
     Makes a structure where each field is aligned to the same modulus (its a struct of aligned fields, not an aligned struct).
 
     .. seealso:: Uses :func:`~construct.core.Aligned` and `~construct.core.Struct`.
@@ -1326,7 +1326,7 @@ def AlignedStruct(modulus, *subcons, **kw):
 
 
 def BitStruct(*subcons):
-    """
+    r"""
     Makes a structure inside a Bitwise.
 
     .. seealso:: Uses :func:`~construct.core.Bitwise` and :func:`~construct.core.Struct`.
@@ -1350,7 +1350,7 @@ def BitStruct(*subcons):
 
 
 def EmbeddedBitStruct(*subcons):
-    """
+    r"""
     Makes an embedded BitStruct.
 
     .. seealso:: Uses :func:`~construct.core.Bitwise` and :func:`~construct.core.Embedded` and :func:`~construct.core.Struct`.
@@ -1368,7 +1368,7 @@ def EmbeddedBitStruct(*subcons):
 # conditional
 #===============================================================================
 class Union(Construct):
-    """
+    r"""
     Treats the same data as multiple constructs (similar to C union statement) so you can look at the data in multiple views.
 
     When parsing, all fields read the same data bytes, but stream remains at initial offset, unless parsefrom selects a subcon by index or name. 
@@ -1466,7 +1466,7 @@ class Union(Construct):
 
 
 class Select(Construct):
-    """
+    r"""
     Selects the first matching subconstruct. It will literally try each of the subconstructs, until one matches.
 
     :param subcons: the subcons to try (order sensitive)
@@ -1524,7 +1524,7 @@ class Select(Construct):
 
 
 def Optional(subcon):
-    """
+    r"""
     Makes an optional construct, that tries to parse the subcon. If parsing fails, returns None. If building fails, writes nothing.
 
     Size cannot be computed, because whether bytes are consumed or produced depends on actual data and context.
@@ -1547,7 +1547,7 @@ def Optional(subcon):
 
 
 class Switch(Construct):
-    """
+    r"""
     A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched and no default value is given, SwitchError will be raised.
 
     .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Same applies to If and IfThenElse macros.
@@ -1610,7 +1610,7 @@ class Switch(Construct):
 
 
 def IfThenElse(predicate, thensubcon, elsesubcon):
-    """
+    r"""
     An if-then-else conditional construct. One of the two subcons is used for parsing or building, depending whether the predicate returns a truthy or falsey value for given context. Constant truthy value can also be used.
 
     :param predicate: a context function that returns a bool (or truthy value)
@@ -1632,7 +1632,7 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
 
 
 def If(predicate, subcon):
-    """
+    r"""
     An if-then conditional construct. If the context predicate indicates True, the `subcon` will be used for parsing and building, otherwise parsing returns None and building is no-op. Note that the predicate has no access to parsed value, it computes only on context.
 
     :param predicate: a function taking context and returning a bool
@@ -1653,7 +1653,7 @@ def If(predicate, subcon):
 # stream manipulation
 #===============================================================================
 class Pointer(Subconstruct):
-    """
+    r"""
     Changes the stream position to a given offset, where the construction should take place, and restores the stream position when finished.
 
     Offset can also be nagative, indicating a position from EOF backwards.
@@ -1696,7 +1696,7 @@ class Pointer(Subconstruct):
 
 
 class Peek(Subconstruct):
-    """
+    r"""
     Peeks at the stream. Parses without changing the stream position. If the end of the stream is reached when reading, returns None. Building is no-op.
 
     Size is defined as 0 because build does not put anything into the stream. 
@@ -1734,7 +1734,7 @@ class Peek(Subconstruct):
 
 @singleton
 class Tell(Construct):
-    """
+    r"""
     Gets the stream position when parsing or building.
 
     Tell is useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute.
@@ -1763,7 +1763,7 @@ class Tell(Construct):
 
 
 class Seek(Construct):
-    """
+    r"""
     Sets a new stream position when parsing or building. Seeks are useful when many other fields follow the jump. Pointer works when there is only one field to look at, but when there is more to be done, Seek may come useful.
 
     .. seealso:: Analog :func:`~construct.core.Pointer` wrapper that has same side effect but also processed a subcon.
@@ -1800,7 +1800,7 @@ class Seek(Construct):
 
 
 class Restreamed(Subconstruct):
-    """
+    r"""
     Transforms bytes between the underlying stream and the subcon.
 
     When the parsing or building is done, the wrapper stream is closed. If read buffer or write buffer is not empty, error is raised.
@@ -1848,7 +1848,7 @@ class Restreamed(Subconstruct):
 
 
 class Rebuffered(Subconstruct):
-    """
+    r"""
     Caches bytes from the underlying stream, so it becomes seekable and tellable. Also makes the stream blocking, in case it came from a socket or a pipe. Optionally, stream can forget bytes that went a certain amount of bytes beyond the current offset, allowing only a limited seeking capability while allowing to process an endless stream.
 
     .. warning:: Experimental implementation. May not be mature enough.
@@ -1876,7 +1876,7 @@ class Rebuffered(Subconstruct):
 # miscellaneous
 #===============================================================================
 def Padding(length, pattern=b"\x00", strict=False):
-    """
+    r"""
     Padding field that adds bytes when building, discards bytes when parsing.
 
     :param length: length of the padding, an integer or a context function returning such an integer
@@ -1899,7 +1899,7 @@ def Padding(length, pattern=b"\x00", strict=False):
 
 
 class Const(Subconstruct):
-    """
+    r"""
     Field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
 
     Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes (and hence does NOT require a fixed sized lenghtfield), but depends on the subcon to read the appropriate amount (eg. VarInt is acceptable).
@@ -1944,7 +1944,7 @@ class Const(Subconstruct):
 
 
 class Computed(Construct):
-    """
+    r"""
     Field computing a value. Underlying byte stream is unaffected. When parsing, the context function provides the value. Constant literal value can also be provided.
 
     Building does not require a value, the value gets computed.
@@ -1984,7 +1984,7 @@ class Computed(Construct):
 
 @singleton
 class Pass(Construct):
-    """
+    r"""
     No-op construct, useful as the default case for Switch. Returns None on parsing, puts nothing on building, size is 0 by definition.
 
     Building does not require a value, and any provided value gets discarded.
@@ -2011,7 +2011,7 @@ class Pass(Construct):
 
 @singleton
 class Terminated(Construct):
-    """
+    r"""
     Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows.
 
     This construct is only meaningful for parsing. Building does nothing.
@@ -2041,7 +2041,7 @@ class Terminated(Construct):
 
 @singleton
 class Error(Construct):
-    """
+    r"""
     Raises an exception when triggered by parse or build. Can be used as a sentinel that blows a whistle when a conditional branch goes the wrong way, or to raise an error explicitly the declarative way.
 
     :raises ExplicitError: when parsed or build
@@ -2063,7 +2063,7 @@ class Error(Construct):
 
 @singleton
 class Numpy(Construct):
-    """
+    r"""
     Preserves numpy arrays (both shape, dtype and values).
 
     :raises ImportError: when numpy cannot be imported during init
@@ -2091,7 +2091,7 @@ class Numpy(Construct):
 
 
 class NamedTuple(Adapter):
-    """
+    r"""
     Both arrays, structs, and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of string names. Just like the standard namedtuple.
 
     :raises AdaptationError: when subcon is not either Struct Sequence Range
@@ -2122,7 +2122,7 @@ class NamedTuple(Adapter):
 
 
 class Rebuild(Subconstruct):
-    """
+    r"""
     Parses the field like normal, but computes the value used for building from a context function. Constant value can also be used instead.
 
     Building does not require a value, because the value gets recomputed anyway.
@@ -2152,7 +2152,7 @@ class Rebuild(Subconstruct):
 
 
 class Default(Subconstruct):
-    """
+    r"""
     Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys.
 
     Building does not require a value, but can accept one.
@@ -2184,7 +2184,7 @@ class Default(Subconstruct):
 # tunneling and swapping
 #===============================================================================
 class RawCopy(Subconstruct):
-    """
+    r"""
     Returns a dict containing both parsed subcon, the raw bytes that were consumed by it, starting and ending offset in the stream, and the amount of bytes. Builds either from raw bytes or a value used by subcon.
 
     Context does contain a dict with data (if built from raw bytes) or with both (if built from value or parsed).
@@ -2228,7 +2228,7 @@ class RawCopy(Subconstruct):
 
 
 def ByteSwapped(subcon):
-    """
+    r"""
     Swap the byte order within boundaries of the given subcon. Requires a fixed sized subcon.
 
     :param subcon: the subcon on top of byte swapped bytes
@@ -2244,7 +2244,7 @@ def ByteSwapped(subcon):
 
 
 def BitsSwapped(subcon):
-    """
+    r"""
     Swap the bit order within each byte within boundaries of the given subcon. Does NOT require a fixed sized subcon.
 
     :param subcon: the subcon on top of bit swapped bytes
@@ -2264,7 +2264,7 @@ def BitsSwapped(subcon):
 
 
 class Prefixed(Subconstruct):
-    """
+    r"""
     Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, data is prefixed by its length. Optionally, length field can include its own size.
 
     .. seealso:: The :class:`~construct.core.VarInt` encoding should be preferred over `Int*` fixed sized fields. VarInt is more compact and never overflows.
@@ -2307,7 +2307,7 @@ class Prefixed(Subconstruct):
 
 
 class Checksum(Construct):
-    """
+    r"""
     Field that is build or validated by a hash of a given byte range.
 
     :param checksumfield: a subcon field that reads the checksum, usually Bytes(int)
@@ -2351,7 +2351,7 @@ class Checksum(Construct):
 
 
 class Compressed(Tunnel):
-    """
+    r"""
     Compresses and decompresses underlying stream when processing the subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :func:`~construct.core.Prefixed` or entire stream.
 
     :param subcon: the subcon used for storing the value
@@ -2399,7 +2399,7 @@ class Compressed(Tunnel):
 # lazy equivalents
 #===============================================================================
 class LazyStruct(Construct):
-    """
+    r"""
     Equivalent to Struct construct, however fixed size members are parsed on demand, others are parsed immediately. If entire struct is fixed size then entire parse is essentially one stream seek.
 
     .. seealso:: Equivalent to :func:`~construct.core.Struct`.
@@ -2489,7 +2489,7 @@ class LazyStruct(Construct):
 
 
 class LazyRange(Construct):
-    """
+    r"""
     Equivalent to Range construct, but members are parsed on demand. Works only with fixed size subcon. Entire parse is essentially one stream seek.
 
     .. seealso:: Equivalent to :func:`~construct.core.Range`.
@@ -2549,7 +2549,7 @@ class LazyRange(Construct):
 
 
 class LazySequence(Construct):
-    """
+    r"""
     Equivalent to Sequence construct, however fixed size members are parsed on demand, others are parsed immediately. If entire sequence is fixed size then entire parse is essentially one seek.
 
     .. seealso:: Equivalent to :func:`~construct.core.Sequence`.
@@ -2634,7 +2634,7 @@ class LazySequence(Construct):
 
 
 class OnDemand(Subconstruct):
-    """
+    r"""
     Allows for on demand (lazy) parsing. When parsing, it will return a parameterless function that when called, will return the parsed value. Object is cached after first parsing, so non-deterministic subcons will be affected. Works only with fixed size subcon.
 
     :param subcon: the subcon to read/write on demand, must be fixed size
@@ -2675,7 +2675,7 @@ class OnDemand(Subconstruct):
 
 
 def OnDemandPointer(offset, subcon):
-    """
+    r"""
     CURRENTLY BROKEN.
 
     On demand pointer. Is both lazy and jumps to a position before reading.
@@ -2697,7 +2697,7 @@ def OnDemandPointer(offset, subcon):
 
 
 class LazyBound(Construct):
-    """
+    r"""
     Lazy-bound construct that binds to the construct only at runtime. Useful for recursive data structures (like linked lists or trees), where a construct needs to refer to itself (while it does not exist yet).
 
     :param subconfunc: a context function returning a Construct (derived) instance, can also return Pass or itself
@@ -2740,7 +2740,7 @@ class LazyBound(Construct):
 # special
 #===============================================================================
 class Embedded(Subconstruct):
-    """
+    r"""
     Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences. Name is also inherited.
 
     .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
@@ -2760,7 +2760,7 @@ class Embedded(Subconstruct):
 
 
 class Renamed(Subconstruct):
-    """
+    r"""
     Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name, which in general means just a None. Can be used to give same construct few different names. Used internally by / operator.
 
     Also this wrapper is responsible for building a path (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. A field that is not named does not appear on the path.
@@ -2808,7 +2808,7 @@ class Renamed(Subconstruct):
 # mappings
 #===============================================================================
 class Mapping(Adapter):
-    """
+    r"""
     Adapter that maps objects to other objects. Translates objects before parsing and before building.
 
     :param subcon: the subcon to map
@@ -2853,7 +2853,7 @@ class Mapping(Adapter):
 
 
 def SymmetricMapping(subcon, mapping, default=NotImplemented):
-    """
+    r"""
     Defines a symmetric mapping, same mapping is used on parsing and building.
 
     .. seealso:: Based on :func:`~construct.core.Mapping`.
@@ -2876,7 +2876,7 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
 
 @singleton
 def Flag():
-    """
+    r"""
     One byte (or one bit) field that maps to True or False. Other non-zero values are also considered True.
 
     Example::
@@ -2890,7 +2890,7 @@ def Flag():
 
 
 def Enum(subcon, default=NotImplemented, **mapping):
-    """
+    r"""
     Set of named values mapping. Can build both from names and values.
 
     :param subcon: the subcon to map
@@ -2921,7 +2921,7 @@ def Enum(subcon, default=NotImplemented, **mapping):
 
 
 class FlagsEnum(Adapter):
-    """
+    r"""
     Set of flag values mapping. Each flag is extracted from the number, resulting in a FlagsContainer dict that has each key assigned True or False.
 
     :param subcon: the subcon to extract
@@ -2961,7 +2961,7 @@ class FlagsEnum(Adapter):
 # adapters and validators
 #===============================================================================
 class ExprAdapter(Adapter):
-    """
+    r"""
     A generic adapter that takes ``encoder`` and ``decoder`` as parameters. You can use ExprAdapter instead of writing a full-blown class when only a simple lambda is needed.
 
     :param subcon: the subcon to adapt
@@ -2991,7 +2991,7 @@ class ExprSymmetricAdapter(ExprAdapter):
 
 
 class ExprValidator(Validator):
-    """
+    r"""
     A generic adapter that takes ``validator`` as parameter. You can use ExprValidator instead of writing a full-blown class when only a simple expression is needed.
 
     :param subcon: the subcon to adapt
@@ -3008,7 +3008,7 @@ class ExprValidator(Validator):
 
 
 def Hex(subcon):
-    """
+    r"""
     Adapter for hex-dumping bytes. It returns a hex dump when parsing, and un-dumps when building.
 
     Example::
@@ -3024,7 +3024,7 @@ def Hex(subcon):
 
 
 def HexDump(subcon, linesize=16):
-    """
+    r"""
     Adapter for hex-dumping bytes. It returns a hex dump when parsing, and un-dumps when building.
 
     :param linesize: default 16 bytes per line
@@ -3041,7 +3041,7 @@ def HexDump(subcon, linesize=16):
 
 
 class Slicing(Adapter):
-    """
+    r"""
     Adapter for slicing a list (getting a slice from that list). Works with Range and Sequence and their lazy equivalents.
 
     :param subcon: the subcon to slice
@@ -3078,7 +3078,7 @@ class Slicing(Adapter):
 
 
 class Indexing(Adapter):
-    """
+    r"""
     Adapter for indexing a list (getting a single item from that list). Works with Range and Sequence and their lazy equivalents.
 
     :param subcon: the subcon to index
@@ -3105,7 +3105,7 @@ class Indexing(Adapter):
 
 
 class FocusedSeq(Construct):
-    """
+    r"""
     Parses and builds a sequence where only one subcon value is returned from parsing or taken into building, other fields are parsed and discarded or built from nothing.
 
     :param parsebuildfrom: which subcon to use, an integer index or string name, or a context lambda returning either
@@ -3180,7 +3180,7 @@ class FocusedSeq(Construct):
 
 
 def OneOf(subcon, valids):
-    """
+    r"""
     Validates that the object is one of the listed values, both during parsing and building. Note that providing a set instead of a list may increase performance.
 
     :param subcon: a construct to validate
@@ -3206,7 +3206,7 @@ def OneOf(subcon, valids):
 
 
 def NoneOf(subcon, invalids):
-    """
+    r"""
     Validates that the object is none of the listed values, both during parsing and building.
 
     :param subcon: a construct to validate
@@ -3221,7 +3221,7 @@ def NoneOf(subcon, invalids):
 
 
 def Filter(predicate, subcon):
-    """
+    r"""
     Filters a list leaving only the elements that passed through the validator.
 
     :param subcon: a construct to validate, usually a Range Array Sequence
@@ -3239,7 +3239,7 @@ def Filter(predicate, subcon):
 
 
 class Check(Construct):
-    """
+    r"""
     Checks for a condition, and raises ValidationError if the check fails.
 
     :param func: a context function returning a bool (or truthy value)
@@ -3266,7 +3266,7 @@ class Check(Construct):
 
 
 class StopIf(Construct):
-    """
+    r"""
     Checks for a condition, and stops a Struct/Sequence/Range from parsing or building further.
 
     Example::
@@ -3296,7 +3296,7 @@ globalstringencoding = None
 
 
 def setglobalstringencoding(encoding):
-    """
+    r"""
     Sets the encoding globally for all String/PascalString/CString/GreedyString instances.
 
     :param encoding: a string like "utf8", or None which means working with bytes (not unicode)
@@ -3373,7 +3373,7 @@ class StringPaddedTrimmed(Adapter):
 
 
 def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
-    """
+    r"""
     Configurable, fixed-length or variable-length string field.
 
     When parsing, the byte string is stripped of pad character (as specified) from the direction (as specified) then decoded (as specified). Length is a constant integer or a context function.
@@ -3421,7 +3421,7 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
 
 
 def PascalString(lengthfield, encoding=None):
-    """
+    r"""
     Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ul). VarInt is recommended for new designs. Stored length is in bytes, not characters.
 
     :param lengthfield: a field used to parse and build the length (eg. VarInt Int64ul)
@@ -3439,7 +3439,7 @@ def PascalString(lengthfield, encoding=None):
 
 
 def CString(terminators=b"\x00", encoding=None):
-    """
+    r"""
     String ending in a terminator byte.
 
     By default, the terminator is the \x00 byte character. Terminators field can be a longer bytes, and any one of the characters breaks parsing. First terminator byte is used when building.
@@ -3466,7 +3466,7 @@ def CString(terminators=b"\x00", encoding=None):
 
 
 def GreedyString(encoding=None):
-    """
+    r"""
     String that reads the rest of the stream until EOF, and writes a given string as is. If no encoding is specified, this is essentially GreedyBytes.
 
     :param encoding: encoding (eg. "utf8"), or None for bytes
