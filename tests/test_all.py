@@ -529,8 +529,6 @@ class TestCore(unittest.TestCase):
         assert BitsInteger(8).sizeof() == 8
         assert BitsInteger(8, signed=True).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == -1
         assert BitsInteger(8, signed=True).build(-1) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
-        assert BitsInteger(8, swapped=True, bytesize=4).parse(b"\x01\x01\x01\x01\x00\x00\x00\x00") == 0x0f
-        assert BitsInteger(8, swapped=True, bytesize=4).build(0x0f) == b"\x01\x01\x01\x01\x00\x00\x00\x00"
         assert raises(BitsInteger(this.missing).sizeof) == SizeofError
 
     def test_bytesinteger(self):
@@ -539,8 +537,6 @@ class TestCore(unittest.TestCase):
         assert BytesInteger(4).sizeof() == 4
         assert BytesInteger(4, signed=True).parse(b"\xff\xff\xff\xff") == -1
         assert BytesInteger(4, signed=True).build(-1) == b"\xff\xff\xff\xff"
-        assert BytesInteger(4, swapped=True, bytesize=2).parse(b"\x00\xff\x00\x00") == 255
-        assert BytesInteger(4, swapped=True, bytesize=2).build(255) == b"\x00\xff\x00\x00"
         assert raises(BytesInteger(this.missing).sizeof) == SizeofError
 
     def test_bitwise(self):

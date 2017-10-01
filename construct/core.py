@@ -522,7 +522,6 @@ class BytesInteger(Construct):
     :param length: number of bytes in the field, and integer or a context function that returns such an integer
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
     :param swapped: whether to swap byte order (little endian), default is False (big endian)
-    :param bytesize: size of byte as used for byte swapping (if swapped), default is 1
 
     Example::
 
@@ -534,18 +533,17 @@ class BytesInteger(Construct):
         >>> d.sizeof()
         4
     """
-    __slots__ = ["length", "signed", "swapped", "bytesize"]
-    def __init__(self, length, signed=False, swapped=False, bytesize=1):
+    __slots__ = ["length", "signed", "swapped"]
+    def __init__(self, length, signed=False, swapped=False):
         super(BytesInteger, self).__init__()
         self.length = length
         self.signed = signed
         self.swapped = swapped
-        self.bytesize = bytesize
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
         data = _read_stream(stream, length)
         if self.swapped:
-            data = swapbytes(data, self.bytesize)
+            data = swapbytes(data, 1)
         return bytes2integer(data, self.signed)
     def _build(self, obj, stream, context, path):
         if obj < 0 and not self.signed:
@@ -553,7 +551,7 @@ class BytesInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bytes(obj, length)
         if self.swapped:
-            data = swapbytes(data, self.bytesize)
+            data = swapbytes(data, 1)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context, path):
         try:
@@ -569,7 +567,6 @@ class BitsInteger(Construct):
     :param length: number of bits in the field, an integer or a context function that returns such an integer
     :param signed: whether the value is signed (two's complement), default is False (unsigned)
     :param swapped: whether to swap byte order (little endian), default is False (big endian)
-    :param bytesize: size of byte as used for byte swapping (if swapped), default is 8
 
     Example::
 
@@ -581,18 +578,17 @@ class BitsInteger(Construct):
         >>> d.sizeof()
         1
     """
-    __slots__ = ["length", "signed", "swapped", "bytesize"]
-    def __init__(self, length, signed=False, swapped=False, bytesize=8):
+    __slots__ = ["length", "signed", "swapped"]
+    def __init__(self, length, signed=False, swapped=False):
         super(BitsInteger, self).__init__()
         self.length = length
         self.signed = signed
         self.swapped = swapped
-        self.bytesize = bytesize
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
         data = _read_stream(stream, length)
         if self.swapped:
-            data = swapbytes(data, self.bytesize)
+            data = swapbytes(data, 8)
         return bits2integer(data, self.signed)
     def _build(self, obj, stream, context, path):
         if obj < 0 and not self.signed:
@@ -600,7 +596,7 @@ class BitsInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bits(obj, length)
         if self.swapped:
-            data = swapbytes(data, self.bytesize)
+            data = swapbytes(data, 8)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context, path):
         try:
