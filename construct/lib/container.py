@@ -13,10 +13,6 @@ def setglobalfullprinting(enabled):
     global globalfullprinting
     globalfullprinting = enabled
 
-def getglobalfullprinting():
-    """Used internally."""
-    return bool(globalfullprinting)
-
 
 def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"):
     """Used internally."""
@@ -225,14 +221,13 @@ class Container(dict):
 
     @recursion_lock()
     def __str__(self, indentation="\n    "):
-        fullprinting = getglobalfullprinting()
         printingcap = 64
         text = ["Container: "]
         for k,v in self.items():
             if not isinstance(k,str) or not k.startswith("_"):
                 text.extend([indentation, str(k), " = "])
                 if isinstance(v, stringtypes):
-                    if len(v) <= printingcap or fullprinting:
+                    if len(v) <= printingcap or globalfullprinting:
                         text.append("%s (total %d)" % (reprbytes(v), len(v)))
                     else:
                         text.append("%s... (truncated, total %d)" % (reprbytes(v[:printingcap]), len(v)))
@@ -316,9 +311,6 @@ class LazyContainer(object):
             at, sc = self.offsetmap[key]
             self.stream.seek(self.addoffset + at)
             self.cached[key] = sc._parse(self.stream, self.context, "lazy container")
-            if len(self.cached) == len(self):
-                self.offsetmap = None
-                self.stream = None
         return self.cached[key]
 
     def __getattr__(self, name):
@@ -376,8 +368,6 @@ class LazyRangeContainer(ListContainer):
         if index not in self.cached:
             self.stream.seek(self.addoffset + index * self.subsize)
             self.cached[index] = self.subcon._parse(self.stream, self.context, "lazy range container")
-            if len(self.cached) == len(self):
-                self.stream = None
         return self.cached[index]
 
     def __len__(self):
@@ -414,9 +404,6 @@ class LazySequenceContainer(LazyRangeContainer):
             at,sc = self.offsetmap[index]
             self.stream.seek(self.addoffset + at)
             self.cached[index] = sc._parse(self.stream, self.context, "lazy sequence container")
-            if len(self.cached) == len(self):
-                self.offsetmap = None
-                self.stream = None
         return self.cached[index]
 
     def __len__(self):
