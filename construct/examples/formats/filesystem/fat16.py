@@ -1,97 +1,89 @@
 """
 fat.py; ad-hoc fat16 reader
-   by Bram Westerbaan <bram@westerbaan.name> 
+    by Bram Westerbaan <bram@westerbaan.name> 
 
 references:
-  http://en.wikipedia.org/wiki/File_Allocation_Table
-  http://www.ecma-international.org/publications/standards/Ecma-107.htm
+    http://en.wikipedia.org/wiki/File_Allocation_Table
+    http://www.ecma-international.org/publications/standards/Ecma-107.htm
 
 example:
-   with open("/dev/sdc1", "rb") as file:
-       fs = FatFs(file)
-       for rootdir in fs:
-           print rootdir
+    with open("/dev/sdc1", "rb") as file:
+        fs = FatFs(file)
+        for rootdir in fs:
+            print rootdir
 """
 
 import numbers
 from io import BytesIO, BufferedReader
 from construct import *
 
-def Fat16Header(name):
-    return Struct(name,
-        Bytes("jumpInstruction", 3),
-        Bytes("creatingSystemId", 8),
-        ULInt16("sectorSize"),
-        Byte("sectorsPerCluster"),
-        ULInt16("reservedSectorCount"),
-        Byte("fatCount"),
-        ULInt16("rootdirEntryCount"),
-        ULInt16("sectorCount_small"),
-        Byte("mediaId"), 
-        ULInt16("sectorsPerFat"),
-        ULInt16("sectorsPerTrack"),
-        ULInt16("sideCount"),
-        ULInt32("hiddenSectorCount"),
-        ULInt32("sectorCount_large"),
-        Byte("physicalDriveNumber"),
-        Byte("currentHead"),
-        Byte("extendedBootSignature"),
-        Bytes("volumeId", 4),
-        Bytes("volumeLabel", 11),
-        Const(Bytes("fsType", 8), "FAT16   "),
-        Bytes("bootCode", 448),
-        Const(Bytes("bootSectorSignature", 2), "\x55\xaa"),
-    )
+Fat16Header = Struct(
+    "jumpInstruction" / Bytes(3),
+    "creatingSystemId" / Bytes(8),
+    "sectorSize" / Int16ul,
+    "sectorsPerCluster" / Byte,
+    "reservedSectorCount" / Int16ul,
+    "fatCount" / Byte,
+    "rootdirEntryCount" / Int16ul,
+    "sectorCount_small" / Int16ul,
+    "mediaId" / Byte, 
+    "sectorsPerFat" / Int16ul,
+    "sectorsPerTrack" / Int16ul,
+    "sideCount" / Int16ul,
+    "hiddenSectorCount" / Int32ul,
+    "sectorCount_large" / Int32ul,
+    "physicalDriveNumber" / Byte,
+    "currentHead" / Byte,
+    "extendedBootSignature" / Byte,
+    "volumeId" / Bytes(4),
+    "volumeLabel" / Bytes(11),
+    "fsType" / Const(b"FAT16   "),
+    "bootCode" / Bytes(448),
+    "bootSectorSignature" / Const(b"\x55\xaa"),
+)
 
-def BootSector(name):
-    header = Fat16Header("header")
-    return  Struct(name,
-            Embed(header),
-            Padding(lambda ctx: ctx.sectorSize - header.sizeof()))
+BootSector = Struct(
+    Embedded(Fat16Header),
+    Padding(this.sectorSize - Fat16Header.sizeof()),
+)
 
-def FatEntry(name):
-    return Enum(ULInt16(name),
-            free_cluster = 0x0000,
-            bad_cluster = 0xfff7,
-            last_cluster = 0xffff,
-            _default_ = Pass)
+FatEntry = Enum(Int16ul,
+    free_cluster = 0x0000,
+    bad_cluster = 0xfff7,
+    last_cluster = 0xffff,
+    default = Pass,
+)
 
-def DirEntry(name):
-    return Struct(name,
-        Bytes("name", 8),
-        Bytes("extension", 3),
-        BitStruct("attributes",
-            Flag("unused"),
-            Flag("device"),
-            Flag("archive"),
-            Flag("subDirectory"),
-            Flag("volumeLabel"),
-            Flag("system"),
-            Flag("hidden"),
-            Flag("readonly")),
-        # reserved
-        Padding(10),
-        ULInt16("timeRecorded"),
-        ULInt16("dateRecorded"),
-        ULInt16("firstCluster"),
-        ULInt32("fileSize"),
-    )
+DirEntry = Struct(
+    "name" / Bytes(8),
+    "extension" / Bytes(3),
+    "attributes" / BitStruct(
+        "unused" / Flag,
+        "device" / Flag,
+        "archive" / Flag,
+        "subDirectory" / Flag,
+        "volumeLabel" / Flag,
+        "system" /Flag,
+        "hidden" / Flag,
+        "readonly" / Flag,
+    ),
+    Padding(10),
+    "timeRecorded" / Int16ul,
+    "dateRecorded" / Int16ul,
+    "firstCluster" / Int16ul,
+    "fileSize" / Int32ul,
+)
 
-def PreDataRegion(name):
-    rde = DirEntry("rootdirs")
-    fe = FatEntry("fats")
-    return Struct(name,
-            Embed(BootSector("bootSector")),
-            # the remaining reserved sectors
-            Padding(lambda ctx: (ctx.reservedSectorCount - 1)
-                * ctx.sectorSize),
-            # file allocation tables
-            Array(lambda ctx: (ctx.fatCount), 
-                Array(lambda ctx: ctx.sectorsPerFat * 
-                    ctx.sectorSize / fe.sizeof(), fe)),
-            # root directories
-            Array(lambda ctx: (ctx.rootdirEntryCount*rde.sizeof()) 
-                / ctx.sectorSize, rde))
+# NOTE: non-integer division, really?
+PreDataRegion = Struct(
+    "bootSector" / Embedded(BootSector),
+    # the remaining reserved sectors
+    Padding((this.reservedSectorCount - 1) * this.sectorSize),
+    # file allocation tables
+    Array(this.fatCount, Array(this.sectorsPerFat * this.sectorSize / FatEntry.sizeof(), FatEntry)),
+    # root directories
+    Array((this.rootdirEntryCount * DirEntry.sizeof()) / this.sectorSize, DirEntry),
+)
 
 
 class File(object):
@@ -113,16 +105,14 @@ class File(object):
 
     @classmethod
     def fromDirEntries(cls, dirEntries, fs):
-        return filter(None, [cls.fromDirEntry(de, fs) 
-            for de in dirEntries])
+        return filter(None, [cls.fromDirEntry(de, fs) for de in dirEntries])
 
     def toStream(self, stream):
         self.fs.fileToStream(self.dirEntry.firstCluster, stream)
     
     @property
     def name(self):
-        return "%s.%s" %  (self.dirEntry.name.rstrip(),
-                self.dirEntry.extension)
+        return "%s.%s" % (self.dirEntry.name.rstrip(), self.dirEntry.extension)
     
     def __str__(self):
         return "&%s %s" % (self.dirEntry.firstCluster, self.name)
@@ -134,8 +124,8 @@ class Directory(File):
         self.children = children
         if not self.children:
             self.children = File.fromDirEntries(\
-                    self.fs.getDirEntries(\
-                    self.dirEntry.firstCluster), fs)
+                self.fs.getDirEntries(\
+                self.dirEntry.firstCluster), fs)
     
     @property
     def name(self):
@@ -156,7 +146,7 @@ class Directory(File):
 class FatFs(Directory):
     def __init__(self, stream):
         self.stream = stream
-        self.pdr = PreDataRegion("pdr").parse_stream(stream)
+        self.pdr = PreDataRegion.parse_stream(stream)
         super(FatFs, self).__init__(dirEntry = None, 
                 fs = self, children = File.fromDirEntries(
                         self.pdr.rootdirs, self))
@@ -202,7 +192,7 @@ class FatFs(Directory):
         ress = set([fat[clidx] for fat in self.pdr.fats])
         if len(ress)==1:
             return ress.pop()
-        print("inconsistencie between FATs:  %s points to" % clidx)
+        print("inconsistencie between FATs:  %s points to" % (clidx,))
         for i,fat in enumerate(self.pdr.fats):
             print("\t%s according to fat #%s" % (fat[clidx], i))
         res = ress.pop()
