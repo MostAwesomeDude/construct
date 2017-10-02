@@ -1,10 +1,9 @@
 ##############################################################
 # WARNING: HEADER IS SKIPPED NOT PARSED, DATETIME CAN BE WRONG
+# 
 # https://wiki.wireshark.org/Development/LibpcapFileFormat
 ##############################################################
-"""
-tcpdump capture file
-"""
+
 from construct import *
 import time, datetime
 
@@ -14,7 +13,7 @@ class MicrosecAdapter(Adapter):
         return datetime.datetime.fromtimestamp(obj[0] + obj[1] / 1000000.0)
     def _encode(self, obj, context):
         epoch = datetime.datetime.utcfromtimestamp(0)
-        return [int((obj - epoch).total_seconds()), 0]
+        return [int((obj-epoch).total_seconds()), 0]
 
         # offset = time.mktime(*obj.timetuple())
         # sec = int(offset)
@@ -28,7 +27,4 @@ packet = Struct(
     "data" / HexDump(Bytes(this.length)),
 )
 
-cap_file = Struct(
-    Padding(24),
-    "packets" / GreedyRange(packet),
-)
+cap_file = Padded(24, GreedyRange(packet))
