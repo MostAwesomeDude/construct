@@ -1,3 +1,4 @@
+import re
 from construct.lib.py3compat import *
 
 
@@ -179,16 +180,13 @@ class Container(dict):
         for k,v in self.items():
             if k not in other or v != other[k]:
                 return False
-        for k,v in other.items():
-            if k not in self or v != self[k]:
-                return False
         return True
 
     def _search(self, compiled_pattern, search_all):
         items = []
         for key in self.keys():
             try:
-                if type(self[key]) == Container or type(self[key]) == ListContainer:
+                if isinstance(self[key], (Container,ListContainer)):
                     ret = self[key]._search(compiled_pattern, search_all)
                     if ret is not None:
                         if search_all:
@@ -208,12 +206,10 @@ class Container(dict):
             return None
 
     def search(self, pattern):
-        import re
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, False)
 
     def search_all(self, pattern):
-        import re
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, True)
 
@@ -270,7 +266,7 @@ class ListContainer(list):
     def __str__(self, indentation="\n    "):
         text = ["ListContainer: "]
         for k in self:
-            text.extend([indentation])
+            text.append(indentation)
             lines = str(k).split("\n")
             text.append(indentation.join(lines))
         return "".join(text)
@@ -293,12 +289,10 @@ class ListContainer(list):
             return None
 
     def search(self, pattern):
-        import re
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, False)
 
     def search_all(self, pattern):
-        import re
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, True)
 
@@ -354,9 +348,6 @@ class LazyContainer(object):
             return False
         for k,v in self.items():
             if k not in other or v != other[k]:
-                return False
-        for k,v in other.items():
-            if k not in self.keysbackend or v != self[k]:
                 return False
         return True
 
