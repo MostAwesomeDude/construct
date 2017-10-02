@@ -52,13 +52,13 @@ Strings
 
 String remains
 
-PascalString argument `length_field=UBInt8` was made `lengthfield`
+PascalString argument `length_field=UBInt8` was made `lengthfield` and explicit
 
 CString dropped `char_field`
 
 GreedyString dropped `char_field`
 
-All above use optional `encoding` or use global encoding (see ``setglobalstringencoding()``).
+All above use optional `encoding` argument or use global encoding (see ``setglobalstringencoding()``).
 
 
 
@@ -126,7 +126,7 @@ Switch remains
 
 Optional remains
 
-Union takes explicit `parsefrom` so parsing seeks stream by selected subcon or none
+Union takes explicit `parsefrom` so parsing seeks stream by selected subcon size or doesnt seek
 
 Select remains
 
@@ -147,7 +147,7 @@ Terminator was renamed Terminated
 
 Error added
 
-OneOf Noneof remain
+OneOf NoneOf remain
 
 Filter added
 

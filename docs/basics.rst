@@ -48,7 +48,7 @@ b'\xd2\x85\xd8\xcc\x04'
 >>> VarInt.sizeof()
 construct.core.SizeofError: cannot calculate size
 
-Fields are sometimes fixed size and some composites behave differently when they are composed of those. Keep that detail in mind. Classes that cannot determine size always raise SizeofError in response. There are few classes where same instance may return an int or raise SizeofError depending on circumstances. Array size depends on whether count of elements is constant (can be a context lambda) and subcon is constant size.
+Fields are sometimes fixed size and some composites behave differently when they are composed of those. Keep that detail in mind. Classes that cannot determine size always raise SizeofError in response. There are few classes where same instance may return an int or raise SizeofError depending on circumstances. Array size depends on whether count of elements is constant (can be a context lambda) and subcon is fixed size.
 
 >>> Int16ub[2].sizeof()
 4
@@ -189,7 +189,7 @@ A Struct can be embedded into an enclosing Struct. This means all the fields of 
 >>> outer = Struct(
 ...     "data" / Byte,
 ...     "inner" / Embedded(Struct(
-...             "data" / Bytes(4),
+...         "data" / Bytes(4),
 ...     ))
 ... )
 >>> outer.parse(b"01234")

@@ -199,6 +199,5 @@ Logical ``and or not`` operators cannot be used in this expressions. You have to
 ...
 >>> lambda ctx: not ctx.flag1 or ctx.flag2 and ctx.flag3
 
-``in`` operator cannot be used in this expressions, you have to use a lambda
- expression
+Contains operator ``in`` cannot be used in this expressions, you have to use a lambda expression:
 >>> lambda ctx: ctx.value in (1, 2, 3)
