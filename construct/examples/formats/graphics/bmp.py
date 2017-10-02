@@ -7,7 +7,7 @@ from construct import *
 #===============================================================================
 # pixels: uncompressed
 #===============================================================================
-def UncompressedRows(subcon, align_to_byte = False):
+def UncompressedRows(subcon, align_to_byte=False):
     """argh! lines must be aligned to a 4-byte boundary, and bit-pixel lines must be aligned to full bytes..."""
     if align_to_byte:
         line_pixels = Bitwise(Aligned(8, Array(this.width, subcon)))
@@ -17,8 +17,8 @@ def UncompressedRows(subcon, align_to_byte = False):
 
 uncompressed_pixels = "uncompressed" / Switch(this.bpp,
     {
-        1 : UncompressedRows(Bit, align_to_byte = True), # index
-        4 : UncompressedRows(Nibble, align_to_byte = True), # index
+        1 : UncompressedRows(Bit, align_to_byte=True), # index
+        4 : UncompressedRows(Nibble, align_to_byte=True), # index
         8 : UncompressedRows(Byte),  # index
         24 : UncompressedRows(Byte[3]),  # rgb
     }
@@ -26,6 +26,8 @@ uncompressed_pixels = "uncompressed" / Switch(this.bpp,
 
 #===============================================================================
 # pixels: Run Length Encoding (RLE) 8 bit
+# 
+# NOTE: not used anywhere
 #===============================================================================
 class RunLengthAdapter(Adapter):
     def _encode(self, obj):
@@ -71,12 +73,8 @@ bitmap_file = "bitmap_file" / Struct(
     "important_colors" / Int32ul,
 
     # palette (24 bit has no palette)
-    "palette" / Array(lambda ctx: 2**ctx.bpp if ctx.bpp <= 8 else 0,
-        Struct(
-            "rgb" / Byte[3],
-            Padding(1),
-        )
-    ),
+    # NOTE: was called "rgb" inside of it
+    "palette" / Array(lambda ctx: 2**ctx.bpp if ctx.bpp <= 8 else 0, Padded(4, Byte[3])),
 
     "pixels" / Pointer(this.data_offset,
         Switch(this.compression,
