@@ -37,17 +37,19 @@ def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"
 
 class Container(dict):
     r"""
-    Generic ordered dictionary that allows both key and attribute access, and preserve key order by insertion. Also it uses __call__ method to chain add keys, because **kw does not preserve order.
+    Generic ordered dictionary that allows both key and attribute access, and preserve key order by insertion. Also it uses __call__ method to chain add keys, because **kw does not preserve order (unless PY36+).
 
     Struct and Sequence, and few others parsers returns a container, since their members have order so do keys.
 
     Example::
 
+        Container(dict(name="anonymous", age=21))
+
         Container([ ("name","anonymous"), ("age",21) ])
 
         Container(name="anonymous")(age=21)
 
-        # Note that this syntax does NOT work before python 3.6 due to unordered keyword arguments:
+        # This syntax requires Python 3.6:
         Container(name="anonymous", age=21)
 
         Container(container2)
