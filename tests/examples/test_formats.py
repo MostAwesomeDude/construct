@@ -77,3 +77,7 @@ class TestFormats(unittest.TestCase):
         commondump(pe32_file, "python.exe")
         commondump(pe32_file, "NOTEPAD.EXE")
         commondump(pe32_file, "sqlite3.dll")
+
+    @pytest.mark.xfail(reason="unknown problem, fails parsing")
+    def test_elf32_file(self):
+        commondump(elf32_file, "_ctypes_test.so")

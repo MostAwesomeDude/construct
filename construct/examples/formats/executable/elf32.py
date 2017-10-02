@@ -1,6 +1,6 @@
 """
 Executable and Linkable Format (ELF), 32 bit, big or little endian.
-Used on *nix systems as a replacement of the older a.out format.
+Used on Unix systems as a replacement of the older a.out format.
 
 Big-endian support kindly submitted by Craig McQueen (mcqueen-c#edsrd1!yzk!co!jp).
 """
@@ -9,8 +9,8 @@ from construct import *
 
 
 def elf32_body(ElfInt16, ElfInt32):
-    elf32_program_header = Struct("program_header",
-        Enum(ElfInt32("type"),
+    elf32_program_header = Struct(
+        "type" / Enum(ElfInt32,
             NULL = 0,
             LOAD = 1,
             DYNAMIC = 2,
@@ -18,23 +18,21 @@ def elf32_body(ElfInt16, ElfInt32):
             NOTE = 4,
             SHLIB = 5,
             PHDR = 6,
-            _default_ = Pass,
+            default = Pass,
         ),
-        ElfInt32("offset"),
-        ElfInt32("vaddr"),
-        ElfInt32("paddr"),
-        ElfInt32("file_size"),
-        ElfInt32("mem_size"),
-        ElfInt32("flags"),
-        ElfInt32("align"),
+        "offset" / ElfInt32,
+        "vaddr" / ElfInt32,
+        "paddr" / ElfInt32,
+        "file_size" / ElfInt32,
+        "mem_size" / ElfInt32,
+        "flags" / ElfInt32,
+        "align" / ElfInt32,
     )
     
-    elf32_section_header = Struct("section_header",
-        ElfInt32("name_offset"),
-        Pointer(lambda ctx: ctx._.strtab_data_offset + ctx.name_offset,
-            CString("name")
-        ),
-        Enum(ElfInt32("type"), 
+    elf32_section_header = Struct(
+        "name_offset" / ElfInt32,
+        "name" / Pointer(this._.strtab_data_offset + this.name_offset, CString()),
+        "type" / Enum(ElfInt32, 
             NULL = 0,
             PROGBITS = 1,
             SYMTAB = 2,
@@ -47,30 +45,28 @@ def elf32_body(ElfInt16, ElfInt32):
             REL = 9,
             SHLIB = 10,
             DYNSYM = 11,
-            _default_ = Pass,
+            default = Pass,
         ),
-        ElfInt32("flags"),
-        ElfInt32("addr"),
-        ElfInt32("offset"),
-        ElfInt32("size"),
-        ElfInt32("link"),
-        ElfInt32("info"),
-        ElfInt32("align"),
-        ElfInt32("entry_size"),
-        OnDemandPointer(lambda ctx: ctx.offset,
-            HexDumpAdapter(Field("data", lambda ctx: ctx.size))
-        ),
+        "flags" / ElfInt32,
+        "addr" / ElfInt32,
+        "offset" / ElfInt32,
+        "size" / ElfInt32,
+        "link" / ElfInt32,
+        "info" / ElfInt32,
+        "align" / ElfInt32,
+        "entry_size" / ElfInt32,
+        "data" / OnDemandPointer(this.offset, HexDump(Bytes(this.size))),
     )
     
-    return Struct("body",
-        Enum(ElfInt16("type"),
+    return Struct(
+        "type" / Enum(ElfInt16,
             NONE = 0,
             RELOCATABLE = 1,
             EXECUTABLE = 2,
             SHARED = 3,
             CORE = 4,
         ),
-        Enum(ElfInt16("machine"),
+        "machine" / Enum(ElfInt16,
             NONE = 0,
             M32 = 1,
             SPARC = 2,
@@ -79,73 +75,47 @@ def elf32_body(ElfInt16, ElfInt32):
             Motorolla88K = 5,
             Intel860 = 7,
             MIPS = 8,
-            _default_ = Pass
+            default = Pass
         ),
-        ElfInt32("version"),
-        ElfInt32("entry"),
-        ElfInt32("ph_offset"),
-        ElfInt32("sh_offset"),
-        ElfInt32("flags"),
-        ElfInt16("header_size"),
-        ElfInt16("ph_entry_size"),
-        ElfInt16("ph_count"),
-        ElfInt16("sh_entry_size"),
-        ElfInt16("sh_count"),
-        ElfInt16("strtab_section_index"),
+        "version"              / ElfInt32,
+        "entry"                / ElfInt32,
+        "ph_offset"            / ElfInt32,
+        "sh_offset"            / ElfInt32,
+        "flags"                / ElfInt32,
+        "header_size"          / ElfInt16,
+        "ph_entry_size"        / ElfInt16,
+        "ph_count"             / ElfInt16,
+        "sh_entry_size"        / ElfInt16,
+        "sh_count"             / ElfInt16,
+        "strtab_section_index" / ElfInt16,
         
         # calculate the string table data offset (pointer arithmetics)
         # ugh... anyway, we need it in order to read the section names, later on
-        Pointer(lambda ctx: 
-            ctx.sh_offset + ctx.strtab_section_index * ctx.sh_entry_size + 16,
-            ElfInt32("strtab_data_offset"),
-        ),
+        "strtab_data_offset" / Pointer(this.sh_offset + this.strtab_section_index * this.sh_entry_size + 16, ElfInt32),
         
-        # program header table
-        Rename("program_table",
-            Pointer(lambda ctx: ctx.ph_offset,
-                Array(lambda ctx: ctx.ph_count,
-                    elf32_program_header
-                )
-            )
-        ),
+        "program_table" / Pointer(this.ph_offset, elf32_program_header[this.ph_count]),
         
-        # section table
-        Rename("sections", 
-            Pointer(lambda ctx: ctx.sh_offset,
-                Array(lambda ctx: ctx.sh_count,
-                    elf32_section_header
-                )
-            )
-        ),    
+        "sections" / Pointer(this.sh_offset, elf32_section_header[this.sh_count]),
     )
 
-elf32_body_little_endian = elf32_body(ULInt16, ULInt32)
-elf32_body_big_endian = elf32_body(UBInt16, UBInt32)
-
-elf32_file = Struct("elf32_file",
-    Struct("identifier",
+elf32_file = Struct(
+    "identifier" / Struct(
         Const(b"\x7fELF"),
-        Enum(Byte("file_class"),
+        "file_class" / Enum(Byte,
             NONE = 0,
             CLASS32 = 1,
             CLASS64 = 2,
         ),
-        Enum(Byte("encoding"),
+        "encoding" / Enum(Byte,
             NONE = 0,
             LSB = 1,
             MSB = 2,            
         ),
-        Byte("version"),
+        "version" / Byte,
         Padding(9),
     ),
-    Embedded(IfThenElse("body", lambda ctx: ctx.identifier.encoding == "LSB",
-        elf32_body_little_endian,
-        elf32_body_big_endian,
+    "body" / Embedded(IfThenElse(this.identifier.encoding == "LSB",
+        elf32_body(Int16ul, Int32ul),
+        elf32_body(Int16ub, Int32ub),
     )),
 )
-
-
-if __name__ == "__main__":
-    obj = elf32_file.parse_stream(open("../../../tests/_ctypes_test.so", "rb"))
-    #[s.data.value for s in obj.sections]
-    print(obj)
