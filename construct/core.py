@@ -3269,6 +3269,8 @@ class StopIf(Construct):
     r"""
     Checks for a condition, and stops a Struct/Sequence/Range from parsing or building further.
 
+    :param condfunc: a context function returning a bool (or truthy value)
+
     Example::
 
         Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
