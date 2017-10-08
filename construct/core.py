@@ -1898,6 +1898,8 @@ class Const(Subconstruct):
     r"""
     Field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
 
+    Usually a member of a Struct, where it can be anonymous (so it does not appear in parsed dictionary for simplicity).
+
     Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes (and hence does NOT require a fixed sized lenghtfield), but depends on the subcon to read the appropriate amount (eg. VarInt is acceptable).
 
     :param subcon: the subcon used to build value from, or a bytes value
@@ -1929,11 +1931,11 @@ class Const(Subconstruct):
     def _parse(self, stream, context, path):
         obj = self.subcon._parse(stream, context, path)
         if obj != self.value:
-            raise ConstError("expected %r but parsed %r" % (self.value, obj))
+            raise ConstError("parsing expected %r but got %r" % (self.value, obj))
         return obj
     def _build(self, obj, stream, context, path):
         if obj not in (None, self.value):
-            raise ConstError("expected None or %r" % (self.value,))
+            raise ConstError("building expected None or %r but got %r" % (self.value, obj))
         return self.subcon._build(self.value, stream, context, path)
     def _sizeof(self, context, path):
         return self.subcon._sizeof(context, path)
