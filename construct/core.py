@@ -2831,8 +2831,6 @@ class Mapping(Adapter):
     def _encode(self, obj, context):
         try:
             return self.encoding[obj]
-        except ExplicitError:
-            raise
         except (KeyError, TypeError):
             if self.encdefault is NotImplemented:
                 raise MappingError("no encoding mapping for %r" % (obj,))
@@ -2842,8 +2840,6 @@ class Mapping(Adapter):
     def _decode(self, obj, context):
         try:
             return self.decoding[obj]
-        except ExplicitError:
-            raise
         except (KeyError, TypeError):
             if self.decdefault is NotImplemented:
                 raise MappingError("no decoding mapping for %r" % (obj,))
@@ -2868,7 +2864,7 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
     """
     return Mapping(subcon,
         encoding = mapping,
-        decoding = dict((v,k) for k, v in mapping.items()),
+        decoding = dict((v,k) for k,v in mapping.items()),
         encdefault = default,
         decdefault = default,
     )
@@ -2914,7 +2910,7 @@ def Enum(subcon, default=NotImplemented, **mapping):
 
     return Mapping(subcon,
         encoding = encmapping,
-        decoding = dict((v,k) for k, v in mapping.items()),
+        decoding = dict((v,k) for k,v in mapping.items()),
         encdefault = default,
         decdefault = default,
     )
@@ -2940,7 +2936,7 @@ class FlagsEnum(Adapter):
     def _encode(self, obj, context):
         try:
             flags = 0
-            for name, value in obj.items():
+            for name,value in obj.items():
                 if value:
                     flags |= self.flags[name]
             return flags
@@ -2950,7 +2946,7 @@ class FlagsEnum(Adapter):
             raise MappingError("unknown flag: %s" % (name,))
     def _decode(self, obj, context):
         obj2 = FlagsContainer()
-        for name, value in self.flags.items():
+        for name,value in self.flags.items():
             obj2[name] = bool(obj & value)
         return obj2
 
