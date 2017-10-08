@@ -8,11 +8,10 @@ from construct import *
 from construct.lib import *
 from construct.examples.formats import *
 
-from io import BytesIO
 import os, random, itertools, hashlib, binascii
+from io import BytesIO
 from binascii import hexlify, unhexlify
 ident = lambda x: x
-
 
 
 def common(format, data, obj, size=None):
@@ -48,7 +47,6 @@ def commonbytes(format, data):
     # assert hexlify(data2) == hexlify(data)
 
 
-
 class TestFormats(unittest.TestCase):
 
     def test_png(self):
@@ -78,7 +76,7 @@ class TestFormats(unittest.TestCase):
     def test_snoop(self):
         commondump(snoop_file, "snoop1")
 
-    @pytest.mark.xfail(reason="OnDemandPointer is broken, fix it before unlocking")
+    @pytest.mark.xfail(reason="OnDemandPointer is broken, not example code")
     def test_pe32file(self):
         commondump(pe32_file, "python.exe")
         commondump(pe32_file, "NOTEPAD.EXE")
@@ -86,4 +84,4 @@ class TestFormats(unittest.TestCase):
 
     @pytest.mark.xfail(reason="unknown problem, fails parsing")
     def test_elf32_file(self):
-        commondump(elf32_file, "_ctypes_test.so")
+        commondump(elf32_file, "ctypes.so")
