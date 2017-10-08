@@ -1778,7 +1778,7 @@ class Seek(Construct):
         >>> d.build([b"0123456789", None, 255])
         b'01234\xff6789'
     """
-    __slots__ = ["at","whence"]
+    __slots__ = ["at", "whence"]
     def __init__(self, at, whence=0):
         super(Seek, self).__init__()
         self.at = at
