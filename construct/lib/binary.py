@@ -47,12 +47,12 @@ def integer2bytes(number, width):
     return b"".join(acc)
 
 
+D = {b"0":0, b"\x00":0, b"1":1, b"\x01":1}
 def onebit2integer(b):
-    if b in (b"0", b"\x00"):
-        return 0
-    if b in (b"1", b"\x01"):
-        return 1
-    raise ValueError(r"bit was not recognized as one of: 0 1 \x00 \x01")
+    try:
+        return D[b]
+    except KeyError:
+        raise ValueError(r"bit was not recognized as one of: 0 1 \x00 \x01")
 
 
 def bits2integer(data, signed=False):
