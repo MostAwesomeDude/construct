@@ -7,15 +7,15 @@ http://www.win.tue.nl/~aeb/partitions/partition_types-1.html
 
 from construct import *
 
-mbr_format = "mbr" / Struct(
-    "bootloader_code" / HexDump(Bytes(446)),
+mbr_format = Struct(
+    "bootloader_code" / Bytes(446),
     "partitions" / Array(4, Struct(
         "state" / Enum(Byte,
             INACTIVE = 0x00,
             ACTIVE = 0x80,
         ),
         "beginning" / BitStruct(
-            "head" / Octet,
+            "head" / BitsInteger(8),
             "sect" / BitsInteger(6),
             "cyl" / BitsInteger(10),
         ),
@@ -32,10 +32,10 @@ mbr_format = "mbr" / Struct(
             NTFS = 0x07,
             LINUX_SWAP = 0x82,
             LINUX_NATIVE = 0x83,
-            default=Pass,
+            default = Pass,
         ),
         "ending" / BitStruct(
-            "head" / Octet,
+            "head" / BitsInteger(8),
             "sect" / BitsInteger(6),
             "cyl" / BitsInteger(10),
         ),

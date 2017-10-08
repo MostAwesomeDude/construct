@@ -15,7 +15,7 @@ def UncompressedRows(subcon, align_to_byte=False):
         line_pixels = Array(this.width, subcon)
     return Array(this.height, Aligned(4, line_pixels))
 
-uncompressed_pixels = "uncompressed" / Switch(this.bpp,
+uncompressed_pixels = Switch(this.bpp,
     {
         1 : UncompressedRows(Bit, align_to_byte=True), # index
         4 : UncompressedRows(Nibble, align_to_byte=True), # index
@@ -26,22 +26,21 @@ uncompressed_pixels = "uncompressed" / Switch(this.bpp,
 
 #===============================================================================
 # pixels: Run Length Encoding (RLE) 8 bit
-# 
-# NOTE: not used anywhere
 #===============================================================================
 class RunLengthAdapter(Adapter):
     def _encode(self, obj):
         return len(obj), obj[0]
     def _decode(self, obj):
-        length, value = obj
+        length,value = obj
         return [value] * length
 
+# WARNING: not used anywhere
 rle8pixel = "rle8pixel" / RunLengthAdapter(Byte >> Byte)
 
 #===============================================================================
 # file structure
 #===============================================================================
-bitmap_file = "bitmap_file" / Struct(
+bitmap_file = Struct(
     "signature" / Const(b"BM"),
     "file_size" / Int32ul,
     Padding(4),
@@ -77,10 +76,6 @@ bitmap_file = "bitmap_file" / Struct(
     "palette" / Array(lambda ctx: 2**ctx.bpp if ctx.bpp <= 8 else 0, Padded(4, Byte[3])),
 
     "pixels" / Pointer(this.data_offset,
-        Switch(this.compression,
-            {
-                "Uncompressed" : uncompressed_pixels,
-            },
-        ),
+        Switch(this.compression, {"Uncompressed" : uncompressed_pixels}),
     ),
 )

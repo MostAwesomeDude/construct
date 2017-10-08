@@ -4,9 +4,10 @@ Windows Meta File
 
 from construct import *
 
-wmf_record = Struct("records",
-    ULInt32("size"), # size in words, including the size, function and params
-    Enum(ULInt16("function"),
+
+wmf_record = Struct(
+    "size" / Int32ul, # size in words, including the size, function and params
+    "function" / Enum(Int16ul,
         AbortDoc = 0x0052,
         Aldus_Header = 0x0001,
         AnimatePalette = 0x0436,
@@ -91,39 +92,39 @@ wmf_record = Struct("records",
         StretchBlt = 0x0B23,
         StretchDIB = 0x0F43,
         TextOut = 0x0521,
-        _default_ = Pass,
+        default = Pass,
     ),
-    Array(lambda ctx: ctx.size - 3, ULInt16("params")),
+    "params" / Array(this.size - 3, Int16ul),
 )
 
-wmf_placeable_header = Struct("placeable_header",
-  Const(ULInt32("key"), 0x9AC6CDD7),
-  ULInt16("handle"),
-  SLInt16("left"),
-  SLInt16("top"),
-  SLInt16("right"),
-  SLInt16("bottom"),
-  ULInt16("units_per_inch"),
+wmf_placeable_header = Struct(
+  "key" / Const(Int32ul, 0x9AC6CDD7),
+  "handle" / Int16ul,
+  "left" / Int16sl,
+  "top" / Int16sl,
+  "right" / Int16sl,
+  "bottom"/ Int16sl,
+  "units_per_inch"/ Int16ul,
   Padding(4),
-  ULInt16("checksum")
+  "checksum" / Int16ul,
 )
 
-wmf_file = Struct("wmf_file",
+wmf_file = Struct(
     # --- optional placeable header ---
-    Optional(wmf_placeable_header),
+    "placeable_header" / Optional(wmf_placeable_header),
 
     # --- header ---
-    Enum(ULInt16("type"),
+    "type" / Enum(Int16ul, 
         InMemory = 0,
         File = 1,
     ),
-    Const(ULInt16("header_size"), 9),
-    ULInt16("version"),
-    ULInt32("size"), # file size is in words
-    ULInt16("number_of_objects"),
-    ULInt32("size_of_largest_record"),
-    ULInt16("number_of_params"),
+    "header_size" / Const(Int16ul, 9),
+    "version" / Int16ul,
+    "size" / Int32ul, # file size is in words
+    "number_of_objects" / Int16ul,
+    "size_of_largest_record" / Int32ul,
+    "number_of_params" / Int16ul,
 
     # --- records ---
-    GreedyRange(wmf_record)
+    "records" / GreedyRange(wmf_record)
 )

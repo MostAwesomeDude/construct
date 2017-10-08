@@ -23,7 +23,7 @@ compression_method = "compression_method" / Enum(Byte, deflate = 0, default=Pass
 # 11.2.3: PLTE - Palette
 #===============================================================================
 plte_info = "plte_info" / Struct(
-    "num_entries" / Computed(this._.length / 3),
+    "num_entries" / Computed(this._.length // 3),
     "palette_entries" / Array(this.num_entries, Byte[3]),
 )
 
@@ -64,7 +64,7 @@ gama_info = "gama_info" / Struct(
 iccp_info = "iccp_info" / Struct(
     "name" / CString(),
     compression_method,
-    "compressed_profile" / Bytes(lambda ctx: ctx._.length - (len(ctx.name) + 2)),
+    "compressed_profile" / Bytes(this._.length - (len_(this.name) + 2)),
 )
 
 #===============================================================================
@@ -88,7 +88,7 @@ srgb_info = "rendering_intent" / Enum(Byte,
     relative_colorimetric = 1,
     saturation = 2,
     absolute_colorimetric = 3,
-    default=Pass
+    default = Pass,
 )
 
 #===============================================================================
@@ -96,7 +96,7 @@ srgb_info = "rendering_intent" / Enum(Byte,
 #===============================================================================
 text_info = "text_info" / Struct(
     "keyword" / CString(),
-    "text" / Bytes(lambda ctx: ctx._.length - (len(ctx.keyword) + 1)),
+    "text" / Bytes(this._.length - (len_(this.keyword) + 1)),
 )
 
 #===============================================================================
@@ -108,7 +108,7 @@ ztxt_info = "ztxt_info" / Struct(
     # As with iCCP, length is chunk length, minus length of
     # keyword, minus two: one byte for the null terminator,
     # and one byte for the compression method.
-    "compressed_text" / Bytes(lambda ctx: ctx._.length - (len(ctx.keyword) + 2)),
+    "compressed_text" / Bytes(this._.length - (len_(this.keyword) + 2)),
 )
 
 #===============================================================================
@@ -120,7 +120,7 @@ itxt_info = "itxt_info" / Struct(
     compression_method,
     "language_tag" / CString(),
     "translated_keyword" / CString(),
-    "text" / Bytes(lambda ctx: ctx._.length - (len(ctx.keyword) + len(ctx.language_tag) + len(ctx.translated_keyword) + 5)),
+    "text" / Bytes(this._.length - (len_(this.keyword) + len_(this.language_tag) + len_(this.translated_keyword) + 5)),
 )
 
 #===============================================================================
@@ -154,11 +154,8 @@ phys_info = "phys_info" / Struct(
 # 11.3.5.4: sPLT - Suggested palette
 #===============================================================================
 def splt_info_data_length(ctx):
-    if ctx.sample_depth == 8:
-        entry_size = 6
-    else:
-        entry_size = 10
-    return (ctx._.length - len(ctx.name) - 2) / entry_size
+    entry_size = 6 if ctx.sample_depth == 8 else 10
+    return (ctx._.length - len(ctx.name) - 2) // entry_size
 
 splt_info = "data" / Struct(
     "name" / CString(),
@@ -196,9 +193,9 @@ time_info = "time_info" / Struct(
 #===============================================================================
 # chunks
 #===============================================================================
-default_chunk_info = HexDump(Bytes(this.length))
+default_chunk_info = Bytes(this.length)
 
-chunk = "chunk" / Struct(
+chunk = Struct(
     "length" / Int32ub,
     "type" / Bytes(4),
     "data" / Switch(this.type,
@@ -226,7 +223,7 @@ chunk = "chunk" / Struct(
     "crc" / Int32ub,
 )
 
-image_header_chunk = "image_header" / Struct(
+image_header_chunk = Struct(
     "length" / Int32ub,
     "signature" / Const(b"IHDR"),
     "width" / Int32ub,
@@ -252,6 +249,6 @@ image_header_chunk = "image_header" / Struct(
 #===============================================================================
 png_file = "png" / Struct(
     "signature" / Const(b"\x89PNG\r\n\x1a\n"),
-    image_header_chunk,
+    "image_header" / image_header_chunk,
     "chunks" / GreedyRange(chunk),
 )

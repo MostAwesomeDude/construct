@@ -4,7 +4,7 @@ Enhanced Meta File
 
 from construct import *
 
-record_type = "record_type" / Enum(Int32ul,
+record_type = Enum(Int32ul,
     ABORTPATH = 68,
     ANGLEARC = 41,
     ARC = 45,
@@ -101,16 +101,16 @@ record_type = "record_type" / Enum(Int32ul,
     STROKEANDFILLPATH = 63,
     STROKEPATH = 64,
     WIDENPATH = 66,
-    default=Pass
+    default = Pass,
 )
 
-generic_record = "records" / Struct(
-    record_type,
+generic_record = Struct(
+    "record_type" / record_type,
     "record_size" / Int32ul,      # Size of the record in bytes 
     "params" / RawCopy(Array((this.record_size - 8) // 4, Int32ul)),
 )
 
-header_record = "header_record" / Struct(
+header_record = Struct(
     Const(record_type, "HEADER"),
     "record_size" / Int32ul,              # Size of the record in bytes 
     "bounds_left" / Int32sl,              # Left inclusive bounds 
@@ -136,14 +136,13 @@ header_record = "header_record" / Struct(
     "device_height_mm" / Int32sl,         # Height of reference device in millimeters
     
     "description" / Pointer(this.description_offset,
-        String(this.description_size * 2),
-    ),
+        String(this.description_size * 2)),
     
     # padding up to end of record
     Padding(this.record_size - 88),
 )
 
-emf_file = "emf_file" / Struct(
-    header_record,
-    Array(this.header_record.num_of_records - 1, generic_record),
+emf_file = Struct(
+    "header_record" / header_record,
+    "records" / Array(this.header_record.num_of_records - 1, generic_record),
 )

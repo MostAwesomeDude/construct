@@ -75,7 +75,7 @@ def elf32_body(ElfInt16, ElfInt32):
             Motorolla88K = 5,
             Intel860 = 7,
             MIPS = 8,
-            default = Pass
+            default = Pass,
         ),
         "version"              / ElfInt32,
         "entry"                / ElfInt32,

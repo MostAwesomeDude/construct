@@ -9,8 +9,8 @@ http://download.microsoft.com/download/1/6/1/161ba512-40e2-4cc9-843a-923143f3456
 http://download.microsoft.com/download/9/c/5/9c5b2167-8017-4bae-9fde-d599bac8184a/pecoff_v8.doc
 """
 
-import time
 from construct import *
+import time
 
 
 class UTCTimeStampAdapter(Adapter):
@@ -63,7 +63,7 @@ class NamedSequence(Adapter):
         return obj2
 
 
-msdos_header = "msdos_header" / Struct(
+msdos_header = Struct(
     Const(b"MZ"),
     "partPag" / Int16ul,
     "page_count" / Int16ul,
@@ -90,14 +90,15 @@ msdos_header = "msdos_header" / Struct(
 symbol_table = "symbol_table" / Struct(
     "name" / String(8, padchar=b"\x00"),
     "value" / Int32ul,
-    "section_number" / Enum(ExprAdapter(Int16sl,
+    "section_number" / Enum(
+        ExprAdapter(Int16sl,
             encoder = lambda obj,ctx: obj + 1,
             decoder = lambda obj,ctx: obj - 1,
         ),
         UNDEFINED = -1,
         ABSOLUTE = -2,
         DEBUG = -3,
-        _default_ = Pass,
+        default = Pass,
     ),
     "complex_type" / Enum(Int8ul,
         NULL = 0,
@@ -155,7 +156,7 @@ symbol_table = "symbol_table" / Struct(
     "aux_symbols" / Array(this.number_of_aux_symbols, Bytes(18))
 )
 
-coff_header = "coff_header" / Struct(
+coff_header = Struct(
     Const(b"PE\x00\x00"),
     "machine_type" / Enum(Int16ul,
         UNKNOWN = 0x0,
@@ -178,7 +179,7 @@ coff_header = "coff_header" / Struct(
         SH5= 0x1a8,
         THUMB = 0x1c2,
         WCEMIPSV2 = 0x169,
-        _default_ = Pass
+        default = Pass,
     ),
     "number_of_sections" / Int16ul,
     "time_stamp" / UTCTimeStamp,
@@ -207,7 +208,7 @@ coff_header = "coff_header" / Struct(
 
 PEPlusField = IfThenElse(this.pe_type == "PE32_plus", Int64ul, Int32ul)
 
-optional_header = "optional_header" / Struct(
+optional_header = Struct(
     # standard fields
     "pe_type" / Enum(Int16ul,
         PE32 = 0x10b,
@@ -250,7 +251,7 @@ optional_header = "optional_header" / Struct(
         EFI_RUNTIME_DRIVER = 12,
         EFI_ROM = 13,
         XBOX = 14,
-        _default_ = Pass
+        default = Pass
     ),
     "dll_characteristics" / FlagsEnum(Int16ul,
         NO_BIND = 0x0800,
@@ -368,10 +369,10 @@ section = "section" / Struct(
 )
 
 pe32_file = "pe32_file" / Struct(
-    msdos_header,
-    coff_header,
+    "msdos_header" / msdos_header,
+    "coff_header" / coff_header,
     "_start_of_optional_header" / Tell,
-    optional_header,
+    "optional_header" / optional_header,
     "_end_of_optional_header" / Tell,
     Padding(lambda ctx: min(0, ctx.coff_header.optional_header_size - ctx._end_of_optional_header + ctx._start_of_optional_header)),
     "sections" / Array(this.coff_header.number_of_sections, section)

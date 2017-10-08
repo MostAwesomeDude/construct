@@ -63,6 +63,12 @@ class TestFormats(unittest.TestCase):
         commondump(bitmap_file, "bitmap8.bmp")
         commondump(bitmap_file, "bitmap24.bmp")
 
+    def test_wmf(self):
+        commondump(wmf_file, "wmf1.wmf")
+
+    def test_gif(self):
+        commondump(gif_file, "sample.gif")
+
     def test_mbr(self):
         commondump(mbr_format, "mbr1")
 
