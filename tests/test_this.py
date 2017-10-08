@@ -95,3 +95,11 @@ class TestThis(unittest.TestCase):
         )
         assert st.build(dict(data=1)) == b'4'
         assert st.build(dict(data=7)) == b'5'
+
+    def test_shift(self):
+        st = Struct(
+           "a" / Byte,
+           "ls" / Computed(this.a << 1),
+           "rs" / Computed(this.a >> 1),
+        )
+        assert st.parse(b"\x02") == Container(a=2)(ls=4)(rs=1)
