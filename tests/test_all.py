@@ -7,36 +7,28 @@ ontravis = 'TRAVIS' in os.environ
 from construct import *
 from construct.lib import *
 
-from io import BytesIO
 import os, random, itertools, collections, hashlib, math
+from io import BytesIO
 ident = lambda x: x
 
 
-
-def common(format, data=NotImplemented, obj=NotImplemented, size=NotImplemented, eq=True):
-    if data is not NotImplemented:
-        data2 = data.strip(b"?")
+def common(format, data=NotImplemented, obj=NotImplemented, size=NotImplemented):
     if data is not NotImplemented and obj is not NotImplemented:
         assert format.parse(data) == obj
         assert format.build(obj) == data
+        # following are guaranteed by the above
+        # assert format.parse(format.build(obj)) == obj
+        # assert format.build(format.parse(data)) == data
     else:
         if obj is not NotImplemented:
-            if eq:
-                assert format.parse(format.build(obj)) == obj
-            else:
-                assert format.parse(format.build(obj))
-
+            assert format.parse(format.build(obj)) == obj
         if data is not NotImplemented:
-            if eq:
-                assert format.build(format.parse(data)) == data
-            else:
-                assert format.build(format.parse(data))
+            assert format.build(format.parse(data)) == data
     if size is not NotImplemented:
         if isinstance(size, int):
             assert format.sizeof() == size
         else:
             assert raises(format.sizeof) == size
-
 
 
 class TestCore(unittest.TestCase):
@@ -98,8 +90,6 @@ class TestCore(unittest.TestCase):
     def test_ints24(self):
         common(Int24ub, b"\x01\x02\x03", 0x010203, 3)
         common(Int24ul, b"\x01\x02\x03", 0x030201, 3)
-        common(Struct(int24=Int24ub), b"\x01\x02\x03", Container(int24=0x010203), 3)
-        common(Struct(int24=Int24ul), b"\x01\x02\x03", Container(int24=0x030201), 3)
         common(Int24sb, b"\xff\xff\xff", -1, 3)
         common(Int24sl, b"\xff\xff\xff", -1, 3)
 
@@ -114,20 +104,9 @@ class TestCore(unittest.TestCase):
         assert raises(VarInt.parse, b"") == FieldError
         assert raises(VarInt.build, -1) == ValueError
 
-    def test_varint_randomized(self):
-        for i in range(100):
-            common(VarInt, obj=random.randrange(0, 2**1024), size=SizeofError)
-            common(VarInt, data=os.urandom(1024) + b"\x00\xff", eq=False, size=SizeofError)
-
     def test_floats(self):
         assert Single.build(1.2) == b"?\x99\x99\x9a"
         assert Double.build(1.2) == b"?\xf3333333"
-
-    def test_floats_randomized(self):
-        for i in range(100):
-            x = random.random()
-            assert abs(Single.parse(Single.build(x)) - x) < 1e-3
-            assert Double.parse(Double.build(x)) == x
 
     def test_bytes(self):
         assert Bytes(4).parse(b"12345678") == b"1234"
@@ -150,18 +129,16 @@ class TestCore(unittest.TestCase):
         common(GreedyBytes, b"1234", b"1234", SizeofError)
 
     def test_formatfield(self):
-        assert FormatField("<","L").parse(b"\x12\x34\x56\x78") == 0x78563412
-        assert FormatField("<","L").build(0x78563412) == b"\x12\x34\x56\x78"
+        common(FormatField("<","L"), b"\x12\x34\x56\x78", 0x78563412, 4)
         assert raises(FormatField("<","L").parse, b"") == FieldError
         assert raises(FormatField("<","L").parse, b"\x12\x34\x56") == FieldError
         assert raises(FormatField("<","L").build, "string not int") == FieldError
-        assert FormatField("<","L").sizeof() == 4
         assert raises(FormatField("<","L").build, 2**100) == FieldError
         assert raises(FormatField("<","L").build, 9e9999) == FieldError
 
     def test_formatfield_ints_randomized(self):
         for endianess,dtype in itertools.product("<>=","bhlqBHLQ"):
-            d = FormatField(endianess,dtype)
+            d = FormatField(endianess, dtype)
             for i in range(100):
                 common(d, obj=random.randrange(0, 256**d.sizeof()//2))
                 common(d, data=os.urandom(d.sizeof()))
@@ -259,25 +236,17 @@ class TestCore(unittest.TestCase):
         assert RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).build([1,0,0,4]) == b"\x01\x00\x00"
 
     def test_struct(self):
-        assert Struct("a" / Int16ul, "b" / Byte).parse(b"\x01\x00\x02") == Container(a=1)(b=2)
-        assert Struct("a" / Int16ul, "b" / Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x02"
-        assert Struct("a"/Struct("b"/Byte)).parse(b"\x01") == Container(a=Container(b=1))
-        assert Struct("a"/Struct("b"/Byte)).build(Container(a=Container(b=1))) == b"\x01"
-        assert Struct("a"/Struct("b"/Byte)).sizeof() == 1
+        common(Struct("a"/Int16ul, "b"/Byte), b"\x01\x00\x02", Container(a=1,b=2))
+        common(Struct("a"/Struct("b"/Byte)), b"\x01", Container(a=Container(b=1)), 1)
         assert raises(Struct("missingkey"/Byte).build, dict()) == KeyError
         assert Struct("a"/Byte, "a"/VarInt, "a"/Pass).build(dict(a=1)) == b"\x01\x01"
-        assert Struct().parse(b"") == Container()
-        assert Struct().build(dict()) == b""
-        assert Struct(Padding(2)).parse(b"\x00\x00") == Container()
-        assert Struct(Padding(2)).build(dict()) == b"\x00\x00"
-        assert Struct(Padding(2)).sizeof() == 2
+        common(Struct(), b"", Container(), 0)
+        common(Struct(Padding(2)), b"\x00\x00", Container(), 2)
         assert raises(Struct(Bytes(this.missing)).sizeof) == SizeofError
 
     def test_struct_nested_embedded(self):
-        assert Struct("a" / Byte, "b" / Int16ub, "inner" / Struct("c" / Byte, "d" / Byte)).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(inner=Container(c=3)(d=4))
-        assert Struct("a" / Byte, "b" / Int16ub, "inner" / Struct("c" / Byte, "d" / Byte)).build(Container(a=1)(b=2)(inner=Container(c=3)(d=4))) == b"\x01\x00\x02\x03\x04"
-        assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).parse(b"\x01\x00\x02\x03\x04") == Container(a=1)(b=2)(c=3)(d=4)
-        assert Struct("a" / Byte, "b" / Int16ub, Embedded("inner" / Struct("c" / Byte, "d" / Byte))).build(Container(a=1)(b=2)(c=3)(d=4)) == b"\x01\x00\x02\x03\x04"
+        common(Struct("a"/Byte, "b"/Int16ub, "inner"/Struct("c"/Byte, "d"/Byte)), b"\x01\x00\x02\x03\x04", Container(a=1,b=2,inner=Container(c=3,d=4)))
+        common(Struct("a"/Byte, "b"/Int16ub, Embedded("inner"/Struct("c"/Byte, "d"/Byte))), b"\x01\x00\x02\x03\x04", Container(a=1,b=2,c=3,d=4))
 
     @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_struct_kwctor(self):
@@ -345,7 +314,7 @@ class TestCore(unittest.TestCase):
         print(st.parse(b"\x01\x02\xff\x00"))
         print(st.build(dict(raw=dict(value=dict(x=1, len=2)), array=[0xff, 0x01])))
         print(st.build(st.parse(b"\x01\x02\xff\x00")))
-        # this is not buildable, array is not passed and cannot be deduced from raw data anyway
+        # this is not buildable, array is not passed and cannot be deduced from raw data
         # print(st.build(dict(raw=dict(data=b"\x01\x02\xff\x00"))))
 
     def test_rawcopy_issue_358(self):
@@ -905,8 +874,6 @@ class TestCore(unittest.TestCase):
         assert r.build([0]) == b"\x00"
         assert r.build([1]) == b"\x01"
         assert r.build([1,0,2]) == b"\x01\x00"
-        # common(r, b"\x00???", [], eq=0)
-        # common(r, b"\x01\x00???", [1], eq=0)
 
     def test_hex(self):
         assert Hex(GreedyBytes).parse(b"abcd") == b"61626364"

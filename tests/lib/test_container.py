@@ -7,7 +7,7 @@ from construct.lib import *
 
 from copy import copy
 from random import randint, shuffle
-
+import pickle
 
 
 class TestContainer(unittest.TestCase):
@@ -29,8 +29,6 @@ class TestContainer(unittest.TestCase):
         assert list(c.items()) == list(d.items())
 
     def test_pickling(self):
-        import pickle
-
         empty = Container()
         empty_unpickled = pickle.loads(pickle.dumps(empty))
         assert empty_unpickled == empty
