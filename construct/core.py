@@ -1300,21 +1300,22 @@ class Aligned(Subconstruct):
 
 def AlignedStruct(modulus, *subcons, **kw):
     r"""
-    Makes a structure where each field is aligned to the same modulus (its a struct of aligned fields, not an aligned struct).
+    Makes a structure where each field is aligned to the same modulus (it is a struct of aligned fields, not an aligned struct).
 
     .. seealso:: Uses :func:`~construct.core.Aligned` and `~construct.core.Struct`.
 
     :param modulus: passed to each member
-    :param \*subcons: subcons that make up a Struct
-    :param \*\*kw: named subcons
+    :param \*subcons: subcons that make up the Struct
+    :param \*\*kw: named subcons, extend the Struct
 
     Example::
 
-        >>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5))
+        >>> d = AlignedStruct(4, "a"/Int8ub, "b"/Int16ub)
+        >>> d.build(dict(a=1,b=5))
         b'\x01\x00\x00\x00\x00\x05\x00\x00'
-        >>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).parse(_)
+        >>> d.parse(_)
         Container(a=1)(b=5)
-        >>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).sizeof()
+        >>> d.sizeof()
         8
     """
     subcons = list(subcons) + list(k/v for k,v in kw.items())
