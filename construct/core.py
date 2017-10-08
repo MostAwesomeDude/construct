@@ -1517,7 +1517,7 @@ class Select(Construct):
                 else:
                     _write_stream(stream, len(data), data)
                     return
-        raise SelectError("no subconstruct matched", obj)
+        raise SelectError("no subconstruct matched: %s" % (obj,))
 
 
 def Optional(subcon):
