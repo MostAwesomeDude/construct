@@ -3000,14 +3000,16 @@ def Hex(subcon):
 
     Example::
 
-        >>> Hex(GreedyBytes).parse(b"abcd")
+        >>> d = Hex(GreedyBytes)
+        >>> d.parse(b"abcd")
         b'61626364'
-        >>> Hex(GreedyBytes).build("01020304")
+        >>> d.build("01020304")
         b'\x01\x02\x03\x04'
     """
     return ExprAdapter(subcon,
         encoder = lambda obj,ctx: None if subcon.flagbuildnone else unhexlify(obj),
-        decoder = lambda obj,ctx: hexlify(obj),)
+        decoder = lambda obj,ctx: hexlify(obj),
+    )
 
 
 def HexDump(subcon, linesize=16):
@@ -3019,12 +3021,14 @@ def HexDump(subcon, linesize=16):
 
     Example::
 
-        >>> HexDump(Bytes(10)).parse(b"12345abc;/")
+        >>> d = HexDump(Bytes(10))
+        >>> d.parse(b"12345abc;/")
         '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/       \n'
     """
     return ExprAdapter(subcon,
         encoder = lambda obj,ctx: None if subcon.flagbuildnone else hexundump(obj, linesize=linesize),
-        decoder = lambda obj,ctx: hexdump(obj, linesize=linesize),)
+        decoder = lambda obj,ctx: hexdump(obj, linesize=linesize),
+    )
 
 
 class Slicing(Adapter):
