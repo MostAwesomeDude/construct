@@ -2676,9 +2676,9 @@ class OnDemand(Subconstruct):
 
 def OnDemandPointer(offset, subcon):
     r"""
-    CURRENTLY BROKEN.
-
     On demand pointer. Is both lazy and jumps to a position before reading.
+
+    .. warning:: CURRENTLY BROKEN.
 
     .. seealso:: Base :func:`~construct.core.OnDemand` and :func:`~construct.core.Pointer` construct.
 
