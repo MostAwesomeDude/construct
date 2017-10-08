@@ -1227,7 +1227,7 @@ class Padded(Subconstruct):
         position2 = stream.tell()
         padlen = length - (position2 - position1)
         if padlen < 0:
-            raise PaddingError("subcon parsed more bytes than was allowed by length")
+            raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length))
         pad = _read_stream(stream, padlen)
         if self.strict:
             if pad != self.pattern * padlen:
@@ -1240,7 +1240,7 @@ class Padded(Subconstruct):
         position2 = stream.tell()
         padlen = length - (position2 - position1)
         if padlen < 0:
-            raise PaddingError("subcon built more bytes than was allowed by length")
+            raise PaddingError("subcon build %d bytes but was allowed only %d" % (position2-position1, length))
         _write_stream(stream, padlen, self.pattern * padlen)
         return subobj
     def _sizeof(self, context, path):
