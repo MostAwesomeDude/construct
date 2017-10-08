@@ -22,7 +22,7 @@ packet_record = Struct(
     "cumulative_drops" / Int32ub,
     "timestamp_seconds" / EpochTimeStampAdapter(Int32ub),
     "timestamp_microseconds" / Int32ub,
-    "data" / HexDump(Bytes(this.included_length)),
+    "data" / Bytes(this.included_length),
     # 24 being the static length of the packet_record header
     Padding(this.record_length - this.included_length - 24),
 )

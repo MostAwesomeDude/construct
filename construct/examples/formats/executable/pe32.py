@@ -84,7 +84,7 @@ msdos_header = Struct(
     Padding(20),
     "coff_header_pointer" / Int32ul,
     "_assembly_start" / Tell,
-    "code" / OnDemand(HexDump(Bytes(this.coff_header_pointer - this._assembly_start))),
+    "code" / OnDemand(Bytes(this.coff_header_pointer - this._assembly_start)),
 )
 
 symbol_table = "symbol_table" / Struct(
@@ -346,7 +346,7 @@ section = "section" / Struct(
         MEM_WRITE = 0x80000000,
     ),
 
-    "raw_data" / OnDemandPointer(this.raw_data_pointer, HexDump(Bytes(this.raw_data_size))),
+    "raw_data" / OnDemandPointer(this.raw_data_pointer, Bytes(this.raw_data_size)),
 
     "line_numbers" / OnDemandPointer(this.line_numbers_pointer,
         Array(this.number_of_line_numbers,

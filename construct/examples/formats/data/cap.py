@@ -24,7 +24,7 @@ packet = Struct(
     "time" / MicrosecAdapter(Int32ul >> Int32ul),
     "length" / Int32ul,
     Padding(4),
-    "data" / HexDump(Bytes(this.length)),
+    "data" / Bytes(this.length),
 )
 
 cap_file = Padded(24, GreedyRange(packet))
