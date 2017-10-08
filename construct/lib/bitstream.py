@@ -4,7 +4,7 @@ from sys import maxsize
 
 
 class RestreamedBytesIO(object):
-    __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer","sincereadwritten"]
+    __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer", "sincereadwritten"]
 
     def __init__(self, substream, encoder, encoderunit, decoder, decoderunit):
         self.substream = substream
@@ -55,7 +55,7 @@ class RestreamedBytesIO(object):
 
 
 class RebufferedBytesIO(object):
-    __slots__ = ["substream","offset","rwbuffer","moved","tailcutoff"]
+    __slots__ = ["substream", "offset", "rwbuffer", "moved", "tailcutoff"]
 
     def __init__(self, substream, tailcutoff=None):
         self.substream = substream
@@ -66,7 +66,7 @@ class RebufferedBytesIO(object):
 
     def read(self, count=None):
         if count is None:
-            raise ValueError("count must be an int, reading until EOF not supported")
+            raise ValueError("count must be integer, reading until EOF not supported")
         startsat = self.offset
         endsat = startsat + count
         if startsat < self.moved:
@@ -114,7 +114,7 @@ class RebufferedBytesIO(object):
             self.offset += at
             return self.offset
         else:
-            raise ValueError("seeks only with whence 0 and 1")
+            raise ValueError("this class seeks only with whence: 0 and 1 (excluded 2)")
 
     def seekable(self):
         return True
