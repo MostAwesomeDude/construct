@@ -34,7 +34,7 @@ def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"
 
 class Container(dict):
     r"""
-    Generic ordered dictionary that allows both key and attribute access, and preserve key order by insertion. Also it uses __call__ method to chain add keys, because **kw does not preserve order (unless PY36+).
+    Generic ordered dictionary that allows both key and attribute access, and preserve key order by insertion. Also it uses __call__ method to chain add keys, because **kw does not preserve order (unless PY36+). Equality does NOT check item order.
 
     Struct and Sequence, and few others parsers returns a container, since their members have order so do keys.
 
@@ -214,7 +214,7 @@ class Container(dict):
         parts = ["Container"]
         for k,v in self.items():
             if not isinstance(k,str) or not k.startswith("_"):
-                parts.extend(["(",str(k),"=",repr(v),")"])
+                parts.extend(["(", str(k), "=", repr(v), ")"])
         if len(parts) == 1:
             parts.append("()")
         return "".join(parts)
@@ -379,7 +379,7 @@ class LazyRangeContainer(ListContainer):
     def __eq__(self, other):
         return len(self)==len(other) and all(a==b for a,b in zip(self,other))
 
-    def __repr__(self):
+    def __str__(self):
         return "<%s: %d possible items, %d cached>" % (self.__class__.__name__, len(self), len(self.cached))
 
 
