@@ -29,10 +29,11 @@ A ``Struct`` is a collection of ordered, named fields::
     ...     "height" / Int8ub,
     ...     "pixels" / Array(this.width * this.height, Byte),
     ... )
-    >>> format.build(dict(width=3,height=2,pixels=[7,8,9,11,12,13]))
+    >>> format.build(dict(width=3, height=2, pixels=[7,8,9,11,12,13]))
     b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
     >>> format.parse(b'BMP\x03\x02\x07\x08\t\x0b\x0c\r')
-    Container(signature=b'BMP')(width=3)(height=2)(pixels=[7, 8, 9, 11, 12, 13])
+    Container(signature=b'BMP', width=3, height=2, pixels=[7, 8, 9, 11, 12, 13])
+
 
 A ``Sequence`` is a collection of ordered fields, and differs from a ``Range`` in that latter is homogenous::
 
