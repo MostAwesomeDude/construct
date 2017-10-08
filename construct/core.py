@@ -2761,18 +2761,16 @@ class Embedded(Subconstruct):
 
 class Renamed(Subconstruct):
     r"""
-    Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name, which in general means just a None. Can be used to give same construct few different names. Used internally by / operator.
+    Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name, which by default is just None. Can be used to give same construct few different names. Used internally by / operator.
 
-    Also this wrapper is responsible for building a path (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. A field that is not named does not appear on the path.
+    Also this wrapper is responsible for building a path (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. Fields that are not named do not appear in the path string.
 
-    :param newname: the new name
+    :param newname: the new name, as string
     :param subcon: the subcon to rename
 
     Example::
 
         >>> "name" / Int32ul
-        <Renamed: name>
-        >>> Renamed("name", Int32ul)
         <Renamed: name>
     """
     def __init__(self, newname, subcon):
