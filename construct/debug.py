@@ -2,11 +2,7 @@
 Debugging utilities for constructs
 """
 
-import sys
-import traceback
-import pdb
-import inspect
-
+import sys, traceback, pdb, inspect
 from construct import *
 from construct.lib import *
 
@@ -23,7 +19,8 @@ class Probe(Construct):
     
     Example::
 
-        >>> Struct("count"/Byte, "items"/Byte[this.count], Probe()).parse(b"\x05abcde")
+        >>> d = Struct("count"/Byte, "items"/Byte[this.count], Probe())
+        >>> d.parse(b"\x05abcde")
         ================================================================================
         Probe <unnamed 3>
         EOF reached
@@ -38,7 +35,8 @@ class Probe(Construct):
         ================================================================================
         Container(count=5)(items=[97, 98, 99, 100, 101])
 
-        >>> (Byte >> Probe()).parse(b"?")
+        >>> d = (Byte >> Probe())
+        >>> d.parse(b"?")
         ================================================================================
         Probe <unnamed 1>
         EOF reached
@@ -115,47 +113,6 @@ def ProbeInto(func):
     ProbeInto looks inside the context and extracts a part of it using a lambda instead of printing the entire context.
 
     Example::
-
-        >>> st = "junk"/RepeatUntil(obj_ == 0,Byte) + "num"/Byte + Probe()
-        >>> st.parse(b"xcnzxmbjskahuiwerhquiehnsdjk\x00\xff")
-        ================================================================================
-        Probe <unnamed 5>
-        path is parsing
-        EOF reached
-        Container: 
-            junk = ListContainer: 
-                120
-                99
-                110
-                122
-                120
-                109
-                98
-                106
-                115
-                107
-                97
-                104
-                117
-                105
-                119
-                101
-                114
-                104
-                113
-                117
-                105
-                101
-                104
-                110
-                115
-                100
-                106
-                107
-                0
-            num = 255
-        ================================================================================
-        Container(junk=[120, 99, 110, 122, 120, 109, 98, 106, 115, 107, 97, 104, 117, 105, 119, 101, 114, 104, 113, 117, 105, 101, 104, 110, 115, 100, 106, 107, 0])(num=255)
 
         >>> st = "junk"/RepeatUntil(obj_ == 0,Byte) + "num"/Byte + ProbeInto(this.num)
         >>> st.parse(b"xcnzxmbjskahuiwerhquiehnsdjk\x00\xff")
