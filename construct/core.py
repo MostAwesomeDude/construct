@@ -1302,7 +1302,7 @@ def AlignedStruct(modulus, *subcons, **kw):
     r"""
     Makes a structure where each field is aligned to the same modulus (it is a struct of aligned fields, not an aligned struct).
 
-    .. seealso:: Uses :func:`~construct.core.Aligned` and `~construct.core.Struct`.
+    .. seealso:: Uses :func:`~construct.core.Aligned` and :func:`~construct.core.Struct`.
 
     :param modulus: passed to each member
     :param \*subcons: subcons that make up the Struct
