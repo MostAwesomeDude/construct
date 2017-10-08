@@ -137,11 +137,9 @@ class Container(dict):
 
     def update(self, seqordict, **kw):
         if isinstance(seqordict, dict):
-            for k, v in seqordict.items():
-                self[k] = v
-        else:
-            for k, v in seqordict:
-                self[k] = v
+            seqordict = seqordict.items()
+        for k,v in seqordict:
+            self[k] = v
         dict.update(self, kw)
 
     def copy(self):

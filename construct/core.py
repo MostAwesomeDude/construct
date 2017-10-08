@@ -863,8 +863,8 @@ class Struct(Construct):
                 subobj = sc._parse(stream, context, path)
                 if sc.flagembedded:
                     if subobj is not None:
-                        obj.update(subobj.items())
-                        context.update(subobj.items())
+                        obj.update(subobj)
+                        context.update(subobj)
                 else:
                     if sc.name is not None:
                         obj[sc.name] = subobj
