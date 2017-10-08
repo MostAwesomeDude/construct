@@ -498,8 +498,8 @@ class FormatField(Bytes):
         if endianity not in (">", "<", "="):
             raise ValueError("endianity must be like: = < >", endianity)
         if len(format) != 1:
-            raise ValueError("format must be like: f d B H L Q b h l q")
-        super(FormatField, self).__init__(packer.calcsize(endianity + format))
+            raise ValueError("format must be like: f d B H L Q b h l q", format)
+        super(FormatField, self).__init__(packer.calcsize(endianity+format))
         self.fmtstr = endianity + format
     def _parse(self, stream, context, path):
         try:
@@ -510,7 +510,7 @@ class FormatField(Bytes):
         try:
             _write_stream(stream, self.sizeof(), packer.pack(self.fmtstr, obj))
         except Exception:
-            raise FieldError("packer %r error during building, given value %s" % (self.fmtstr, obj))
+            raise FieldError("packer %r error during building, given value %r" % (self.fmtstr, obj))
 
 
 class BytesInteger(Construct):
