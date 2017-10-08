@@ -2938,18 +2938,16 @@ class FlagsEnum(Adapter):
         super(FlagsEnum, self).__init__(subcon)
         self.flags = flags
     def _encode(self, obj, context):
-        flags = 0
         try:
+            flags = 0
             for name, value in obj.items():
                 if value:
                     flags |= self.flags[name]
-        except ExplicitError:
-            raise
+            return flags
         except AttributeError:
             raise MappingError("not a mapping type: %r" % (obj,))
         except KeyError:
-            raise MappingError("unknown flag: %s" % name)
-        return flags
+            raise MappingError("unknown flag: %s" % (name,))
     def _decode(self, obj, context):
         obj2 = FlagsContainer()
         for name, value in self.flags.items():
