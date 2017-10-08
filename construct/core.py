@@ -2096,7 +2096,7 @@ class NamedTuple(Adapter):
 
         >>> d = NamedTuple("coord", "x y z", Byte[3])
         >>> d = NamedTuple("coord", "x y z", Byte >> Byte >> Byte)
-        >>> d = NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte))
+        >>> d = NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte)
         >>> d.parse(b"123")
         coord(x=49, y=50, z=51)
     """
