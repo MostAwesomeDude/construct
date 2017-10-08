@@ -2741,7 +2741,7 @@ class LazyBound(Construct):
 #===============================================================================
 class Embedded(Subconstruct):
     r"""
-    Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences. Name is also inherited.
+    Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences, merging items. Name is inherited from subcon.
 
     .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
 
@@ -2749,10 +2749,9 @@ class Embedded(Subconstruct):
 
     Example::
 
-        >>> Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte).parse(b"abc")
+        >>> d = Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte)
+        >>> d.parse(b"abc")
         Container(a=97)(b=98)(c=99)
-        >>> Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte).build(_)
-        b'abc'
     """
     def __init__(self, subcon):
         super(Embedded, self).__init__(subcon)
