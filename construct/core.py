@@ -49,7 +49,7 @@ class ValidationError(ConstructError):
     pass
 class BitIntegerError(ConstructError):
     pass
-class MappingError(AdaptationError):
+class MappingError(ConstructError):
     pass
 class ExplicitError(ConstructError):
     pass
