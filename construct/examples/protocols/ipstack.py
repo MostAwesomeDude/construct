@@ -1,8 +1,7 @@
 """
 TCP/IP Protocol Stack
 
-WARNING: before parsing the application layer over a TCP stream, you must
-first combine all the TCP frames into a stream. See utils.tcpip for some solutions.
+WARNING: before parsing the application layer over a TCP stream, you must first combine all the TCP frames into a stream. See utils.tcpip for some solutions.
 """
 
 from construct import *
@@ -15,9 +14,10 @@ from construct.lib import *
 
 MacAddress = ExprAdapter(Byte[6],
     encoder = lambda obj,ctx: [int(part, 16) for part in obj.split("-")],
-    decoder = lambda obj,ctx: "-".join("%02x" % b for b in obj), )
+    decoder = lambda obj,ctx: "-".join("%02x" % b for b in obj),
+)
 
-ethernet_header = "ethernet_header" / Struct(
+ethernet_header = Struct(
     "destination" / MacAddress,
     "source" / MacAddress,
     "type" / Enum(Int16ub,
@@ -49,7 +49,7 @@ HwAddress = Bytes(this.hwaddr_length)
 
 ProtoAddress = Bytes(this.protoaddr_length)
 
-arp_header = "arp_header" / Struct(
+arp_header = Struct(
     "hardware_type" / Enum(Int16ub,
         ETHERNET = 1,
         EXPERIMENTAL_ETHERNET = 2,
@@ -84,7 +84,6 @@ arp_header = "arp_header" / Struct(
         InARP_REQUEST = 8,
         InARP_REPLY = 9,
         ARP_NAK = 10
-
     ),
     "source_hwaddr" / HwAddress,
     "source_protoaddr" / ProtoAddress,
@@ -97,7 +96,7 @@ arp_header = "arp_header" / Struct(
 # (untested)
 #===============================================================================
 
-mtp2_header = "mtp2_header" / BitStruct(
+mtp2_header = BitStruct(
     "flag1" / Octet,
     "bsn" / BitsInteger(7),
     "bib" / Bit,
@@ -115,23 +114,22 @@ mtp2_header = "mtp2_header" / BitStruct(
 #===============================================================================
 
 IpAddress = ExprAdapter(Byte[4],
-    encoder = lambda obj,ctx: list(map(int, obj.split("."))),
-    decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj), )
+    encoder = lambda obj,ctx: [int(x) for x in obj.split(".")],
+    decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj),
+)
 
+ProtocolEnum = Enum(Int8ub,
+    ICMP = 1,
+    TCP = 6,
+    UDP = 17,
+)
 
-def ProtocolEnum(code):
-    return Enum(code,
-        ICMP = 1,
-        TCP = 6,
-        UDP = 17,
-    )
-
-ipv4_header = "ip_header" / Struct(
+ipv4_header = Struct(
     EmbeddedBitStruct(
         "version" / Const(Nibble, 4),
         "header_length" / ExprAdapter(Nibble,
             decoder = lambda obj, ctx: obj * 4,
-            encoder = lambda obj, ctx: obj / 4
+            encoder = lambda obj, ctx: obj // 4,
         ),
     ),
     "tos" / BitStruct(
@@ -146,15 +144,13 @@ ipv4_header = "ip_header" / Struct(
     "payload_length" / Computed(this.total_length - this.header_length),
     "identification" / Int16ub,
     EmbeddedBitStruct(
-        "flags" / Struct(
-            Padding(1),
-            "dont_fragment" / Flag,
-            "more_fragments" / Flag,
-        ),
+        Padding(1),
+        "dont_fragment" / Flag,
+        "more_fragments" / Flag,
         "frame_offset" / BitsInteger(13),
     ),
     "ttl" / Int8ub,
-    "protocol" / ProtocolEnum(Int8ub),
+    "protocol" / ProtocolEnum,
     "checksum" / Int16ub,
     "source" / IpAddress,
     "destination" / IpAddress,
@@ -164,25 +160,25 @@ ipv4_header = "ip_header" / Struct(
 #===============================================================================
 # layer 3, IP v6
 #===============================================================================
-def ProtocolEnum(code):
-    return Enum(code,
-        ICMP = 1,
-        TCP = 6,
-        UDP = 17,
-    )
+ProtocolEnum = Enum(Int8ub,
+    ICMP = 1,
+    TCP = 6,
+    UDP = 17,
+)
 
 Ipv6Address = ExprAdapter(Byte[16],
     encoder = lambda obj,ctx: [int(part, 16) for part in obj.split(":")],
-    decoder = lambda obj,ctx: ":".join("%02x" % b for b in obj), )
+    decoder = lambda obj,ctx: ":".join("%02x" % b for b in obj),
+)
 
-ipv6_header = "ip_header" / Struct(
+ipv6_header = Struct(
     EmbeddedBitStruct(
         "version" / OneOf(BitsInteger(4), [6]),
         "traffic_class" / BitsInteger(8),
         "flow_label" / BitsInteger(20),
     ),
     "payload_length" / Int16ub,
-    "protocol" / ProtocolEnum(Int8ub),
+    "protocol" / ProtocolEnum,
     "hoplimit" / Int8ub,
     "ttl" / Computed(this.hoplimit),
     "source" / Ipv6Address,
@@ -195,7 +191,7 @@ ipv6_header = "ip_header" / Struct(
 # (untested)
 #===============================================================================
 
-mtp3_header = "mtp3_header" / BitStruct(
+mtp3_header = BitStruct(
     "service_indicator" / Nibble,
     "subservice" / Nibble,
 )
@@ -205,21 +201,21 @@ mtp3_header = "mtp3_header" / BitStruct(
 # Internet Control Message Protocol for IPv4
 #===============================================================================
 
-echo_payload = "echo_payload" / Struct(
+echo_payload = Struct(
     "identifier" / Int16ub,
     "sequence" / Int16ub,
     "data" / Bytes(32),
     # length is implementation dependent, is anyone using more than 32 bytes?
 )
 
-dest_unreachable_payload = "dest_unreachable_payload" / Struct(
+dest_unreachable_payload = Struct(
     Padding(2),
     "next_hop_mtu" / Int16ub,
     "host" / IpAddress,
     "echo" / Bytes(8),
 )
 
-dest_unreachable_code = "code" / Enum(Byte,
+dest_unreachable_code = Enum(Byte,
     Network_unreachable_error = 0,
     Host_unreachable_error = 1,
     Protocol_unreachable_error = 2,
@@ -235,7 +231,7 @@ dest_unreachable_code = "code" / Enum(Byte,
     Host_TOS_unreachable = 12,
 )
 
-icmp_header = "icmp_header" / Struct(
+icmp_header = Struct(
     "type" / Enum(Byte,
         Echo_reply = 0,
         Destination_unreachable = 3,
@@ -268,8 +264,8 @@ icmp_header = "icmp_header" / Struct(
             "Echo_request" : echo_payload,
             "Destination_unreachable" : dest_unreachable_payload,
         },
-        default = Pass
-    )
+        default = Pass,
+    ),
 )
 
 #===============================================================================
@@ -280,15 +276,15 @@ icmp_header = "icmp_header" / Struct(
 # jesse@housejunkie.ca
 #===============================================================================
 
-igmp_type = "igmp_type" / Enum(Byte,
+igmp_type = Enum(Byte,
     MEMBERSHIP_QUERY = 0x11,
     MEMBERSHIP_REPORT_V1 = 0x12,
     MEMBERSHIP_REPORT_V2 = 0x16,
     LEAVE_GROUP = 0x17,
 )
 
-igmpv2_header = "igmpv2_header" / Struct(
-    igmp_type,
+igmpv2_header = Struct(
+    "igmp_type" / igmp_type,
     "max_resp_time" / Byte,
     "checksum" / Int16ub,
     "group_address" / IpAddress,
@@ -302,7 +298,7 @@ igmpv2_header = "igmpv2_header" / Struct(
 # http://www.networksorcery.com/enp/protocol/bootp/options.htm
 #===============================================================================
 
-dhcp4_option = "dhcp_option" / Struct(
+dhcp4_option = Struct(
     "code" / Enum(Byte,
         Pad = 0,
         Subnet_Mask = 1,
@@ -417,7 +413,7 @@ dhcp4_option = "dhcp_option" / Struct(
     "value" / If(this.code != "Pad", Prefixed(Byte, GreedyBytes)),
 )
 
-dhcp4_header = "dhcp_header" / Struct(
+dhcp4_header = Struct(
     "opcode" / Enum(Byte,
         BootRequest = 1,
         BootReply = 2,
@@ -444,9 +440,9 @@ dhcp4_header = "dhcp_header" / Struct(
     "your_addr" / IpAddress,
     "server_addr" / IpAddress,
     "relay_addr" / IpAddress,
-    "client_hardware_addr" / Hex(Bytes(16)),
-    "server_host_name" / Hex(Bytes(64)),
-    "boot_filename" / Hex(Bytes(128)),
+    "client_hardware_addr" / Bytes(16),
+    "server_host_name" / Bytes(64),
+    "boot_filename" / Bytes(128),
     # BOOTP/DHCP options
     # "The first four bytes contain the (decimal) values 99, 130, 83 and 99"
     "signature" / Const(b"\x63\x82\x53\x63"),
@@ -460,7 +456,7 @@ dhcp4_header = "dhcp_header" / Struct(
 # http://www.networksorcery.com/enp/rfc/rfc3315.txt
 #===============================================================================
 
-dhcp6_option = "dhcp_option" / Struct(
+dhcp6_option = Struct(
     "code" / Enum(Int16ub,
         OPTION_CLIENTID = 1,
         OPTION_SERVERID = 2,
@@ -503,17 +499,17 @@ dhcp6_option = "dhcp_option" / Struct(
     "data" / Prefixed(Int16ub, GreedyBytes),
 )
 
-client_message = "client_message" / BitStruct(
+client_message = BitStruct(
     "transaction_id" / BitsInteger(24),
 )
 
-relay_message = "relay_message" / Struct(
+relay_message = Struct(
     "hop_count" / Byte,
     "linkaddr" / Ipv6Address,
     "peeraddr" / Ipv6Address,
 )
 
-dhcp6_message = "dhcp_message" / Struct(
+dhcp6_message = Struct(
     "msgtype" / Enum(Byte,
         # these are client-server messages
         SOLICIT = 1,
@@ -547,7 +543,7 @@ dhcp6_message = "dhcp_message" / Struct(
 # ISDN User Part (SS7 protocol stack)
 #===============================================================================
 
-isup_header = "isup_header" / Struct(
+isup_header = Struct(
     "routing_label" / Bytes(5),
     "cic" / Int16ub,
     "message_type" / Int8ub,
@@ -561,17 +557,18 @@ isup_header = "isup_header" / Struct(
 # Transmission Control Protocol (TCP/IP protocol stack)
 #===============================================================================
 
-tcp_header = "tcp_header" / Struct(
+tcp_header = Struct(
     "source" / Int16ub,
     "destination" / Int16ub,
     "seq" / Int32ub,
     "ack" / Int32ub,
     EmbeddedBitStruct(
         "header_length" / ExprAdapter(Nibble,
-            encoder = lambda obj, ctx: obj / 4,
-            decoder = lambda obj, ctx: obj * 4,
+            encoder = lambda obj,ctx: obj // 4,
+            decoder = lambda obj,ctx: obj * 4,
         ),
         Padding(3),
+        # make into FlagsEnum?
         "flags" / Struct(
             "ns"  / Flag,
             "cwr" / Flag,
@@ -590,19 +587,18 @@ tcp_header = "tcp_header" / Struct(
     "options" / Bytes(this.header_length - 20),
 )
 
-
 #===============================================================================
 # layer 4
 # User Datagram Protocol (TCP/IP protocol stack)
 #===============================================================================
 
-udp_header = "udp_header" / Struct(
-    "header_length" / Computed(lambda ctx: 8),
+udp_header = Struct(
+    "header_length" / Computed(8),
     "source" / Int16ub,
     "destination" / Int16ub,
     "payload_length" / ExprAdapter(Int16ub,
-        encoder = lambda obj, ctx: obj + 8,
-        decoder = lambda obj, ctx: obj - 8,
+        encoder = lambda obj,ctx: obj + 8,
+        decoder = lambda obj,ctx: obj - 8,
     ),
     "checksum" / Int16ub,
 )
@@ -624,7 +620,7 @@ class DnsNamesAdapter(Adapter):
     def _encode(self, obj, context):
         return [dict(ispointer=1,pointer=x|0xc000) if isinstance(x,int) else dict(islabel=1,label=x) for x in obj]
 
-dns_record_class = "class" / Enum(Int16ub,
+dns_record_class = Enum(Int16ub,
     RESERVED = 0,
     INTERNET = 1,
     CHAOS = 3,
@@ -633,7 +629,7 @@ dns_record_class = "class" / Enum(Int16ub,
     ANY = 255,
 )
 
-dns_record_type = "type" / Enum(Int16ub,
+dns_record_type = Enum(Int16ub,
     IPv4 = 1,
     AUTHORITIVE_NAME_SERVER = 2,
     CANONICAL_NAME = 5,
@@ -647,10 +643,10 @@ dns_record_type = "type" / Enum(Int16ub,
     ALL = 255,
 )
 
-query_record = "query_record" / Struct(
+query_record = Struct(
     "name" / DnsStringAdapter(RepeatUntil(len_(obj_)==0, PascalString(Byte, encoding="ascii"))),
-    dns_record_type,
-    dns_record_class,
+    "type" / dns_record_type,
+    "class" / dns_record_class,
 )
 
 labelpointer = Struct(
@@ -662,16 +658,16 @@ labelpointer = Struct(
     "pointer" / If(this.ispointer, Int16ub),
 )
 
-resource_record = "resource_record" / Struct(
-    # http://www.zytrax.com/books/dns/ch15/#qname
+resource_record = Struct(
+    # based on http://www.zytrax.com/books/dns/ch15/#qname
     "names" / DnsNamesAdapter(RepeatUntil(obj_.ispointer | len_(obj_.label)==0, labelpointer)),
-    dns_record_type,
-    dns_record_class,
+    "type" / dns_record_type,
+    "class" / dns_record_class,
     "ttl" / Int32ub,
-    "rdata" / Hex(Prefixed(Int16ub, GreedyBytes)),
+    "rdata" / Prefixed(Int16ub, GreedyBytes),
 )
 
-dns = "dns" / Struct(
+dns = Struct(
     "id" / Int16ub,
     "flags" / BitStruct(
         "type" / Enum(Bit,
@@ -720,36 +716,36 @@ dns = "dns" / Struct(
 # entire IP stack
 #===============================================================================
 
-layer4_tcp = "layer4_tcp" / Struct(
+layer4_tcp = Struct(
     "header" / tcp_header,
-    "next" / HexDump(Bytes(this._.header.payload_length - this.header.header_length)),
+    "next" / Bytes(this._.header.payload_length - this.header.header_length),
 )
 
-layer4_udp = "layer4_udp" / Struct(
+layer4_udp = Struct(
     "header" / udp_header,
-    "next" / HexDump(Bytes(this.header.payload_length)),
+    "next" / Bytes(this.header.payload_length),
 )
 
-layer3_payload = "next" / Switch(this.header.protocol,
+layer3_payload = Switch(this.header.protocol,
     {
         "TCP" : layer4_tcp,
         "UDP" : layer4_udp,
         "ICMP" : icmp_header,
     },
-    default = Pass
+    default = Pass,
 )
 
-layer3_ipv4 = "layer3_ipv4" / Struct(
+layer3_ipv4 = Struct(
     "header" / ipv4_header,
-    layer3_payload,
+    "next" / layer3_payload,
 )
 
-layer3_ipv6 = "layer3_ipv6" / Struct(
+layer3_ipv6 = Struct(
     "header" / ipv6_header,
-    layer3_payload,
+    "next" / layer3_payload,
 )
 
-layer2_ethernet = "layer2_ethernet" / Struct(
+layer2_ethernet = Struct(
     "header" / ethernet_header,
     "next" / Switch(this.header.type,
         {
