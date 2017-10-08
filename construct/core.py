@@ -775,7 +775,7 @@ def Int24sl():
 @singleton
 class VarInt(Construct):
     r"""
-    Varint encoded integer. Each 7 bits of the number are encoded in one byte of the stream, where leftmost (8th) bit is unset when byte is terminal.
+    Varint encoded integer. Each 7 bits of the number are encoded in one byte of the stream, where leftmost (MSB) bit is unset when byte is terminal.
 
     Can only encode non-negative numbers.
 
@@ -787,12 +787,8 @@ class VarInt(Construct):
 
         >>> VarInt.build(16)
         b'\x10'
-        >>> VarInt.parse(_)
-        16
         >>> VarInt.build(2**100)
         b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04'
-        >>> VarInt.parse(_)
-        1267650600228229401496703205376 or 2**100
     """
     def _parse(self, stream, context, path):
         acc = []
@@ -807,7 +803,7 @@ class VarInt(Construct):
         return num
     def _build(self, obj, stream, context, path):
         if obj < 0:
-            raise ValueError("varint cannot build from negative number")
+            raise ValueError("varint cannot build from negative number: %r" % (obj,))
         while obj > 0b01111111:
             _write_stream(stream, 1, int2byte(0b10000000 | (obj & 0b01111111)))
             obj >>= 7
