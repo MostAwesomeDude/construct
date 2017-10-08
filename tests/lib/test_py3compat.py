@@ -1,5 +1,5 @@
 import unittest
-from declarativeunittest import raises, atmostone, alldifferent
+from declarativeunittest import raises, atmostone
 
 from construct.lib.py3compat import *
 

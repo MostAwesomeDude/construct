@@ -1,17 +1,11 @@
 
 def raises(func, *args, **kw):
     try:
-        ret = func(*args, **kw)
+        func(*args, **kw)
+        return None
     except Exception as e:
         return e.__class__
-    else:
-        return None
 
 
 def atmostone(*args):
-    return sum(int(bool(x)) for x in args) <= 1
-
-
-def alldifferent(*args):
-    return all(i != j and x == y for i,x in enumerate(args) for j,y in enumerate(args))
-
+    return sum(1 for x in args if x) <= 1
