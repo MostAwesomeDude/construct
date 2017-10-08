@@ -1,4 +1,4 @@
-# # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import unittest, pytest, os
 from declarativeunittest import raises
@@ -6,7 +6,7 @@ ontravis = 'TRAVIS' in os.environ
 
 from construct import *
 from construct.lib import *
-from construct.examples.protocols.ipstack import *
+from construct.examples.protocols import *
 
 import os, random, itertools, hashlib, binascii
 from io import BytesIO
