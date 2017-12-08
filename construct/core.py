@@ -2174,7 +2174,7 @@ class Default(Subconstruct):
         self.value = value
         self.flagbuildnone = True
     def _build(self, obj, stream, context, path):
-        obj = self.value if obj is None else obj
+        obj = (self.value(context) if callable(self.value) else self.value) if obj is None else obj
         self.subcon._build(obj, stream, context, path)
         return obj
 
