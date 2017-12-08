@@ -2881,35 +2881,64 @@ def Flag():
     return SymmetricMapping(Byte, {True : 1, False : 0}, default=True)
 
 
-def Enum(subcon, default=NotImplemented, **mapping):
+class Enum(Subconstruct):
     r"""
-    Set of named values mapping. Can build both from names and values.
+    Translates unicode label names to subcon values, and vice versa. 
 
     :param subcon: the subcon to map
-    :param \*\*mapping: keyword arguments which serve as the encoding mapping
-    :param default: an optional, keyword-only argument that specifies the default value to use when the mapping is undefined. if not given, and exception is raised when the mapping is undefined. use `Pass` topass the unmapped value as-is
+    :param \*\*mapping: keyword arguments which serve as the mapping
+    :param default: an optional, keyword-only argument that specifies the default value to use when an unknown labels gets build, can overlap with some existing label, if Pass then parsing returns "default" label and building skips stream
+
+    :raises MappingError: when label (during building) or value (during parsing) cannot be translated, and no default was provided
 
     Example::
 
-        >>> d = Enum(Byte, a=1, b=2)
+        >>> d = Enum(Byte, zero=0, one=1)
         >>> d.parse(b"\x01")
-        'a'
-        >>> d.parse(b"\x08")
-        construct.core.MappingError: no decoding mapping for 8
-        >>> d.build("a")
+        'one'
+        >>> d.parse(b"\xff")
+        construct.core.MappingError: no decoding mapping for 255
+        >>> d.build("one")
         b'\x01'
         >>> d.build(1)
         b'\x01'
     """
-    encmapping = mapping.copy()
-    encmapping.update({v:v for v in mapping.values()})
-
-    return Mapping(subcon,
-        encoding = encmapping,
-        decoding = dict((v,k) for k,v in mapping.items()),
-        encdefault = default,
-        decdefault = default,
-    )
+    __slots__ = ["default", "encmapping", "decmapping"]
+    def __init__(self, subcon, default=NotImplemented, **mapping):
+        super(Enum, self).__init__(subcon)
+        self.default = default
+        self.encmapping =      {k:v for k,v in mapping.items()}
+        self.encmapping.update({v:v for k,v in mapping.items()})
+        self.decmapping =      {v:k for k,v in mapping.items()}
+        self.decmapping.update({k:k for k,v in mapping.items()})
+        if self.default is not NotImplemented and self.default is not Pass:
+            if True:
+                self.decmapping.update({"default":default})
+            if default not in self.decmapping:
+                self.decmapping.update({default:"default"})
+    def _parse(self, stream, context, path):
+        obj2 = self.subcon._parse(stream, context, path)
+        try:
+            obj = self.decmapping[obj2]
+        except KeyError:
+            if self.default is NotImplemented:
+                raise MappingError("no mapping for %r, no default either" % (obj2,))
+            if self.default is Pass:
+                return "default"
+            return "default"
+        return obj
+    def _build(self, obj, stream, context, path):
+        try:
+            obj2 = self.encmapping[obj]
+        except KeyError:
+            if self.default is NotImplemented:
+                raise MappingError("no mapping for %r, no default either" % (obj,))
+            if self.default is Pass:
+                return
+            obj = "default"
+            obj2 = self.default
+        self.subcon._build(obj2, stream, context, path)
+        return obj
 
 
 class FlagsEnum(Adapter):

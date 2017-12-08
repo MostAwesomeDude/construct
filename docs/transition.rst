@@ -41,7 +41,7 @@ GreedyBytes was added
 
 Flag was made a singleton
 
-Enum takes the `default` keyword argument, no underscores
+Enum takes the `default` keyword argument (no underscores), always puts label into context (not a value)
 
 FlagsEnum remains
 

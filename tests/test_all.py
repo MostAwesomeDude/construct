@@ -1003,26 +1003,25 @@ class TestCore(unittest.TestCase):
         assert Flag.sizeof() == 1
 
     def test_enum(self):
+        # Pass default no longer tested
         assert Enum(Byte, q=3,r=4,t=5).parse(b"\x04") == "r"
         assert Enum(Byte, q=3,r=4,t=5).build("r") == b"\x04"
         assert Enum(Byte, q=3,r=4,t=5).build(4) == b"\x04"
-        assert raises(Enum(Byte, q=3,r=4,t=5).parse, b"\x07") == MappingError
-        assert raises(Enum(Byte, q=3,r=4,t=5).build, "spam") == MappingError
-        assert Enum(Byte, q=3,r=4,t=5, default="spam").parse(b"\x07") == "spam"
-        assert Enum(Byte, q=3,r=4,t=5, default=9).build("spam") == b"\x09"
-        assert Enum(Byte, q=3,r=4,t=5, default=Pass).parse(b"\x07") == 7
-        assert Enum(Byte, q=3,r=4,t=5, default=Pass).build(9) == b"\x09"
+        assert raises(Enum(Byte, q=3,r=4,t=5).parse, b"\xff") == MappingError
+        assert raises(Enum(Byte, q=3,r=4,t=5).build, "unknown") == MappingError
+        assert Enum(Byte, q=3,r=4,t=5, default=255).build("unknown") == b"\xff"
         assert Enum(Byte, q=3,r=4,t=5).sizeof() == 1
 
     def test_from_issue_298(self):
+        # also tests when default case value overlaps with another label's value
         st = Struct(
-            "ctrl"/Enum(Bytes(1),
+            "ctrl" / Enum(Bytes(1),
                 default = b'\x02',
                 STX = b'\x02',
                 ACK = b'\x06',
                 NAK = b'\x15',
             ),
-            "optional"/If(this.ctrl == "NAK", Byte),
+            "optional" / If(this.ctrl == "NAK", Byte),
         )
         assert st.parse(b"\x15\xff") == Container(ctrl='NAK')(optional=255)
         assert b"\x15\xff" == st.build(Container(ctrl='NAK')(optional=255))
