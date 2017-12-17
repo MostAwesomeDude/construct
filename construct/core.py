@@ -2403,6 +2403,8 @@ class LazyStruct(Construct):
 
     .. seealso:: Equivalent to :func:`~construct.core.Struct`.
 
+    .. warning:: Struct members that depend on earlier context entries do not work properly, because since Struct is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
+
     """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes", "keys"]
     def __init__(self, *subcons, **kw):

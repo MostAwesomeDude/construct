@@ -2,15 +2,14 @@
 Lazy parsing
 ============
 
-.. note::
+.. warning::
 
-    Certain constructs are available only for seekable streams (in-memory and files) and some require tellable streams (which in fact is a subset of seekability). Sockets and pipes do not support seeking, so you'll have to first read the data from the stream, and parse it in-memory, or use the :func:`~construct.core.Rebuffered` wrapper.
-
+    Struct members that depend on earlier context entries do not work properly, because since Struct is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
 
 Structs Sequences and Ranges
 ----------------------------
 
-Lazy* constructs allow lazy construction and deconstruction, meaning the data is actually parsed only when it's requested (demanded). Lazy parsing (also called on-demand parsing but that term is reserved here) is very useful with record-oriented data, where you don't have to actually parse the data unless it's actually needed. The result of parsing is a different container that remembers names of the members and their location in the stream, and when the data is accessed by key (or attribute for that matter) then that field is parsed. Members are parsed only once each.
+Lazy* constructs allow lazy deconstruction, meaning each member gets parsed only when accessed (not during LazyStruct.parse). Each member can be parsed only once, then it gets cached.
 
 Essentially almost every code that uses the base classes also works on these but there are few things that one has to be aware of when using lazy equivalents.
 
