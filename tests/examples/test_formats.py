@@ -67,7 +67,6 @@ class TestFormats(unittest.TestCase):
     def test_gif(self):
         commondump(gif_file, "sample.gif")
 
-    @pytest.mark.xfail(reason="broken after Enum was reimplemented")
     def test_mbr(self):
         commondump(mbr_format, "mbr1")
 
@@ -82,6 +81,5 @@ class TestFormats(unittest.TestCase):
         commondump(pe32_file, "NOTEPAD.EXE")
         commondump(pe32_file, "sqlite3.dll")
 
-    @pytest.mark.xfail(reason="unknown problem, fails parsing; also OnDemandPointer was removed")
     def test_elf32_file(self):
         commondump(elf32_file, "ctypes.so")
