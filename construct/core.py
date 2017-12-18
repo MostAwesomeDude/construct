@@ -2634,7 +2634,7 @@ class LazySequence(Construct):
 
 class OnDemand(Subconstruct):
     r"""
-    Allows for on demand (lazy) parsing. When parsing, it will return a parameterless function that when called, will return the parsed value. Object is cached after first parsing, so non-deterministic subcons will be affected. Works only with fixed size subcon.
+    Allows for lazy parsing of one field. When parsing, it will return a parameterless function that when called, will return the parsed value. Object is cached after first parsing, so non-deterministic subcons will be affected. Works only with fixed size subcon.
 
     :param subcon: the subcon to read/write on demand, must be fixed size
 
@@ -2665,8 +2665,8 @@ class OnDemand(Subconstruct):
                 stream.seek(offset)
                 obj = self.subcon._parse(stream, context, path)
                 stream.seek(fallback)
-                cache["parsed"] = obj
-            return cache["parsed"]
+                cache["value"] = obj
+            return cache["value"]
         return effectuate
     def _build(self, obj, stream, context, path):
         obj = obj() if callable(obj) else obj
