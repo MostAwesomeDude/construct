@@ -1007,20 +1007,34 @@ class TestCore(unittest.TestCase):
         assert Enum(Byte, q=3,r=4,t=5).sizeof() == 1
 
     def test_from_issue_298(self):
-        # also tests when default case value overlaps with another label's value
+        # also tests Enum when default case value overlaps with another label's value
         st = Struct(
-            "ctrl" / Enum(Bytes(1),
-                default = b'\x02',
-                STX = b'\x02',
-                ACK = b'\x06',
-                NAK = b'\x15',
+            "ctrl" / Enum(Byte,
+                NAK = 0x15,
+                STX = 0x02,
+                default = 0x02,
             ),
             "optional" / If(this.ctrl == "NAK", Byte),
         )
-        assert st.parse(b"\x15\xff") == Container(ctrl='NAK')(optional=255)
-        assert b"\x15\xff" == st.build(Container(ctrl='NAK')(optional=255))
-        assert st.parse(b"\x02") == Container(ctrl='STX')(optional=None)
-        assert b"\x02" == st.build(Container(ctrl='STX')(optional=None))
+        common(st, b"\x15\xff", Container(ctrl='NAK')(optional=255))
+        common(st, b"\x02", Container(ctrl='STX')(optional=None))
+
+        # FlagsEnum is not affected by same bug
+        st = Struct(
+            "flags" / FlagsEnum(Byte, a=1),
+            Check(lambda ctx: ctx.flags == FlagsContainer(a=1)),
+        )
+        st.parse(b"\x01")
+        st.build(dict(flags=FlagsContainer(a=1)))
+
+        # Flag is not affected by same bug
+        st = Struct(
+            "flag" / Flag,
+            Check(lambda ctx: ctx.flag == True),
+        )
+        st.parse(b"\x01")
+        st.build(dict(flag=True))
+
 
     def test_flagsenum(self):
         assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
