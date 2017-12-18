@@ -346,9 +346,10 @@ section = "section" / Struct(
         MEM_WRITE = 0x80000000,
     ),
 
-    "raw_data" / OnDemandPointer(this.raw_data_pointer, Bytes(this.raw_data_size)),
+    "raw_data" / Pointer(this.raw_data_pointer, 
+        Bytes(this.raw_data_size)),
 
-    "line_numbers" / OnDemandPointer(this.line_numbers_pointer,
+    "line_numbers" / Pointer(this.line_numbers_pointer,
         Array(this.number_of_line_numbers,
             Struct(
                 "type" / Int32ul,
@@ -357,7 +358,7 @@ section = "section" / Struct(
         )
     ),
 
-    "relocations" / OnDemandPointer(this.relocations_pointer,
+    "relocations" / Pointer(this.relocations_pointer,
         Array(this.number_of_relocations,
             Struct(
                 "virtual_address" / Int32ul,

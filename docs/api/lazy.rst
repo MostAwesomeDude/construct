@@ -6,5 +6,4 @@ Core API: Lazy equivalents
 .. autofunction:: construct.LazySequence
 .. autofunction:: construct.LazyRange
 .. autofunction:: construct.OnDemand
-.. autofunction:: construct.OnDemandPointer
 .. autofunction:: construct.LazyBound

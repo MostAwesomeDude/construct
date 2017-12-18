@@ -1657,8 +1657,6 @@ class Pointer(Subconstruct):
 
     Size is defined as unspecified, instead of previous 0.
 
-    .. seealso:: Analog to :func:`~construct.core.OnDemandPointer`, which also seeks to a given offset but returns a lazy lambda instead of constructing the value immediately.
-
     :param offset: an integer or a context function that returns a stream position, where the construction would take place
     :param subcon: the subcon to use at the offset
 
@@ -2673,28 +2671,6 @@ class OnDemand(Subconstruct):
     def _build(self, obj, stream, context, path):
         obj = obj() if callable(obj) else obj
         return self.subcon._build(obj, stream, context, path)
-
-
-def OnDemandPointer(offset, subcon):
-    r"""
-    On demand pointer. Is both lazy and jumps to a position before reading.
-
-    .. warning:: CURRENTLY BROKEN.
-
-    .. seealso:: Base :func:`~construct.core.OnDemand` and :func:`~construct.core.Pointer` construct.
-
-    :param offset: an integer or a context function that returns such an integer
-    :param subcon: subcon that will be parsed or build at the `offset` stream position
-
-    Example::
-
-        >>> d = OnDemandPointer(lambda ctx: 2, Byte)
-        >>> d.parse(b"\x01\x02\x03\x04\x05")
-        <function OnDemand._parse.<locals>.effectuate at 0x7f6f011ad510>
-        >>> _()
-        3
-    """
-    return OnDemand(Pointer(offset, subcon))
 
 
 class LazyBound(Construct):

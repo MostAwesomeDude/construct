@@ -984,12 +984,6 @@ class TestCore(unittest.TestCase):
         parseret = OnDemand(Byte).parse(b"\x01garbage")
         assert OnDemand(Byte).build(parseret) == b"\x01"
 
-    @pytest.mark.xfail(reason="OnDemand fails because Pointer size cannot be computed")
-    def test_ondemandpointer(self):
-        assert OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03garbage")() == 3
-        assert OnDemandPointer(lambda ctx: 2, Byte).build(1) == b"\x00\x00\x01"
-        assert OnDemandPointer(lambda ctx: 2, Byte).sizeof() == 0
-
     def test_from_issue_76(self):
         assert Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).parse(b"\x02\xab\xcd\x00") == Container(a=2)(f=b"\xab\xcd")
         assert Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).build(Container(a=2)(f=b"\xab\xcd")) == b"\x02\xab\xcd\x00"

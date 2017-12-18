@@ -98,7 +98,7 @@ LazyStruct LazyRange LazySequence were added
 
 OnDemand now returns a paramterless lambda that returns the parsed object
 
-OnDemandPointer dropped `force_build` parameter
+OnDemandPointer was dropped
 
 LazyBound remains
 

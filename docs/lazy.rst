@@ -38,13 +38,6 @@ There is a different approach to lazy parsing, where only one field is made lazy
 >>> OnDemand(Byte).build(16)
 b'\x10'
 
-There is also OnDemandPointer class.
-
->>> OnDemandPointer(lambda ctx: 2, Byte).parse(b"\x01\x02\x03garbage")
-<function OnDemand._parse.<locals>.effectuate at 0x7f6f011ad510>
->>> _()
-3
-
 
 LazyBound
 ---------

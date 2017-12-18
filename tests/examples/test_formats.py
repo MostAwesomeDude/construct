@@ -77,12 +77,11 @@ class TestFormats(unittest.TestCase):
     def test_snoop(self):
         commondump(snoop_file, "snoop1")
 
-    @pytest.mark.xfail(reason="OnDemandPointer is broken, not example code")
     def test_pe32file(self):
         commondump(pe32_file, "python.exe")
         commondump(pe32_file, "NOTEPAD.EXE")
         commondump(pe32_file, "sqlite3.dll")
 
-    @pytest.mark.xfail(reason="unknown problem, fails parsing")
+    @pytest.mark.xfail(reason="unknown problem, fails parsing; also OnDemandPointer was removed")
     def test_elf32_file(self):
         commondump(elf32_file, "ctypes.so")

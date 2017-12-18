@@ -55,7 +55,7 @@ def elf32_body(ElfInt16, ElfInt32):
         "info" / ElfInt32,
         "align" / ElfInt32,
         "entry_size" / ElfInt32,
-        "data" / OnDemandPointer(this.offset, Bytes(this.size)),
+        "data" / Pointer(this.offset, Bytes(this.size)),
     )
     
     return Struct(
