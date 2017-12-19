@@ -1,50 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import unittest, pytest, os
-from declarativeunittest import raises
-ontravis = 'TRAVIS' in os.environ
-
+from declarativeunittest import *
 from construct import *
 from construct.lib import *
 from construct.examples.formats import *
-
-import os, random, itertools, hashlib, binascii
-from io import BytesIO
-from binascii import hexlify, unhexlify
-ident = lambda x: x
-
-
-def common(format, data, obj, size=None):
-    assert format.parse(data) == obj
-    assert format.build(obj) == data
-    # following are guaranteed by the above
-    # assert format.parse(format.build(obj)) == obj
-    # assert format.build(format.parse(data)) == data
-    if size is not None:
-        if isinstance(size, Exception):
-            assert raises(format.sizeof) == size
-        else:
-            assert format.sizeof() == size
-
-def commondump(format, filename):
-    if ontravis:
-        filename = "examples/formats/" + filename
-    if not ontravis:
-        filename = "tests/examples/formats/" + filename
-    with open(filename,'rb') as f:
-        data = f.read()
-    commonbytes(format, data)
-
-def commonhex(format, hexdata):
-    commonbytes(format, binascii.unhexlify(hexdata))
-
-def commonbytes(format, data):
-    obj = format.parse(data)
-    print(obj)
-    data2 = format.build(obj)
-    print(hexlify(data))
-    print(hexlify(data2))
-    # assert hexlify(data2) == hexlify(data)
 
 
 class TestFormats(unittest.TestCase):
@@ -76,10 +35,10 @@ class TestFormats(unittest.TestCase):
     def test_snoop(self):
         commondump(snoop_file, "snoop1")
 
-    def test_pe32file(self):
+    def test_pe32(self):
         commondump(pe32_file, "python.exe")
         commondump(pe32_file, "NOTEPAD.EXE")
         commondump(pe32_file, "sqlite3.dll")
 
-    def test_elf32_file(self):
+    def test_elf32(self):
         commondump(elf32_file, "ctypes.so")

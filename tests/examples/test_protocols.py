@@ -1,40 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import unittest, pytest, os
-from declarativeunittest import raises
-ontravis = 'TRAVIS' in os.environ
-
+from declarativeunittest import *
 from construct import *
 from construct.lib import *
 from construct.examples.protocols import *
-
-import os, random, itertools, hashlib, binascii
-from io import BytesIO
-from binascii import hexlify, unhexlify
-ident = lambda x: x
-
-
-def common(format, data, obj, size=None):
-    assert format.parse(data) == obj
-    assert format.build(obj) == data
-    # following are guaranteed by the above
-    # assert format.parse(format.build(obj)) == obj
-    # assert format.build(format.parse(data)) == data
-    if isinstance(size, int):
-        assert format.sizeof() == size
-    else:
-        assert raises(format.sizeof) == size
-
-def commonhex(format, hexdata):
-    commonbytes(format, binascii.unhexlify(hexdata))
-
-def commonbytes(format, data):
-    obj = format.parse(data)
-    print(obj)
-    data2 = format.build(obj)
-    print(hexlify(data))
-    print(hexlify(data2))
-    assert hexlify(data2) == hexlify(data)
 
 
 class TestProtocols(unittest.TestCase):

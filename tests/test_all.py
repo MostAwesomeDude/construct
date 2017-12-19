@@ -1,34 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import unittest, pytest, os
-from declarativeunittest import raises
-ontravis = 'TRAVIS' in os.environ
-
+from declarativeunittest import *
 from construct import *
 from construct.lib import *
-
-import os, random, itertools, collections, hashlib, math
-from io import BytesIO
-ident = lambda x: x
-
-
-def common(format, data=NotImplemented, obj=NotImplemented, size=NotImplemented):
-    if data is not NotImplemented and obj is not NotImplemented:
-        assert format.parse(data) == obj
-        assert format.build(obj) == data
-        # following are guaranteed by the above
-        # assert format.parse(format.build(obj)) == obj
-        # assert format.build(format.parse(data)) == data
-    else:
-        if obj is not NotImplemented:
-            assert format.parse(format.build(obj)) == obj
-        if data is not NotImplemented:
-            assert format.build(format.parse(data)) == data
-    if size is not NotImplemented:
-        if isinstance(size, int):
-            assert format.sizeof() == size
-        else:
-            assert raises(format.sizeof) == size
 
 
 class TestCore(unittest.TestCase):
@@ -96,7 +70,7 @@ class TestCore(unittest.TestCase):
     def test_varint(self):
         common(VarInt, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10", 2**123, SizeofError)
         for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
-            common(VarInt, obj=n)
+            assert VarInt.parse(VarInt.build(n)) == n
             assert len(VarInt.build(n)) >= len("%x" % n)//2
         for n in range(0, 127):
             common(VarInt, int2byte(n), n, SizeofError)
@@ -140,8 +114,10 @@ class TestCore(unittest.TestCase):
         for endianess,dtype in itertools.product("<>=","bhlqBHLQ"):
             d = FormatField(endianess, dtype)
             for i in range(100):
-                common(d, obj=random.randrange(0, 256**d.sizeof()//2))
-                common(d, data=os.urandom(d.sizeof()))
+                obj = random.randrange(0, 256**d.sizeof()//2)
+                assert d.parse(d.build(obj)) == obj
+                data = os.urandom(d.sizeof())
+                assert d.build(d.parse(data)) == data
 
     def test_formatfield_floats_randomized(self):
         # there is a roundoff eror because Python float is a C double
@@ -1101,9 +1077,10 @@ class TestCore(unittest.TestCase):
 
     def test_rebuffered(self):
         data = b"0" * 1000
-        assert Rebuffered(Array(1000,Byte)).parse_stream(BytesIO(data)) == [48]*1000
-        assert Rebuffered(Array(1000,Byte), tailcutoff=50).parse_stream(BytesIO(data)) == [48]*1000
+        assert Rebuffered(Array(1000,Byte)).parse_stream(io.BytesIO(data)) == [48]*1000
+        assert Rebuffered(Array(1000,Byte), tailcutoff=50).parse_stream(io.BytesIO(data)) == [48]*1000
         assert Rebuffered(Byte).sizeof() == 1
+        assert raises(Rebuffered(Byte).sizeof) == None
         assert raises(Rebuffered(VarInt).sizeof) == SizeofError
 
     def test_expradapter(self):
