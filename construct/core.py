@@ -31,11 +31,7 @@ class SelectError(ConstructError):
     pass
 class UnionError(ConstructError):
     pass
-class FocusedError(ConstructError):
-    pass
 class TerminatedError(ConstructError):
-    pass
-class OverwriteError(ConstructError):
     pass
 class PaddingError(ConstructError):
     pass
