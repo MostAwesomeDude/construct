@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from declarativeunittest import *
 from construct import *
 from construct.lib import *

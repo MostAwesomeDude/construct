@@ -1,12 +1,5 @@
-import unittest
-from declarativeunittest import raises
-import pytest
-
+from declarativeunittest import *
 from construct import *
-
-from io import BytesIO
-import os, random
-
 
 
 class TestBitstream(unittest.TestCase):
@@ -18,12 +11,12 @@ class TestBitstream(unittest.TestCase):
         z = b"0"
 
         print("sequential read")
-        bstream = RebufferedBytesIO(BytesIO(z*1000))
+        bstream = RebufferedBytesIO(io.BytesIO(z*1000))
         assert bstream.read(1000) == z*1000
 
         print("random reads")
         data = os.urandom(1000)
-        bstream = RebufferedBytesIO(BytesIO(data))
+        bstream = RebufferedBytesIO(io.BytesIO(data))
         for i in range(50):
             o1 = random.randrange(0, 480)
             o2 = random.randrange(520, 1000)
@@ -33,7 +26,7 @@ class TestBitstream(unittest.TestCase):
             assert bstream.tell() == o2
 
         print("sequential writes")
-        bstream = RebufferedBytesIO(BytesIO())
+        bstream = RebufferedBytesIO(io.BytesIO())
         for i in range(10):
             assert bstream.write(z*100) == 100
         assert bstream.seek(0) == 0
@@ -41,7 +34,7 @@ class TestBitstream(unittest.TestCase):
 
         print("random writes")
         data = os.urandom(1000)
-        bstream = RebufferedBytesIO(BytesIO())
+        bstream = RebufferedBytesIO(io.BytesIO())
         assert bstream.write(data) == len(data)
         for i in range(50):
             o1 = random.randrange(0, 480)
@@ -55,7 +48,7 @@ class TestBitstream(unittest.TestCase):
 
         print("cutting off trail")
         data = os.urandom(1000)
-        bstream = RebufferedBytesIO(BytesIO(data), tailcutoff=50)
+        bstream = RebufferedBytesIO(io.BytesIO(data), tailcutoff=50)
         for i in range(15):
             at = bstream.tell()
             assert bstream.read(50) == data[at:at+50]

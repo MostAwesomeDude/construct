@@ -1,6 +1,4 @@
-import unittest
-from declarativeunittest import raises
-
+from declarativeunittest import *
 from construct.lib.hex import *
 
 

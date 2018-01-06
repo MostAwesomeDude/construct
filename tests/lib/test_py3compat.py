@@ -1,6 +1,4 @@
-import unittest
-from declarativeunittest import raises, atmostone
-
+from declarativeunittest import *
 from construct.lib.py3compat import *
 
 
