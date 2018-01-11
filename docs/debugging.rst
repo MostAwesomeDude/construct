@@ -2,7 +2,7 @@
 Debugging Construct
 ===================
 
-Programming data structures in Construct is much easier than writing the equivalent procedural code, both in terms of RAD and correctness. However, sometimes things don't behave the way you expect them to. Yep, a bug.
+Programming data structures in Construct is much easier than writing the equivalent procedural code, both in terms of ease-of-use and correctness. However, sometimes things don't behave the way you expect them to. Yep, a bug.
 
 Most end-user bugs originate from handling the context wrong. Sometimes you forget what nesting level you are at, or you move things around without taking into account the nesting, thus breaking context-based expressions. The two utilities described below should help you out.
 
@@ -39,7 +39,7 @@ The Probe simply dumps information to the screen. It will help you inspect the c
     ================================================================================
     [63, None]
 
-There is also `ProbeInto` looks inside the context and extracts a part of it using a lambda instead of printing the entire context.
+There is also `ProbeInto` that looks inside the context and extracts a part of it using a lambda instead of printing the entire context.
 
 >>> st = "junk"/RepeatUntil(obj_ == 0,Byte) + "num"/Byte + Probe()
 >>> st.parse(b"xcnzxmbjskahuiwerhquiehnsdjk\x00\xff")
@@ -142,14 +142,5 @@ When an exception occurs while parsing, you can go up (using u) to the level of 
     -> raise MappingError("no decoding mapping for %r" % (obj,))
     (Pdb) self.retval = "???"
     (Pdb) q
-
-Error
-=====
-
-Raises an exception when triggered by parse or build. Can be used as a sentinel that blows a whistle when a conditional branch goes the wrong way, or to raise an error explicitly the declarative way.
-
->>> d = "x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)
->>> d.parse(b"\xff\x05")
-construct.core.ExplicitError: Error field was activated during parsing
 
 

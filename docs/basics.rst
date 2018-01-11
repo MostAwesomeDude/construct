@@ -11,9 +11,9 @@ Fields are the most fundamental unit of construction: they **parse** (read data 
 Some examples of parsing:
 
 >>> from construct import Int16ub, Int16ul
->>> Int16ub.parse("\x01\x02")
+>>> Int16ub.parse(b"\x01\x02")
 258
->>> Int16ul.parse("\x01\x02")
+>>> Int16ul.parse(b"\x01\x02")
 513
 
 Some examples of building:
@@ -119,7 +119,7 @@ Container:
     b = 256
     c = 1.401298464324817e-45
 
-Thanks to blapid, containers can also be searched. Structs nested within Structs return containers within containers on parsing. One can search the entire "tree" of dicts for a particular name. Regular expressions are not supported.
+Thanks to blapid, containers can also be searched. Structs nested within Structs return containers within containers on parsing. One can search the entire "tree" of dicts for a particular name. Regular expressions are supported.
 
 >>> con = Container(Container(a=1,d=Container(a=2)))
 >>> con.search("a")
@@ -160,7 +160,7 @@ b'+\x02\x00\x00'
 >>> c = Struct("b"/Int32ul, "c"/Flag)
 >>> class Dummy:
 ...     def __getitem__(self, key):
-...             return 1
+...         return 1
 ...
 >>> dummy = Dummy()
 >>> c.build(dummy)
@@ -174,7 +174,7 @@ Structs can be nested. Structs can contain other Structs, as well as any constru
 
 >>> st = Struct(
 ...     "inner" / Struct(
-...             "data" / Bytes(4),
+...         "data" / Bytes(4),
 ...     )
 ... )
 >>> st.parse(b"lala")
@@ -190,7 +190,7 @@ A Struct can be embedded into an enclosing Struct. This means all the fields of 
 ...     "data" / Byte,
 ...     "inner" / Embedded(Struct(
 ...         "data" / Bytes(4),
-...     ))
+...     )),
 ... )
 >>> outer.parse(b"01234")
 Container(data=b'1234')

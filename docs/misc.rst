@@ -2,7 +2,8 @@
 Miscellaneous
 =============
 
-Miscellaneous
+
+Special
 =============
 
 Embedded
@@ -15,12 +16,21 @@ Embeds a struct into the enclosing struct, merging fields. Can also embed sequen
 >>> Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte).parse(b"abc")
 Container(a=97)(b=98)(c=99)
 
+Renamed
+-------
 
+Adds a name string to a field (which by default is None). This class is only used internally and you should use the / operator instead. Naming fields is needed when working with Structs and sometimes Sequences.
+
+>>> "num"/Byte  <-->  Renamed("num",Byte)
+
+
+Miscellaneous
+=============
 
 Const
 -----
 
-A constant value that is required to exist in the data and match a given value. If the value is not matched, ConstError is raised. Useful for so called magic numbers, signatures, asserting correct protocol version, etc.
+A constant value that is required to exist in the data and match a given value. If the value is not matching, ConstError is raised. Useful for so called magic numbers, signatures, asserting correct protocol version, etc.
 
 >>> Const(b"IHDR").build(None)
 b'IHDR'
@@ -32,11 +42,13 @@ By default, Const uses a Bytes field with size mathing the value. However, other
 >>> Const(Int32ul, 1).build(None)
 b'\x01\x00\x00\x00'
 
+The shortcoming is that it only works if the amount and exact bytes are known in advance. To check if a "variable" data meets some criterium (not mere equality), you would need the Check class.
+
 
 Computed
 --------
 
-Represents a dynamically computed value from the context. Computed does not read or write anything to the stream. It only returns its computed value as the result. Usually Computed fields are used for computations on the context. Look at the previous chapter. However, Computed can also produce values based on external environment, random module, or constants. For example:
+Represents a dynamically computed value from the context. Computed does not read or write anything to the stream. It only computes a value (usually by extracting a key from a context dictionary) and returns its computed value as the result. Usually Computed fields are used for computations on the context object. Context is explained in a previous chapter. However, Computed can also produce values based on external environment, random module, or constants. For example:
 
 >>> st = Struct(
 ...     "width" / Byte,
@@ -52,57 +64,10 @@ b'\x04\x05'
 b'[\x86\xcc\xf1b\xd9\x10\x0f?\x1a'
 
 
-Pass
-----
-
-A do-nothing construct, useful in Switches and Enums.
-
-.. note:: Pass is a singleton object. Do not try to instantiate it, ``Pass()`` will not work.
-
->>> Pass.parse(b"123123")
->>> Pass.build(None)
-b''
-
-
-Terminated
-----------
-
-Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows.
-
-.. note:: Terminated is a singleton object. Do not try to instantiate it, ``Terminated()`` will not work.
-
->>> Terminated.parse(b"")
->>> Terminated.parse(b"x")
-construct.core.TerminatedError: expected end of stream
-
-
-Numpy
------
-
-Numpy arrays can be preserved and retrived along with their dtype, shape and size, and all. Otherwise, if dtype is constant, you could use PrefixedArray or Range to store enumerables.
-
->>> import numpy
->>> Numpy.build(numpy.asarray([1,2,3]))
-b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
-
-
-NamedTuple
-----------
-
-Both arrays, structs and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of strings. Just like the stadard namedtuple does.
-
->>> NamedTuple("coord", "x y z", Byte[3]).parse(b"123")
-coord(x=49, y=50, z=51)
->>> NamedTuple("coord", "x y z", Byte >> Byte >> Byte).parse(b"123")
-coord(x=49, y=50, z=51)
->>> NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte)).parse(b"123")
-coord(x=49, y=50, z=51)
-
-
 Rebuild
 -------
 
-When there is an array separated from its length field, the Rebuild wrapped can be used to measure the len of the list at building. Note that both the `len_` and `this` expressions are used as discussed in meta chapter.
+When there is an array separated from its length field, the Rebuild wrapper can be used to measure the length of the list when building. Note that both the `len_` and `this` expressions are used as discussed in meta chapter. Only building is affected, parsing is simply deferred to subcon.
 
 >>> st = Struct(
 ...     "count" / Rebuild(Byte, len_(this.items)),
@@ -118,10 +83,22 @@ When the length field is directly before the items, `PrefixedArray` can be used 
 b'\x03\x01\x02\x03'
 
 
+Default
+-------
+
+Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys. Only building is affected, parsing is simply deferred to subcon.
+
+>>> st = Struct("a" / Default(Byte, 0))
+>>> st.build(dict(a=1))
+b'\x01'
+>>> st.build(dict())
+b'\x00'
+
+
 Check
 -----
 
-When fields are expected to be coherent in some way but integrity cannot be checked easily using Const or otherwise, then a Check field can be put in place that will compute from the context if the integrity is preserved. For example, maybe there is a count field (implied being non-negative but the field is signed):
+When fields are expected to be coherent in some way but integrity cannot be checked by merely comparing data with constant bytes using Const field, then a Check field can be put in place to get a key from context dict and check if the integrity is preserved. For example, maybe there is a count field (implied being non-negative but the field is signed type):
 
 >>> st = Struct(num=Int8sb, integrity1=Check(this.num > 0))
 >>> st.parse(b"\xff")
@@ -131,34 +108,53 @@ Or there is a collection and a count provided and the count is expected to match
 
 >>> st = Struct(count=Byte, items=Byte[this.count])
 FieldError: packer '>B' error during building, given value 9090
-...
 >>> st = Struct(integrity=Check(this.count == len_(this.items)), count=Byte, items=Byte[this.count])
 ValidationError: check failed during building
+
+
+Error
+------
+
+You can also explicitly raise an error, declaratively with a construct.
+
+>>> Error.parse(b"")
+ExplicitError: Error field was activated during parsing
 
 
 FocusedSeq
 ----------
 
-When a sequence is has some fields that could be ommited like Const and Terminated, user can focus on the particular fields that are useful:
+When a sequence has some fields that could be ommited like Const Padding Terminated, the user can focus on one particular field that is useful. Only one field can be focused on, and can be referred by index or name. Other fields must be able to build without a value:
 
 >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
 >>> d = FocusedSeq(1,     Const(b"MZ"), "num"/Byte, Terminated)
-...
 >>> d.parse(b"MZ\xff")
 255
 >>> d.build(255)
 b'MZ\xff'
 
 
-Default
--------
+Numpy
+-----
 
-Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys.
+Numpy arrays can be preserved and retrived along with their dtype, shape and items. Otherwise, if dtype is known, you could use PrefixedArray, and if shape is known too, you could use Array. However this class is more convenient.
 
->>> Struct("a"/Default(Byte,0)).build(dict(a=1))
-b'\x01'
->>> Struct("a"/Default(Byte,0)).build(dict())
-b'\x00'
+>>> import numpy
+>>> Numpy.build(numpy.asarray([1,2,3]))
+b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+
+
+NamedTuple
+----------
+
+Both arrays, structs and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of strings. Just like the stadard namedtuple does.
+
+>>> NamedTuple("coord", "x y z", Byte[3]).parse(b"123")
+coord(x=49, y=50, z=51)
+>>> NamedTuple("coord", "x y z", Byte >> Byte >> Byte).parse(b"123")
+coord(x=49, y=50, z=51)
+>>> NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte).parse(b"123")
+coord(x=49, y=50, z=51)
 
 
 
@@ -170,20 +166,19 @@ Union
 
 Treats the same data as multiple constructs (similar to C union statement) so you can "look" at the data in multiple views.
 
-When parsing, all fields read the same data bytes, but stream remains at initial offset if None, unless parsefrom selects a subcon by index or name. When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
+When parsing, all fields read the same data bytes, but stream remains at initial offset (or rather seeks back to original position after each subcon was parsed), unless parsefrom selects a subcon by index or name. When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
 
 .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset. Many users fail to use this class properly.
 
->>> Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).parse(b"12345678")
+>>> d = Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8])
+>>> d.parse(b"12345678")
 Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
-
->>> Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8]).build(dict(chars=range(8)))
+>>> d.build(dict(chars=range(8)))
 b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
 ::
 
     Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
-    >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
 
 Select
@@ -207,6 +202,7 @@ Optional
 Attempts to parse or build the subconstruct. If it fails during parsing, returns a None. If it fails during building, it puts nothing into the stream.
 
 >>> Optional(Int64ul).parse(b"1234")
+None
 >>> Optional(Int64ul).parse(b"12345678")
 4050765991979987505
 
@@ -219,7 +215,7 @@ b''
 If
 --
 
-Parses or builds the subconstruct only if a certain condition is met. Otherwise, returns a None and puts nothing.
+Parses or builds the subconstruct only if a certain condition is met. Otherwise, returns a None when parsing and puts nothing when building. The condition is a lambda that computes on the context just like in Computed examples.
 
 >>> If(this.x > 0, Byte).build(255, dict(x=1))
 b'\xff'
@@ -230,7 +226,7 @@ b''
 IfThenElse
 ----------
 
-Branches the construction path based on a given condition. If the condition is met, the ``thensubcon`` is used, otherwise the ``elsesubcon`` is used.
+Branches the construction path based on a given condition. If the condition is met, the ``thensubcon`` is used, otherwise the ``elsesubcon`` is used. Fields like Pass or Error can be used here. Just for your curiosity, If is just a macro around this class.
 
 >>> IfThenElse(this.x > 0, VarInt, Byte).build(255, dict(x=1))
 b'\xff\x01'
@@ -240,7 +236,7 @@ b'\xff'
 Switch
 ------
 
-Branches the construction based on a return value from a function. This is a more general version of IfThenElse.
+Branches the construction based on a return value from a function. This is a more general implementation then IfThenElse.
 
 .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
 
@@ -253,7 +249,7 @@ b'\x00\x00\x00\x05'
 StopIf
 ------
 
-Checks for a condition, and stops a Struct Sequence Range from parsing or building.
+Checks for a condition after each element, and stops a Struct Sequence Range from parsing or building following elements.
 
 ::
 
@@ -265,13 +261,13 @@ Checks for a condition, and stops a Struct Sequence Range from parsing or buildi
 
 
 
-Alignment and Padding
+Alignment and padding
 =====================
 
 Padding
 -------
 
-Adds and removes bytes without returning the to the user. Analog to Padded but does not wrap around another construct.
+Adds additional null bytes (a filler) analog to Padded but without a subcon that follows it. This field can usually be anonymous inside a Struct.
 
 >>> Padding(4).build(None)
 b'\x00\x00\x00\x00'
@@ -281,23 +277,27 @@ construct.core.PaddingError: expected b'\x00\x00\x00\x00', found b'****'
 Padded
 ------
 
-Appends additional null bytes to achieve a fixed length.
+Appends additional null bytes after subcon to achieve a fixed length.
 
 >>> Padded(4, Byte).build(255)
 b'\xff\x00\x00\x00'
+>>> Padded(this.numfield, Byte)
+...
 
 Aligned
 -------
 
-Aligns the subconstruct to a given modulus boundary.
+Appends additional null bytes after subcon to achieve a given modulus boundary.
 
 >>> Aligned(4, Int16ub).build(1)
 b'\x00\x01\x00\x00'
+>>> Aligned(this.numfield, Int16ub)
+...
 
 AlignedStruct
 -------------
 
-Automatically aligns all the fields of the Struct to the modulus boundary. It does NOT align entire Struct.
+Automatically aligns each member to modulus boundary. It does NOT align entire Struct, but each member separately.
 
 >>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5))
 b'\x01\x00\x00\x00\x00\x05\x00\x00'

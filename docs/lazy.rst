@@ -4,12 +4,12 @@ Lazy parsing
 
 .. warning::
 
-    Struct members that depend on earlier context entries do not work properly, because since Struct is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
+    Struct members that depend on earlier context entries (meta-constructs) do not work properly, because since Struct is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
 
 Structs Sequences and Ranges
 ----------------------------
 
-Lazy* constructs allow lazy deconstruction, meaning each member gets parsed only when accessed (not during LazyStruct.parse). Each member can be parsed only once, then it gets cached.
+Lazy* constructs allow lazy deconstruction, meaning each member gets parsed only when resulting Container gets accessed (LazyStruct parsing only prepares a Container, it does not parse the members). Each member can be parsed only once, then it gets cached.
 
 Essentially almost every code that uses the base classes also works on these but there are few things that one has to be aware of when using lazy equivalents.
 
@@ -23,13 +23,13 @@ Essentially almost every code that uses the base classes also works on these but
 
 `LazyRange` works like Range but parses into a LazyRangeContainer.
 
-    Equivalent to Range construct, but members are parsed on demand. Works only with fixed size subcon.
+    Equivalent to Range construct, but members are parsed on demand. Works only with fixed size subcon. Entire parse is essentially one seek.
 
 
 OnDemand
 --------
 
-There is a different approach to lazy parsing, where only one field is made lazy. Parsing returns a parameterless lambda that when called, returns the parsed data. Right now, each time the lambda is called the object is parsed again, so it the inner subcon is non-deterministic, each parsing may return a different object. Builds from a parsed object or a lambda.
+There is a different approach to lazy parsing, where only one field is made lazy. Parsing returns a parameterless lambda that when called, returns the parsed data. Right now, each time the lambda is called the object is parsed again, so if the inner subcon is non-deterministic, each parsing may return a different object. Builds from a parsed object or a lambda.
 
 >>> OnDemand(Byte).parse(b"\xff")
 <function OnDemand._parse.<locals>.<lambda> at 0x7fdc241cfc80>

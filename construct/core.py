@@ -335,7 +335,7 @@ class Validator(SymmetricAdapter):
     """
     def _decode(self, obj, context):
         if not self._validate(obj, context):
-            raise ValidationError("object failed validation", obj)
+            raise ValidationError("object failed validation: %s" % (obj,))
         return obj
     def _validate(self, obj, context):
         raise NotImplementedError
@@ -811,17 +811,17 @@ class VarInt(Construct):
 #===============================================================================
 class Struct(Construct):
     r"""
-    Sequence of usually named constructs, similar to structs in C. The elements are parsed and built in the order they are defined.
+    Sequence of usually named constructs, similar to structs in C. The elements are parsed and built in the order they are defined. If a member is anonymous (its name is None) then it gets parsed and its value discarded, or it gets build from nothing (from None).
 
     Some fields do not need to be named, since they are built without value anyway. See Const Padding Pass Terminated for examples of such fields.
 
-    Size is the sum of all subcon sizes.
+    Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
 
     Operator + can also be used to make Structs.
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges members into parent's members.
+    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges members with parent's members.
 
-    :param subcons: subcons that make up this structure
+    :param subcons: subcons that make up this structure, some can be anonymous
 
     Example::
 
@@ -912,15 +912,15 @@ class Struct(Construct):
 
 class Sequence(Struct):
     r"""
-    Sequence of unnamed constructs. The elements are parsed and built in the order they are defined.
+    Sequence of unnamed constructs. The elements are parsed and built in the order they are defined. If a member is named, its parsed value gets inserted into the context. This allows using members that refer to previous members values.
 
-    Size is the sum of all subcon sizes.
+    Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
 
     Operator >> can also be used to make Sequences.
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges entries into parent's entries.
+    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges entries with parent's entries.
 
-    :param subcons: subcons that make up this sequence
+    :param subcons: subcons that make up this sequence, some can be named
 
     Example::
 
@@ -1352,7 +1352,7 @@ def EmbeddedBitStruct(*subcons):
 
     Example::
 
-        ???
+        EmbeddedBitStruct  <-->  Bitwise(Embedded(Struct(...)))
     """
     return Bitwise(Embedded(Struct(*subcons)))
 
@@ -1649,7 +1649,7 @@ class Pointer(Subconstruct):
     r"""
     Changes the stream position to a given offset, where the construction should take place, and restores the stream position when finished.
 
-    Offset can also be nagative, indicating a position from EOF backwards.
+    Offset can also be negative, indicating a position from EOF backwards.
 
     Size is defined as unspecified, instead of previous 0.
 
@@ -1688,11 +1688,11 @@ class Pointer(Subconstruct):
 
 class Peek(Subconstruct):
     r"""
-    Peeks at the stream. Parses without changing the stream position. If the end of the stream is reached when reading, returns None. Building is no-op.
+    Peeks at the stream. Parses without changing the stream position, or rather measures stream position before parsing and seeks back to that position afterwards. If the end of the stream is reached when reading, returns None. Building is no-op.
 
     Size is defined as 0 because build does not put anything into the stream. 
 
-    .. seealso:: The :func:`~construct.core.Union` class.
+    .. seealso:: The :func:`~construct.core.Union` class uses Peek to parse each member.
 
     :param subcon: the subcon to peek at
 
@@ -1732,7 +1732,7 @@ class Tell(Construct):
 
     Size is defined as 0 because parsing and building does not consume or add into the stream.
 
-    .. seealso:: Its better to use :func:`~construct.core.RawCopy` instead of manually extracting stream positions and bytes.
+    .. seealso:: Its better to use :func:`~construct.core.RawCopy` instead of manually extracting two positions and computing difference.
 
     Example::
 
@@ -1757,7 +1757,7 @@ class Seek(Construct):
     r"""
     Sets a new stream position when parsing or building. Seeks are useful when many other fields follow the jump. Pointer works when there is only one field to look at, but when there is more to be done, Seek may come useful.
 
-    .. seealso:: Analog :func:`~construct.core.Pointer` wrapper that has same side effect but also processed a subcon.
+    .. seealso:: Analog :func:`~construct.core.Pointer` wrapper that has same side effect but also processes a subcon.
 
     :param at: where to jump to, can be an integer or a context lambda returning such an integer
     :param whence: is the offset from beginning (0) or from current position (1) or from ending (2), can be an integer or a context lambda returning such an integer, default is 0
@@ -1849,7 +1849,7 @@ class Rebuffered(Subconstruct):
 
     Example::
 
-        Rebuffered(..., tailcutoff=1024).parse_stream(endless_nonblocking_stream)
+        Rebuffered(..., tailcutoff=1024).parse_stream(nonseekable_stream)
     """
     __slots__ = ["stream2", "tailcutoff"]
     def __init__(self, subcon, tailcutoff=None):
@@ -1957,6 +1957,10 @@ class Computed(Construct):
         >>> d.parse(b"12")
         Container(width=49)(height=50)(total=2450)
 
+        >>> d = Computed(lambda ctx: 7)
+        >>> d.parse(b"")
+        7
+
         >>> import os
         >>> d = Computed(lambda ctx: os.urandom(10))
         >>> d.parse(b"")
@@ -1978,9 +1982,9 @@ class Computed(Construct):
 @singleton
 class Pass(Construct):
     r"""
-    No-op construct, useful as the default case for Switch. Returns None on parsing, puts nothing on building, size is 0 by definition.
+    No-op construct, useful as default cases for Switch and Enum. 
 
-    Building does not require a value, and any provided value gets discarded.
+    Returns None on parsing, puts nothing on building, size is 0 by definition. Building does not require a value, and any provided value gets discarded.
 
     Example::
 
@@ -2005,7 +2009,7 @@ class Pass(Construct):
 @singleton
 class Terminated(Construct):
     r"""
-    Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows.
+    Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows in the stream.
 
     This construct is only meaningful for parsing. Building does nothing.
 
@@ -3113,7 +3117,6 @@ class FocusedSeq(Construct):
 
         >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
         >>> d = FocusedSeq(1,     Const(b"MZ"), "num"/Byte, Terminated)
-
         >>> d.parse(b"MZ\xff")
         255
         >>> d.build(255)
@@ -3180,6 +3183,8 @@ def OneOf(subcon, valids):
     r"""
     Validates that the object is one of the listed values, both during parsing and building. Note that providing a set instead of a list may increase performance.
 
+    Notice that `OneOf(dtype, [value])` is essentially equivalent to `Const(dtype, value)`.
+
     :param subcon: a construct to validate
     :param valids: a collection implementing __contains__
 
@@ -3210,8 +3215,6 @@ def NoneOf(subcon, invalids):
     :param valids: a collection implementing __contains__
 
     :raises ValidationError: when actual value is among invalids
-
-    .. seealso:: Analog of :func:`~construct.core.OneOf`.
 
     """
     return ExprValidator(subcon, lambda obj,ctx: obj not in invalids)
@@ -3446,7 +3449,7 @@ def CString(terminators=b"\x00", encoding=None):
     :param terminators: sequence of valid terminators, first is used when building, all are used when parsing
     :param encoding: encoding (eg. "utf8"), or None for bytes
 
-    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with CStrings, they are not safe.
+    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with string classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
 
     Example::
 

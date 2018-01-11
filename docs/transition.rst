@@ -65,13 +65,13 @@ All above use optional `encoding` argument or use global encoding (see ``setglob
 Structures and Sequences
 ------------------------
 
-Struct uses syntax like ``Struct("num"/Int32ub, "text"/CString())``
+Struct uses syntax like ``Struct("num"/Int32ub, "text"/CString())`` and ``"num"/Int32ub + "text"/CString()``
 
 Sequence uses syntax like ``Byte >> Int16ul`` and ``Sequence(Byte, Int16ul)``
 
 Range uses syntax like ``Byte[2]`` and ``Byte[:]``
 
-On Python 3.6 you can also use syntax like ``Struct(num=Int32ub, text=CString())`` and ``Sequence(num=Int32ub, text=CString()``
+On Python 3.6 you can also use syntax like ``Struct(num=Int32ub, text=CString())`` and ``Sequence(num=Int32ub, text=CString())``
 
 
 Ranges and Arrays
@@ -139,19 +139,19 @@ Value was made Computed
 
 Embed was made Embedded
 
-Const incorporated Magic field
+Alias was removed
+
+Magic was made Const
 
 Pass remains
 
 Terminator was renamed Terminated
 
-Error added
-
-OneOf NoneOf remain
+OneOf and NoneOf remain
 
 Filter added
 
-LengthValueAdapter was replaced by Prefixed, and gained `includelength` option
+LengthValueAdapter was made Prefixed, and gained `includelength` option
 
 Hex added
 
@@ -161,7 +161,7 @@ HexDump builds from hexdumped data, not from raw bytes
 
 SlicingAdapter and IndexingAdapter were made Slicing and Indexing
 
-ExprAdapter ExprSymmetricAdapter ExprValidator added or remain
+ExprAdapter ExprSymmetricAdapter ExprValidator were added or remain
 
 SeqOfOne was replaced by FocusedSeq
 
@@ -171,9 +171,11 @@ NamedTuple added
 
 Check added
 
+Error added
+
 Default added
 
-Alias was removed
+Rebuild added
 
 StopIf added
 
@@ -182,7 +184,9 @@ StopIf added
 Stream manipulation
 -------------------
 
-Bitwise was reimplemented using Restreamed, and Bytewise was added
+Bitwise was reimplemented using Restreamed
+
+Bytewise was added
 
 Restreamed and Rebuffered were redesigned
 
@@ -203,6 +207,8 @@ RawCopy was added, returns both parsed object and raw bytes consumed
 
 Prefixed was added, allows to put greedy fields inside structs and sequences
 
-ByteSwapped and BitsSwapped added
+ByteSwapped and BitsSwapped were added
 
-Checksum and Compressed added
+Checksum was added
+
+Compressed was added

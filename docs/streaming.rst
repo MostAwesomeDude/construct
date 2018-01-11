@@ -1,32 +1,22 @@
-=================
-Streaming tactics
-=================
+===================
+Stream manipulation
+===================
 
 .. note::
 
     Certain constructs are available only for seekable or tellable streams (in-memory and files). Sockets and pipes do not support seeking, so you'll have to first read the data from the stream and parse it in-memory, or use experimental :func:`~construct.core.Rebuffered` wrapper.
 
-Wrappers
-========
 
-Pointer
--------
+Field wrappers
+==============
 
 Pointer allows for non-sequential construction. The pointer first changes the stream position, does the construction, and restores the original stream position.
 
->>> Pointer(8, Bytes(1)).parse(b"abcdefghijkl")
-b'i'
->>> Pointer(8, Bytes(1)).build(b"x")
-b'\x00\x00\x00\x00\x00\x00\x00\x00x'
+.. autoclass:: construct.core.Pointer
 
-Peek
-----
+Peek parses the subconstruct but restores the stream position afterwards (it does peeking). Building does nothing, it does NOT defer to subcon when building.
 
-Parses the subconstruct but restores the stream position afterwards (it does peeking).
-
->>> Sequence(Peek(Byte), Peek(Int16ub)).parse(b"\x01\x02")
-[1, 258]
-
+.. autoclass:: construct.core.Peek
 
 
 Pure side effects
@@ -34,16 +24,21 @@ Pure side effects
 
 Seek makes a jump within the stream and leaves it at that point. It does not read or write anything to the stream by itself.
 
-.. autoclass:: construct.core.Seek
+.. autofunction:: construct.core.Seek
 
 Tell checks the current stream position and returns it, also putting it into the context. It does not read or write anything to the stream by itself.
 
 .. autofunction:: construct.core.Tell
 
+.. autofunction:: construct.core.Pass
 
-Stream manipulation
+.. autofunction:: construct.core.Terminated
+
+
+Stream wrappers
 ===================
 
-.. autofunction:: construct.core.Rebuffered
+.. autoclass:: construct.core.Restreamed
 
-.. autofunction:: construct.core.Restreamed
+.. autoclass:: construct.core.Rebuffered
+

@@ -47,10 +47,10 @@ Container(a=True)(b=7)(c=887)(d=None)
 Important notes
 ===============
 
-* BitStructs are non-nestable so writing something like ``BitStruct("foo", BitStruct("bar", Octet("spam")))`` will not work. You can use regular Structs inside BitStructs.
+* BitStructs are non-nestable so writing something like ``BitStruct(BitStruct(Octet))`` will not work. You can use regular Structs inside BitStructs.
 * BitStructs are embeddable. The ``Embedded`` wrapper can be used for that purpose. There is also the ``EmbeddedBitStruct``.
 
-* Byte aligned - The total size of the elements of a BitStruct must be a multiple of 8 (due to alignment issues). RestreamedBytesIO will raise an error of the amount of bits and bytes does not align properly.
+* Byte aligned - The total size of the elements of a BitStruct must be a multiple of 8 (due to alignment issues). RestreamedBytesIO will raise an error if the amount of bits and bytes does not align properly.
 * Pointers and OnDemand - Do not place Pointers or OnDemands inside bitwise because it uses an internal stream, so external stream offsets will turn out wrong, have side-effects or raise exceptions.
 * Advanced classes like tunneling may not work in bitwise context. Only basic fields like integers were throughly tested.
 

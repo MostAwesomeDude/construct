@@ -6,7 +6,7 @@ globalfullprinting = None
 
 def setglobalfullprinting(enabled):
     r"""
-    Sets full printing for all Container instances. When enabled, Container str produces full content of bytes and strings, otherwise and by default, it produces truncated output.
+    Sets full printing for all Container instances. When enabled, Container __str__ produces full content of bytes and strings, otherwise and by default, it produces truncated output.
 
     :param enabled: bool to enable or disable full printing, or None to default
     """
@@ -34,9 +34,9 @@ def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"
 
 class Container(dict):
     r"""
-    Generic ordered dictionary that allows both key and attribute access, and preserve key order by insertion. Also it uses __call__ method to chain add keys, because **kw does not preserve order (unless PY36+). Equality does NOT check item order.
+    Generic ordered dictionary that allows both key and attribute access, and preserve key order by insertion. Also it uses __call__ method to chain add keys, because \*\*kw does not preserve order (unless PY36). Equality does NOT check item order.
 
-    Struct and Sequence, and few others parsers returns a container, since their members have order so do keys.
+    Struct and Sequence, and few other parsers return a container, and since their members have order, so do keys.
 
     Example::
 
@@ -236,7 +236,7 @@ class Container(dict):
 
 class FlagsContainer(Container):
     r"""
-    Container made to represent a FlagsEnum, only equality skips order. Provides pretty-printing for flags. Only set flags are displayed.
+    Container made to represent a FlagsEnum, but equality does NOT check order. Provides pretty-printing for flags. Only set flags are displayed.
     """
 
     @recursion_lock()
@@ -292,7 +292,7 @@ class ListContainer(list):
 
 class LazyContainer(object):
     r"""
-    Lazy equivalent to Container. Works the same but parses subcons on first access whenever possible.
+    Lazy equivalent to Container. Each key is either associated with info how to parse a value (before first access) or a cached value.
     """
     __slots__ = ["keysbackend", "offsetmap", "cached", "stream", "addoffset", "context"]
 
@@ -347,7 +347,7 @@ class LazyContainer(object):
 
 class LazyRangeContainer(ListContainer):
     r"""
-    Lazy equivalent to ListContainer. Works the same but parses subcons on first access whenever possible.
+    Lazy equivalent to ListContainer. Each key is either associated with info how to parse a value (before first access) or a cached value.
     """
     __slots__ = ["subcon", "subsize", "count", "stream", "addoffset", "context", "cached", "offsetmap"]
 
@@ -383,7 +383,7 @@ class LazyRangeContainer(ListContainer):
 
 class LazySequenceContainer(LazyRangeContainer):
     r"""
-    Lazy equivalent to ListContainer. Works the same but parses subcons on first access whenever possible.
+    Lazy equivalent to ListContainer. Each key is either associated with info how to parse a value (before first access) or a cached value.
     """
     __slots__ = ["count", "offsetmap", "cached", "stream", "addoffset", "context"]
 

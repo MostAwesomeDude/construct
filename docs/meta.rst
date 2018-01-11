@@ -2,7 +2,7 @@
 The Context
 ===========
 
-Meta constructs are the key to the declarative power of Construct. Meta constructs are constructs which are affected by the context of the construction (parsing or building). In other words, meta constructs are self-referring. The context is a dictionary that is created during the construction process by Structs and Sequences, and is "propagated" down and up to all constructs along the way, so that they could use it. It basically represents a mirror image of the construction tree, as it is altered by the different constructs. Nested structs create nested contexts, just as they create nested containers.
+Meta constructs are the key to the declarative power of Construct. Meta constructs are constructs which are affected by the context of the construction (during parsing and building). The context is a dictionary that is created during the parsing and building process by Structs and Sequences, and is "propagated" down and up to all constructs along the way, so that other members can access other members parsing or building resuslts. It basically represents a mirror image of the construction tree, as it is altered by the different constructs. Nested structs create nested contexts, just as they create nested containers.
 
 In order to see the context, let's try this snippet:
 
@@ -28,7 +28,7 @@ As you can see, the context looks different at different points of the construct
 
 You may wonder what does the little underscore ('_') that is found in the context means. It basically represents the parent node, like the .. in unix pathnames ("../foo.txt"). We'll use it only when we refer to the context of upper layers.
 
-Using the context is easy. All meta constructs take a function as a parameter, which is usually passed as a lambda function, although "big" functions are just as good. This function, unless otherwise stated, takes a single parameter called ctx (short for context), and returns a result calculated from that context.
+Using the context is easy. All meta constructs take a function as a parameter, which is usually passed as a lambda function, although "big" named functions are just as good. This function, unless otherwise stated, takes a single parameter called ctx (short for context), and returns a result calculated from that context.
 
 >>> st = Struct(
 ...     "count" / Byte,
@@ -37,21 +37,18 @@ Using the context is easy. All meta constructs take a function as a parameter, w
 >>> st.parse(b"\x05abcde")
 Container(count=5)(data=b'abcde')
 
-Of course the function can return anything (it doesn't have to use ctx at all):
+Of course the function can return anything (it does not need to depend on the context):
 
->>> st = Struct(
-...     "ct" / Computed(lambda ctx: 7),
-... )
->>> st.parse(b"")
-Container(ct=7)
+>>> Computed(lambda ctx: 7)
+>>> Computed(lambda ctx: os.urandom(16))
 
-And here's how we use the special '_' name to get to the upper layer. Here the length of the string is calculated as ``length1 + length2``:
+And here's how we use the special '_' name to get to the upper container in a nested containers situation (which happens when parsing nested Structs). Here the length of the string is calculated as ``length1 + length2`` but note the fields are on different levels:
 
 >>> st = Struct(
 ...     "length1" / Byte,
 ...     "inner" / Struct(
-...             "length2" / Byte,
-...             "sum" / Computed(lambda ctx: ctx._.length1 + ctx.length2),
+...         "length2" / Byte,
+...         "sum" / Computed(lambda ctx: ctx._.length1 + ctx.length2),
 ...     ),
 ... )
 >>> st.parse(b"12")
@@ -62,17 +59,17 @@ Container(length1=49)(inner=Container(length2=50)(sum=99))
 Using `this` expression
 ===========================
 
-Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided even a better syntax. The `this` singleton object can be used to build a lambda expression. All four examples below are equivalent:
+Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided even a better syntax. The `this` singleton object can be used to build a lambda expression. All four examples below are equivalent, but last is recommended:
 
 >>> lambda ctx: ctx["_"]["field"]
 ...
 >>> lambda ctx: ctx._.field
 ...
->>> this._.field
-...
 >>> this["_"]["field"]
+...
+>>> this._.field
 
-Of course, `this` can be mixed with other calculations. When evaluating, each instance of this is replaced by ctx.
+Of course, `this` can be mixed with other calculations. When evaluating, each instance of this is replaced by context.
 
 >>> this.width * this.height - this.offset
 
@@ -81,13 +78,13 @@ Of course, `this` can be mixed with other calculations. When evaluating, each in
 Using `len_` builtin alikes
 ===========================
 
-There used to be a bit of a hassle when you used to builtin functions like `len sum min max` on context items. Builtin `len` takes a list and returns an int but `len_` analog takes a lambda and returns a lambda. This allows to use this kind of shorthand:
+There used to be a bit of a hassle when you used built-in functions like `len sum min max` on context items. Builtin `len` takes a list and returns an int but `len_` analog takes a lambda and returns a lambda. This allows to use this kind of shorthand:
 
 >>> lambda ctx: len(ctx.items)
 ...
 >>> len_(this.items)
 
-These can be used in newly added Rebuild wrappers that take compute count/length fields from another items-alike field:
+These can be used in newly added Rebuild wrappers that compute count/length fields from another items-alike field:
 
 >>> st = Struct(
 ...     "count" / Rebuild(Byte, len_(this.items)),
@@ -128,16 +125,14 @@ When creating an Array, rather than specifying a constant length, you can instea
 ::
 
     PrefixedArray  <-->  FocusedSeq(1,
-        "count"/Rebuild(lengthfield, len_(this.items)),
-        "items"/subcon[this.count],
+        "count" / Rebuild(lengthfield, len_(this.items)),
+        "items" / subcon[this.count],
 
 
 RepeatUntil
 -----------
 
-A repeater that repeats until a condition is met. The perfect example is null-terminated strings.
-
-.. note:: For null-terminated strings, use :func:`~construct.CString`.
+A repeater that repeats until a condition is met. Null terminated strings are probably not the best example, as you should use CString there, but here is a list of integers with terminating 0 value.
 
 >>> loop = RepeatUntil(obj_ == 0, Byte)
 >>> loop.parse(b"aioweqnjkscs\x00")
@@ -153,10 +148,10 @@ Branches the construction path based on a condition, similarly to C's switch sta
 ...     "type" / Enum(Byte, INT1=1, INT2=2, INT4=3, STRING=4),
 ...     "data" / Switch(this.type,
 ...     {
-...             "INT1" : Int8ub,
-...             "INT2" : Int16ub,
-...             "INT4" : Int32ub,
-...             "STRING" : String(10),
+...         "INT1" : Int8ub,
+...         "INT2" : Int16ub,
+...         "INT4" : Int32ub,
+...         "STRING" : String(10),
 ...     }),
 ... )
 >>> st.parse(b"\x02\x00\xff")
@@ -169,9 +164,9 @@ When the condition is not found in the switching table, and a default construct 
 >>> st = Struct(
 ...     "type" / Byte,
 ...     "data" / Switch(this.type, {
-...             1 : Int8ul,
-...             2 : Int8sl,
-...         }, default = Int8ul),
+...         1 : Int8ul,
+...         2 : Int8sl,
+...     }, default = Int8ul),
 ... )
 >>> st.parse(b"\xff\x01")
 Container(type=255)(data=1)
@@ -181,8 +176,8 @@ When you want to ignore/skip errors, you can use the Pass construct, which is a 
 >>> st = Struct(
 ...     "type" / Byte,
 ...     "data" / Switch(this.type, {
-...             1 : Int8ul,
-...             2 : Int8sl,
+...         1 : Int8ul,
+...         2 : Int8sl,
 ...     }, default = Pass),
 ... )
 >>> st.parse(b"??????")
@@ -200,4 +195,5 @@ Logical ``and or not`` operators cannot be used in this expressions. You have to
 >>> lambda ctx: not ctx.flag1 or ctx.flag2 and ctx.flag3
 
 Contains operator ``in`` cannot be used in this expressions, you have to use a lambda expression:
+
 >>> lambda ctx: ctx.value in (1, 2, 3)

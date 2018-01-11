@@ -6,11 +6,10 @@ Tunneling tactics
 Obtaining raw bytes
 -------------------
 
-When some value needs to be processed as both a parsed object and raw bytes, both of these can be obtained using RawCopy. You can build from either the object or raw bytes as well.
+When some value needs to be processed as both a parsed object and its raw bytes representation, both of these can be obtained using RawCopy. You can build from either the object or raw bytes as well. Dict also happen to contain the stream offsets, if you need to know at which position it resides in the stream or if you need to know its size in bytes.
 
 >>> RawCopy(Byte).parse(b"\xff")
-Container(data='\xff')(value=255)(offset1=0L)(offset2=1L)(length=1L)
-...
+Container(data='\xff')(value=255)(offset1=0)(offset2=1)(length=1)
 >>> RawCopy(Byte).build(dict(data=b"\xff"))
 '\xff'
 >>> RawCopy(Byte).build(dict(value=255))
@@ -40,7 +39,7 @@ When bits within each byte need to be swapped, there is another wrapper:
 Working with bytes subsets
 --------------------------
 
-Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending an element count (see PrefixedArray) or by prepending a byte count:
+Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending an element count (see PrefixedArray) or by prepending a byte count (see Prefixed):
 
 >>> Prefixed(VarInt, GreedyRange(Int32ul)).parse(b"\x08abcdefgh")
 [1684234849, 1751606885]
@@ -48,15 +47,13 @@ Greedy* constructs consume as much data as possible. This is convenient when bui
 >>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
 [1684234849, 1751606885]
 
-Note that VarInt encoding should be preferred because it is both compact and never overflows.
-
-Optionally, length field can include its own size. Then the length field must be of fixed size.
+VarInt encoding is recommended because it is both compact and never overflows. Optionally, length field can include its own size. Then the length field must be of fixed size.
 
 
 Compression and checksuming
 ----------------------------------------
 
-Data can be checksummed easily. Note that checksum field does not need to be Bytes, and lambda may return an integer or otherwise.
+Data can be easily checksummed. Note that checksum field does not need to be Bytes, and lambda may return an integer or otherwise.
 
 ::
 
@@ -71,7 +68,7 @@ Data can be checksummed easily. Note that checksum field does not need to be Byt
     data = d.build(dict(fields=dict(value=dict(a=1,b=2))))
     # returned b'\x01\x02\xbd\xd8\x1a\xb23\xbc\xebj\xd23\xcd\x18qP\x93 \xa1\x8d\x035\xa8\x91\xcf\x98s\t\x90\xe8\x92>\x1d\xda\x04\xf35\x8e\x9c~\x1c=\x16\xb1o@\x8c\xfa\xfbj\xf52T\xef0#\xed$6S8\x08\xb6\xca\x993'
 
-Also can be compressed easily. Supported encodings include zlib/gzip/bzip2/lzma and entire codecs module. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :func:`~construct.core.Prefixed` or entire stream.
+Also data can be easily compressed. Supported encodings include zlib/gzip/bzip2/lzma and entire codecs module. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :func:`~construct.core.Prefixed` or entire stream.
 
 ::
 

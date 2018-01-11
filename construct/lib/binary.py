@@ -3,7 +3,7 @@ from construct.lib.py3compat import *
 
 def integer2bits(number, width):
     r"""
-    Converts an integer into its binary representation in a b-string. Width is the amount of bits to generate. If width is larger than the actual amount of bits required to represent number in binary, sign-extension is used. If it's smaller, the representation is trimmed to width bits. Each bit is represented as either b'\x00' or b'\x01'. The most significant is first, big-endian. This is reverse to `bits2integer`.
+    Converts an integer into its binary representation in a b-string. Width is the amount of bits to generate. If width is larger than the actual amount of bits required to represent number in binary, sign-extension is used. If it's smaller, the representation is trimmed to width bits. Each bit is represented as either b'\\x00' or b'\\x01'. The most significant is first, big-endian. This is reverse to `bits2integer`.
 
     Examples:
 
@@ -57,7 +57,7 @@ def onebit2integer(b):
 
 def bits2integer(data, signed=False):
     r"""
-    Converts a b-string into an integer. Both b'0' and b'\x00' are considered zero, and both b'1' and b'\x01' are considered one. Set sign to interpret the number as a 2-s complement signed integer. This is reverse to `integer2bits`.
+    Converts a b-string into an integer. Both b'0' and b'\\x00' are considered zero, and both b'1' and b'\\x01' are considered one. Set sign to interpret the number as a 2-s complement signed integer. This is reverse to `integer2bits`.
 
     Examples:
 
