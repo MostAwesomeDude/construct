@@ -463,18 +463,14 @@ class TestCore(unittest.TestCase):
         assert raises(BitsInteger(this.missing).sizeof) == SizeofError
 
     def test_bytesinteger(self):
-        assert BytesInteger(4).parse(b"\x00\x00\x00\xff") == 255
-        assert BytesInteger(4).build(255) == b"\x00\x00\x00\xff"
-        assert BytesInteger(4).sizeof() == 4
-        assert BytesInteger(4, signed=True).parse(b"\xff\xff\xff\xff") == -1
-        assert BytesInteger(4, signed=True).build(-1) == b"\xff\xff\xff\xff"
+        common(BytesInteger(4), b"\x00\x00\x00\xff", 255, 4)
+        common(BytesInteger(4, signed=True), b"\xff\xff\xff\xff", -1, 4)
         assert raises(BytesInteger(this.missing).sizeof) == SizeofError
 
     def test_bitwise(self):
         assert Bitwise(Bytes(8)).parse(b"\xff") == b"\x01\x01\x01\x01\x01\x01\x01\x01"
         assert Bitwise(Bytes(8)).build(b"\x01\x01\x01\x01\x01\x01\x01\x01") == b"\xff"
         assert Bitwise(Bytes(8)).sizeof() == 1
-
         assert Bitwise(Array(8,Bit)).parse(b"\xff") == [1,1,1,1,1,1,1,1]
         assert Bitwise(Array(8,Bit)).build([1,1,1,1,1,1,1,1]) == b"\xff"
         assert Bitwise(Array(2,Nibble)).parse(b"\xff") == [15,15]
@@ -954,12 +950,8 @@ class TestCore(unittest.TestCase):
         assert Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).build(Container(a=2)(f=b"\xab\xcd")) == b"\x02\xab\xcd\x00"
 
     def test_flag(self):
-        assert Flag.parse(b"\x00") == False
-        assert Flag.parse(b"\x01") == True
-        assert Flag.parse(b"\xff") == True
-        assert Flag.build(False) == b"\x00"
-        assert Flag.build(True) == b"\x01"
-        assert Flag.sizeof() == 1
+        common(Flag, b"\x00", False, 1)
+        common(Flag, b"\x01", True, 1)
 
     def test_enum(self):
         # Pass default no longer tested
