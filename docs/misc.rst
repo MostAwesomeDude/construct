@@ -271,8 +271,8 @@ Adds additional null bytes (a filler) analog to Padded but without a subcon that
 
 >>> Padding(4).build(None)
 b'\x00\x00\x00\x00'
->>> Padding(4, strict=True).parse(b"****")
-construct.core.PaddingError: expected b'\x00\x00\x00\x00', found b'****'
+>>> Padding(4).parse(b"****")
+None
 
 Padded
 ------

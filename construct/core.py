@@ -1565,32 +1565,31 @@ class NamedTuple(Adapter):
 #===============================================================================
 # alignment and padding
 #===============================================================================
-def Padding(length, pattern=b"\x00", strict=False):
+def Padding(length, pattern=b"\x00"):
     r"""
     Padding field that adds bytes when building, discards bytes when parsing.
 
     :param length: length of the padding, an integer or a context function returning such an integer
-    :param pattern: padding pattern as bytes character, default is \x00
-    :param strict: whether to verify during parsing that the stream contains the exact pattern, raises PaddingError if actual padding differs from the pattern, default is False
+    :param pattern: padding pattern as b-character, default is \\x00
 
     :raises PaddingError: when strict is set and actual parsed pattern differs from specified
 
     Example::
 
-        >>> d = Padding(4, strict=True)
+        >>> d = Padding(4)
         >>> d.build(None)
         b'\x00\x00\x00\x00'
         >>> d.parse(b"****")
-        construct.core.PaddingError: expected b'\x00\x00\x00\x00', found b'****'
+        None
         >>> d.sizeof()
         4
     """
-    return Padded(length, Pass, pattern=pattern, strict=strict)
+    return Padded(length, Pass, pattern=pattern)
 
 
 class Padded(Subconstruct):
     r"""
-    Appends additional null bytes to achieve a fixed length. Fails if actual data is longer than specified length.
+    Appends additional null bytes to achieve a fixed length. Fails if actual data is longer than specified length. Note that subcon can actually be variable size, its the eventual size during building that determines actual padding.
 
     :raises PaddingError: when parsed or build data is longer than the length
 
@@ -1610,14 +1609,13 @@ class Padded(Subconstruct):
         >>> d.build(70000)
         b'\xf0\xa2\x04\x00'
     """
-    __slots__ = ["length", "pattern", "strict"]
-    def __init__(self, length, subcon, pattern=b"\x00", strict=False):
+    __slots__ = ["length", "pattern"]
+    def __init__(self, length, subcon, pattern=b"\x00"):
         if not isinstance(pattern, bytes) or len(pattern) != 1:
             raise PaddingError("pattern expected to be bytes of length 1")
         super(Padded, self).__init__(subcon)
         self.length = length
         self.pattern = pattern
-        self.strict = strict
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
         position1 = stream.tell()
@@ -1626,10 +1624,7 @@ class Padded(Subconstruct):
         padlen = length - (position2 - position1)
         if padlen < 0:
             raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length))
-        pad = _read_stream(stream, padlen)
-        if self.strict:
-            if pad != self.pattern * padlen:
-                raise PaddingError("expected %r times %r, found %r" % (self.pattern, padlen, pad))
+        _read_stream(stream, padlen)
         return obj
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length

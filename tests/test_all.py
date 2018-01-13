@@ -392,27 +392,13 @@ class TestCore(unittest.TestCase):
         common(If(False, Byte), b"", None, 0)
 
     def test_padding(self):
-        assert Padding(4).parse(b"\x00\x00\x00\x00") == None
-        assert Padding(4).build(None) == b"\x00\x00\x00\x00"
-        assert Padding(4).sizeof() == 4
-        assert Padding(4, strict=True).parse(b"\x00\x00\x00\x00") == None
-        assert Padding(4, strict=True).build(None) == b"\x00\x00\x00\x00"
-        assert Padding(4, pattern=b'x', strict=True).parse(b"xxxx") == None
-        assert raises(Padding(4, strict=True).parse, b"????") == PaddingError
-        assert raises(Padding(4, pattern=b'x', strict=True).parse, b"????") == PaddingError
-        assert raises(Padding, 4, pattern=b"??") == PaddingError
+        common(Padding(4), b"\x00\x00\x00\x00", None, 4)
+        assert raises(Padding, 4, pattern=b"?????") == PaddingError
         assert raises(Padding, 4, pattern=u"?") == PaddingError
 
     def test_padded(self):
-        assert Padded(4, Byte).parse(b"\x01\x00\x00\x00") == 1
-        assert Padded(4, Byte).build(1) == b"\x01\x00\x00\x00"
-        assert Padded(4, Byte).sizeof() == 4
-        assert Padded(4, Byte, strict=True).parse(b"\x01\x00\x00\x00") == 1
-        assert raises(Padded(4, Byte, strict=True).parse, b"\x01???") == PaddingError
-        assert Padded(4, Byte, strict=True).build(1) == b"\x01\x00\x00\x00"
-        assert Padded(4, Byte, pattern=b'x', strict=True).parse(b"\x01xxx") == 1
-        assert raises(Padded(4, Byte, pattern=b'x', strict=True).parse, b"\x01???") == PaddingError
-        assert raises(Padded, 4, Byte, pattern=b"??") == PaddingError
+        common(Padded(4, Byte), b"\x01\x00\x00\x00", 1, 4)
+        assert raises(Padded, 4, Byte, pattern=b"?????") == PaddingError
         assert raises(Padded, 4, Byte, pattern=u"?") == PaddingError
         assert Padded(4, VarInt).sizeof() == 4
         assert Padded(4, Byte[this.missing]).sizeof() == 4
