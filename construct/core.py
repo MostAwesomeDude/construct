@@ -1397,10 +1397,12 @@ class Check(Construct):
         self.func = func
         self.flagbuildnone = True
     def _parse(self, stream, context, path):
-        if not self.func(context):
+        passed = self.func(context) if callable(self.func) else self.func
+        if not passed:
             raise ValidationError("check failed during parsing")
     def _build(self, obj, stream, context, path):
-        if not self.func(context):
+        passed = self.func(context) if callable(self.func) else self.func
+        if not passed:
             raise ValidationError("check failed during building")
     def _sizeof(self, context, path):
         return 0

@@ -814,6 +814,9 @@ class TestCore(unittest.TestCase):
         assert Filter(obj_ != 0, Byte[:]).build([0,1,0,2,0]) == b"\x01\x02"
 
     def test_check(self):
+        assert Check(True).parse(b"") == None
+        assert Check(True).build(None) == b""
+        assert Check(True).sizeof() == 0
         assert Check(this.x == 255).parse(b"", Container(x=255)) == None
         assert Check(this.x == 255).build(None, Container(x=255)) == b""
         assert Check(this.x == 255).sizeof() == 0
