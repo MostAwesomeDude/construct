@@ -6,6 +6,7 @@ from struct import error as PackerError
 from io import BytesIO, StringIO
 from binascii import hexlify, unhexlify
 import collections
+import sys
 
 from construct.lib import *
 from construct.expr import *
@@ -749,22 +750,32 @@ def Float64n():
 Single = Float32b
 Double = Float64b
 
+native = (sys.byteorder == "little")
+
 @singleton
 def Int24ub():
     """A 3-byte big-endian unsigned integer, as used in ancient file formats."""
-    return BytesInteger(3)
+    return BytesInteger(3, signed=False, swapped=False)
 @singleton
 def Int24ul():
     """A 3-byte little-endian unsigned integer, as used in ancient file formats."""
-    return BytesInteger(3, swapped=True)
+    return BytesInteger(3, signed=False, swapped=True)
+@singleton
+def Int24un():
+    """A 3-byte native-endian unsigned integer, as used in ancient file formats."""
+    return BytesInteger(3, signed=False, swapped=native)
 @singleton
 def Int24sb():
     """A 3-byte big-endian signed integer, as used in ancient file formats."""
-    return BytesInteger(3, signed=True)
+    return BytesInteger(3, signed=True, swapped=False)
 @singleton
 def Int24sl():
     """A 3-byte little-endian signed integer, as used in ancient file formats."""
     return BytesInteger(3, signed=True, swapped=True)
+@singleton
+def Int24sn():
+    """A 3-byte native-endian signed integer, as used in ancient file formats."""
+    return BytesInteger(3, signed=True, swapped=native)
 
 
 @singleton

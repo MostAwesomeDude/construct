@@ -181,6 +181,5 @@ __all__ = [
     'version',
     'version_string',
 ]
-__all__ += ["Int%s%s%s" % (n,us,bln) for n in (8,16,32,64) for us in "us" for bln in "bln"]
-__all__ += ["Int24ub", "Int24ul", "Int24sb", "Int24sl"]
+__all__ += ["Int%s%s%s" % (n,us,bln) for n in (8,16,24,32,64) for us in "us" for bln in "bln"]
 __all__ += ["Float%s%s" % (n,bl) for n in (32,64) for bl in "bl"]
