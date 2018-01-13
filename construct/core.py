@@ -1121,27 +1121,6 @@ def Array(count, subcon):
     return Range(count, count, subcon)
 
 
-def PrefixedArray(lengthfield, subcon):
-    r"""
-    Homogenous array prefixed by item count (as opposed to prefixed by byte count, see :func:`~construct.core.Prefixed`).
-
-    :param lengthfield: field parsing and building an integer
-    :param subcon: subcon to process individual elements
-
-    Example::
-
-        >>> Prefixed(VarInt, GreedyRange(Int32ul)).parse(b"\x08abcdefgh")
-        [1684234849, 1751606885]
-
-        >>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
-        [1684234849, 1751606885]
-    """
-    return FocusedSeq(1,
-        "count"/Rebuild(lengthfield, len_(this.items)),
-        "items"/subcon[this.count],
-    )
-
-
 class RepeatUntil(Subconstruct):
     r"""
     Homogenous array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return list.
@@ -1184,8 +1163,431 @@ class RepeatUntil(Subconstruct):
 
 
 #===============================================================================
-# subconstructs
+# specials
 #===============================================================================
+class Embedded(Subconstruct):
+    r"""
+    Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences, merging items. Name is inherited from subcon.
+
+    .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
+
+    :param subcon: the inner struct to embed inside outer struct or sequence
+
+    Example::
+
+        >>> d = Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte)
+        >>> d.parse(b"abc")
+        Container(a=97)(b=98)(c=99)
+    """
+    def __init__(self, subcon):
+        super(Embedded, self).__init__(subcon)
+        self.flagembedded = True
+
+
+class Renamed(Subconstruct):
+    r"""
+    Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name, which by default is just None. Can be used to give same construct few different names. Used internally by / operator.
+
+    Also this wrapper is responsible for building a path (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. Fields that are not named do not appear in the path string.
+
+    :param newname: the new name, as string
+    :param subcon: the subcon to rename
+
+    Example::
+
+        >>> "name" / Int32ul
+        <Renamed: name>
+    """
+    def __init__(self, newname, subcon):
+        super(Renamed, self).__init__(subcon)
+        self.name = newname
+    def _parse(self, stream, context, path):
+        try:
+            path += " -> %s" % (self.name)
+            return self.subcon._parse(stream, context, path)
+        except ConstructError as e:
+            if "\n" in str(e):
+                raise
+            raise e.__class__("%s\n    %s" % (e, path))
+    def _build(self, obj, stream, context, path):
+        try:
+            path += " -> %s" % (self.name)
+            return self.subcon._build(obj, stream, context, path)
+        except ConstructError as e:
+            if "\n" in str(e):
+                raise
+            raise e.__class__("%s\n    %s" % (e, path))
+    def _sizeof(self, context, path):
+        try:
+            path += " -> %s" % (self.name)
+            return self.subcon._sizeof(context, path)
+        except ConstructError as e:
+            if "\n" in str(e):
+                raise
+            raise e.__class__("%s\n    %s" % (e, path))
+
+
+#===============================================================================
+# miscellaneous
+#===============================================================================
+class Const(Subconstruct):
+    r"""
+    Field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
+
+    Usually a member of a Struct, where it can be anonymous (so it does not appear in parsed dictionary for simplicity).
+
+    Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes (and hence does NOT require a fixed sized lenghtfield), but depends on the subcon to read the appropriate amount (eg. VarInt is acceptable).
+
+    :param subcon: the subcon used to build value from, or a bytes value
+    :param value: optional, the expected value
+
+    :raises ConstError: when parsed data does not match specified value, or building from wrong value
+
+    Example::
+
+        >>> d = Const(b"IHDR")
+        >>> d.build(None)
+        b'IHDR'
+        >>> d.parse(b"JPEG")
+        construct.core.ConstError: expected b'IHDR' but parsed b'JPEG'
+
+        >>> d = Const(Int32ul, 16)
+        >>> d.build(None)
+        b'\x10\x00\x00\x00'
+    """
+    __slots__ = ["value"]
+    def __init__(self, subcon, value=None):
+        if value is None:
+            subcon, value = Bytes(len(subcon)), subcon
+        if isinstance(subcon, str):
+            subcon, value = Bytes(len(value)), value
+        super(Const, self).__init__(subcon)
+        self.value = value
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        obj = self.subcon._parse(stream, context, path)
+        if obj != self.value:
+            raise ConstError("parsing expected %r but got %r" % (self.value, obj))
+        return obj
+    def _build(self, obj, stream, context, path):
+        if obj not in (None, self.value):
+            raise ConstError("building expected None or %r but got %r" % (self.value, obj))
+        return self.subcon._build(self.value, stream, context, path)
+    def _sizeof(self, context, path):
+        return self.subcon._sizeof(context, path)
+
+
+class Computed(Construct):
+    r"""
+    Field computing a value. Underlying byte stream is unaffected. When parsing, the context function provides the value. Constant literal value can also be provided.
+
+    Building does not require a value, the value gets computed.
+
+    Size is defined as 0 because parsing and building does not consume or produce bytes.
+
+    :param func: a context function or a constant value
+
+    Example::
+        >>> d = Struct(
+        ...     "width" / Byte,
+        ...     "height" / Byte,
+        ...     "total" / Computed(this.width * this.height),
+        ... )
+        >>> d.build(dict(width=4,height=5))
+        b'\x04\x05'
+        >>> d.parse(b"12")
+        Container(width=49)(height=50)(total=2450)
+
+        >>> d = Computed(lambda ctx: 7)
+        >>> d.parse(b"")
+        7
+
+        >>> import os
+        >>> d = Computed(lambda ctx: os.urandom(10))
+        >>> d.parse(b"")
+        b'\x98\xc2\xec\x10\x07\xf5\x8e\x98\xc2\xec'
+    """
+    __slots__ = ["func"]
+    def __init__(self, func):
+        super(Computed, self).__init__()
+        self.func = func
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        return self.func(context) if callable(self.func) else self.func
+    def _build(self, obj, stream, context, path):
+        return self.func(context) if callable(self.func) else self.func
+    def _sizeof(self, context, path):
+        return 0
+
+
+class Rebuild(Subconstruct):
+    r"""
+    Parses the field like normal, but computes the value used for building from a context function. Constant value can also be used instead.
+
+    Building does not require a value, because the value gets recomputed anyway.
+
+    Size is the same as subcon size.
+
+    .. seealso:: Useful for length and count fields when :class:`~construct.core.Prefixed` and :class:`~construct.core.PrefixedArray` cannot be used.
+
+    Example::
+
+        >>> d = Struct(
+        ...     "count" / Rebuild(Byte, len_(this.items)),
+        ...     "items" / Byte[this.count],
+        ... )
+        >>> d.build(dict(items=[1,2,3]))
+        b'\x03\x01\x02\x03'
+    """
+    __slots__ = ["func"]
+    def __init__(self, subcon, func):
+        super(Rebuild, self).__init__(subcon)
+        self.func = func
+        self.flagbuildnone = True
+    def _build(self, obj, stream, context, path):
+        obj = self.func(context) if callable(self.func) else self.func
+        self.subcon._build(obj, stream, context, path)
+        return obj
+
+
+class Default(Subconstruct):
+    r"""
+    Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys.
+
+    Building does not require a value, but can accept one.
+
+    Size is the same as subcon size.
+
+    Example::
+
+        >>> d = Struct(
+        ...     "a" / Default(Byte, 0),
+        ... )
+        >>> d.build(dict(a=1))
+        b'\x01'
+        >>> d.build(dict())
+        b'\x00'
+    """
+    __slots__ = ["value"]
+    def __init__(self, subcon, value):
+        super(Default, self).__init__(subcon)
+        self.value = value
+        self.flagbuildnone = True
+    def _build(self, obj, stream, context, path):
+        obj = (self.value(context) if callable(self.value) else self.value) if obj is None else obj
+        self.subcon._build(obj, stream, context, path)
+        return obj
+
+
+class Check(Construct):
+    r"""
+    Checks for a condition, and raises ValidationError if the check fails.
+
+    :param func: a context function returning a bool (or truthy value)
+
+    :raises ValidationError: when condition fails
+
+    Example::
+
+        Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len)
+        Check(len_(this.payload.data) == this.payload_len)
+    """
+    def __init__(self, func):
+        super(Check, self).__init__()
+        self.func = func
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        if not self.func(context):
+            raise ValidationError("check failed during parsing")
+    def _build(self, obj, stream, context, path):
+        if not self.func(context):
+            raise ValidationError("check failed during building")
+    def _sizeof(self, context, path):
+        return 0
+
+
+@singleton
+class Error(Construct):
+    r"""
+    Raises an exception when triggered by parse or build. Can be used as a sentinel that blows a whistle when a conditional branch goes the wrong way, or to raise an error explicitly the declarative way.
+
+    :raises ExplicitError: when parsed or build
+
+    Example::
+
+        >>> d = ("x"/Byte >> IfThenElse(this.x > 0, Byte, Error))
+        >>> d.parse(b"\xff\x05")
+        construct.core.ExplicitError: Error field was activated during parsing
+    """
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        raise ExplicitError("Error field was activated during parsing")
+    def _build(self, obj, stream, context, path):
+        raise ExplicitError("Error field was activated during building")
+
+
+class FocusedSeq(Construct):
+    r"""
+    Parses and builds a sequence where only one subcon value is returned from parsing or taken into building, other fields are parsed and discarded or built from nothing.
+
+    :param parsebuildfrom: which subcon to use, an integer index or string name, or a context lambda returning either
+    :param \*subcons: a list of members
+    :param \*\*kw: a list of members (works ONLY on python 3.6)
+
+    Excample::
+
+        >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
+        >>> d = FocusedSeq(1,     Const(b"MZ"), "num"/Byte, Terminated)
+        >>> d.parse(b"MZ\xff")
+        255
+        >>> d.build(255)
+        b'MZ\xff'
+    """
+    def __init__(self, parsebuildfrom, *subcons, **kw):
+        subcons = list(subcons) + list(k/v for k,v in kw.items()) 
+        super(FocusedSeq, self).__init__()
+        self.parsebuildfrom = parsebuildfrom
+        self.subcons = subcons
+    def _parse(self, stream, context, path):
+        if callable(self.parsebuildfrom):
+            self.parsebuildfrom = self.parsebuildfrom(context)
+        if isinstance(self.parsebuildfrom, int):
+            index = self.parsebuildfrom
+            self.subcons[index]  #IndexError check
+        if isinstance(self.parsebuildfrom, str):
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
+        for i,sc in enumerate(self.subcons):
+            parseret = sc._parse(stream, context, path)
+            context[i] = parseret
+            if sc.name is not None:
+                context[sc.name] = parseret
+            if i == index:
+                finalobj = parseret
+        return finalobj
+    def _build(self, obj, stream, context, path):
+        if callable(self.parsebuildfrom):
+            self.parsebuildfrom = self.parsebuildfrom(context)
+        if isinstance(self.parsebuildfrom, int):
+            index = self.parsebuildfrom
+            self.subcons[index]  #IndexError check
+        if isinstance(self.parsebuildfrom, str):
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
+        for i,sc in enumerate(self.subcons):
+            if i == index:
+                context[i] = obj
+                if sc.name is not None:
+                    context[sc.name] = obj
+        for i,sc in enumerate(self.subcons):
+            buildret = sc._build(obj if i==index else None, stream, context, path)
+            if buildret is not None:
+                if sc.name is not None:
+                    context[sc.name] = buildret
+                context[i] = buildret
+            if i == index:
+                finalobj = buildret
+        return finalobj
+    def _sizeof(self, context, path):
+        try:
+            if callable(self.parsebuildfrom):
+                self.parsebuildfrom = self.parsebuildfrom(context)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
+        if isinstance(self.parsebuildfrom, int):
+            index = self.parsebuildfrom
+            self.subcons[index]  #IndexError check
+        if isinstance(self.parsebuildfrom, str):
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
+        return self.subcons[index]._sizeof(context, path)
+
+
+@singleton
+class Numpy(Construct):
+    r"""
+    Preserves numpy arrays (both shape, dtype and values).
+
+    :raises ImportError: when numpy cannot be imported during init
+
+    Example::
+
+        >>> import numpy
+        >>> a = numpy.asarray([1,2,3])
+        >>> Numpy.build(a)
+        b"\x93NUMPY\x01\x00F\x00"...
+        >>> Numpy.parse(_)
+        array([1, 2, 3])
+    """
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        try:
+            import numpy
+            self.lib = numpy
+        except ImportError:
+            pass # in case import fails on Travis during singleton making
+    def _parse(self, stream, context, path):
+        return self.lib.load(stream)
+    def _build(self, obj, stream, context, path):
+        self.lib.save(stream, obj)
+
+
+class NamedTuple(Adapter):
+    r"""
+    Both arrays, structs, and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of string names. Just like the standard namedtuple.
+
+    :raises AdaptationError: when subcon is not either Struct Sequence Range
+
+    Example::
+
+        >>> d = NamedTuple("coord", "x y z", Byte[3])
+        >>> d = NamedTuple("coord", "x y z", Byte >> Byte >> Byte)
+        >>> d = NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte)
+        >>> d.parse(b"123")
+        coord(x=49, y=50, z=51)
+    """
+    def __init__(self, tuplename, tuplefields, subcon):
+        super(NamedTuple, self).__init__(subcon)
+        self.factory = collections.namedtuple(tuplename, tuplefields)
+    def _decode(self, obj, context):
+        if isinstance(obj, list):
+            return self.factory(*obj)
+        if isinstance(obj, dict):
+            return self.factory(**obj)
+        raise AdaptationError("can only decode and encode from lists and dicts")
+    def _encode(self, obj, context):
+        if isinstance(self.subcon, (Sequence,Range)):
+            return list(obj)
+        if isinstance(self.subcon, Struct):
+            return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name is not None}
+        raise AdaptationError("can only decode and encode from lists and dicts")
+
+
+#===============================================================================
+# alignment and padding
+#===============================================================================
+def Padding(length, pattern=b"\x00", strict=False):
+    r"""
+    Padding field that adds bytes when building, discards bytes when parsing.
+
+    :param length: length of the padding, an integer or a context function returning such an integer
+    :param pattern: padding pattern as bytes character, default is \x00
+    :param strict: whether to verify during parsing that the stream contains the exact pattern, raises PaddingError if actual padding differs from the pattern, default is False
+
+    :raises PaddingError: when strict is set and actual parsed pattern differs from specified
+
+    Example::
+
+        >>> d = Padding(4, strict=True)
+        >>> d.build(None)
+        b'\x00\x00\x00\x00'
+        >>> d.parse(b"****")
+        construct.core.PaddingError: expected b'\x00\x00\x00\x00', found b'****'
+        >>> d.sizeof()
+        4
+    """
+    return Padded(length, Pass, pattern=pattern, strict=strict)
+
+
 class Padded(Subconstruct):
     r"""
     Appends additional null bytes to achieve a fixed length. Fails if actual data is longer than specified length.
@@ -1539,6 +1941,46 @@ def Optional(subcon):
     return Select(subcon, Pass)
 
 
+def If(predicate, subcon):
+    r"""
+    An if-then conditional construct. If the context predicate indicates True, the `subcon` will be used for parsing and building, otherwise parsing returns None and building is no-op. Note that the predicate has no access to parsed value, it computes only on context.
+
+    :param predicate: a function taking context and returning a bool
+    :param subcon: the subcon that will be used if the predicate returns True
+
+    Example::
+
+        >>> d = If(this.x > 0, Byte)
+        >>> d.build(255, dict(x=1))
+        b'\xff'
+        >>> d.build(255, dict(x=0))
+        b''
+    """
+    return IfThenElse(predicate, subcon, Pass)
+
+
+def IfThenElse(predicate, thensubcon, elsesubcon):
+    r"""
+    An if-then-else conditional construct. One of the two subcons is used for parsing or building, depending whether the predicate returns a truthy or falsey value for given context. Constant truthy value can also be used.
+
+    :param predicate: a context function that returns a bool (or truthy value)
+    :param thensubcon: the subcon that will be used if the predicate indicates True
+    :param elsesubcon: the subcon that will be used if the predicate indicates False
+
+    Example::
+
+        >>> d = IfThenElse(this.x > 0, VarInt, Byte)
+        >>> d.build(255, dict(x=1))
+        b'\xff\x01'
+        >>> d.build(255, dict(x=0))
+        b'\xff'
+    """
+    return Switch(
+        lambda ctx: bool(predicate(ctx)) if callable(predicate) else bool(predicate),
+        {True:thensubcon, False:elsesubcon},
+    )
+
+
 class Switch(Construct):
     r"""
     A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched and no default value is given, SwitchError will be raised.
@@ -1602,44 +2044,30 @@ class Switch(Construct):
             raise SizeofError("cannot calculate size, key not found in context")
 
 
-def IfThenElse(predicate, thensubcon, elsesubcon):
+class StopIf(Construct):
     r"""
-    An if-then-else conditional construct. One of the two subcons is used for parsing or building, depending whether the predicate returns a truthy or falsey value for given context. Constant truthy value can also be used.
+    Checks for a condition, and stops a Struct/Sequence/Range from parsing or building further.
 
-    :param predicate: a context function that returns a bool (or truthy value)
-    :param thensubcon: the subcon that will be used if the predicate indicates True
-    :param elsesubcon: the subcon that will be used if the predicate indicates False
+    :param condfunc: a context function returning a bool (or truthy value)
 
     Example::
 
-        >>> d = IfThenElse(this.x > 0, VarInt, Byte)
-        >>> d.build(255, dict(x=1))
-        b'\xff\x01'
-        >>> d.build(255, dict(x=0))
-        b'\xff'
+        Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+        Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+        GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
     """
-    return Switch(
-        lambda ctx: bool(predicate(ctx)) if callable(predicate) else bool(predicate),
-        {True:thensubcon, False:elsesubcon},
-    )
-
-
-def If(predicate, subcon):
-    r"""
-    An if-then conditional construct. If the context predicate indicates True, the `subcon` will be used for parsing and building, otherwise parsing returns None and building is no-op. Note that the predicate has no access to parsed value, it computes only on context.
-
-    :param predicate: a function taking context and returning a bool
-    :param subcon: the subcon that will be used if the predicate returns True
-
-    Example::
-
-        >>> d = If(this.x > 0, Byte)
-        >>> d.build(255, dict(x=1))
-        b'\xff'
-        >>> d.build(255, dict(x=0))
-        b''
-    """
-    return IfThenElse(predicate, subcon, Pass)
+    def __init__(self, condfunc):
+        super(StopIf, self).__init__()
+        self.condfunc = condfunc
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        if self.condfunc(context):
+            raise StopIteration
+    def _build(self, obj, stream, context, path):
+        if self.condfunc(context):
+            raise StopIteration
+    def _sizeof(self, context, path):
+        return SizeofError("Struct/Sequence/Range cannot compute size because StopIf is runtime-dependant")
 
 
 #===============================================================================
@@ -1723,36 +2151,6 @@ class Peek(Subconstruct):
         return 0
 
 
-@singleton
-class Tell(Construct):
-    r"""
-    Gets the stream position when parsing or building.
-
-    Tell is useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute.
-
-    Size is defined as 0 because parsing and building does not consume or add into the stream.
-
-    .. seealso:: Its better to use :func:`~construct.core.RawCopy` instead of manually extracting two positions and computing difference.
-
-    Example::
-
-        >>> d = Struct("num"/VarInt, "offset"/Tell)
-        >>> d.build(dict(num=88))
-        b'X'
-        >>> d.parse(_)
-        Container(num=88)(offset=1)
-    """
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        self.flagbuildnone = True
-    def _parse(self, stream, context, path):
-        return stream.tell()
-    def _build(self, obj, stream, context, path):
-        return stream.tell()
-    def _sizeof(self, context, path):
-        return 0
-
-
 class Seek(Construct):
     r"""
     Sets a new stream position when parsing or building. Seeks are useful when many other fields follow the jump. Pointer works when there is only one field to look at, but when there is more to be done, Seek may come useful.
@@ -1788,6 +2186,93 @@ class Seek(Construct):
         return stream.seek(at, whence)
     def _sizeof(self, context, path):
         raise SizeofError("Seek seeks the stream, sizeof is not meaningful")
+
+
+@singleton
+class Tell(Construct):
+    r"""
+    Gets the stream position when parsing or building.
+
+    Tell is useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute.
+
+    Size is defined as 0 because parsing and building does not consume or add into the stream.
+
+    .. seealso:: Its better to use :func:`~construct.core.RawCopy` instead of manually extracting two positions and computing difference.
+
+    Example::
+
+        >>> d = Struct("num"/VarInt, "offset"/Tell)
+        >>> d.build(dict(num=88))
+        b'X'
+        >>> d.parse(_)
+        Container(num=88)(offset=1)
+    """
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        return stream.tell()
+    def _build(self, obj, stream, context, path):
+        return stream.tell()
+    def _sizeof(self, context, path):
+        return 0
+
+
+@singleton
+class Pass(Construct):
+    r"""
+    No-op construct, useful as default cases for Switch and Enum. 
+
+    Returns None on parsing, puts nothing on building, size is 0 by definition. Building does not require a value, and any provided value gets discarded.
+
+    Example::
+
+        >>> Pass.parse(b"")
+        None
+        >>> Pass.build(None)
+        b''
+        >>> Pass.sizeof()
+        0
+    """
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        return None
+    def _build(self, obj, stream, context, path):
+        pass
+    def _sizeof(self, context, path):
+        return 0
+
+
+@singleton
+class Terminated(Construct):
+    r"""
+    Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows in the stream.
+
+    This construct is only meaningful for parsing. Building does nothing.
+
+    Example::
+
+        >>> Terminated.parse(b"")
+        None
+        >>> Terminated.parse(b"remaining")
+        construct.core.TerminatedError: expected end of stream
+    """
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.flagbuildnone = True
+    def _parse(self, stream, context, path):
+        try:
+            if stream.read(1):
+                raise TerminatedError("expected end of stream")
+        except IOError:
+            # Restreamed.read(1) does not return empty string like BytesIO
+            pass
+    def _build(self, obj, stream, context, path):
+        pass
+    def _sizeof(self, context, path):
+        return 0
 
 
 class Restreamed(Subconstruct):
@@ -1861,320 +2346,6 @@ class Rebuffered(Subconstruct):
     def _build(self, obj, stream, context, path):
         self.stream2.substream = stream
         return self.subcon._build(obj, self.stream2, context, path)
-
-
-#===============================================================================
-# miscellaneous
-#===============================================================================
-def Padding(length, pattern=b"\x00", strict=False):
-    r"""
-    Padding field that adds bytes when building, discards bytes when parsing.
-
-    :param length: length of the padding, an integer or a context function returning such an integer
-    :param pattern: padding pattern as bytes character, default is \x00
-    :param strict: whether to verify during parsing that the stream contains the exact pattern, raises PaddingError if actual padding differs from the pattern, default is False
-
-    :raises PaddingError: when strict is set and actual parsed pattern differs from specified
-
-    Example::
-
-        >>> d = Padding(4, strict=True)
-        >>> d.build(None)
-        b'\x00\x00\x00\x00'
-        >>> d.parse(b"****")
-        construct.core.PaddingError: expected b'\x00\x00\x00\x00', found b'****'
-        >>> d.sizeof()
-        4
-    """
-    return Padded(length, Pass, pattern=pattern, strict=strict)
-
-
-class Const(Subconstruct):
-    r"""
-    Field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must match.
-
-    Usually a member of a Struct, where it can be anonymous (so it does not appear in parsed dictionary for simplicity).
-
-    Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes (and hence does NOT require a fixed sized lenghtfield), but depends on the subcon to read the appropriate amount (eg. VarInt is acceptable).
-
-    :param subcon: the subcon used to build value from, or a bytes value
-    :param value: optional, the expected value
-
-    :raises ConstError: when parsed data does not match specified value, or building from wrong value
-
-    Example::
-
-        >>> d = Const(b"IHDR")
-        >>> d.build(None)
-        b'IHDR'
-        >>> d.parse(b"JPEG")
-        construct.core.ConstError: expected b'IHDR' but parsed b'JPEG'
-
-        >>> d = Const(Int32ul, 16)
-        >>> d.build(None)
-        b'\x10\x00\x00\x00'
-    """
-    __slots__ = ["value"]
-    def __init__(self, subcon, value=None):
-        if value is None:
-            subcon, value = Bytes(len(subcon)), subcon
-        if isinstance(subcon, str):
-            subcon, value = Bytes(len(value)), value
-        super(Const, self).__init__(subcon)
-        self.value = value
-        self.flagbuildnone = True
-    def _parse(self, stream, context, path):
-        obj = self.subcon._parse(stream, context, path)
-        if obj != self.value:
-            raise ConstError("parsing expected %r but got %r" % (self.value, obj))
-        return obj
-    def _build(self, obj, stream, context, path):
-        if obj not in (None, self.value):
-            raise ConstError("building expected None or %r but got %r" % (self.value, obj))
-        return self.subcon._build(self.value, stream, context, path)
-    def _sizeof(self, context, path):
-        return self.subcon._sizeof(context, path)
-
-
-class Computed(Construct):
-    r"""
-    Field computing a value. Underlying byte stream is unaffected. When parsing, the context function provides the value. Constant literal value can also be provided.
-
-    Building does not require a value, the value gets computed.
-
-    Size is defined as 0 because parsing and building does not consume or produce bytes.
-
-    :param func: a context function or a constant value
-
-    Example::
-        >>> d = Struct(
-        ...     "width" / Byte,
-        ...     "height" / Byte,
-        ...     "total" / Computed(this.width * this.height),
-        ... )
-        >>> d.build(dict(width=4,height=5))
-        b'\x04\x05'
-        >>> d.parse(b"12")
-        Container(width=49)(height=50)(total=2450)
-
-        >>> d = Computed(lambda ctx: 7)
-        >>> d.parse(b"")
-        7
-
-        >>> import os
-        >>> d = Computed(lambda ctx: os.urandom(10))
-        >>> d.parse(b"")
-        b'\x98\xc2\xec\x10\x07\xf5\x8e\x98\xc2\xec'
-    """
-    __slots__ = ["func"]
-    def __init__(self, func):
-        super(Computed, self).__init__()
-        self.func = func
-        self.flagbuildnone = True
-    def _parse(self, stream, context, path):
-        return self.func(context) if callable(self.func) else self.func
-    def _build(self, obj, stream, context, path):
-        return self.func(context) if callable(self.func) else self.func
-    def _sizeof(self, context, path):
-        return 0
-
-
-@singleton
-class Pass(Construct):
-    r"""
-    No-op construct, useful as default cases for Switch and Enum. 
-
-    Returns None on parsing, puts nothing on building, size is 0 by definition. Building does not require a value, and any provided value gets discarded.
-
-    Example::
-
-        >>> Pass.parse(b"")
-        None
-        >>> Pass.build(None)
-        b''
-        >>> Pass.sizeof()
-        0
-    """
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        self.flagbuildnone = True
-    def _parse(self, stream, context, path):
-        return None
-    def _build(self, obj, stream, context, path):
-        pass
-    def _sizeof(self, context, path):
-        return 0
-
-
-@singleton
-class Terminated(Construct):
-    r"""
-    Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows in the stream.
-
-    This construct is only meaningful for parsing. Building does nothing.
-
-    Example::
-
-        >>> Terminated.parse(b"")
-        None
-        >>> Terminated.parse(b"remaining")
-        construct.core.TerminatedError: expected end of stream
-    """
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        self.flagbuildnone = True
-    def _parse(self, stream, context, path):
-        try:
-            if stream.read(1):
-                raise TerminatedError("expected end of stream")
-        except IOError:
-            # Restreamed.read(1) does not return empty string like BytesIO
-            pass
-    def _build(self, obj, stream, context, path):
-        pass
-    def _sizeof(self, context, path):
-        return 0
-
-
-@singleton
-class Error(Construct):
-    r"""
-    Raises an exception when triggered by parse or build. Can be used as a sentinel that blows a whistle when a conditional branch goes the wrong way, or to raise an error explicitly the declarative way.
-
-    :raises ExplicitError: when parsed or build
-
-    Example::
-
-        >>> d = ("x"/Byte >> IfThenElse(this.x > 0, Byte, Error))
-        >>> d.parse(b"\xff\x05")
-        construct.core.ExplicitError: Error field was activated during parsing
-    """
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        self.flagbuildnone = True
-    def _parse(self, stream, context, path):
-        raise ExplicitError("Error field was activated during parsing")
-    def _build(self, obj, stream, context, path):
-        raise ExplicitError("Error field was activated during building")
-
-
-@singleton
-class Numpy(Construct):
-    r"""
-    Preserves numpy arrays (both shape, dtype and values).
-
-    :raises ImportError: when numpy cannot be imported during init
-
-    Example::
-
-        >>> import numpy
-        >>> a = numpy.asarray([1,2,3])
-        >>> Numpy.build(a)
-        b"\x93NUMPY\x01\x00F\x00"...
-        >>> Numpy.parse(_)
-        array([1, 2, 3])
-    """
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        try:
-            import numpy
-            self.lib = numpy
-        except ImportError:
-            pass # in case import fails on Travis during singleton making
-    def _parse(self, stream, context, path):
-        return self.lib.load(stream)
-    def _build(self, obj, stream, context, path):
-        self.lib.save(stream, obj)
-
-
-class NamedTuple(Adapter):
-    r"""
-    Both arrays, structs, and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of string names. Just like the standard namedtuple.
-
-    :raises AdaptationError: when subcon is not either Struct Sequence Range
-
-    Example::
-
-        >>> d = NamedTuple("coord", "x y z", Byte[3])
-        >>> d = NamedTuple("coord", "x y z", Byte >> Byte >> Byte)
-        >>> d = NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte)
-        >>> d.parse(b"123")
-        coord(x=49, y=50, z=51)
-    """
-    def __init__(self, tuplename, tuplefields, subcon):
-        super(NamedTuple, self).__init__(subcon)
-        self.factory = collections.namedtuple(tuplename, tuplefields)
-    def _decode(self, obj, context):
-        if isinstance(obj, list):
-            return self.factory(*obj)
-        if isinstance(obj, dict):
-            return self.factory(**obj)
-        raise AdaptationError("can only decode and encode from lists and dicts")
-    def _encode(self, obj, context):
-        if isinstance(self.subcon, (Sequence,Range)):
-            return list(obj)
-        if isinstance(self.subcon, Struct):
-            return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name is not None}
-        raise AdaptationError("can only decode and encode from lists and dicts")
-
-
-class Rebuild(Subconstruct):
-    r"""
-    Parses the field like normal, but computes the value used for building from a context function. Constant value can also be used instead.
-
-    Building does not require a value, because the value gets recomputed anyway.
-
-    Size is the same as subcon size.
-
-    .. seealso:: Useful for length and count fields when :class:`~construct.core.Prefixed` and :class:`~construct.core.PrefixedArray` cannot be used.
-
-    Example::
-
-        >>> d = Struct(
-        ...     "count" / Rebuild(Byte, len_(this.items)),
-        ...     "items" / Byte[this.count],
-        ... )
-        >>> d.build(dict(items=[1,2,3]))
-        b'\x03\x01\x02\x03'
-    """
-    __slots__ = ["func"]
-    def __init__(self, subcon, func):
-        super(Rebuild, self).__init__(subcon)
-        self.func = func
-        self.flagbuildnone = True
-    def _build(self, obj, stream, context, path):
-        obj = self.func(context) if callable(self.func) else self.func
-        self.subcon._build(obj, stream, context, path)
-        return obj
-
-
-class Default(Subconstruct):
-    r"""
-    Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys.
-
-    Building does not require a value, but can accept one.
-
-    Size is the same as subcon size.
-
-    Example::
-
-        >>> d = Struct(
-        ...     "a" / Default(Byte, 0),
-        ... )
-        >>> d.build(dict(a=1))
-        b'\x01'
-        >>> d.build(dict())
-        b'\x00'
-    """
-    __slots__ = ["value"]
-    def __init__(self, subcon, value):
-        super(Default, self).__init__(subcon)
-        self.value = value
-        self.flagbuildnone = True
-    def _build(self, obj, stream, context, path):
-        obj = (self.value(context) if callable(self.value) else self.value) if obj is None else obj
-        self.subcon._build(obj, stream, context, path)
-        return obj
 
 
 #===============================================================================
@@ -2301,6 +2472,27 @@ class Prefixed(Subconstruct):
         return obj
     def _sizeof(self, context, path):
         return self.lengthfield._sizeof(context, path) + self.subcon._sizeof(context, path)
+
+
+def PrefixedArray(lengthfield, subcon):
+    r"""
+    Homogenous array prefixed by item count (as opposed to prefixed by byte count, see :func:`~construct.core.Prefixed`).
+
+    :param lengthfield: field parsing and building an integer
+    :param subcon: subcon to process individual elements
+
+    Example::
+
+        >>> Prefixed(VarInt, GreedyRange(Int32ul)).parse(b"\x08abcdefgh")
+        [1684234849, 1751606885]
+
+        >>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
+        [1684234849, 1751606885]
+    """
+    return FocusedSeq(1,
+        "count"/Rebuild(lengthfield, len_(this.items)),
+        "items"/subcon[this.count],
+    )
 
 
 class Checksum(Construct):
@@ -2714,71 +2906,6 @@ class LazyBound(Construct):
 
 
 #===============================================================================
-# special
-#===============================================================================
-class Embedded(Subconstruct):
-    r"""
-    Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences, merging items. Name is inherited from subcon.
-
-    .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
-
-    :param subcon: the inner struct to embed inside outer struct or sequence
-
-    Example::
-
-        >>> d = Struct("a"/Byte, Embedded(Struct("b"/Byte)), "c"/Byte)
-        >>> d.parse(b"abc")
-        Container(a=97)(b=98)(c=99)
-    """
-    def __init__(self, subcon):
-        super(Embedded, self).__init__(subcon)
-        self.flagembedded = True
-
-
-class Renamed(Subconstruct):
-    r"""
-    Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name, which by default is just None. Can be used to give same construct few different names. Used internally by / operator.
-
-    Also this wrapper is responsible for building a path (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. Fields that are not named do not appear in the path string.
-
-    :param newname: the new name, as string
-    :param subcon: the subcon to rename
-
-    Example::
-
-        >>> "name" / Int32ul
-        <Renamed: name>
-    """
-    def __init__(self, newname, subcon):
-        super(Renamed, self).__init__(subcon)
-        self.name = newname
-    def _parse(self, stream, context, path):
-        try:
-            path += " -> %s" % (self.name)
-            return self.subcon._parse(stream, context, path)
-        except ConstructError as e:
-            if "\n" in str(e):
-                raise
-            raise e.__class__("%s\n    %s" % (e, path))
-    def _build(self, obj, stream, context, path):
-        try:
-            path += " -> %s" % (self.name)
-            return self.subcon._build(obj, stream, context, path)
-        except ConstructError as e:
-            if "\n" in str(e):
-                raise
-            raise e.__class__("%s\n    %s" % (e, path))
-    def _sizeof(self, context, path):
-        try:
-            path += " -> %s" % (self.name)
-            return self.subcon._sizeof(context, path)
-        except ConstructError as e:
-            if "\n" in str(e):
-                raise
-            raise e.__class__("%s\n    %s" % (e, path))
-
-
-#===============================================================================
 # mappings
 #===============================================================================
 class Mapping(Adapter):
@@ -3004,41 +3131,63 @@ class ExprValidator(Validator):
         self._validate = validator
 
 
-def Hex(subcon):
+def OneOf(subcon, valids):
     r"""
-    Adapter for hex-dumping bytes. It returns a hex dump when parsing, and un-dumps when building.
+    Validates that the object is one of the listed values, both during parsing and building. Note that providing a set instead of a list may increase performance.
+
+    Notice that `OneOf(dtype, [value])` is essentially equivalent to `Const(dtype, value)`.
+
+    :param subcon: a construct to validate
+    :param valids: a collection implementing __contains__
+
+    :raises ValidationError: when actual value is not among valids
 
     Example::
 
-        >>> d = Hex(GreedyBytes)
-        >>> d.parse(b"abcd")
-        b'61626364'
-        >>> d.build("01020304")
-        b'\x01\x02\x03\x04'
+        >>> d = OneOf(Byte, [1,2,3])
+        >>> d.parse(b"\x01")
+        1
+        >>> d.parse(b"\xff")
+        construct.core.ValidationError: ('object failed validation', 255)
+
+        >>> d = OneOf(Bytes(2), b"1234567890")
+        >>> d.parse(b"78")
+        b'78'
+        >>> d.parse(b"19")
+        construct.core.ValidationError: ('invalid object', b'19')
     """
-    return ExprAdapter(subcon,
-        encoder = lambda obj,ctx: None if subcon.flagbuildnone else unhexlify(obj),
-        decoder = lambda obj,ctx: hexlify(obj),
-    )
+    return ExprValidator(subcon, lambda obj,ctx: obj in valids)
 
 
-def HexDump(subcon, linesize=16):
+def NoneOf(subcon, invalids):
     r"""
-    Adapter for hex-dumping bytes. It returns a hex dump when parsing, and un-dumps when building.
+    Validates that the object is none of the listed values, both during parsing and building.
 
-    :param linesize: default 16 bytes per line
-    :param buildraw: by default build takes the same format that parse returns, set to build from a bytes directly
+    :param subcon: a construct to validate
+    :param valids: a collection implementing __contains__
+
+    :raises ValidationError: when actual value is among invalids
+
+    """
+    return ExprValidator(subcon, lambda obj,ctx: obj not in invalids)
+
+
+def Filter(predicate, subcon):
+    r"""
+    Filters a list leaving only the elements that passed through the validator.
+
+    :param subcon: a construct to validate, usually a Range Array Sequence
+    :param predicate: a function taking (obj, context) and returning a bool
 
     Example::
 
-        >>> d = HexDump(Bytes(10))
-        >>> d.parse(b"12345abc;/")
-        '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/       \n'
+        >>> d = Filter(obj_ != 0, Byte[:])
+        >>> d.parse(b"\x00\x02\x00")
+        [2]
+        >>> d.build([0,1,0,2,0])
+        b'\x01\x02'
     """
-    return ExprAdapter(subcon,
-        encoder = lambda obj,ctx: None if subcon.flagbuildnone else hexundump(obj, linesize=linesize),
-        decoder = lambda obj,ctx: hexdump(obj, linesize=linesize),
-    )
+    return ExprSymmetricAdapter(subcon, lambda obj,ctx: [x for x in obj if predicate(x,ctx)])
 
 
 class Slicing(Adapter):
@@ -3105,190 +3254,41 @@ class Indexing(Adapter):
         return obj[self.index]
 
 
-class FocusedSeq(Construct):
+def Hex(subcon):
     r"""
-    Parses and builds a sequence where only one subcon value is returned from parsing or taken into building, other fields are parsed and discarded or built from nothing.
-
-    :param parsebuildfrom: which subcon to use, an integer index or string name, or a context lambda returning either
-    :param \*subcons: a list of members
-    :param \*\*kw: a list of members (works ONLY on python 3.6)
-
-    Excample::
-
-        >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
-        >>> d = FocusedSeq(1,     Const(b"MZ"), "num"/Byte, Terminated)
-        >>> d.parse(b"MZ\xff")
-        255
-        >>> d.build(255)
-        b'MZ\xff'
-    """
-    def __init__(self, parsebuildfrom, *subcons, **kw):
-        subcons = list(subcons) + list(k/v for k,v in kw.items()) 
-        super(FocusedSeq, self).__init__()
-        self.parsebuildfrom = parsebuildfrom
-        self.subcons = subcons
-    def _parse(self, stream, context, path):
-        if callable(self.parsebuildfrom):
-            self.parsebuildfrom = self.parsebuildfrom(context)
-        if isinstance(self.parsebuildfrom, int):
-            index = self.parsebuildfrom
-            self.subcons[index]  #IndexError check
-        if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
-        for i,sc in enumerate(self.subcons):
-            parseret = sc._parse(stream, context, path)
-            context[i] = parseret
-            if sc.name is not None:
-                context[sc.name] = parseret
-            if i == index:
-                finalobj = parseret
-        return finalobj
-    def _build(self, obj, stream, context, path):
-        if callable(self.parsebuildfrom):
-            self.parsebuildfrom = self.parsebuildfrom(context)
-        if isinstance(self.parsebuildfrom, int):
-            index = self.parsebuildfrom
-            self.subcons[index]  #IndexError check
-        if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
-        for i,sc in enumerate(self.subcons):
-            if i == index:
-                context[i] = obj
-                if sc.name is not None:
-                    context[sc.name] = obj
-        for i,sc in enumerate(self.subcons):
-            buildret = sc._build(obj if i==index else None, stream, context, path)
-            if buildret is not None:
-                if sc.name is not None:
-                    context[sc.name] = buildret
-                context[i] = buildret
-            if i == index:
-                finalobj = buildret
-        return finalobj
-    def _sizeof(self, context, path):
-        try:
-            if callable(self.parsebuildfrom):
-                self.parsebuildfrom = self.parsebuildfrom(context)
-        except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
-        if isinstance(self.parsebuildfrom, int):
-            index = self.parsebuildfrom
-            self.subcons[index]  #IndexError check
-        if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
-        return self.subcons[index]._sizeof(context, path)
-
-
-def OneOf(subcon, valids):
-    r"""
-    Validates that the object is one of the listed values, both during parsing and building. Note that providing a set instead of a list may increase performance.
-
-    Notice that `OneOf(dtype, [value])` is essentially equivalent to `Const(dtype, value)`.
-
-    :param subcon: a construct to validate
-    :param valids: a collection implementing __contains__
-
-    :raises ValidationError: when actual value is not among valids
+    Adapter for hex-dumping bytes. It returns a hex dump when parsing, and un-dumps when building.
 
     Example::
 
-        >>> d = OneOf(Byte, [1,2,3])
-        >>> d.parse(b"\x01")
-        1
-        >>> d.parse(b"\xff")
-        construct.core.ValidationError: ('object failed validation', 255)
-
-        >>> d = OneOf(Bytes(2), b"1234567890")
-        >>> d.parse(b"78")
-        b'78'
-        >>> d.parse(b"19")
-        construct.core.ValidationError: ('invalid object', b'19')
+        >>> d = Hex(GreedyBytes)
+        >>> d.parse(b"abcd")
+        b'61626364'
+        >>> d.build("01020304")
+        b'\x01\x02\x03\x04'
     """
-    return ExprValidator(subcon, lambda obj,ctx: obj in valids)
+    return ExprAdapter(subcon,
+        encoder = lambda obj,ctx: None if subcon.flagbuildnone else unhexlify(obj),
+        decoder = lambda obj,ctx: hexlify(obj),
+    )
 
 
-def NoneOf(subcon, invalids):
+def HexDump(subcon, linesize=16):
     r"""
-    Validates that the object is none of the listed values, both during parsing and building.
+    Adapter for hex-dumping bytes. It returns a hex dump when parsing, and un-dumps when building.
 
-    :param subcon: a construct to validate
-    :param valids: a collection implementing __contains__
-
-    :raises ValidationError: when actual value is among invalids
-
-    """
-    return ExprValidator(subcon, lambda obj,ctx: obj not in invalids)
-
-
-def Filter(predicate, subcon):
-    r"""
-    Filters a list leaving only the elements that passed through the validator.
-
-    :param subcon: a construct to validate, usually a Range Array Sequence
-    :param predicate: a function taking (obj, context) and returning a bool
+    :param linesize: default 16 bytes per line
+    :param buildraw: by default build takes the same format that parse returns, set to build from a bytes directly
 
     Example::
 
-        >>> d = Filter(obj_ != 0, Byte[:])
-        >>> d.parse(b"\x00\x02\x00")
-        [2]
-        >>> d.build([0,1,0,2,0])
-        b'\x01\x02'
+        >>> d = HexDump(Bytes(10))
+        >>> d.parse(b"12345abc;/")
+        '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/       \n'
     """
-    return ExprSymmetricAdapter(subcon, lambda obj,ctx: [x for x in obj if predicate(x,ctx)])
-
-
-class Check(Construct):
-    r"""
-    Checks for a condition, and raises ValidationError if the check fails.
-
-    :param func: a context function returning a bool (or truthy value)
-
-    :raises ValidationError: when condition fails
-
-    Example::
-
-        Check(lambda ctx: len(ctx.payload.data) == ctx.payload_len)
-        Check(len_(this.payload.data) == this.payload_len)
-    """
-    def __init__(self, func):
-        super(Check, self).__init__()
-        self.func = func
-        self.flagbuildnone = True
-    def _parse(self, stream, context, path):
-        if not self.func(context):
-            raise ValidationError("check failed during parsing")
-    def _build(self, obj, stream, context, path):
-        if not self.func(context):
-            raise ValidationError("check failed during building")
-    def _sizeof(self, context, path):
-        return 0
-
-
-class StopIf(Construct):
-    r"""
-    Checks for a condition, and stops a Struct/Sequence/Range from parsing or building further.
-
-    :param condfunc: a context function returning a bool (or truthy value)
-
-    Example::
-
-        Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
-        Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
-        GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
-    """
-    def __init__(self, condfunc):
-        super(StopIf, self).__init__()
-        self.condfunc = condfunc
-        self.flagbuildnone = True
-    def _parse(self, stream, context, path):
-        if self.condfunc(context):
-            raise StopIteration
-    def _build(self, obj, stream, context, path):
-        if self.condfunc(context):
-            raise StopIteration
-    def _sizeof(self, context, path):
-        return SizeofError("Struct/Sequence/Range cannot compute size because StopIf is runtime-dependant")
+    return ExprAdapter(subcon,
+        encoder = lambda obj,ctx: None if subcon.flagbuildnone else hexundump(obj, linesize=linesize),
+        decoder = lambda obj,ctx: hexdump(obj, linesize=linesize),
+    )
 
 
 #===============================================================================
