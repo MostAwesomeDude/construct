@@ -45,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Construct'
-copyright = u'2016, Arkadiusz Bulski and Tomer Filiba'
+copyright = u'2018, Arkadiusz Bulski, Tomer Filiba, Corbin Simpson'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -215,5 +215,5 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'construct', u'Construct Documentation',
-     [u'Arkadiusz Bulski (taken over from Tomer Filiba)'], 1)
+     [u'Arkadiusz Bulski (taken over from Tomer Filiba and Corbin Simpson)'], 1)
 ]
