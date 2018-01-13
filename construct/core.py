@@ -5,7 +5,6 @@ from struct import Struct as Packer
 from struct import error as PackerError
 from io import BytesIO, StringIO
 from binascii import hexlify, unhexlify
-import sys
 import collections
 
 from construct.lib import *
@@ -238,7 +237,7 @@ class Construct(object):
             if count.step is not None:
                 raise ValueError("slice must not contain a step: %r" % count)
             min = 0 if count.start is None else count.start
-            max = sys.maxsize if count.stop is None else count.stop
+            max = 2**64 if count.stop is None else count.stop
             return Range(min, max, self)
         elif isinstance(count, int) or callable(count):
             return Range(count, count, self)
@@ -1024,7 +1023,7 @@ class Range(Subconstruct):
     def _parse(self, stream, context, path):
         min = self.min(context) if callable(self.min) else self.min
         max = self.max(context) if callable(self.max) else self.max
-        if not 0 <= min <= max <= sys.maxsize:
+        if not 0 <= min <= max:
             raise RangeError("unsane min %s and max %s" % (min, max))
         obj = ListContainer()
         context = Container(_ = context)
@@ -1045,7 +1044,7 @@ class Range(Subconstruct):
     def _build(self, obj, stream, context, path):
         min = self.min(context) if callable(self.min) else self.min
         max = self.max(context) if callable(self.max) else self.max
-        if not 0 <= min <= max <= sys.maxsize:
+        if not 0 <= min <= max:
             raise RangeError("unsane min %s and max %s" % (min, max))
         if not isinstance(obj, collections.Sequence):
             raise RangeError("expected sequence type, found %s" % type(obj))
@@ -1095,7 +1094,7 @@ def GreedyRange(subcon):
         Alternative syntax (recommended):
         >>> Byte[3:5], Byte[3:], Byte[:5], Byte[:]
     """
-    return Range(0, sys.maxsize, subcon)
+    return Range(0, 2**64, subcon)
 
 
 def Array(count, subcon):
@@ -2694,7 +2693,7 @@ class LazyRange(Construct):
     def _parse(self, stream, context, path):
         currentmin = self.min(context) if callable(self.min) else self.min
         currentmax = self.max(context) if callable(self.max) else self.max
-        if not 0 <= currentmin <= currentmax <= sys.maxsize:
+        if not 0 <= currentmin <= currentmax:
             raise RangeError("unsane min %s and max %s" % (currentmin, currentmax))
         starts = stream.tell()
         ends = stream.seek(0,2)
@@ -2708,7 +2707,7 @@ class LazyRange(Construct):
     def _build(self, obj, stream, context, path):
         currentmin = self.min(context) if callable(self.min) else self.min
         currentmax = self.max(context) if callable(self.max) else self.max
-        if not 0 <= currentmin <= currentmax <= sys.maxsize:
+        if not 0 <= currentmin <= currentmax:
             raise RangeError("unsane min %s and max %s" % (currentmin, currentmax))
         if not isinstance(obj, collections.Sequence):
             raise RangeError("expected sequence type, found %s" % type(obj))
@@ -2726,7 +2725,7 @@ class LazyRange(Construct):
         try:
             currentmin = self.min(context) if callable(self.min) else self.min
             currentmax = self.max(context) if callable(self.max) else self.max
-            if not 0 <= currentmin <= currentmax <= sys.maxsize:
+            if not 0 <= currentmin <= currentmax:
                 raise RangeError("unsane min %s and max %s" % (currentmin, currentmax))
             if currentmin == currentmax:
                 return self.min * self.subsize
