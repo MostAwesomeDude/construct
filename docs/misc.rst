@@ -107,8 +107,10 @@ ValidationError: check failed during parsing
 Or there is a collection and a count provided and the count is expected to match the collection length (which might go out of sync by mistake). Note that Rebuild is more appropriate but the check is also possible:
 
 >>> st = Struct(count=Byte, items=Byte[this.count])
+>>> st.build(dict(count=9090, items=[]))
 FieldError: packer '>B' error during building, given value 9090
 >>> st = Struct(integrity=Check(this.count == len_(this.items)), count=Byte, items=Byte[this.count])
+>>> st.build(dict(count=9090, items=[]))
 ValidationError: check failed during building
 
 
@@ -126,8 +128,7 @@ FocusedSeq
 
 When a sequence has some fields that could be ommited like Const Padding Terminated, the user can focus on one particular field that is useful. Only one field can be focused on, and can be referred by index or name. Other fields must be able to build without a value:
 
->>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
->>> d = FocusedSeq(1,     Const(b"MZ"), "num"/Byte, Terminated)
+>>> d = FocusedSeq(1 or "num", Const(b"MZ"), "num"/Byte, Terminated)
 >>> d.parse(b"MZ\xff")
 255
 >>> d.build(255)
@@ -201,14 +202,14 @@ Optional
 
 Attempts to parse or build the subconstruct. If it fails during parsing, returns a None. If it fails during building, it puts nothing into the stream.
 
->>> Optional(Int64ul).parse(b"1234")
-None
 >>> Optional(Int64ul).parse(b"12345678")
 4050765991979987505
+>>> Optional(Int64ul).parse(b"")
+None
 
 >>> Optional(Int64ul).build(1)
 b'\x01\x00\x00\x00\x00\x00\x00\x00'
->>> Optional(Int64ul).build("1")
+>>> Optional(Int64ul).build(None)
 b''
 
 
@@ -251,13 +252,9 @@ StopIf
 
 Checks for a condition after each element, and stops a Struct Sequence Range from parsing or building following elements.
 
-::
-
-    Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
-
-    Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
-
-    GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
+>>> Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+>>> Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+>>> GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
 
 
 

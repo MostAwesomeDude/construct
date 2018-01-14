@@ -1291,7 +1291,7 @@ class Computed(Construct):
     r"""
     Field computing a value. Underlying byte stream is unaffected. When parsing, the context function provides the value. Constant literal value can also be provided.
 
-    Building does not require a value, the value gets computed.
+    Building does not require a value, the value gets computed from context, the same as during parsing.
 
     Size is defined as 0 because parsing and building does not consume or produce bytes.
 
@@ -1450,8 +1450,7 @@ class FocusedSeq(Construct):
 
     Excample::
 
-        >>> d = FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated)
-        >>> d = FocusedSeq(1,     Const(b"MZ"), "num"/Byte, Terminated)
+        >>> d = FocusedSeq(1 or "num", Const(b"MZ"), "num"/Byte, Terminated)
         >>> d.parse(b"MZ\xff")
         255
         >>> d.build(255)
@@ -2059,9 +2058,9 @@ class StopIf(Construct):
 
     Example::
 
-        Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
-        Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
-        GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
+        >>> Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+        >>> Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
+        >>> GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
     """
     def __init__(self, condfunc):
         super(StopIf, self).__init__()

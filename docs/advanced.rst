@@ -22,7 +22,7 @@ Few fields have aliases, Byte among integers and Single/Double among floats.
     Int     <-->  Int32ub
     Long    <-->  Int64ub
     Single  <-->  Float32b
-    Double  <-->  Flaot64b
+    Double  <-->  Float64b
 
 Integers can also be variable-length encoded for compactness. Google invented a popular encoding:
 
