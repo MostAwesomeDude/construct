@@ -491,9 +491,9 @@ class FormatField(Bytes):
     """
     __slots__ = ["fmtstr"]
     def __init__(self, endianity, format):
-        if endianity not in (">", "<", "="):
+        if endianity not in list("=<>"):
             raise ValueError("endianity must be like: = < >", endianity)
-        if len(format) != 1:
+        if format not in list("fdBHLQbhlq"):
             raise ValueError("format must be like: f d B H L Q b h l q", format)
         super(FormatField, self).__init__(packer.calcsize(endianity+format))
         self.fmtstr = endianity + format
