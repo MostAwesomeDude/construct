@@ -64,6 +64,6 @@ Main documentation is at `construct.readthedocs.org <http://construct.readthedoc
 
 Requirements
 --------------
-Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 and pypy pypy3 implementation.
+Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 3.7 and pypy pypy3 implementation.
 
 Best should be 3.6 because it supports ordered keyword arguments which comes handy when declaring Struct members or crafting Containers.
