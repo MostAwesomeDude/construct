@@ -47,7 +47,7 @@ Greedy* constructs consume as much data as possible. This is convenient when bui
 >>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
 [1684234849, 1751606885]
 
-VarInt encoding is recommended because it is both compact and never overflows. Optionally, length field can include its own size. Then the length field must be of fixed size.
+VarInt encoding is recommended because it is both compact and never overflows. Also and optionally, the length field can include its own size. If so, length field must be of fixed size.
 
 
 Compression and checksuming

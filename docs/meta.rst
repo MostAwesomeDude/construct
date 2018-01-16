@@ -69,16 +69,16 @@ Certain classes take a number of elements, or something similar, and allow a cal
 ...
 >>> this._.field
 
-Of course, `this` can be mixed with other calculations. When evaluating, each instance of this is replaced by context.
+Of course, `this` can be mixed with other calculations. When evaluating, each instance of `this` is replaced by context Container which supports attribute access to keys.
 
 >>> this.width * this.height - this.offset
 
 
 
-Using `len_` builtin alikes
-===========================
+Using `len_` built-in alikes
+============================
 
-There used to be a bit of a hassle when you used built-in functions like `len sum min max` on context items. Builtin `len` takes a list and returns an int but `len_` analog takes a lambda and returns a lambda. This allows to use this kind of shorthand:
+There used to be a bit of a hassle when you used built-in functions like `len sum min max` on context items. Built-in `len` takes a list and returns an int but `len_` analog takes a lambda and returns a lambda. This allows to use this kind of shorthand:
 
 >>> lambda ctx: len(ctx.items)
 ...
@@ -127,6 +127,7 @@ When creating an Array, rather than specifying a constant length, you can instea
     PrefixedArray  <-->  FocusedSeq(1,
         "count" / Rebuild(lengthfield, len_(this.items)),
         "items" / subcon[this.count],
+    )
 
 
 RepeatUntil

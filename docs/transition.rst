@@ -24,7 +24,7 @@ VarInt was added
 
 Bit, Nibble, Octet remain
 
-All above were made singletons.
+All above were made singletons
 
 
 
@@ -58,7 +58,7 @@ CString dropped `char_field`
 
 GreedyString dropped `char_field`
 
-All above use optional `encoding` argument or use global encoding (see ``setglobalstringencoding()``).
+All above use optional `encoding` argument or use global encoding (see ``setglobalstringencoding()``)
 
 
 
@@ -77,7 +77,7 @@ On Python 3.6 you can also use syntax like ``Struct(num=Int32ub, text=CString())
 Ranges and Arrays
 -----------------
 
-Array uses syntax like ``Byte[10]`` and ``Array(10, Byte)``.
+Array uses syntax like ``Byte[10]`` and ``Array(10, Byte)``
 
 PrefixedArray takes explicit `lengthfield` before subcon
 
@@ -96,7 +96,7 @@ Lazy collections
 
 LazyStruct LazyRange LazySequence were added
 
-OnDemand now returns a paramterless lambda that returns the parsed object
+OnDemand returns a parameterless lambda that returns the parsed object
 
 OnDemandPointer was dropped
 
@@ -126,7 +126,7 @@ Switch remains
 
 Optional remains
 
-Union takes explicit `parsefrom` so parsing seeks stream by selected subcon size or doesnt seek
+Union takes explicit `parsefrom` so parsing seeks stream by selected subcon size, or does not seek by default
 
 Select remains
 

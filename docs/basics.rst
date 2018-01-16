@@ -48,7 +48,7 @@ b'\xd2\x85\xd8\xcc\x04'
 >>> VarInt.sizeof()
 construct.core.SizeofError: cannot calculate size
 
-Fields are sometimes fixed size and some composites behave differently when they are composed of those. Keep that detail in mind. Classes that cannot determine size always raise SizeofError in response. There are few classes where same instance may return an int or raise SizeofError depending on circumstances. Array size depends on whether count of elements is constant (can be a context lambda) and subcon is fixed size.
+Fields are sometimes fixed size and some composites behave differently when they are composed of those. Keep that detail in mind. Classes that cannot determine size always raise SizeofError in response. There are few classes where same instance may return an integer or raise SizeofError depending on circumstances. Array size depends on whether count of elements is constant (can be a context lambda) and subcon is fixed size (can be variable size). For example, many classes take context lambdas and SizeofError is raised if the key is missing from the context.
 
 >>> Int16ub[2].sizeof()
 4
@@ -59,7 +59,7 @@ construct.core.SizeofError: cannot calculate size
 Structs
 =======
 
-For those of you familiar with C, Structs are very intuitive, but here's a short explanation for the larger audience. A Struct is a sequenced collection of fields or other components, that are parsed/built in that order.
+For those of you familiar with C, Structs are very intuitive, but here's a short explanation for the larger audience. A Struct is a collection of ordered and usually named fields (field means an instance of Construct class), that are parsed/built in that same order. Names are used for two reasons: (1) when parsed, values are returned in a dictionary where keys are matching the names, and when build, each field gets build with a value taken from a dictionary from a matching key (2) parsed and build fields values are inserted into the context dictionary under mathing names. 
 
 >>> format = Struct(
 ...     "signature" / Const(b"BMP"),
@@ -89,15 +89,11 @@ Note that this syntax works ONLY on python 3.6 due to unordered keyword argument
 
 >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
 
-Operator `+` can also be used to make Structs, and to merge (embed) them.
+Operator `+` can also be used to make Structs, and to merge them. Structs are embedded (not nested) when added.
 
 >>> st = "count"/Byte + "items"/Byte[this.count] + Terminated
 >>> st.parse(b"\x03\x01\x02\x03")
 Container(count=3)(items=[1, 2, 3])
-
->>> st = ("a"/Byte + "b"/Byte) + "c"/Byte
->>> st.parse(b"abc")
-Container(a=97)(b=98)(c=99)
 
 
 Containers
@@ -105,19 +101,17 @@ Containers
 
 What is that Container object, anyway? Well, a Container is a regular Python dictionary. It provides pretty-printing and accessing items as attributes as well as keys, and preserves insertion order in addition to the normal facilities of dictionaries. Let's see more of those:
 
->>> c = Struct("a"/Byte, "b"/Int16ul, "c"/Single)
->>> x = c.parse(b"\x07\x00\x01\x00\x00\x00\x01")
+>>> st = Struct("float"/Single)
+>>> x = st.parse(b"\x00\x00\x00\x01")
 >>> x
-Container(a=7)(b=256)(c=1.401298464324817e-45)
->>> x.b
-256
->>> x["b"]
-256
+Container(float=1.401298464324817e-45)
+>>> x.float
+1.401298464324817e-45
+>>> x["float"]
+1.401298464324817e-45
 >>> print(x)
 Container:
-    a = 7
-    b = 256
-    c = 1.401298464324817e-45
+    float = 1.401298464324817e-45
 
 Thanks to blapid, containers can also be searched. Structs nested within Structs return containers within containers on parsing. One can search the entire "tree" of dicts for a particular name. Regular expressions are supported.
 
@@ -128,49 +122,10 @@ Thanks to blapid, containers can also be searched. Structs nested within Structs
 [1, 2]
 
 
-Building and parsing
---------------------
-
-And here is how we build Structs and others:
-
->>> # Rebuilding and reparsing from returned...
->>> format = Byte[10]
->>> format.build([1,2,3,4,5,6,7,8,9,0])
-b'\x01\x02\x03\x04\x05\x06\x07\x08\t\x00'
->>> format.parse(_)
-[1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
->>> format.build(_)
-b'\x01\x02\x03\x04\x05\x06\x07\x08\t\x00'
-
->>> # Mutate the parsed object and rebuild...
->>> st = Struct("num" / Int32ul)
->>> st.build(dict(num=7890))
-b'\xd2\x1e\x00\x00'
->>> x = st.parse(_)
->>> x
-Container(num=7890)
->>> x.num = 555
->>> st.build(x)
-b'+\x02\x00\x00'
-
-.. note::
-
-   Building is fully duck-typed and can be done with any object.
-
->>> c = Struct("b"/Int32ul, "c"/Flag)
->>> class Dummy:
-...     def __getitem__(self, key):
-...         return 1
-...
->>> dummy = Dummy()
->>> c.build(dummy)
-b'\x01\x00\x00\x00\x01'
-
-
 Nesting and embedding
 ---------------------
 
-Structs can be nested. Structs can contain other Structs, as well as any construct. Here's how it's done:
+Structs can be nested. Structs can contain other Structs, as well as any other constructs. Here's how it's done:
 
 >>> st = Struct(
 ...     "inner" / Struct(
@@ -184,7 +139,7 @@ Container:
     inner = Container:
         data = b'lala'
 
-A Struct can be embedded into an enclosing Struct. This means all the fields of the embedded Struct will be merged into the fields of the enclosing Struct. This is useful when you want to split a big Struct into multiple parts, and then combine them all into one Struct. If names are duplicated, inner fields usually overtake the others.
+A Struct can be embedded into an enclosing Struct. This means all the fields of the embedded Struct will be merged into the fields of the enclosing Struct. This is useful when you want to split a big Struct into multiple parts, and then combine them all into one Struct. If names are duplicated, inner fields usually overtake the others but that is not guaranteed. 
 
 >>> outer = Struct(
 ...     "data" / Byte,
@@ -211,7 +166,7 @@ As you can see, Containers provide human-readable representations of the data, w
 Sequences
 =========
 
-Sequences are very similar to Structs, but operate with lists rather than containers. Sequences are less commonly used than Structs, but are very handy in certain situations. Since a list is returned in place of an attribute container, the names of the sub-constructs are not important. Two constructs with the same name will not override or replace each other.
+Sequences are very similar to Structs, but operate with lists rather than containers. Sequences are less commonly used than Structs, but are very handy in certain situations. Since a list is returned in place of an attribute container, the names of the sub-constructs are not important. Two constructs with the same name will not override or replace each other. Names are used for the purposes of context dict.
 
 Operator `>>` can be used to make Sequences, or to merge them.
 

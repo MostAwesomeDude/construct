@@ -6,14 +6,14 @@ The Basics, part 2
 Integers and floats
 ===================
 
-Basic computer science 101. All integers follow Int{8,16,24,32,64}{u,s}{b,l,n} and floats follow Float{32,64}{b,l} a naming pattern. Endianness can be either big-endian, little-endian or native. Integers can be signed or unsigned (non-negative only). Floats do not have a unsigned type.
+Basic computer science 101. All integers follow the Int{8,16,24,32,64}{u,s}{b,l,n} and floats follow the Float{32,64}{b,l} naming patterns. Endianness can be either big-endian, little-endian or native. Integers can be signed or unsigned (non-negative only). Floats do not have a unsigned type.
 
 >>> Int64sl.build(500)
 b'\xf4\x01\x00\x00\x00\x00\x00\x00'
 >>> Int64sl.build(-23)
 b'\xe9\xff\xff\xff\xff\xff\xff\xff'
 
-Few fields have aliases, Byte among integers and Single/Double among floats.
+Few fields have aliases, Byte among integers and Single among floats.
 
 ::
 
@@ -53,7 +53,7 @@ b'12345'
 >>> Bytes(5).parse(b"12345")
 b'12345'
 
-Bytes can also be consumed until end of stream.
+Bytes can also be consumed until end of stream. Tunneling is discussed in a later chapter.
 
 >>> GreedyBytes.parse(b"39217839219...")
 b'39217839219...'
@@ -74,7 +74,9 @@ b'hello\x00\x00\x00\x00\x00'
 >>> String(10, encoding="utf8").build("Афон")
 b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00\x00'
 
-You can use different bytes for padding (although they will break any encoding using those within the stream). Strings can also be trimmed when building. If you supply a too long string, the construct will chop if apart instead of raising a StringError.
+You can use different bytes for padding (although they will break any encoding using those within the stream). Strings can also be trimmed when building. If you supply a too long string, the construct will chop it off apart instead of raising a StringError.
+
+To be honest, using this class is not recommended. There are safer ways to handle variable length strings.
 
 >>> String(10, padchar=b"XYZ", paddir="center").build(b"abc")
 b'XXXabcXXXX'
@@ -92,7 +94,7 @@ CString is an another variable length string, that always ends with a null \\0 t
 >>> CString(encoding="utf8").build(b"hello")
 b'hello\x00'
 
-Last but not least, a GreedyString does the same thing that GreedyBytes does. It reads until the end of stream and decodes it using the specified encoding.
+Last but not least, GreedyString does the same thing as GreedyBytes. It reads until the end of stream and then decodes it using the specified encoding. Tunneling is discussed later.
 
 >>> GreedyString(encoding="utf8").parse(b"329817392189")
 '329817392189'
