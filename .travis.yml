@@ -9,6 +9,7 @@ python:
     - "3.3"
     - "3.4"
     - "3.5"
+    - "3.5-dev"
     - "3.6"
     - "3.6-dev"
     - "3.7-dev"
@@ -16,12 +17,15 @@ python:
     - "pypy"
     - "pypy3"
 
+install:
+    - pip install pytest pytest-benchmark
+
 before_script:
     - "export PYTHONPATH=$PYTHONPATH:`pwd`"
     - "uname -a"
     - "cd tests"
 
-script: py.test --verbose
+script: py.test --benchmark-skip --verbose
 
 notifications:
     email:

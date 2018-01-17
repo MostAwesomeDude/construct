@@ -1,4 +1,5 @@
 from construct.lib.py3compat import byte2int, int2byte, bytes2str, iteratebytes, iterateints
+from binascii import hexlify, unhexlify
 
 
 # Map an integer in the inclusive range 0-255 to its string byte representation
