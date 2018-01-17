@@ -1004,7 +1004,7 @@ class Sequence(Struct):
 #===============================================================================
 class Range(Subconstruct):
     r"""
-    Homogenous array of elements. The array will iterate through between ``min`` to ``max`` times. If an exception occurs (EOF, validation error) then repeater exits cleanly. If less than ``min`` or more than ``max`` elements have been successfully processed, error is raised. 
+    Homogenous array of elements. The array will iterate through between ``min`` to ``max`` times. If an exception occurs (EOF, validation error) then repeater exits cleanly. If less than ``min`` elements were parsed or more than ``max`` elements were provided for building, error is raised. 
 
     Operator [] can be used to make instances.
 
@@ -1138,7 +1138,7 @@ def Array(count, subcon):
 
 class RepeatUntil(Subconstruct):
     r"""
-    Homogenous array that repeats until the predicate indicates it to stop. Note that the last element (which caused the repeat to exit) is included in the return list.
+    Homogenous array that repeats until the predicate indicates it to stop. Note that the last element (that predicate indicated as True) is included in the return list.
 
     :param predicate: a predicate function that takes (obj, list, context) and returns True to break or False to continue (or a truthy value)
     :param subcon: the subcon used to parse and build each element
