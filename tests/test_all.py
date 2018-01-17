@@ -75,7 +75,7 @@ class TestCore(unittest.TestCase):
         for n in range(0, 127):
             common(VarInt, int2byte(n), n, SizeofError)
 
-        assert raises(VarInt.parse, b"") == FieldError
+        assert raises(VarInt.parse, b"") == StreamError
         assert raises(VarInt.build, -1) == ValueError
 
     def test_floats(self):
@@ -85,8 +85,8 @@ class TestCore(unittest.TestCase):
     def test_bytes(self):
         assert Bytes(4).parse(b"12345678") == b"1234"
         assert Bytes(4).build(b"1234") == b"1234"
-        assert raises(Bytes(4).parse, b"") == FieldError
-        assert raises(Bytes(4).build, b"toolong") == FieldError
+        assert raises(Bytes(4).parse, b"") == StreamError
+        assert raises(Bytes(4).build, b"toolong") == StreamError
         assert Bytes(4).build(1) == b"\x00\x00\x00\x01"
         assert Bytes(4).build(0x01020304) == b"\x01\x02\x03\x04"
         assert Bytes(4).sizeof() == 4
@@ -95,8 +95,8 @@ class TestCore(unittest.TestCase):
         assert Bytes(this.n).build(b"1234",n=4) == b"1234"
         assert Bytes(this.n).sizeof(n=4) == 4
         assert Bytes(this.n).build(1, n=4) == b"\x00\x00\x00\x01"
-        assert raises(Bytes(this.n).build, b"", n=4) == FieldError
-        assert raises(Bytes(this.n).build, b"toolong", n=4) == FieldError
+        assert raises(Bytes(this.n).build, b"", n=4) == StreamError
+        assert raises(Bytes(this.n).build, b"toolong", n=4) == StreamError
         assert raises(Bytes(this.n).sizeof) == SizeofError
 
     def test_greedybytes(self):
@@ -104,11 +104,11 @@ class TestCore(unittest.TestCase):
 
     def test_formatfield(self):
         common(FormatField("<","L"), b"\x12\x34\x56\x78", 0x78563412, 4)
-        assert raises(FormatField("<","L").parse, b"") == FieldError
-        assert raises(FormatField("<","L").parse, b"\x12\x34\x56") == FieldError
-        assert raises(FormatField("<","L").build, "string not int") == FieldError
-        assert raises(FormatField("<","L").build, 2**100) == FieldError
-        assert raises(FormatField("<","L").build, 9e9999) == FieldError
+        assert raises(FormatField("<","L").parse, b"") == FormatFieldError
+        assert raises(FormatField("<","L").parse, b"\x12\x34\x56") == FormatFieldError
+        assert raises(FormatField("<","L").build, "string not int") == FormatFieldError
+        assert raises(FormatField("<","L").build, 2**100) == FormatFieldError
+        assert raises(FormatField("<","L").build, 9e9999) == FormatFieldError
 
     def test_formatfield_ints_randomized(self):
         for endianess,dtype in itertools.product("<>=","bhlqBHLQ"):
@@ -164,7 +164,7 @@ class TestCore(unittest.TestCase):
         assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]
         assert PrefixedArray(Byte, Byte).parse(b"\x00") == []
         assert PrefixedArray(Byte, Byte).build([1,2,3]) == b"\x03\x01\x02\x03"
-        assert raises(PrefixedArray(Byte, Byte).parse, b"") == FieldError
+        assert raises(PrefixedArray(Byte, Byte).parse, b"") == FormatFieldError
         assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == RangeError
         assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
 
@@ -205,7 +205,7 @@ class TestCore(unittest.TestCase):
     def test_repeatuntil(self):
         assert RepeatUntil(obj_ == 9, Byte).parse(b"\x02\x03\x09garbage") == [2,3,9]
         assert RepeatUntil(obj_ == 9, Byte).build([2,3,9,1,1,1]) == b"\x02\x03\x09"
-        assert raises(RepeatUntil(obj_ == 9, Byte).parse, b"\x02\x03\x08") == FieldError
+        assert raises(RepeatUntil(obj_ == 9, Byte).parse, b"\x02\x03\x08") == FormatFieldError
         assert raises(RepeatUntil(obj_ == 9, Byte).build, [2,3,8]) == RangeError
         assert raises(RepeatUntil(obj_ == 9, Byte).sizeof) == SizeofError
         assert RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).parse(b"\x01\x00\x00\xff") == [1,0,0]
@@ -717,7 +717,7 @@ class TestCore(unittest.TestCase):
     def test_string(self):
         assert String(5).parse(b"hello") == b"hello"
         assert String(5).build(b"hello") == b"hello"
-        assert raises(String(5).parse, b"") == FieldError
+        assert raises(String(5).parse, b"") == StreamError
         assert String(5).build(b"") == b"\x00\x00\x00\x00\x00"
         assert String(12, encoding="utf8").parse(b"hello joh\xd4\x83n") == u"hello joh\u0503n"
         assert String(12, encoding="utf8").build(u"hello joh\u0503n") == b"hello joh\xd4\x83n"

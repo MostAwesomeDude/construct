@@ -17,7 +17,9 @@ from construct.expr import *
 #===============================================================================
 class ConstructError(Exception):
     pass
-class FieldError(ConstructError):
+class StreamError(ConstructError):
+    pass
+class FormatFieldError(ConstructError):
     pass
 class SizeofError(ConstructError):
     pass
@@ -59,20 +61,20 @@ def singleton(arg):
 
 def _read_stream(stream, length):
     if length < 0:
-        raise ValueError("length must be >= 0", length)
+        raise StreamError("length must be >= 0", length)
     data = stream.read(length)
     if len(data) != length:
-        raise FieldError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
+        raise StreamError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
     return data
 
 def _write_stream(stream, length, data):
     if length < 0:
-        raise ValueError("length must be >= 0", length)
+        raise StreamError("length must be >= 0", length)
     if len(data) != length:
-        raise FieldError("could not write bytes, expected %d, found %d" % (length, len(data)))
+        raise StreamError("could not write bytes, expected %d, found %d" % (length, len(data)))
     written = stream.write(data)
     if written is not None and written != length:
-        raise FieldError("could not write bytes, written %d, should %d" % (written, length))
+        raise StreamError("could not write bytes, expected %d, written %d" % (length, written))
 
 
 #===============================================================================
@@ -430,11 +432,11 @@ def Bitwise(subcon):
     r"""
     Converts the stream from bytes to bits, and passes the bitstream to underlying subcon.
 
-    .. seealso:: Analog :func:`~construct.core.Bytewise` that transforms subset of bits back to bytes.
+    .. seealso:: Analog :func:`~construct.core.Bytewise` that transforms bits back to bytes.
 
     .. warning:: Do not use pointers inside this or other restreamed contexts.
 
-    :param subcon: any field that works with bits like BitStruct or Bit Nibble Octet BitsInteger
+    :param subcon: any field that works with bits like BitStruct or Bit/Nibble/Octet or BitsInteger
 
     Example::
 
@@ -473,7 +475,7 @@ def Bytewise(subcon):
 #===============================================================================
 class FormatField(Bytes):
     r"""
-    Field that uses ``struct`` module to pack and unpack data. This is used to implement basic Int* and Float* fields alongside BytesInteger.
+    Field that uses ``struct`` module to pack and unpack data. This is used to implement basic Int* and Float* fields, but cannot pack 24-bit integers for example, which is left to BytesInteger.
 
     See ``struct`` documentation for instructions on crafting format strings.
 
@@ -497,17 +499,19 @@ class FormatField(Bytes):
         if format not in list("fdBHLQbhlq"):
             raise ValueError("format must be like: f d B H L Q b h l q", format)
         super(FormatField, self).__init__(packer.calcsize(endianity+format))
-        self.fmtstr = endianity + format
+        self.fmtstr = endianity+format
     def _parse(self, stream, context, path):
         try:
-            return packer.unpack(self.fmtstr, _read_stream(stream, self.sizeof()))[0]
+            data = _read_stream(stream, self.sizeof())
+            return packer.unpack(self.fmtstr, data)[0]
         except Exception:
-            raise FieldError("packer %r error during parsing" % self.fmtstr)
+            raise FormatFieldError("packer %r error during parsing" % self.fmtstr)
     def _build(self, obj, stream, context, path):
         try:
-            _write_stream(stream, self.sizeof(), packer.pack(self.fmtstr, obj))
+            data = packer.pack(self.fmtstr, obj)
+            _write_stream(stream, self.sizeof(), data)
         except Exception:
-            raise FieldError("packer %r error during building, given value %r" % (self.fmtstr, obj))
+            raise FormatFieldError("packer %r error during building, given value %r" % (self.fmtstr, obj))
 
 
 class BytesInteger(Construct):
@@ -2148,7 +2152,7 @@ class Peek(Subconstruct):
             return self.subcon._parse(stream, context, path)
         except ExplicitError:
             raise
-        except FieldError:
+        except ConstructError:
             pass
         finally:
             stream.seek(fallback)
