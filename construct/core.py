@@ -1054,7 +1054,7 @@ class Range(Subconstruct):
             raise
         except Exception:
             if len(obj) < min:
-                raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
+                raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
             stream.seek(fallback)
         return obj
     def _build(self, obj, stream, context, path):
@@ -1065,7 +1065,7 @@ class Range(Subconstruct):
         if not isinstance(obj, collections.Sequence):
             raise RangeError("expected sequence type, found %s" % type(obj))
         if not min <= len(obj) <= max:
-            raise RangeError("expected from %d to %d elements, found %d" % (min, max, len(obj)))
+            raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
         context = Container(_ = context)
         try:
             for i,subobj in enumerate(obj):
@@ -1603,7 +1603,7 @@ def Padding(length, pattern=b"\x00"):
 
 class Padded(Subconstruct):
     r"""
-    Appends additional null bytes to achieve a fixed length. Fails if actual data is longer than specified length. Note that subcon can actually be variable size, its the eventual size during building that determines actual padding.
+    Appends additional null bytes to achieve a fixed length. Fails if actual data is longer than specified length. Note that subcon can actually be variable size, it is the eventual size during building that determines actual padding.
 
     :raises PaddingError: when parsed or build data is longer than the length
 
@@ -1663,7 +1663,7 @@ class Aligned(Subconstruct):
 
     :param modulus: the modulus to final length, an integer or a context function returning such an integer
     :param subcon: the subcon to align
-    :param pattern: optional, the padding pattern, a bytes character (default is \x00)
+    :param pattern: optional, the padding pattern, a b-character (default is \x00)
 
     Example::
 
@@ -1775,10 +1775,10 @@ class Union(Construct):
     r"""
     Treats the same data as multiple constructs (similar to C union statement) so you can look at the data in multiple views.
 
-    When parsing, all fields read the same data bytes, but stream remains at initial offset, unless parsefrom selects a subcon by index or name. 
+    When parsing, all fields read the same data bytes, but stream ultimately gets reverted to initial offset, unless parsefrom selects a subcon by index or name. 
     When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
 
-    .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset. Many users fail to use this properly.
+    .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset, not seeked to any common denominator between subcons.
 
     :param parsefrom: how to leave stream after parsing, can be integer index or string name selecting a subcon, None (leaves stream at initial offset, the default), a context lambda returning either of previously mentioned
     :param subcons: subconstructs (order and name sensitive)
@@ -2088,7 +2088,7 @@ class Pointer(Subconstruct):
 
     Offset can also be negative, indicating a position from EOF backwards.
 
-    Size is defined as unspecified, instead of previous 0.
+    Size is defined as unknown, instead of previous 0.
 
     :param offset: an integer or a context function that returns a stream position, where the construction would take place
     :param subcon: the subcon to use at the offset
@@ -2202,7 +2202,7 @@ class Tell(Construct):
     r"""
     Gets the stream position when parsing or building.
 
-    Tell is useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute.
+    Tell is useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute field.
 
     Size is defined as 0 because parsing and building does not consume or add into the stream.
 
@@ -2257,9 +2257,9 @@ class Pass(Construct):
 @singleton
 class Terminated(Construct):
     r"""
-    Asserts the end of the stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows in the stream.
+    Asserts that end of stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows in the stream.
 
-    This construct is only meaningful for parsing. Building does nothing.
+    This construct is only meaningful for parsing. Building does nothing. Size is 0.
 
     Example::
 
@@ -2983,7 +2983,7 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
 @singleton
 def Flag():
     r"""
-    One byte (or one bit) field that maps to True or False. Other non-zero values are also considered True.
+    One byte (or one bit) field that maps to True or False. Other non-zero bytes are also considered True.
 
     Example::
 
