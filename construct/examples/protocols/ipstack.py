@@ -126,7 +126,7 @@ ProtocolEnum = Enum(Int8ub,
 
 ipv4_header = Struct(
     EmbeddedBitStruct(
-        "version" / Const(Nibble, 4),
+        "version" / Const(4, Nibble),
         "header_length" / ExprAdapter(Nibble,
             decoder = lambda obj, ctx: obj * 4,
             encoder = lambda obj, ctx: obj // 4,

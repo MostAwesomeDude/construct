@@ -343,11 +343,11 @@ class TestCore(unittest.TestCase):
 
     def test_const(self):
         common(Const(b"MZ"), b"MZ", b"MZ", 2)
-        common(Const(Bytes(4), b"****"), b"****", b"****", 4)
-        common(Const(Int32ul, 255), b"\xff\x00\x00\x00", 255, 4)
+        common(Const(b"****", Bytes(4)), b"****", b"****", 4)
+        common(Const(255, Int32ul), b"\xff\x00\x00\x00", 255, 4)
         assert raises(Const(b"MZ").parse, b"ELF") == ConstError
         assert raises(Const(b"MZ").build, b"???") == ConstError
-        assert raises(Const(Int32ul, 255).parse, b"\x00\x00\x00\x00") == ConstError
+        assert raises(Const(255, Int32ul).parse, b"\x00\x00\x00\x00") == ConstError
         common(Struct(sig=Const(b"MZ")), b"MZ", Container(sig=b"MZ"), 2)
         assert Struct(sig=Const(b"MZ")).build({}) == b"MZ"
 

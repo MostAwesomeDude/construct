@@ -38,7 +38,7 @@ gif_logical_screen = Struct(
 )
 
 application_extension = Struct(
-    "block_size" / Const(Int8ul, 11),
+    "block_size" / Const(11, Int8ul),
     "application_identifier" / String(8),
     "application_auth_code" / String(3),
     "data_sub_block" / data_sub_block,
@@ -51,7 +51,7 @@ comment_extension = Struct(
 )
 
 graphic_control_extension = Struct(
-    "block_size" / Const(Int8ul, 4),
+    "block_size" / Const(4, Int8ul),
     "flags" / BitStruct(
         "reserved" / BitsInteger(3),
         "disposal_method" / BitsInteger(3),
@@ -64,7 +64,7 @@ graphic_control_extension = Struct(
 )
 
 plain_text_extension = Struct(
-    "block_size" / Const(Int8ul, 12),
+    "block_size" / Const(12, Int8ul),
     "text_left" / Int16ul,
     "text_top" / Int16ul,
     "text_width" / Int16ul,

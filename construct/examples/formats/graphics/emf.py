@@ -111,7 +111,7 @@ generic_record = Struct(
 )
 
 header_record = Struct(
-    Const(record_type, "HEADER"),
+    Const("HEADER", record_type),
     "record_size" / Int32ul,              # Size of the record in bytes 
     "bounds_left" / Int32sl,              # Left inclusive bounds 
     "bounds_right" / Int32sl,             # Right inclusive bounds 
@@ -121,7 +121,7 @@ header_record = Struct(
     "frame_right" / Int32sl,              # Right side of inclusive picture frame 
     "frame_top" / Int32sl,                # Top side of inclusive picture frame 
     "frame_bottom" / Int32sl,             # Bottom side of inclusive picture frame 
-    "signature" / Const(Int32ul, 0x464D4520),
+    "signature" / Const(0x464D4520, Int32ul),
     "version" / Int32ul,                  # Version of the metafile 
     "size" / Int32ul,                     # Size of the metafile in bytes 
     "num_of_records" / Int32ul,           # Number of records in the metafile 

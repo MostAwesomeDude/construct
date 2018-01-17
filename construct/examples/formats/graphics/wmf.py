@@ -98,7 +98,7 @@ wmf_record = Struct(
 )
 
 wmf_placeable_header = Struct(
-  "key" / Const(Int32ul, 0x9AC6CDD7),
+  "key" / Const(0x9AC6CDD7, Int32ul),
   "handle" / Int16ul,
   "left" / Int16sl,
   "top" / Int16sl,
@@ -118,7 +118,7 @@ wmf_file = Struct(
         InMemory = 0,
         File = 1,
     ),
-    "header_size" / Const(Int16ul, 9),
+    "header_size" / Const(9, Int16ul),
     "version" / Int16ul,
     "size" / Int32ul, # file size is in words
     "number_of_objects" / Int16ul,
