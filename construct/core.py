@@ -219,7 +219,7 @@ class Construct(object):
         if context is None:
             context = Container()
         context.update(kw)
-        return self._sizeof(context, "sizeof")
+        return self._sizeof(context, "(sizeof)")
 
     def _sizeof(self, context, path):
         """
@@ -229,6 +229,33 @@ class Construct(object):
         :raises SizeofError: the size could not be determined, ever or just with actual context
         """
         raise SizeofError
+
+    def __rtruediv__(self, name):
+        """
+        Used for renaming subcons, usually part of a Struct, like "index" / Byte.
+        """
+        if name is not None:
+            if not isinstance(name, stringtypes):
+                raise TypeError("name must be b-string or u-string or None", name)
+        return Renamed(name, self)
+
+    __rdiv__ = __rtruediv__
+
+    def __add__(self, other):
+        """
+        Used for making Struct like ("index"/Byte + "prefix"/Byte).
+        """
+        lhs = self.subcons  if isinstance(self,  Struct) else [self]
+        rhs = other.subcons if isinstance(other, Struct) else [other]
+        return Struct(*(lhs + rhs))
+
+    def __rshift__(self, other):
+        """
+        Used for making Sequences like (Byte >> Short).
+        """
+        lhs = self.subcons  if isinstance(self,  Sequence) else [self]
+        rhs = other.subcons if isinstance(other, Sequence) else [other]
+        return Sequence(*(lhs + rhs))
 
     def __getitem__(self, count):
         """
@@ -244,32 +271,6 @@ class Construct(object):
             return Range(count, count, self)
         else:
             raise TypeError("expected an int, a context lambda, or a slice thereof, but found %r" % count)
-
-    def __rshift__(self, other):
-        """
-        Used for making Sequences like (Byte >> Short).
-        """
-        lhs = self.subcons  if isinstance(self,  Sequence) else [self]
-        rhs = other.subcons if isinstance(other, Sequence) else [other]
-        return Sequence(*(lhs + rhs))
-
-    def __rtruediv__(self, name):
-        """
-        Used for renaming subcons, usually part of a Struct, like "index" / Byte.
-        """
-        if name is not None:
-            if not isinstance(name, stringtypes):
-                raise TypeError("name must be b-string or u-string or None", name)
-        return Renamed(name, self)
-    __rdiv__ = __rtruediv__
-
-    def __add__(self, other):
-        """
-        Used for making Structs, like ("index"/Byte + "prefix"/Byte).
-        """
-        lhs = self.subcons  if isinstance(self,  Struct) else [self]
-        rhs = other.subcons if isinstance(other, Struct) else [other]
-        return Struct(*(lhs + rhs))
 
 
 class Subconstruct(Construct):
