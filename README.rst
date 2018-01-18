@@ -57,7 +57,7 @@ Development and support
 -------------------------
 Please use the `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests, report issues and bugs, and to send in patches. Good quality extensions to test suite are highly welcomed. There is also a `mailing list <https://groups.google.com/d/forum/construct3>`_ that was used for years but github issues should be preffered.
 
-Main documentation is at `construct.readthedocs.org <http://construct.readthedocs.org>`_, where you can find all kinds of examples. Source is on  `github <https://github.com/construct/construct>`_. Releases are available on `pypi <https://pypi.python.org/pypi/construct>`_.
+Main documentation is at `construct.readthedocs.org <http://construct.readthedocs.org>`_, where you can find all kinds of examples. Source is on  `github <https://github.com/construct/construct>`_. Releases are available on `pypi <https://pypi.org/project/construct/>`_.
 
 `Construct3 <http://tomerfiliba.com/blog/Survey-of-Construct3/>`_ is a different project. It is a rewrite from scratch and belongs to another (previous) developer, it diverged from this project years ago. As far as I can tell, it was never released and abandoned.
 
