@@ -140,6 +140,10 @@ def test_focusedseq_build(benchmark):
     d = FocusedSeq("num", Const(bytes(2)), "num"/Byte, Terminated)
     benchmark(d.build, 0)
 
+def test_numpy_parse(benchmark):
+    d = Numpy
+    benchmark(d.parse, b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00")
+
 
 
 def test_padded_parse(benchmark):

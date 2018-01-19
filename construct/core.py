@@ -1521,7 +1521,7 @@ class Numpy(Construct):
     r"""
     Preserves numpy arrays (both shape, dtype and values).
 
-    :raises ImportError: when numpy cannot be imported during init
+    :raises ImportError: when numpy cannot be imported during parsing or building
 
     Example::
 
@@ -1534,15 +1534,12 @@ class Numpy(Construct):
     """
     def __init__(self):
         super(self.__class__, self).__init__()
-        try:
-            import numpy
-            self.lib = numpy
-        except ImportError:
-            pass # in case import fails on Travis during singleton making
     def _parse(self, stream, context, path):
-        return self.lib.load(stream)
+        import numpy
+        return numpy.load(stream)
     def _build(self, obj, stream, context, path):
-        self.lib.save(stream, obj)
+        import numpy
+        numpy.save(stream, obj)
 
 
 class NamedTuple(Adapter):
