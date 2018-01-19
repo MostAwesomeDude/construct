@@ -91,7 +91,6 @@ __all__ = [
     'GreedyString',
     'Hex',
     'HexDump',
-    'HexString',
     'If',
     'IfThenElse',
     'Indexing',

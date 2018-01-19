@@ -46,21 +46,3 @@ def hexundump(data, linesize):
         bytes = [int2byte(int(s,16)) for s in line[:3*linesize].split()]
         raw.extend(bytes)
     return b"".join(raw)
-
-
-class HexString(bytes):
-    r"""
-    Represents bytes that will be hex-dumped when parsing, and un-dumped when building.
-
-    See hexdump().
-    """
-    def __init__(self, data, linesize=16):
-        self.linesize = linesize
-
-    def __new__(cls, data, *args, **kwargs):
-        return bytes.__new__(cls, data)
-
-    def __str__(self):
-        if not self:
-            return "''"
-        return "\n" + "\n".join(hexdump(self, self.linesize))
