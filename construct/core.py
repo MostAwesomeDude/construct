@@ -1460,10 +1460,9 @@ class FocusedSeq(Construct):
         b'MZ\xff'
     """
     def __init__(self, parsebuildfrom, *subcons, **kw):
-        subcons = list(subcons) + list(k/v for k,v in kw.items()) 
         super(FocusedSeq, self).__init__()
         self.parsebuildfrom = parsebuildfrom
-        self.subcons = subcons
+        self.subcons = list(subcons) + list(k/v for k,v in kw.items())
     def _parse(self, stream, context, path):
         if callable(self.parsebuildfrom):
             self.parsebuildfrom = self.parsebuildfrom(context)
@@ -1471,7 +1470,7 @@ class FocusedSeq(Construct):
             index = self.parsebuildfrom
             self.subcons[index]  #IndexError check
         if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]  #IndexError check
         for i,sc in enumerate(self.subcons):
             parseret = sc._parse(stream, context, path)
             context[i] = parseret
@@ -1487,7 +1486,7 @@ class FocusedSeq(Construct):
             index = self.parsebuildfrom
             self.subcons[index]  #IndexError check
         if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]  #IndexError check
         for i,sc in enumerate(self.subcons):
             if i == index:
                 context[i] = obj
@@ -1512,7 +1511,7 @@ class FocusedSeq(Construct):
             index = self.parsebuildfrom
             self.subcons[index]  #IndexError check
         if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]  #IndexError check
         return self.subcons[index]._sizeof(context, path)
 
 
@@ -1795,9 +1794,8 @@ class Union(Construct):
     def __init__(self, parsefrom, *subcons, **kw):
         if isinstance(parsefrom, Construct):
             raise UnionError("parsefrom should be either: None int str context-function")
-        subcons = list(subcons) + list(k/v for k,v in kw.items()) 
         super(Union, self).__init__()
-        self.subcons = subcons
+        self.subcons = list(subcons) + list(k/v for k,v in kw.items())
         self.parsefrom = parsefrom
     def _parse(self, stream, context, path):
         obj = Container()
@@ -1886,11 +1884,10 @@ class Select(Construct):
     """
     __slots__ = ["subcons", "includename"]
     def __init__(self, *subcons, **kw):
-        subcons = list(subcons) + list(k/v for k,v in kw.items() if k != "includename") 
         super(Select, self).__init__()
-        self.subcons = subcons
-        self.flagbuildnone = all(sc.flagbuildnone for sc in subcons)
-        self.flagembedded = all(sc.flagembedded for sc in subcons)
+        self.subcons = list(subcons) + list(k/v for k,v in kw.items() if k != "includename")
+        self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
+        self.flagembedded = all(sc.flagembedded for sc in self.subcons)
         self.includename = kw.pop("includename", False)
     def _parse(self, stream, context, path):
         for sc in self.subcons:
