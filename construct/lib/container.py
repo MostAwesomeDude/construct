@@ -40,16 +40,17 @@ class Container(dict):
 
     Example::
 
-        Container(dict(name="anonymous", age=21))
-
-        Container([ ("name","anonymous"), ("age",21) ])
-
-        Container(name="anonymous")(age=21)
-
-        # This syntax requires Python 3.6:
-        Container(name="anonymous", age=21)
-
-        Container(container2)
+        # empty dict
+        >>> Container()
+        # This syntax always works
+        >>> Container([ ("name","anonymous"), ("age",21) ])
+        # This syntax requires Python 3.6
+        >>> Container(name="anonymous", age=21)
+        # This syntax is for internal use only
+        >>> Container(name="anonymous")(age=21)
+        # copies another dict
+        >>> Container(dict2)
+        >>> Container(container2)
     """
     __slots__ = ["__keys_order__", "__recursion_lock__"]
 
