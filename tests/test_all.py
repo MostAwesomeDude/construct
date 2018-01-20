@@ -7,6 +7,26 @@ from construct.lib import *
 
 class TestCore(unittest.TestCase):
 
+    def test_bytes(self):
+        common(Bytes(4), b"1234", b"1234", 4)
+        assert Bytes(4).parse(b"12345678") == b"1234"
+        assert raises(Bytes(4).parse, b"") == StreamError
+        assert raises(Bytes(4).build, b"toolong") == StreamError
+        assert Bytes(4).build(1) == b"\x00\x00\x00\x01"
+        assert Bytes(4).build(0x01020304) == b"\x01\x02\x03\x04"
+        assert Bytes(4).sizeof() == 4
+
+        assert Bytes(this.n).parse(b"12345678",n=4) == b"1234"
+        assert Bytes(this.n).build(b"1234",n=4) == b"1234"
+        assert Bytes(this.n).sizeof(n=4) == 4
+        assert Bytes(this.n).build(1, n=4) == b"\x00\x00\x00\x01"
+        assert raises(Bytes(this.n).build, b"", n=4) == StreamError
+        assert raises(Bytes(this.n).build, b"toolong", n=4) == StreamError
+        assert raises(Bytes(this.n).sizeof) == SizeofError
+
+    def test_greedybytes(self):
+        common(GreedyBytes, b"1234", b"1234", SizeofError)
+
     def test_ints(self):
         common(Byte, b"\xff", 255, 1)
         common(Short, b"\x00\xff", 255, 2)
@@ -67,40 +87,9 @@ class TestCore(unittest.TestCase):
         common(Int24sb, b"\xff\xff\xff", -1, 3)
         common(Int24sl, b"\xff\xff\xff", -1, 3)
 
-    def test_varint(self):
-        common(VarInt, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10", 2**123, SizeofError)
-        for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
-            assert VarInt.parse(VarInt.build(n)) == n
-            assert len(VarInt.build(n)) >= len("%x" % n)//2
-        for n in range(0, 127):
-            common(VarInt, int2byte(n), n, SizeofError)
-
-        assert raises(VarInt.parse, b"") == StreamError
-        assert raises(VarInt.build, -1) == ValueError
-
     def test_floats(self):
         assert Single.build(1.2) == b"?\x99\x99\x9a"
         assert Double.build(1.2) == b"?\xf3333333"
-
-    def test_bytes(self):
-        assert Bytes(4).parse(b"12345678") == b"1234"
-        assert Bytes(4).build(b"1234") == b"1234"
-        assert raises(Bytes(4).parse, b"") == StreamError
-        assert raises(Bytes(4).build, b"toolong") == StreamError
-        assert Bytes(4).build(1) == b"\x00\x00\x00\x01"
-        assert Bytes(4).build(0x01020304) == b"\x01\x02\x03\x04"
-        assert Bytes(4).sizeof() == 4
-
-        assert Bytes(this.n).parse(b"12345678",n=4) == b"1234"
-        assert Bytes(this.n).build(b"1234",n=4) == b"1234"
-        assert Bytes(this.n).sizeof(n=4) == 4
-        assert Bytes(this.n).build(1, n=4) == b"\x00\x00\x00\x01"
-        assert raises(Bytes(this.n).build, b"", n=4) == StreamError
-        assert raises(Bytes(this.n).build, b"toolong", n=4) == StreamError
-        assert raises(Bytes(this.n).sizeof) == SizeofError
-
-    def test_greedybytes(self):
-        common(GreedyBytes, b"1234", b"1234", SizeofError)
 
     def test_formatfield(self):
         common(FormatField("<","L"), b"\x12\x34\x56\x78", 0x78563412, 4)
@@ -136,6 +125,30 @@ class TestCore(unittest.TestCase):
                 b = os.urandom(d.sizeof())
                 if not math.isnan(d.parse(b)):
                     assert d.build(d.parse(b)) == b
+
+    def test_bytesinteger(self):
+        common(BytesInteger(4), b"\x00\x00\x00\xff", 255, 4)
+        common(BytesInteger(4, signed=True), b"\xff\xff\xff\xff", -1, 4)
+        assert raises(BytesInteger(this.missing).sizeof) == SizeofError
+
+    def test_bitsinteger(self):
+        assert BitsInteger(8).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == 255
+        assert BitsInteger(8).build(255) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
+        assert BitsInteger(8).sizeof() == 8
+        assert BitsInteger(8, signed=True).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == -1
+        assert BitsInteger(8, signed=True).build(-1) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
+        assert raises(BitsInteger(this.missing).sizeof) == SizeofError
+
+    def test_varint(self):
+        common(VarInt, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10", 2**123, SizeofError)
+        for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
+            assert VarInt.parse(VarInt.build(n)) == n
+            assert len(VarInt.build(n)) >= len("%x" % n)//2
+        for n in range(0, 127):
+            common(VarInt, int2byte(n), n, SizeofError)
+
+        assert raises(VarInt.parse, b"") == StreamError
+        assert raises(VarInt.build, -1) == ValueError
 
     def test_array(self):
         assert Byte[4].parse(b"1234") == [49,50,51,52]
@@ -454,19 +467,6 @@ class TestCore(unittest.TestCase):
     def test_renamed(self):
         common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)
 
-    def test_bitsinteger(self):
-        assert BitsInteger(8).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == 255
-        assert BitsInteger(8).build(255) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
-        assert BitsInteger(8).sizeof() == 8
-        assert BitsInteger(8, signed=True).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == -1
-        assert BitsInteger(8, signed=True).build(-1) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
-        assert raises(BitsInteger(this.missing).sizeof) == SizeofError
-
-    def test_bytesinteger(self):
-        common(BytesInteger(4), b"\x00\x00\x00\xff", 255, 4)
-        common(BytesInteger(4, signed=True), b"\xff\xff\xff\xff", -1, 4)
-        assert raises(BytesInteger(this.missing).sizeof) == SizeofError
-
     def test_bitwise(self):
         assert Bitwise(Bytes(8)).parse(b"\xff") == b"\x01\x01\x01\x01\x01\x01\x01\x01"
         assert Bitwise(Bytes(8)).build(b"\x01\x01\x01\x01\x01\x01\x01\x01") == b"\xff"
@@ -736,14 +736,10 @@ class TestCore(unittest.TestCase):
         assert String(5).sizeof() == 5
 
     def test_pascalstring(self):
-        assert PascalString(Byte).parse(b"\x05hello????????") == b"hello"
-        assert PascalString(Byte).build(b"hello") == b"\x05hello"
-        assert PascalString(Byte, encoding="utf8").parse(b"\x05hello") == u"hello"
-        assert PascalString(Byte, encoding="utf8").build(u"hello") == b"\x05hello"
-        assert PascalString(Int16ub).parse(b"\x00\x05hello????????") == b"hello"
-        assert PascalString(Int16ub).build(b"hello") == b"\x00\x05hello"
-        assert raises(PascalString(Byte).sizeof) == SizeofError
-        assert raises(PascalString(VarInt).sizeof) == SizeofError
+        common(PascalString(Byte), b"\x05hello", b"hello")
+        common(PascalString(Byte, encoding="utf8"), b"\x05hello", u"hello")
+        common(PascalString(Int16ub), b"\x00\x05hello", b"hello")
+        common(PascalString(VarInt), b"\x05hello", b"hello")
 
     def test_cstring(self):
         assert CString().parse(b"hello\x00") == b"hello"
