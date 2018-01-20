@@ -8,6 +8,7 @@ from construct.lib import *
 
 class TestCompile(unittest.TestCase):
 
+    @pytest.mark.xfail(not PY3, reason="compiler supports PY3")
     def test_it(self):
         d = Struct(
             "num" / Byte,
@@ -23,7 +24,8 @@ class TestCompile(unittest.TestCase):
 
         dc = d.compile()
         print(dc.source)
-        dc.tofile("tests/compiled.py")
+        if not ontravis:
+            dc.tofile("tests/compiled.py")
 
         data = bytes(1000)
         assert dc.parse(data) == d.parse(data)
