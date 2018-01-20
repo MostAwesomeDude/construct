@@ -79,6 +79,11 @@ def _write_stream(stream, length, data):
 class CodeGen:
     def __init__(self):
         self.blocks = []
+        self.nextid = 0
+
+    def allocateId(self):
+        self.nextid += 1
+        return self.nextid
 
     def append(self, block):
         block = [s for s in block.splitlines() if s.strip()]
@@ -87,6 +92,9 @@ class CodeGen:
         block = "\n".join(s[trim:] for s in block)
         if block not in self.blocks:
             self.blocks.append(block)
+
+    def appendnl(self):
+        self.blocks.append("")
 
     def toString(self):
         return "\n".join(self.blocks)
@@ -258,9 +266,12 @@ class Construct(object):
         """)
         code.append("""
             def parseall(io, context):
+                this = context
                 return %s
         """ % (self._compileparse(code),))
-        return code.toString()
+        code.appendnl()
+        source = code.toString()
+        return Compiled(source)
 
     def _compileparse(self, code):
         raise NotImplementedError
@@ -400,6 +411,25 @@ class Tunnel(Subconstruct):
         raise NotImplementedError
     def _encode(self, data, context):
         raise NotImplementedError
+
+
+class Compiled(Construct):
+    __slots__ = ["source", "module"]
+    def __init__(self, source):
+        from types import ModuleType
+        compiled = compile(source, '', 'exec')
+        module = ModuleType("construct_compile_target")
+        exec(compiled, module.__dict__)
+        self.source = source
+        self.module = module
+
+    def _parse(self, stream, context, path):
+        return self.module.parseall(stream, context)
+
+    def tofile(self, filename):
+        with open(filename, 'wt') as f:
+            f.write(self.source)
+
 
 
 #===============================================================================
@@ -975,6 +1005,27 @@ class Struct(Construct):
             return sum(sc._sizeof(nest(context, sc), path) for sc in self.subcons)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
+    def _compileparse(self, code):
+        code.append("""
+            from construct.lib import Container
+        """)
+        fname = "parse_struct_%s" % code.allocateId()
+        block = """
+            def %s(io, context):
+                # class FIELDS:
+                #     __slots__ = [%s]
+                # this = FIELDS()
+                this = Container()
+        """ % (fname, ", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
+        for sc in self.subcons:
+            block += """
+                %s%s
+            """ % ("this.%s = " % sc.name if sc.name else "", sc._compileparse(code))
+        block += """
+                return this
+        """
+        code.append(block)
+        return "%s(io, this)" % (fname,)
 
 
 class Sequence(Struct):
@@ -1049,6 +1100,8 @@ class Sequence(Struct):
                     context[i] = buildret
             except StopIteration:
                 break
+    def _compileparse(self, code):
+        raise NotImplementedError
 
 
 #===============================================================================
@@ -1292,6 +1345,8 @@ class Renamed(Subconstruct):
             if "\n" in str(e):
                 raise
             raise e.__class__("%s\n    %s" % (e, path))
+    def _compileparse(self, code):
+        return self.subcon._compileparse(code)
 
 
 #===============================================================================
