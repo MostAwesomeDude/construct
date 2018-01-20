@@ -1168,7 +1168,6 @@ class Range(Subconstruct):
             while len(obj) < max:
                 fallback = stream.tell()
                 obj.append(self.subcon._parse(stream, context._, path))
-                context[len(obj)-1] = obj[-1]
         except StopIteration:
             pass
         except ExplicitError:
@@ -1190,7 +1189,6 @@ class Range(Subconstruct):
         context = Container(_ = context)
         try:
             for i,subobj in enumerate(obj):
-                context[i] = subobj
                 self.subcon._build(subobj, stream, context._, path)
         except StopIteration:
             pass
