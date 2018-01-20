@@ -17,6 +17,16 @@
 # >>> timeit('f(0,1,2)', setup='def f(a,b,c): pass')
 # 0.11116954099998111
 
+# In [43]: class C:
+#     ...:     __slots__=["field"]
+# In [44]: c=C()
+# In [45]: timeit(lambda: c.__setattr__("field",1))
+# Out[45]: 0.2751457769991248
+# In [46]: c=Container()
+# In [47]: timeit(lambda: c.__setattr__("field",1))
+# Out[47]: 0.8966468750004424
+
+
 # compiles into
 
 from construct import Container
