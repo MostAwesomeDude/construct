@@ -76,6 +76,21 @@ def _write_stream(stream, length, data):
     if written is not None and written != length:
         raise StreamError("could not write bytes, expected %d, written %d" % (length, written))
 
+class CodeGen:
+    def __init__(self):
+        self.blocks = []
+
+    def append(self, block):
+        block = [s for s in block.splitlines() if s.strip()]
+        firstline = block[0]
+        trim = len(firstline) - len(firstline.lstrip())
+        block = "\n".join(s[trim:] for s in block)
+        if block not in self.blocks:
+            self.blocks.append(block)
+
+    def toString(self):
+        return "\n".join(self.blocks)
+
 
 #===============================================================================
 # abstract constructs
@@ -231,6 +246,27 @@ class Construct(object):
         :raises SizeofError: the size could not be determined, ever or just with actual context
         """
         raise SizeofError
+
+    def compile(self):
+        code = CodeGen()
+        code.append("""
+            def read_bytes(io, count):
+                assert count >= 0
+                data = io.read(count)
+                assert len(data) == count
+                return data
+        """)
+        code.append("""
+            def parseall(io, context):
+                return %s
+        """ % (self._compileparse(code),))
+        return code.toString()
+
+    def _compileparse(self, code):
+        raise NotImplementedError
+
+    def _compilebuild(self, code):
+        raise NotImplementedError
 
     def __rtruediv__(self, name):
         """
@@ -406,6 +442,8 @@ class Bytes(Construct):
             return self.length(context) if callable(self.length) else self.length
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
+    def _compileparse(self, code):
+        return "read_bytes(io, %s)" % (self.length,)
 
 
 @singleton
@@ -426,6 +464,8 @@ class GreedyBytes(Construct):
         return stream.read()
     def _build(self, obj, stream, context, path):
         stream.write(obj)
+    def _compileparse(self, code):
+        return "io.read()"
 
 
 def Bitwise(subcon):
@@ -512,6 +552,11 @@ class FormatField(Bytes):
             _write_stream(stream, self.sizeof(), data)
         except Exception:
             raise FormatFieldError("packer %r error during building, given value %r" % (self.fmtstr, obj))
+    def _compileparse(self, code):
+        code.append("""
+            from struct import pack, unpack, calcsize
+        """)
+        return "unpack(%r, read_bytes(io, %r))[0]" % (self.fmtstr, self.length)
 
 
 class BytesInteger(Construct):
@@ -559,6 +604,8 @@ class BytesInteger(Construct):
             return self.length(context) if callable(self.length) else self.length
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
+    def _compileparse(self, code):
+        return "int.from_bytes(read_bytes(io, %s), byteorder=%r, signed=%s)" % (self.length, 'little' if self.swapped else 'big', self.signed)
 
 
 class BitsInteger(Construct):
@@ -819,6 +866,11 @@ class VarInt(Construct):
             _write_stream(stream, 1, int2byte(0b10000000 | (obj & 0b01111111)))
             obj >>= 7
         _write_stream(stream, 1, int2byte(obj))
+    def _compileparse(self, code):
+        code.append("""
+            from construct import VarInt
+        """)
+        return "VarInt._parse(io, None, None)"
 
 
 #===============================================================================

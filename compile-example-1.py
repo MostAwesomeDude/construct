@@ -12,6 +12,11 @@
 # 	),
 # )
 
+# >>> timeit('f()', setup='def f(): pass')
+# 0.09585036399948876
+# >>> timeit('f(0,1,2)', setup='def f(a,b,c): pass')
+# 0.11116954099998111
+
 # compiles into
 
 from construct import Container
@@ -45,6 +50,7 @@ def parse_struct_1(io, context):
 	this.num = parse_formatfield(io, "b", 1)
 	this.data = read_bytes(io, this.num)
 	this.ps = parse_pascalstring(io, "utf8", parse_formatfield(io, "b", 1))
+	this._ = None
 	return this
 
 def parse_check(condition):
@@ -70,6 +76,7 @@ def parse_struct_4(io, context):
 	this.inner = parse_struct_1(io, this)
 	parse_check(this.sig == b"MZ")
 	this.inner2 = parse_sequence_3(io, this)
+	this._ = None
 	return this
 
 def parse_all(io, context):
