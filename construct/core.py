@@ -1006,16 +1006,12 @@ class Struct(Construct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
     def _compileparse(self, code):
-        code.append("""
-            from construct.lib import Container
-        """)
         fname = "parse_struct_%s" % code.allocateId()
         block = """
             def %s(io, context):
-                # class FIELDS:
-                #     __slots__ = [%s]
-                # this = FIELDS()
-                this = Container()
+                class FIELDS:
+                    __slots__ = [%s]
+                this = FIELDS()
         """ % (fname, ", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
         for sc in self.subcons:
             block += """
@@ -1101,13 +1097,10 @@ class Sequence(Struct):
             except StopIteration:
                 break
     def _compileparse(self, code):
-        code.append("""
-            from construct.lib import ListContainer
-        """)
         fname = "parse_sequence_%s" % code.allocateId()
         block = """
             def %s(io, context):
-                this = ListContainer()
+                this = []
         """ % (fname,)
         for sc in self.subcons:
             block += """
@@ -1211,10 +1204,7 @@ class Range(Subconstruct):
     def _compileparse(self, code):
         if not self.min == self.max:
             raise NotImplementedError("Range compiles only for Array instances, min==max")
-        code.append("""
-            from construct.lib import ListContainer
-        """)
-        return "ListContainer([%s for i in range(%s)])" % (self.subcon._compileparse(code), self.max)
+        return "[%s for i in range(%s)]" % (self.subcon._compileparse(code), self.max)
         # fname = "parse_range_%s" % code.allocateId()
         # block = """
         #     def %s(io, context):
