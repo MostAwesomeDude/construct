@@ -1101,7 +1101,23 @@ class Sequence(Struct):
             except StopIteration:
                 break
     def _compileparse(self, code):
-        raise NotImplementedError
+        code.append("""
+            from construct.lib import ListContainer
+        """)
+        fname = "parse_sequence_%s" % code.allocateId()
+        block = """
+            def %s(io, context):
+                this = ListContainer()
+        """ % (fname,)
+        for sc in self.subcons:
+            block += """
+                this.append(%s)
+            """ % (sc._compileparse(code))
+        block += """
+                return this
+        """
+        code.append(block)
+        return "%s(io, this)" % (fname,)
 
 
 #===============================================================================

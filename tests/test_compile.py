@@ -10,6 +10,7 @@ class TestCompile(unittest.TestCase):
 
     def test_it(self):
         d = Struct(
+            "num" / Byte,
             "bytes" / Bytes(this.num),
             # GreedyBytes
             "int8" / FormatField(">", "B"),
@@ -22,7 +23,6 @@ class TestCompile(unittest.TestCase):
         dc = d.compile()
         print(dc.source)
         dc.tofile("tests/compiled.py")
-        dc.parse(bytes(1000))
 
-        # data = d.build(dict(inner=dict(num=1,data=bytes(1))))
-        # assert dc.parse(data) == d.parse(data)
+        data = bytes(1000)
+        assert dc.parse(data) == d.parse(data)
