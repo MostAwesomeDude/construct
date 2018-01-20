@@ -116,7 +116,7 @@ User Guide
    :maxdepth: 2
 
    intro
-   transition
+   transition28
    basics
    advanced
    bitwise
