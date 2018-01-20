@@ -18,6 +18,7 @@ class TestCompile(unittest.TestCase):
             "varint" / VarInt,
             "struct" / Struct("field" / Byte),
             "sequence" / Sequence(Byte, Byte),
+            "array" / Array(5, Byte),
         )
 
         dc = d.compile()

@@ -1210,6 +1210,23 @@ class Range(Subconstruct):
         if min == max:
             return min * self.subcon._sizeof(context, path)
         raise SizeofError("cannot calculate size, unless element count and size is fixed")
+    def _compileparse(self, code):
+        if not self.min == self.max:
+            raise NotImplementedError("Range compiles only for Array instances, min==max")
+        code.append("""
+            from construct.lib import ListContainer
+        """)
+        return "ListContainer([%s for i in range(%s)])" % (self.subcon._compileparse(code), self.max)
+        # fname = "parse_range_%s" % code.allocateId()
+        # block = """
+        #     def %s(io, context):
+        #         this = ListContainer()
+        #         for ???
+        #         return this
+        # """ % (fname,)
+        # (sc._compileparse(code))
+        # code.append(block)
+        # return "%s(io, this)" % (fname,)
 
 
 def GreedyRange(subcon):
