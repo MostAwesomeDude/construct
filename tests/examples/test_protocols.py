@@ -15,11 +15,11 @@ class TestProtocols(unittest.TestCase):
         commonhex(arp_header, b"00010800060400020011508c283cc0a802010002e3426009c0a80204")
 
     def test_ip4(self):
-        common(IpAddress, b"\x7f\x80\x81\x82", "127.128.129.130")
+        common(IpAddress, b"\x7f\x80\x81\x82", "127.128.129.130", 4)
         commonhex(ipv4_header, b"4500003ca0e3000080116185c0a80205d474a126")
 
     def test_ip6(self):
-        common(Ipv6Address, b"1234567890123456", "31:32:33:34:35:36:37:38:39:30:31:32:33:34:35:36")
+        common(Ipv6Address, b"1234567890123456", "31:32:33:34:35:36:37:38:39:30:31:32:33:34:35:36", 16)
         commonhex(ipv6_header, b"6ff00000010206803031323334353637383941424344454646454443424139383736353433323130")
 
     def test_icmp(self):

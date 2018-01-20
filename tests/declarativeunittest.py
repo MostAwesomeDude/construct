@@ -5,6 +5,9 @@ import os, math, random, collections, itertools, io, hashlib, binascii
 ontravis = 'TRAVIS' in os.environ
 ident = lambda x: x
 
+from construct import *
+from construct.lib import *
+
 
 def raises(func, *args, **kw):
     try:
@@ -18,17 +21,16 @@ def atmostone(*args):
     return sum(1 for x in args if x) <= 1
 
 
-def common(format, data, obj, size=NotImplemented):
+def common(format, data, obj, size=SizeofError):
     assert format.parse(data) == obj
     assert format.build(obj) == data
     # following are implied by above (re-parse and re-build)
     # assert format.parse(format.build(obj)) == obj
     # assert format.build(format.parse(data)) == data
-    if size is not NotImplemented:
-        if isinstance(size, int):
-            assert format.sizeof() == size
-        else:
-            assert raises(format.sizeof) == size
+    if isinstance(size, int):
+        assert format.sizeof() == size
+    else:
+        assert raises(format.sizeof) == size
 
 
 def commonhex(format, hexdata):
