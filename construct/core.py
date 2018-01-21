@@ -3225,7 +3225,7 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
 
 
 @singleton
-def Flag():
+class Flag(Construct):
     r"""
     One byte (or one bit) field that maps to True or False. Other non-zero bytes are also considered True.
 
@@ -3236,7 +3236,14 @@ def Flag():
         >>> Flag.build(True)
         b'\x01'
     """
-    return SymmetricMapping(Byte, {True : 1, False : 0}, default=True)
+    def _parse(self, stream, context, path):
+        return _read_stream(stream, 1) != b"\x00"
+    def _build(self, obj, stream, context, path):
+        _write_stream(stream, 1, b"\x01" if obj else b"\x00")
+    def _sizeof(self, context, path):
+        return 1
+    def _compileparse(self, code):
+        return "(read_bytes(io, 1) != b'\\x00')"
 
 
 class Enum(Subconstruct):

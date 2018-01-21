@@ -54,6 +54,8 @@ class TestCompile(unittest.TestCase):
 
             "prefixed" / Prefixed(Byte, GreedyBytes),
             "prefixedarray" / PrefixedArray(Byte, Byte),
+
+            "flag" / Flag,
         )
 
         dc = d.compile()
