@@ -3576,21 +3576,18 @@ class StringEncoded(Adapter):
     def _decode(self, obj, context):
         encoding = self.encoding or globalstringencoding
         if encoding:
-            if isinstance(encoding, str):
-                obj = obj.decode(encoding)
-            else:
-                obj = encoding.decode(obj)
+            obj = obj.decode(encoding)
         return obj
     def _encode(self, obj, context):
         encoding = self.encoding or globalstringencoding
-        if not isinstance(obj, bytes):
-            if not encoding:
-                raise StringError("no encoding provided when processing a unicode obj")
-            if isinstance(encoding, str):
-                obj = obj.encode(encoding)
-            else:
-                obj = encoding.encode(obj)
+        if encoding:
+            obj = obj.encode(encoding)
+        if not isinstance(obj, stringbytetype):
+            raise StringError("encoding must result in bytes type")
         return obj
+    def _compileparse(self, code):
+        encoding = self.encoding or globalstringencoding
+        return "(%s).decode(%r)" % (self.subcon._compileparse(code), encoding, ) if encoding else "%s" % (self.subcon._compileparse(code), )
 
 
 class StringPaddedTrimmed(Adapter):

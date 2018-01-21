@@ -56,6 +56,9 @@ class TestCompile(unittest.TestCase):
             "prefixedarray" / PrefixedArray(Byte, Byte),
 
             "flag" / Flag,
+
+            "pascalstring1" / PascalString(Byte),
+            # "pascalstring2" / PascalString(Byte, "utf8"),
         )
 
         dc = d.compile()

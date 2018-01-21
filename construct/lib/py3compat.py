@@ -16,6 +16,7 @@ supportskwordered = PY >= (3,6) or PYPY
 
 if PY3:
     stringtypes = (bytes, str, )
+    stringbytetype = bytes
 
     def int2byte(i):
         """Converts int (0 through 255) into b'...' character."""
@@ -58,6 +59,7 @@ if PY3:
 
 else:
     stringtypes = (str, unicode, )
+    stringbytetype = str
 
     def int2byte(i):
         """Converts int (0 through 255) into b'...' character."""
