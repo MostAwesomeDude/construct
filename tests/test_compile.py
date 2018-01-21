@@ -10,17 +10,23 @@ from construct.lib import *
 class TestCompile(unittest.TestCase):
 
     def test_all(self):
-        shared = Struct()
         d = Struct(
             "num" / Byte,
-            "bytes" / Bytes(this.num),
+
+            "bytes1" / Bytes(4),
+            "bytes2" / Bytes(this.num),
             # GreedyBytes
+
             "int8" / FormatField(">", "B"),
-            "int16" / BytesInteger(16),
+            "int16a" / BytesInteger(16),
+            "int16b" / BytesInteger(this.num),
             "varint" / VarInt,
+
             "struct" / Struct("field" / Byte),
             "sequence" / Sequence(Byte, Byte),
-            "array" / Array(5, Byte),
+            "array1" / Array(5, Byte),
+            "array2" / Array(this.num, Byte),
+
             "const1" / Const(bytes(4)),
             "const2" / Const(0, Int32ub),
             "computed" / Computed(this.num),
@@ -46,9 +52,6 @@ class TestCompile(unittest.TestCase):
             "pass1" / Pass,
 
             "prefixedarray" / PrefixedArray(Byte, Byte),
-
-            "shared1" / shared,
-            "shared2" / shared,
         )
 
         dc = d.compile()
