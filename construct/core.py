@@ -1617,55 +1617,77 @@ class FocusedSeq(Construct):
         self.parsebuildfrom = parsebuildfrom
         self.subcons = list(subcons) + list(k/v for k,v in kw.items())
     def _parse(self, stream, context, path):
-        if callable(self.parsebuildfrom):
-            self.parsebuildfrom = self.parsebuildfrom(context)
-        if isinstance(self.parsebuildfrom, int):
-            index = self.parsebuildfrom
+        context = Container(_ = context)
+        parsebuildfrom = self.parsebuildfrom(context) if callable(self.parsebuildfrom) else self.parsebuildfrom
+        if isinstance(parsebuildfrom, int):
+            index = parsebuildfrom
             self.subcons[index]  #IndexError check
-        if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]  #IndexError check
+        if isinstance(parsebuildfrom, str):
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == parsebuildfrom][0]  #IndexError check
         for i,sc in enumerate(self.subcons):
             parseret = sc._parse(stream, context, path)
             context[i] = parseret
-            if sc.name is not None:
+            if sc.name:
                 context[sc.name] = parseret
-            if i == index:
-                finalobj = parseret
-        return finalobj
+        return context[index]
     def _build(self, obj, stream, context, path):
-        if callable(self.parsebuildfrom):
-            self.parsebuildfrom = self.parsebuildfrom(context)
-        if isinstance(self.parsebuildfrom, int):
-            index = self.parsebuildfrom
+        context = Container(_ = context)
+        parsebuildfrom = self.parsebuildfrom(context) if callable(self.parsebuildfrom) else self.parsebuildfrom
+        if isinstance(parsebuildfrom, int):
+            index = parsebuildfrom
             self.subcons[index]  #IndexError check
-        if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]  #IndexError check
-        for i,sc in enumerate(self.subcons):
-            if i == index:
-                context[i] = obj
-                if sc.name is not None:
-                    context[sc.name] = obj
+        if isinstance(parsebuildfrom, str):
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == parsebuildfrom][0]  #IndexError check
+        context[index] = obj
+        sc = self.subcons[index]
+        if sc.name:
+            context[sc.name] = obj
         for i,sc in enumerate(self.subcons):
             buildret = sc._build(obj if i==index else None, stream, context, path)
             if buildret is not None:
-                if sc.name is not None:
-                    context[sc.name] = buildret
                 context[i] = buildret
-            if i == index:
-                finalobj = buildret
-        return finalobj
+                if sc.name:
+                    context[sc.name] = buildret
+        return context[index]
     def _sizeof(self, context, path):
+        context = Container(_ = context)
         try:
-            if callable(self.parsebuildfrom):
-                self.parsebuildfrom = self.parsebuildfrom(context)
+            parsebuildfrom = self.parsebuildfrom(context) if callable(self.parsebuildfrom) else self.parsebuildfrom
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
-        if isinstance(self.parsebuildfrom, int):
-            index = self.parsebuildfrom
+        if isinstance(parsebuildfrom, int):
+            index = parsebuildfrom
             self.subcons[index]  #IndexError check
-        if isinstance(self.parsebuildfrom, str):
-            index = [i for i,sc in enumerate(self.subcons) if sc.name == self.parsebuildfrom][0]  #IndexError check
+        if isinstance(parsebuildfrom, str):
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == parsebuildfrom][0]  #IndexError check
         return self.subcons[index]._sizeof(context, path)
+    def _compileparse(self, code):
+        if callable(self.parsebuildfrom):
+            raise NotImplementedError("FocusedSeq does not compile non-constant selectors")
+        fname = "parse_focusedseq_%s" % code.allocateId()
+        block = """
+            def %s(io, context):
+                result = []
+        """ % (fname, )
+        if any(sc.name for sc in self.subcons):
+            block += """
+                class FIELDS:
+                    __slots__ = [%s]
+                this = FIELDS()
+            """ % (", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
+        for sc in self.subcons:
+            block += """
+                result.append(%s)
+            """ % (sc._compileparse(code), )
+            if sc.name:
+                block += """
+                this.%s = result[-1]
+                """ % (sc.name, )
+        block += """
+                return %s
+        """ % ("result[%s]" % self.parsebuildfrom if isinstance(self.parsebuildfrom, int) else "this.%s" % self.parsebuildfrom, )
+        code.append(block)
+        return "%s(io, this)" % (fname,)
 
 
 @singleton

@@ -29,6 +29,9 @@ class TestCompile(unittest.TestCase):
             Check(this.num == 0),
             # Error,
             # If(False, Error),
+            "focusedseq1" / FocusedSeq(0, Byte, Byte),
+            "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
+            "prefixedarray" / PrefixedArray(Byte, Byte),
 
             "shared1" / shared,
             "shared2" / shared,
