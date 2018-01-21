@@ -2455,6 +2455,8 @@ class Tell(Construct):
         return stream.tell()
     def _sizeof(self, context, path):
         return 0
+    def _compileparse(self, code):
+        return "io.tell()"
 
 
 @singleton
@@ -2712,6 +2714,17 @@ class Prefixed(Subconstruct):
         return obj
     def _sizeof(self, context, path):
         return self.lengthfield._sizeof(context, path) + self.subcon._sizeof(context, path)
+    def _compileparse(self, code):
+        if self.includelength:
+            raise NotImplementedError("Prefixed does not compile with includelength")
+        code.append("""
+            from io import BytesIO
+        """)
+        code.append("""
+            def parse_prefixed(data, func):
+                func(BytesIO(data))
+        """)
+        return "parse_prefixed(read_bytes(io, %s), lambda io: %s)" % (self.lengthfield._compileparse(code), self.subcon._compileparse(code), )
 
 
 def PrefixedArray(lengthfield, subcon):

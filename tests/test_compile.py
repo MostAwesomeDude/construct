@@ -49,8 +49,10 @@ class TestCompile(unittest.TestCase):
             "if1" / If(this.num == 0, Byte),
             "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
 
+            "tell" / Tell,
             "pass1" / Pass,
 
+            "prefixed" / Prefixed(Byte, GreedyBytes),
             "prefixedarray" / PrefixedArray(Byte, Byte),
         )
 
