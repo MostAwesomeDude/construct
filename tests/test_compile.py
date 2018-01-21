@@ -15,7 +15,7 @@ class TestCompile(unittest.TestCase):
 
             "bytes1" / Bytes(4),
             "bytes2" / Bytes(this.num),
-            # GreedyBytes
+            "greedybytes" / Prefixed(Byte, GreedyBytes),
 
             "int8" / FormatField(">", "B"),
             "int16a" / BytesInteger(16),
@@ -57,8 +57,11 @@ class TestCompile(unittest.TestCase):
 
             "flag" / Flag,
 
+            "string1" / String(10),
+            "string2" / String(10, encoding="utf8"),
             "pascalstring1" / PascalString(Byte),
-            # "pascalstring2" / PascalString(Byte, "utf8"),
+            # "pascalstring2" / PascalString(Byte, encoding="utf8"),
+            "greedystring" / Prefixed(Byte, GreedyString()),
         )
 
         dc = d.compile()

@@ -3594,8 +3594,12 @@ class StringPaddedTrimmed(Adapter):
     """Used internally."""
     __slots__ = ["length", "padchar", "paddir", "trimdir"]
     def __init__(self, length, subcon, padchar=b"\x00", paddir="right", trimdir="right"):
-        if not isinstance(padchar, bytes):
+        if not isinstance(padchar, stringbytetype) or len(padchar) != 1:
             raise StringError("padchar must be b-string character")
+        if paddir not in ["right","left","center"]:
+            raise StringError("paddir must be one of: right left center")
+        if trimdir not in ["right","left"]:
+            raise StringError("trimdir must be one of: right left")
         super(StringPaddedTrimmed, self).__init__(subcon)
         self.length = length
         self.padchar = padchar
@@ -3604,31 +3608,33 @@ class StringPaddedTrimmed(Adapter):
     def _decode(self, obj, context):
         if self.paddir == "right":
             obj = obj.rstrip(self.padchar)
-        elif self.paddir == "left":
+        if self.paddir == "left":
             obj = obj.lstrip(self.padchar)
-        elif self.paddir == "center":
+        if self.paddir == "center":
             obj = obj.strip(self.padchar)
-        else:
-            raise StringError("paddir must be one of: right left center")
         return obj
     def _encode(self, obj, context):
         length = self.length(context) if callable(self.length) else self.length
         if self.paddir == "right":
             obj = obj.ljust(length, self.padchar[0:1])
-        elif self.paddir == "left":
+        if self.paddir == "left":
             obj = obj.rjust(length, self.padchar[0:1])
-        elif self.paddir == "center":
+        if self.paddir == "center":
             obj = obj.center(length, self.padchar[0:1])
-        else:
-            raise StringError("paddir must be one of: right left center")
         if len(obj) > length:
             if self.trimdir == "right":
                 obj = obj[:length]
-            elif self.trimdir == "left":
+            if self.trimdir == "left":
                 obj = obj[-length:]
-            else:
-                raise StringError("expected a string of length %s given %s (%r)" % (length,len(obj),obj))
         return obj
+    def _compileparse(self, code):
+        if self.paddir == "right":
+            func = "rstrip"
+        if self.paddir == "left":
+            func = "lstrip"
+        if self.paddir == "center":
+            func = "strip"
+        return "(%s).%s(%r)" % (self.subcon._compileparse(code), func, self.padchar)
 
 
 def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
