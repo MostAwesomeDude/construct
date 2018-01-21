@@ -9,7 +9,7 @@ from construct.lib import *
 @pytest.mark.xfail(not PY3, reason="compiler supports PY3")
 class TestCompile(unittest.TestCase):
 
-    def test_it(self):
+    def test_all(self):
         shared = Struct()
         d = Struct(
             "num" / Byte,
