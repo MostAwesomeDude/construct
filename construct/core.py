@@ -1416,6 +1416,13 @@ class Const(Subconstruct):
         return self.subcon._build(self.value, stream, context, path)
     def _sizeof(self, context, path):
         return self.subcon._sizeof(context, path)
+    def _compileparse(self, code):
+        code.append("""
+            def parse_const(value, expected):
+                assert value == expected
+                return value
+        """)
+        return "parse_const(%s, %r)" % (self.subcon._compileparse(code), self.value)
 
 
 class Computed(Construct):
@@ -1459,6 +1466,8 @@ class Computed(Construct):
         return self.func(context) if callable(self.func) else self.func
     def _sizeof(self, context, path):
         return 0
+    def _compileparse(self, code):
+        return "%r" % (self.func,)
 
 
 class Rebuild(Subconstruct):
@@ -1489,6 +1498,8 @@ class Rebuild(Subconstruct):
         obj = self.func(context) if callable(self.func) else self.func
         self.subcon._build(obj, stream, context, path)
         return obj
+    def _compileparse(self, code):
+        return self.subcon._compileparse(code)
 
 
 class Default(Subconstruct):
@@ -1518,6 +1529,8 @@ class Default(Subconstruct):
         obj = (self.value(context) if callable(self.value) else self.value) if obj is None else obj
         self.subcon._build(obj, stream, context, path)
         return obj
+    def _compileparse(self, code):
+        return self.subcon._compileparse(code)
 
 
 class Check(Construct):
@@ -1547,6 +1560,12 @@ class Check(Construct):
             raise ValidationError("check failed during building")
     def _sizeof(self, context, path):
         return 0
+    def _compileparse(self, code):
+        code.append("""
+            def parse_check(condition):
+                assert condition
+        """)
+        return "parse_check(%r)" % (self.func)
 
 
 @singleton
@@ -1569,6 +1588,12 @@ class Error(Construct):
         raise ExplicitError("Error field was activated during parsing")
     def _build(self, obj, stream, context, path):
         raise ExplicitError("Error field was activated during building")
+    def _compileparse(self, code):
+        code.append("""
+            def parse_error():
+                assert False
+        """)
+        return "parse_error()"
 
 
 class FocusedSeq(Construct):

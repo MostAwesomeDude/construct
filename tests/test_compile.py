@@ -10,6 +10,7 @@ class TestCompile(unittest.TestCase):
 
     @pytest.mark.xfail(not PY3, reason="compiler supports PY3")
     def test_it(self):
+        shared = Struct()
         d = Struct(
             "num" / Byte,
             "bytes" / Bytes(this.num),
@@ -20,6 +21,17 @@ class TestCompile(unittest.TestCase):
             "struct" / Struct("field" / Byte),
             "sequence" / Sequence(Byte, Byte),
             "array" / Array(5, Byte),
+            "const1" / Const(bytes(4)),
+            "const2" / Const(0, Int32ub),
+            "computed" / Computed(this.num),
+            "rebuild" / Rebuild(Byte, len_(this.array)),
+            "default" / Default(Byte, 0),
+            Check(this.num == 0),
+            # Error,
+            # If(False, Error),
+
+            "shared1" / shared,
+            "shared2" / shared,
         )
 
         dc = d.compile()
