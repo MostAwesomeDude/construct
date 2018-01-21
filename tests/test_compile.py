@@ -36,6 +36,12 @@ class TestCompile(unittest.TestCase):
             "namedtuple2" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
             # "namedtuple3" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
 
+            "padding" / Padding(2),
+            "paddedbyte" / Padded(4, Byte),
+            "alignedbyte" / Aligned(4, Byte),
+
+            "pass1" / Pass,
+
             "prefixedarray" / PrefixedArray(Byte, Byte),
 
             "shared1" / shared,

@@ -1820,6 +1820,10 @@ def Padding(length, pattern=b"\x00"):
         4
     """
     return Padded(length, Pass, pattern=pattern)
+    # macro = Padded(length, Pass, pattern=pattern)
+    # def _compileparse(self, code):
+    #     return "[read_bytes(io, %r), None][1]" % (length, )
+    # return CompilableMacro(macro, _compileparse)
 
 
 class Padded(Subconstruct):
@@ -1876,6 +1880,8 @@ class Padded(Subconstruct):
             return self.length(context) if callable(self.length) else self.length
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
+    def _compileparse(self, code):
+        return "[%s, read_bytes(io, %r - %s)][0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
 
 
 class Aligned(Subconstruct):
@@ -1924,6 +1930,8 @@ class Aligned(Subconstruct):
             return subconlen + (-subconlen % modulus)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
+    def _compileparse(self, code):
+        return "[%s, read_bytes(io, -%s %% %r)][0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
 
 
 def AlignedStruct(modulus, *subcons, **kw):
@@ -2471,7 +2479,8 @@ class Pass(Construct):
         pass
     def _sizeof(self, context, path):
         return 0
-
+    def _compileparse(self, code):
+        return "None"
 
 @singleton
 class Terminated(Construct):
