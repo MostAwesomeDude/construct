@@ -2211,10 +2211,13 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
         >>> d.build(255, dict(x=0))
         b'\xff'
     """
-    return Switch(
+    macro = Switch(
         lambda ctx: bool(predicate(ctx)) if callable(predicate) else bool(predicate),
         {True:thensubcon, False:elsesubcon},
     )
+    def _compileparse(self, code):
+        return "(%s if %r else %s)" % (thensubcon._compileparse(code), predicate, elsesubcon._compileparse(code), )
+    return CompilableMacro(macro, _compileparse)
 
 
 class Switch(Construct):

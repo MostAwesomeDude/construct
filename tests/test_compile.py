@@ -40,6 +40,9 @@ class TestCompile(unittest.TestCase):
             "paddedbyte" / Padded(4, Byte),
             "alignedbyte" / Aligned(4, Byte),
 
+            "if1" / If(this.num == 0, Byte),
+            "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
+
             "pass1" / Pass,
 
             "prefixedarray" / PrefixedArray(Byte, Byte),
