@@ -10,7 +10,7 @@ Construct 2.9 adds an experimental feature: compiling user made constructs into 
 Requirements
 ------------
 
-Compilation feature requires Construct 2.9 and Python 3.3. More importantly, you should manually check the generated code for correctness and have a test suite of your own. Construct aims to be reliable, but there is inherent risk in using experimental features.
+Compilation feature requires Construct 2.9 and Python 3.4. More importantly, you should manually check the generated code for correctness and have a test suite of your own. Construct aims to be reliable, but there is inherent risk in using experimental features.
 
 Compiling schemas
 ===================

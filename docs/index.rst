@@ -102,11 +102,11 @@ Main documentation is at `readthedocs <http://construct.readthedocs.org>`_, wher
 
 Requirements
 --------------
-Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 3.7 pypy pypy3 implementation. Best should be 3.6 because it supports ordered keyword arguments which comes handy when declaring Struct members and crafting Containers.
+Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 3.7 pypy pypy3 implementation. Best should be 3.6 because it supports ordered keyword arguments which comes handy when declaring Struct members and crafting Containers. Second best would be 3.4 because it supports compilation feature.
 
 Numpy is optional, if you want to serialize numpy arrays using Numpy protocol. Otherwise arrays can still be serialized using Range construct.
 
-Codecs module supports different algorithms on different Python versions, if you want to use Compressed construct.
+Codecs standard module supports different algorithms on different Python versions, if you want to use Compressed construct.
 
 
 User Guide
