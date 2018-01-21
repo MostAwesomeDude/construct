@@ -558,13 +558,13 @@ class TestCore(unittest.TestCase):
         assert FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated).sizeof(s="num") == 1
 
         assert raises(FocusedSeq(123, Pass).parse, b"") == IndexError
-        assert raises(FocusedSeq("missing", Pass).parse, b"") == IndexError
-        assert raises(FocusedSeq(this.missing, Pass).parse, b"") == KeyError
         assert raises(FocusedSeq(123, Pass).build, {}) == IndexError
-        assert raises(FocusedSeq("missing", Pass).build, {}) == IndexError
-        assert raises(FocusedSeq(this.missing, Pass).build, {}) == KeyError
         assert raises(FocusedSeq(123, Pass).sizeof) == IndexError
+        assert raises(FocusedSeq("missing", Pass).parse, b"") == IndexError
+        assert raises(FocusedSeq("missing", Pass).build, {}) == IndexError
         assert raises(FocusedSeq("missing", Pass).sizeof) == IndexError
+        assert raises(FocusedSeq(this.missing, Pass).parse, b"") == KeyError
+        assert raises(FocusedSeq(this.missing, Pass).build, {}) == KeyError
         assert raises(FocusedSeq(this.missing, Pass).sizeof) == SizeofError
 
     def test_select(self):
