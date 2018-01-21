@@ -269,9 +269,21 @@ class Construct(object):
                 this = context
                 return %s
         """ % (self._compileparse(code),))
+        code.append("""
+            from construct import Compiled
+            compiledschema = Compiled(parseall)
+        """)
         code.appendnl()
+
         source = code.toString()
-        return Compiled(source)
+        from types import ModuleType
+        compiled = compile(source, '', 'exec')
+        module = ModuleType("construct_compile_target")
+        exec(compiled, module.__dict__)
+
+        compiledschema = module.compiledschema
+        compiledschema.source = source
+        return compiledschema
 
     def _compileparse(self, code):
         raise NotImplementedError
@@ -414,17 +426,12 @@ class Tunnel(Subconstruct):
 
 
 class Compiled(Construct):
-    __slots__ = ["source", "module"]
-    def __init__(self, source):
-        from types import ModuleType
-        compiled = compile(source, '', 'exec')
-        module = ModuleType("construct_compile_target")
-        exec(compiled, module.__dict__)
-        self.source = source
-        self.module = module
+    __slots__ = ["source", "parsefunc"]
+    def __init__(self, parsefunc):
+        self.parsefunc = parsefunc
 
     def _parse(self, stream, context, path):
-        return self.module.parseall(stream, context)
+        return self.parsefunc(stream, context)
 
     def tofile(self, filename):
         with open(filename, 'wt') as f:
