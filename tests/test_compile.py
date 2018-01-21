@@ -32,7 +32,9 @@ class TestCompile(unittest.TestCase):
             "focusedseq1" / FocusedSeq(0, Byte, Byte),
             "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
             # Numpy
-            "namedtuple" / NamedTuple("coord", "x y z", Byte[3]),
+            "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
+            "namedtuple2" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
+            # "namedtuple3" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
 
             "prefixedarray" / PrefixedArray(Byte, Byte),
 
