@@ -3518,7 +3518,7 @@ globalstringencoding = None
 
 def setglobalstringencoding(encoding):
     r"""
-    Sets the encoding globally for all String/PascalString/CString/GreedyString instances.
+    Sets the encoding globally for all String/PascalString/CString/GreedyString instances, but an encoding specified expiciltly in a particular construct supersedes it.
 
     :param encoding: a string like "utf8", or None which means working with bytes (not unicode)
     """
