@@ -431,6 +431,15 @@ class Compiled(Construct):
             f.write(self.source)
 
 
+class CompilableMacro(Subconstruct):
+    __slots__ = ["compileparsefunc"]
+    def __init__(self, subcon, compileparsefunc):
+        super(CompilableMacro, self).__init__(subcon)
+        # self._compileparse = compileparsefunc
+        self.compileparsefunc = compileparsefunc
+    def _compileparse(self, code):
+        return self.compileparsefunc(self, code)
+
 
 #===============================================================================
 # bytes and bits
