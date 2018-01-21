@@ -6,9 +6,9 @@ from construct import *
 from construct.lib import *
 
 
+@pytest.mark.xfail(not PY3, reason="compiler supports PY3")
 class TestCompile(unittest.TestCase):
 
-    @pytest.mark.xfail(not PY3, reason="compiler supports PY3")
     def test_it(self):
         shared = Struct()
         d = Struct(
@@ -31,6 +31,9 @@ class TestCompile(unittest.TestCase):
             # If(False, Error),
             "focusedseq1" / FocusedSeq(0, Byte, Byte),
             "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
+            # Numpy
+            "namedtuple" / NamedTuple("coord", "x y z", Byte[3]),
+
             "prefixedarray" / PrefixedArray(Byte, Byte),
 
             "shared1" / shared,
@@ -44,4 +47,12 @@ class TestCompile(unittest.TestCase):
 
         data = bytes(1000)
         dc.parse(data)
-        # assert dc.parse(data) == d.parse(data)
+
+    def test_numpy(self):
+        d = Numpy
+        dc = d.compile()
+        print(dc.source)
+        if not ontravis:
+            dc.tofile("tests/compiled_numpy.py")
+        data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+        dc.parse(data)

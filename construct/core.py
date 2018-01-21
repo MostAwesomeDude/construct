@@ -1702,7 +1702,7 @@ class Numpy(Construct):
         >>> import numpy
         >>> a = numpy.asarray([1,2,3])
         >>> Numpy.build(a)
-        b"\x93NUMPY\x01\x00F\x00"...
+        b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
         >>> Numpy.parse(_)
         array([1, 2, 3])
     """
@@ -1714,6 +1714,11 @@ class Numpy(Construct):
     def _build(self, obj, stream, context, path):
         import numpy
         numpy.save(stream, obj)
+    def _compileparse(self, code):
+        code.append("""
+            import numpy
+        """)
+        return "numpy.load(io)"
 
 
 class NamedTuple(Adapter):
@@ -1732,6 +1737,9 @@ class NamedTuple(Adapter):
     """
     def __init__(self, tuplename, tuplefields, subcon):
         super(NamedTuple, self).__init__(subcon)
+        self.tuplename = tuplename
+        self.tuplefields = tuplefields
+        import collections
         self.factory = collections.namedtuple(tuplename, tuplefields)
     def _decode(self, obj, context):
         if isinstance(obj, list):
@@ -1745,6 +1753,43 @@ class NamedTuple(Adapter):
         if isinstance(self.subcon, Struct):
             return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name is not None}
         raise AdaptationError("can only decode and encode from lists and dicts")
+    def _compileparse(self, code):
+        code.append("""
+            import collections
+        """)
+        code.append("""
+            def parse_namedtuple(value, factory):
+                if isinstance(value, list):
+                    return factory(*value)
+                if isinstance(value, dict):
+                    return factory(**value)
+                assert False
+        """)
+        tuplename = "namedtuple_%s" % code.allocateId()
+        code.append("""
+            %s = collections.namedtuple(%r, %r)
+        """ % (tuplename, self.tuplename, self.tuplefields, ))
+        return "parse_namedtuple(%s, %s)" % (self.subcon._compileparse(code), tuplename)
+
+        block = """
+            def %s(io, context):
+                class FIELDS:
+                    __slots__ = [%s]
+                this = FIELDS()
+        """ % (fname, ", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
+        for sc in self.subcons:
+            block += """
+                %s%s
+            """ % ("this.%s = " % sc.name if sc.name else "", sc._compileparse(code))
+        block += """
+                return this
+        """
+        code.append(block)
+        return "%s(io, this)" % (fname,)
+
+
+
+
 
 
 #===============================================================================
