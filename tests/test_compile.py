@@ -34,13 +34,13 @@ class TestCompile(unittest.TestCase):
             "rebuild" / Rebuild(Byte, len_(this.array)),
             "default" / Default(Byte, 0),
             Check(this.num == 0),
-            # Error,
-            # If(False, Error),
+            "error0" / If(False, Error),
             "focusedseq1" / FocusedSeq(0, Byte, Byte),
             "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
-            # Numpy
+            # Numpy, cannot parse empty string, only a proper pickle
             "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
             "namedtuple2" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
+            # NamedTuple, cannot use factory on FIELDS object (non dict)
             # "namedtuple3" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
 
             "padding" / Padding(2),
