@@ -1634,7 +1634,9 @@ class FocusedSeq(Construct):
         self.subcons = list(subcons) + list(k/v for k,v in kw.items())
     def _parse(self, stream, context, path):
         context = Container(_ = context)
-        parsebuildfrom = self.parsebuildfrom(context) if callable(self.parsebuildfrom) else self.parsebuildfrom
+        parsebuildfrom = self.parsebuildfrom
+        if callable(parsebuildfrom):
+            parsebuildfrom = parsebuildfrom(context)
         if isinstance(parsebuildfrom, int):
             index = parsebuildfrom
             self.subcons[index]  #IndexError check
@@ -1648,7 +1650,9 @@ class FocusedSeq(Construct):
         return context[index]
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
-        parsebuildfrom = self.parsebuildfrom(context) if callable(self.parsebuildfrom) else self.parsebuildfrom
+        parsebuildfrom = self.parsebuildfrom
+        if callable(parsebuildfrom):
+            parsebuildfrom = parsebuildfrom(context)
         if isinstance(parsebuildfrom, int):
             index = parsebuildfrom
             self.subcons[index]  #IndexError check
@@ -1668,7 +1672,9 @@ class FocusedSeq(Construct):
     def _sizeof(self, context, path):
         context = Container(_ = context)
         try:
-            parsebuildfrom = self.parsebuildfrom(context) if callable(self.parsebuildfrom) else self.parsebuildfrom
+            parsebuildfrom = self.parsebuildfrom
+            if callable(parsebuildfrom):
+                parsebuildfrom = parsebuildfrom(context)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
         if isinstance(parsebuildfrom, int):
