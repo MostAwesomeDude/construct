@@ -975,7 +975,7 @@ class Struct(Construct):
                         obj.update(subobj)
                         context.update(subobj)
                 else:
-                    if sc.name is not None:
+                    if sc.name:
                         obj[sc.name] = subobj
                         context[sc.name] = subobj
             except StopIteration:
@@ -995,14 +995,14 @@ class Struct(Construct):
 
                 if sc.flagembedded:
                     context.update(subobj)
-                if sc.name is not None:
+                if sc.name:
                     context[sc.name] = subobj
 
                 buildret = sc._build(subobj, stream, context, path)
                 if buildret is not None:
                     if sc.flagembedded:
                         context.update(buildret)
-                    if sc.name is not None:
+                    if sc.name:
                         context[sc.name] = buildret
             except StopIteration:
                 break
@@ -1085,7 +1085,7 @@ class Sequence(Struct):
                     context[i] = subobj
                 else:
                     obj.append(subobj)
-                    if sc.name is not None:
+                    if sc.name:
                         context[sc.name] = subobj
                     context[i] = subobj
             except StopIteration:
@@ -1100,14 +1100,14 @@ class Sequence(Struct):
                     subobj = objiter
                 else:
                     subobj = next(objiter)
-                    if sc.name is not None:
+                    if sc.name:
                         context[sc.name] = subobj
                 context[i] = subobj
                 buildret = sc._build(subobj, stream, context, path)
                 if buildret is not None:
                     if sc.flagembedded:
                         context.update(buildret)
-                    if sc.name is not None:
+                    if sc.name:
                         context[sc.name] = buildret
                     context[i] = buildret
             except StopIteration:
@@ -1767,7 +1767,7 @@ class NamedTuple(Adapter):
         if isinstance(self.subcon, (Sequence,Range)):
             return list(obj)
         if isinstance(self.subcon, Struct):
-            return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name is not None}
+            return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name}
         raise AdaptationError("can only decode and encode from lists and dicts")
     def _compileparse(self, code):
         code.append("""
@@ -2049,11 +2049,11 @@ class Union(Construct):
                 context.update(subobj)
             else:
                 subobj = sc._parse(stream, context, path)
-                if sc.name is not None:
+                if sc.name:
                     obj[sc.name] = subobj
                     context[sc.name] = subobj
             forwards[i] = stream.tell()
-            if sc.name is not None:
+            if sc.name:
                 forwards[sc.name] = stream.tell()
             stream.seek(fallback)
         parsefrom = self.parsefrom
@@ -2072,7 +2072,7 @@ class Union(Construct):
                 if buildret is not None:
                     if sc.flagembedded:
                         context.update(buildret)
-                    if sc.name is not None:
+                    if sc.name:
                         context[sc.name] = buildret
                 return buildret
             elif sc.name in obj:
@@ -2081,7 +2081,7 @@ class Union(Construct):
                 if buildret is not None:
                     if sc.flagembedded:
                         context.update(buildret)
-                    if sc.name is not None:
+                    if sc.name:
                         context[sc.name] = buildret
                 return buildret
         else:
@@ -2099,7 +2099,7 @@ class Union(Construct):
             sc = self.subcons[parsefrom]
             return sc._sizeof(context, path)
         if isinstance(parsefrom, str):
-            sc = {sc.name:sc for sc in self.subcons if sc.name is not None}[parsefrom]
+            sc = {sc.name:sc for sc in self.subcons if sc.name}[parsefrom]
             return sc._sizeof(context, path)
         raise UnionError("parsefrom should be either: None, an int, a str, or context function")
 
@@ -2868,7 +2868,7 @@ class LazyStruct(Construct):
             for sc in self.subcons:
                 if sc.flagembedded:
                     raise SizeofError
-                if sc.name is not None:
+                if sc.name:
                     keys[sc.name] = None
                     self.offsetmap[sc.name] = (at, sc)
                 at += sc.sizeof()
@@ -2903,12 +2903,12 @@ class LazyStruct(Construct):
                 context.update(subobj)
             elif size is None:
                 subobj = sc._parse(stream, context, path)
-                if sc.name is not None:
+                if sc.name:
                     keys[sc.name] = None
                     values[sc.name] = subobj
                     context[sc.name] = subobj
             else:
-                if sc.name is not None:
+                if sc.name:
                     keys[sc.name] = None
                     offsetmap[sc.name] = (stream.tell(), sc)
                 stream.seek(size, 1)
@@ -2928,7 +2928,7 @@ class LazyStruct(Construct):
             if buildret is not None:
                 if sc.flagembedded:
                     context.update(buildret)
-                if sc.name is not None:
+                if sc.name:
                     context[sc.name] = buildret
         return context
 
@@ -3066,14 +3066,14 @@ class LazySequence(Construct):
                 subobj = objiter
             else:
                 subobj = next(objiter)
-                if sc.name is not None:
+                if sc.name:
                     context[sc.name] = subobj
             context[i] = subobj
             buildret = sc._build(subobj, stream, context, path)
             if buildret is not None:
                 if sc.flagembedded:
                     context.update(buildret)
-                if sc.name is not None:
+                if sc.name:
                     context[sc.name] = buildret
                 context[i] = buildret
 
