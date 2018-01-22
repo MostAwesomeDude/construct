@@ -1116,14 +1116,24 @@ class Sequence(Struct):
         fname = "parse_sequence_%s" % code.allocateId()
         block = """
             def %s(io, context):
-                this = []
+                result = []
         """ % (fname,)
+        if any(sc.name for sc in self.subcons):
+            block += """
+                class FIELDS:
+                    __slots__ = [%s]
+                this = FIELDS()
+            """ % (", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
         for sc in self.subcons:
             block += """
-                this.append(%s)
+                result.append(%s)
             """ % (sc._compileparse(code))
+            if sc.name:
+                block += """
+                this.%s = result[-1]
+                """ % (sc.name, )
         block += """
-                return this
+                return result
         """
         code.append(block)
         return "%s(io, this)" % (fname,)
