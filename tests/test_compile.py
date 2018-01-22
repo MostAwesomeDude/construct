@@ -37,7 +37,7 @@ class TestCompile(unittest.TestCase):
             "error0" / If(False, Error),
             "focusedseq1" / FocusedSeq(0, Byte, Byte),
             "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
-            # Numpy, cannot parse empty string, only a proper pickle
+            "numpy0" / If(False, Numpy),
             "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
             "namedtuple2" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
             # NamedTuple, cannot use factory on FIELDS object (non dict)
