@@ -1803,22 +1803,6 @@ class NamedTuple(Adapter):
         """ % (tuplename, self.tuplename, self.tuplefields, ))
         return "parse_namedtuple(%s, %s)" % (self.subcon._compileparse(code), tuplename)
 
-        block = """
-            def %s(io, context):
-                class FIELDS:
-                    __slots__ = [%s]
-                this = FIELDS()
-        """ % (fname, ", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
-        for sc in self.subcons:
-            block += """
-                %s%s
-            """ % ("this.%s = " % sc.name if sc.name else "", sc._compileparse(code))
-        block += """
-                return this
-        """
-        code.append(block)
-        return "%s(io, this)" % (fname,)
-
 
 #===============================================================================
 # alignment and padding
