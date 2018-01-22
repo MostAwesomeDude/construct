@@ -81,3 +81,18 @@ class TestCompile(unittest.TestCase):
             dc.tofile("tests/compiled_numpy.py")
         data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
         dc.parse(data)
+
+    def test_example1(self):
+        d = Struct(
+            "num8" / Int8ub,
+            "num24" / Int24ub,
+            "data" / Bytes(this.num8),
+        )
+
+        dc = d.compile()
+        print(dc.source)
+        if not ontravis:
+            dc.tofile("tests/compiled_example1.py")
+
+        data = bytes(1000)
+        dc.parse(data)
