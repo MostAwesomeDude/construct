@@ -1758,10 +1758,7 @@ class Numpy(Construct):
         import numpy
         numpy.save(stream, obj)
     def _compileparse(self, code):
-        code.append("""
-            import numpy
-        """)
-        return "numpy.load(io)"
+        return code.defer("Numpy")
 
 
 class NamedTuple(Adapter):
