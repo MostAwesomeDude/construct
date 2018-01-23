@@ -59,6 +59,7 @@ class ExplicitError(ConstructError):
 def singleton(arg):
     return arg()
 
+
 def _read_stream(stream, length):
     if length < 0:
         raise StreamError("length must be >= 0", length)
@@ -66,6 +67,7 @@ def _read_stream(stream, length):
     if len(data) != length:
         raise StreamError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
     return data
+
 
 def _write_stream(stream, length, data):
     if length < 0:
@@ -75,6 +77,7 @@ def _write_stream(stream, length, data):
     written = stream.write(data)
     if written is not None and written != length:
         raise StreamError("could not write bytes, expected %d, written %d" % (length, written))
+
 
 class CodeGen:
     def __init__(self):
