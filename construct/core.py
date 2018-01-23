@@ -545,7 +545,13 @@ def Bitwise(subcon):
         >>> d.sizeof()
         1
     """
-    return Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
+    macro = Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
+    def _compileparse(self, code):
+        code.append("""
+            from construct.lib import bits2bytes, bytes2bits
+        """)
+        return "restream(bytes2bits(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof()//8, subcon._compileparse(code), )
+    return CompilableMacro(macro, _compileparse)
 
 
 def Bytewise(subcon):
@@ -708,6 +714,13 @@ class BitsInteger(Construct):
             return self.length(context) if callable(self.length) else self.length
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
+    def _compileparse(self, code):
+        if callable(self.length):
+            raise NotImplementedError("BitsInteger does not compile non-constant length")
+        code.append("""
+            from construct.lib import bits2integer, integer2bits
+        """)
+        return "bits2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed, )
 
 
 @singleton

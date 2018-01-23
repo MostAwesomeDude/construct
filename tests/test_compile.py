@@ -16,10 +16,15 @@ class TestCompile(unittest.TestCase):
             "bytes1" / Bytes(4),
             "bytes2" / Bytes(this.num),
             "greedybytes" / Prefixed(Byte, GreedyBytes),
+            "bitwise1" / Bitwise(BitsInteger(8, swapped=False)),
+            "bitwise2" / Bitwise(BitsInteger(8, swapped=True)),
 
             "int8" / FormatField(">", "B"),
-            "int16a" / BytesInteger(16),
-            "int16b" / BytesInteger(this.num),
+            "int16_1" / BytesInteger(16, swapped=True),
+            "int16_2" / BytesInteger(16, swapped=False),
+            "int16dynamic" / BytesInteger(this.num),
+            "bitsinteger1" / Bitwise(BitsInteger(8, swapped=False)),
+            "bitsinteger2" / Bitwise(BitsInteger(8, swapped=True)),
             "varint" / VarInt,
 
             "struct" / Struct("field" / Byte),
