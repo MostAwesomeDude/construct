@@ -99,6 +99,12 @@ class CodeGen:
     def appendnl(self):
         self.blocks.append("")
 
+    def defer(self, name):
+        self.append("""
+            from construct import %s
+        """ % name)
+        return "%s._parse(io, None, None)" % name
+
     def toString(self):
         return "\n".join(self.blocks)
 
@@ -916,10 +922,7 @@ class VarInt(Construct):
             obj >>= 7
         _write_stream(stream, 1, int2byte(obj))
     def _compileparse(self, code):
-        code.append("""
-            from construct import VarInt
-        """)
-        return "VarInt._parse(io, None, None)"
+        return code.defer("VarInt")
 
 
 #===============================================================================
