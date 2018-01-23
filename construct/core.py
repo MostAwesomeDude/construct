@@ -3595,7 +3595,7 @@ class StringEncoded(Adapter):
         encoding = self.encoding or globalstringencoding
         if encoding:
             obj = obj.encode(encoding)
-        if not isinstance(obj, stringbytetype):
+        if not isinstance(obj, bytestringtype):
             raise StringError("encoding must result in bytes type")
         return obj
     def _compileparse(self, code):
@@ -3607,7 +3607,7 @@ class StringPaddedTrimmed(Adapter):
     """Used internally."""
     __slots__ = ["length", "padchar", "paddir", "trimdir"]
     def __init__(self, length, subcon, padchar=b"\x00", paddir="right", trimdir="right"):
-        if not isinstance(padchar, stringbytetype) or len(padchar) != 1:
+        if not isinstance(padchar, bytestringtype) or len(padchar) != 1:
             raise StringError("padchar must be b-string character")
         if paddir not in ["right","left","center"]:
             raise StringError("paddir must be one of: right left center")
