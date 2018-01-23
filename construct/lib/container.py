@@ -54,20 +54,54 @@ class Container(dict):
     """
     __slots__ = ["__keys_order__", "__recursion_lock__"]
 
+    def __getattr__(self, name):
+        try:
+            if name in self.__slots__:
+                return object.__getattribute__(self, name)
+            else:
+                return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        try:
+            if name in self.__slots__:
+                return object.__setattr__(self, name, value)
+            else:
+                self[name] = value
+        except KeyError:
+            raise AttributeError(name)
+
+    def __delattr__(self, name):
+        try:
+            if name in self.__slots__:
+                return object.__delattr__(self, name)
+            else:
+                del self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setitem__(self, key, value):
+        if key not in self:
+            self.__keys_order__.append(key)
+        dict.__setitem__(self, key, value)
+
+    def __delitem__(self, key):
+        """Removes an item from the Container in linear time O(n)."""
+        if key in self:
+            self.__keys_order__.remove(key)
+        dict.__delitem__(self, key)
+
     def __init__(self, *args, **kw):
-        object.__setattr__(self, "__keys_order__", [])
-        if isinstance(args, dict):
-            for k, v in args.items():
-                self[k] = v
-            return
+        self.__keys_order__ = []
         for arg in args:
             if isinstance(arg, dict):
-                for k, v in arg.items():
+                for k,v in arg.items():
                     self[k] = v
             else:
-                for k, v in arg:
+                for k,v in arg:
                     self[k] = v
-        for k, v in kw.items():
+        for k,v in kw.items():
             self[k] = v
 
     def __getstate__(self):
@@ -76,53 +110,15 @@ class Container(dict):
     def __setstate__(self, state):
         self.__keys_order__ = state
 
-    def __getattr__(self, name):
-        try:
-            if name in self.__slots__:
-                try:
-                    return object.__getattribute__(self, name)
-                except AttributeError as e:
-                    if name == "__keys_order__":
-                        object.__setattr__(self, "__keys_order__", [])
-                        return []
-                    else:
-                        raise e
-            else:
-                return self[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    def __setitem__(self, key, val):
-        if key in self.__slots__:
-            object.__setattr__(self, key, val)
-        else:
-            if key not in self:
-                if not hasattr(self, "__keys_order__"):
-                    object.__setattr__(self, "__keys_order__", [key])
-                else:
-                    self.__keys_order__.append(key)
-            dict.__setitem__(self, key, val)
-
-    def __delitem__(self, key):
-        """Removes an item from the Container in linear time O(n)."""
-        if key in self.__slots__:
-            object.__delattr__(self, key)
-        else:
-            dict.__delitem__(self, key)
-            self.__keys_order__.remove(key)
-
-    __delattr__ = __delitem__
-    __setattr__ = __setitem__
-
     def __call__(self, **kw):
         """Chains adding new entries to the same container. See ctor."""
         for k,v in kw.items():
-            self.__setitem__(k, v)
+            self[k] = v
         return self
 
     def clear(self):
         dict.clear(self)
-        del self.__keys_order__[:]
+        self.__keys_order__ = []
 
     def pop(self, key, *default):
         """Removes and returns the value for a given key, raises KeyError if not found."""
