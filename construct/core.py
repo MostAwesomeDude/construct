@@ -2752,10 +2752,13 @@ def PrefixedArray(lengthfield, subcon):
         >>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
         [1684234849, 1751606885]
     """
-    return FocusedSeq(1,
-        "count"/Rebuild(lengthfield, len_(this.items)),
-        "items"/subcon[this.count],
+    macro = FocusedSeq(1,
+        "count" / Rebuild(lengthfield, len_(this.items)),
+        "items" / subcon[this.count],
     )
+    def _compileparse(self, code):
+        return "[%s for i in range(%s)]" % (subcon._compileparse(code), lengthfield._compileparse(code), )
+    return CompilableMacro(macro, _compileparse)
 
 
 class Checksum(Construct):
