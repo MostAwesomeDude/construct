@@ -272,6 +272,9 @@ class Construct(object):
                 data = io.read(count)
                 assert len(data) == count
                 return data
+            from io import BytesIO
+            def restream(data, func):
+                return func(BytesIO(data))
         """)
         code.append("""
             def parseall(io, context):
@@ -2712,13 +2715,6 @@ def ByteSwapped(subcon):
         lambda s: s[::-1], subcon.sizeof(),
         lambda n: n)
     def _compileparse(self, code):
-        code.append("""
-            from io import BytesIO
-        """)
-        code.append("""
-            def restream(data, func):
-                func(BytesIO(data))
-        """)
         return "restream(read_bytes(io, %s)[::-1], lambda io: %s)" % (subcon.sizeof(), subcon._compileparse(code), )
     return CompilableMacro(macro, _compileparse)
 
@@ -2787,13 +2783,6 @@ class Prefixed(Subconstruct):
     def _compileparse(self, code):
         if self.includelength:
             raise NotImplementedError("Prefixed does not compile with includelength")
-        code.append("""
-            from io import BytesIO
-        """)
-        code.append("""
-            def restream(data, func):
-                func(BytesIO(data))
-        """)
         return "restream(read_bytes(io, %s), lambda io: %s)" % (self.lengthfield._compileparse(code), self.subcon._compileparse(code), )
 
 
