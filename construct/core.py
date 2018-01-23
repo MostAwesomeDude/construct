@@ -1022,13 +1022,14 @@ class Struct(Construct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
     def _compileparse(self, code):
+        code.append("""
+            from construct import Container
+        """)
         fname = "parse_struct_%s" % code.allocateId()
         block = """
             def %s(io, context):
-                class FIELDS:
-                    __slots__ = [%s]
-                this = FIELDS()
-        """ % (fname, ", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
+                this = Container()
+        """ % (fname, )
         for sc in self.subcons:
             block += """
                 %s%s
@@ -1113,6 +1114,9 @@ class Sequence(Struct):
             except StopIteration:
                 break
     def _compileparse(self, code):
+        code.append("""
+            from construct import Container
+        """)
         fname = "parse_sequence_%s" % code.allocateId()
         block = """
             def %s(io, context):
@@ -1120,10 +1124,8 @@ class Sequence(Struct):
         """ % (fname,)
         if any(sc.name for sc in self.subcons):
             block += """
-                class FIELDS:
-                    __slots__ = [%s]
-                this = FIELDS()
-            """ % (", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
+                this = Container()
+            """
         for sc in self.subcons:
             block += """
                 result.append(%s)
@@ -1696,6 +1698,9 @@ class FocusedSeq(Construct):
     def _compileparse(self, code):
         if callable(self.parsebuildfrom):
             raise NotImplementedError("FocusedSeq does not compile non-constant selectors")
+        code.append("""
+            from construct import Container
+        """)
         fname = "parse_focusedseq_%s" % code.allocateId()
         block = """
             def %s(io, context):
@@ -1703,10 +1708,8 @@ class FocusedSeq(Construct):
         """ % (fname, )
         if any(sc.name for sc in self.subcons):
             block += """
-                class FIELDS:
-                    __slots__ = [%s]
-                this = FIELDS()
-            """ % (", ".join(repr(sc.name) for sc in self.subcons if sc.name),)
+                this = Container()
+            """
         for sc in self.subcons:
             block += """
                 result.append(%s)
