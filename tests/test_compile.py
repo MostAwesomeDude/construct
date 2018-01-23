@@ -56,6 +56,7 @@ class TestCompile(unittest.TestCase):
             "seek0" / Seek(0, 1),
             "tell" / Tell,
             "pass1" / Pass,
+            "terminated0" / Prefixed(Byte, Terminated),
 
             "prefixed" / Prefixed(Byte, GreedyBytes),
             "prefixedarray" / PrefixedArray(Byte, Byte),

@@ -2574,6 +2574,8 @@ class Terminated(Construct):
         pass
     def _sizeof(self, context, path):
         return 0
+    def _compileparse(self, code):
+        return code.defer("Terminated")
 
 
 class Restreamed(Subconstruct):
