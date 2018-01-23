@@ -2108,6 +2108,44 @@ class Union(Construct):
             sc = {sc.name:sc for sc in self.subcons if sc.name}[parsefrom]
             return sc._sizeof(context, path)
         raise UnionError("parsefrom should be either: None int str context-function")
+    def _compileparse(self, code):
+        if callable(self.parsefrom):
+            raise NotImplementedError("Union does not compile non-constant parsefrom")
+        code.append("""
+            from construct import Container
+        """)
+        fname = "parse_union_%s" % code.allocateId()
+        block = """
+            def %s(io, context):
+                this = Container()
+                fallback = io.tell()
+        """ % (fname, )
+        index = -1
+        if isinstance(self.parsefrom, int):
+            index = self.parsefrom
+        if isinstance(self.parsefrom, str):
+            index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[self.parsefrom]
+        for i,sc in enumerate(self.subcons):
+            block += """
+                %s%s
+            """ % ("this.%s = " % sc.name if sc.name else "", sc._compileparse(code))
+            if i == index:
+                block += """
+                forward = io.tell()
+                """
+            if i < len(self.subcons)-1 or index == -1:
+                block += """
+                io.seek(fallback)
+                """
+        if index != -1:
+            block += """
+                io.seek(forward)
+            """
+        block += """
+                return this
+        """
+        code.append(block)
+        return "%s(io, this)" % (fname,)
 
 
 class Select(Construct):

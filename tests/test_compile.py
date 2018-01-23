@@ -47,6 +47,9 @@ class TestCompile(unittest.TestCase):
             "paddedbyte" / Padded(4, Byte),
             "alignedbyte" / Aligned(4, Byte),
 
+            "union1" / Union(None, "char"/Byte),
+            "union2" / Union(0, "char"/Byte),
+            "union3" / Union("char", "char"/Byte),
             "if1" / If(this.num == 0, Byte),
             "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
 
