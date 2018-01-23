@@ -12,6 +12,7 @@ PY36 = sys.version_info[:2] == (3,6)
 PY37 = sys.version_info[:2] == (3,7)
 PYPY = '__pypy__' in sys.builtin_module_names
 supportskwordered = PY >= (3,6) or PYPY
+supportscompiler = PY >= (3,4)
 
 
 if PY3:

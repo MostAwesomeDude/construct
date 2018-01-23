@@ -6,7 +6,7 @@ from construct import *
 from construct.lib import *
 
 
-@pytest.mark.xfail(PY < (3,4), reason="compiler requires Python 3.4")
+@pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.4")
 class TestCompile(unittest.TestCase):
 
     def test_all(self):
