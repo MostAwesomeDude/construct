@@ -219,12 +219,12 @@ def test_rawcopy_build2(benchmark):
     benchmark(d.build, dict(value=0))
 
 def test_prefixed_parse(benchmark):
-    d = Prefixed(Byte, GreedyRange(Byte))
+    d = Prefixed(Byte, GreedyBytes)
     benchmark(d.parse, b"\x08"+bytes(8))
 
 def test_prefixed_build(benchmark):
-    d = Prefixed(Byte, GreedyRange(Byte))
-    benchmark(d.build, [0]*8)
+    d = Prefixed(Byte, GreedyBytes)
+    benchmark(d.build, bytes(8))
 
 def test_prefixedarray_parse(benchmark):
     d = PrefixedArray(Byte, Byte)

@@ -2731,10 +2731,10 @@ class Prefixed(Subconstruct):
             from io import BytesIO
         """)
         code.append("""
-            def parse_prefixed(data, func):
+            def restream(data, func):
                 func(BytesIO(data))
         """)
-        return "parse_prefixed(read_bytes(io, %s), lambda io: %s)" % (self.lengthfield._compileparse(code), self.subcon._compileparse(code), )
+        return "restream(read_bytes(io, %s), lambda io: %s)" % (self.lengthfield._compileparse(code), self.subcon._compileparse(code), )
 
 
 def PrefixedArray(lengthfield, subcon):
