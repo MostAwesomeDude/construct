@@ -741,6 +741,9 @@ class TestCore(unittest.TestCase):
         common(PascalString(Int16ub), b"\x00\x05hello", b"hello")
         common(PascalString(VarInt), b"\x05hello", b"hello")
 
+        common(PascalString(Byte), b"\x00", b"")
+        common(PascalString(Byte, encoding="utf8"), b"\x00", u"")
+
     def test_cstring(self):
         assert CString().parse(b"hello\x00") == b"hello"
         assert CString().build(b"hello") == b"hello\x00"
@@ -806,14 +809,12 @@ class TestCore(unittest.TestCase):
         assert Filter(obj_ != 0, Byte[:]).build([0,1,0,2,0]) == b"\x01\x02"
 
     def test_check(self):
-        assert Check(True).parse(b"") == None
-        assert Check(True).build(None) == b""
-        assert Check(True).sizeof() == 0
-        assert Check(this.x == 255).parse(b"", Container(x=255)) == None
-        assert Check(this.x == 255).build(None, Container(x=255)) == b""
-        assert Check(this.x == 255).sizeof() == 0
-        assert Check(len_(this.a) == 3).parse(b"", Container(a=[1,2,3])) == None
-        assert Check(len_(this.a) == 3).build(None, Container(a=[1,2,3])) == b""
+        common(Check(True), b"", None, 0)
+        common(Check(this.x == 255), b"", None, 0, x=255)
+        common(Check(len_(this.a) == 3), b"", None, 0, a=[1,2,3])
+        assert raises(Check(False).parse, b"") == ValidationError
+        assert raises(Check(this.x == 255).parse, b"", x=0) == ValidationError
+        assert raises(Check(len_(this.a) == 3).parse, b"", a=[]) == ValidationError
 
     @pytest.mark.xfail(reason="Struct.sizeof seems buggy?")
     def test_stopif(self):

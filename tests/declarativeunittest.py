@@ -21,16 +21,16 @@ def atmostone(*args):
     return sum(1 for x in args if x) <= 1
 
 
-def common(format, data, obj, size=SizeofError):
-    assert format.parse(data) == obj
-    assert format.build(obj) == data
+def common(format, data, obj, size=SizeofError, **kw):
+    assert format.parse(data, **kw) == obj
+    assert format.build(obj, **kw) == data
     # following are implied by above (re-parse and re-build)
     # assert format.parse(format.build(obj)) == obj
     # assert format.build(format.parse(data)) == data
     if isinstance(size, int):
-        assert format.sizeof() == size
+        assert format.sizeof(**kw) == size
     else:
-        assert raises(format.sizeof) == size
+        assert raises(format.sizeof, **kw) == size
 
 
 def commonhex(format, hexdata):
