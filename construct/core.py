@@ -2065,7 +2065,7 @@ class Union(Construct):
         parsefrom = self.parsefrom
         if callable(parsefrom):
             parsefrom = parsefrom(context)
-        if isinstance(parsefrom, (int,str)):
+        if parsefrom is not None:
             stream.seek(forwards[parsefrom])
         return obj
     def _build(self, obj, stream, context, path):
@@ -2100,14 +2100,14 @@ class Union(Construct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
         if parsefrom is None:
-            raise SizeofError("cannot calculate size")
+            raise SizeofError("cannot calculate size, parsefrom is None")
         if isinstance(parsefrom, int):
             sc = self.subcons[parsefrom]
             return sc._sizeof(context, path)
         if isinstance(parsefrom, str):
             sc = {sc.name:sc for sc in self.subcons if sc.name}[parsefrom]
             return sc._sizeof(context, path)
-        raise UnionError("parsefrom should be either: None, an int, a str, or context function")
+        raise UnionError("parsefrom should be either: None int str context-function")
 
 
 class Select(Construct):
