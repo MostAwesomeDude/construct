@@ -58,6 +58,7 @@ class TestCompile(unittest.TestCase):
             "pass1" / Pass,
             "terminated0" / Prefixed(Byte, Terminated),
 
+            "byteswapped" / ByteSwapped(BytesInteger(8)),
             "prefixed" / Prefixed(Byte, GreedyBytes),
             "prefixedarray" / PrefixedArray(Byte, Byte),
 

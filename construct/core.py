@@ -2708,10 +2708,20 @@ def ByteSwapped(subcon):
 
         Int24ul <--> ByteSwapped(Int24ub) <--> BytesInteger(3, swapped=True)
     """
-    return Restreamed(subcon,
+    macro = Restreamed(subcon,
         lambda s: s[::-1], subcon.sizeof(),
         lambda s: s[::-1], subcon.sizeof(),
         lambda n: n)
+    def _compileparse(self, code):
+        code.append("""
+            from io import BytesIO
+        """)
+        code.append("""
+            def restream(data, func):
+                func(BytesIO(data))
+        """)
+        return "restream(read_bytes(io, %s)[::-1], lambda io: %s)" % (subcon.sizeof(), subcon._compileparse(code), )
+    return CompilableMacro(macro, _compileparse)
 
 
 def BitsSwapped(subcon):
