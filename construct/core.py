@@ -2476,6 +2476,10 @@ class Seek(Construct):
         return stream.seek(at, whence)
     def _sizeof(self, context, path):
         raise SizeofError("Seek seeks the stream, sizeof is not meaningful")
+    def _compileparse(self, code):
+        if callable(self.at) or callable(self.whence):
+            raise NotImplementedError("Seek does not compile non-constant at or whence")
+        return "io.seek(%r, %r)" % (self.at, self.whence, )
 
 
 @singleton
@@ -2537,6 +2541,7 @@ class Pass(Construct):
         return 0
     def _compileparse(self, code):
         return "None"
+
 
 @singleton
 class Terminated(Construct):

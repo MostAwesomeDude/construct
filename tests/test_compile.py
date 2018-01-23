@@ -53,6 +53,7 @@ class TestCompile(unittest.TestCase):
             "if1" / If(this.num == 0, Byte),
             "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
 
+            "seek0" / Seek(0, 1),
             "tell" / Tell,
             "pass1" / Pass,
 
