@@ -37,11 +37,11 @@ class TestCompile(unittest.TestCase):
             "error0" / If(False, Error),
             "focusedseq1" / FocusedSeq(0, Byte, Byte),
             "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
+            # "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
             "numpy0" / If(False, Numpy),
             "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
             "namedtuple2" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
-            # NamedTuple, cannot use factory on FIELDS object (non dict)
-            # "namedtuple3" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
+            "namedtuple3" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
 
             "padding" / Padding(2),
             "paddedbyte" / Padded(4, Byte),
@@ -67,7 +67,7 @@ class TestCompile(unittest.TestCase):
             "string1" / String(10),
             "string2" / String(10, encoding="utf8"),
             "pascalstring1" / PascalString(Byte),
-            # "pascalstring2" / PascalString(Byte, encoding="utf8"),
+            "pascalstring2" / PascalString(Byte, encoding="utf8"),
             "greedystring" / Prefixed(Byte, GreedyString()),
         )
 
@@ -77,7 +77,7 @@ class TestCompile(unittest.TestCase):
             dc.tofile("tests/compiled.py")
 
         data = bytes(1000)
-        dc.parse(data)
+        assert d.parse(data) == dc.parse(data)
 
     def test_numpy(self):
         d = Numpy
@@ -86,19 +86,4 @@ class TestCompile(unittest.TestCase):
         if not ontravis:
             dc.tofile("tests/compiled_numpy.py")
         data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
-        dc.parse(data)
-
-    def test_example1(self):
-        d = Struct(
-            "num8" / Int8ub,
-            "num24" / Int24ub,
-            "data" / Bytes(this.num8),
-        )
-
-        dc = d.compile()
-        print(dc.source)
-        if not ontravis:
-            dc.tofile("tests/compiled_example1.py")
-
-        data = bytes(1000)
         dc.parse(data)
