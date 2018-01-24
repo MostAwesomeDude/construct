@@ -655,7 +655,7 @@ class BytesInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = _read_stream(stream, length)
         if self.swapped:
-            data = swapbytes(data, 1)
+            data = data[::-1]
         return bytes2integer(data, self.signed)
     def _build(self, obj, stream, context, path):
         if obj < 0 and not self.signed:
