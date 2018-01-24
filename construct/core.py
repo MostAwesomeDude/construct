@@ -1136,12 +1136,12 @@ class Sequence(Struct):
                 break
     def _compileparse(self, code):
         code.append("""
-            from construct import Container
+            from construct import Container, ListContainer
         """)
         fname = "parse_sequence_%s" % code.allocateId()
         block = """
             def %s(io, context):
-                result = []
+                result = ListContainer()
         """ % (fname,)
         if any(sc.name for sc in self.subcons):
             block += """
