@@ -41,7 +41,9 @@ GreedyBytes was added
 
 Flag was made a singleton
 
-Enum takes the `default` keyword argument (no underscores), always puts label into context (not a value)
+Enum takes the `default` keyword argument (no underscores)
+
+Enum was fixed, the context value is a string label (not integer).
 
 FlagsEnum remains
 
@@ -143,6 +145,8 @@ Alias was removed
 
 Magic was made Const
 
+Const has reordered parameters, like ``Const(b"\\x00")`` and ``Const(0, Int8ub)``.
+
 Pass remains
 
 Terminator was renamed Terminated
@@ -212,3 +216,11 @@ ByteSwapped and BitsSwapped were added
 Checksum was added
 
 Compressed was added
+
+
+Exceptions
+-----------
+
+FocusedError OverwriteError were removed
+
+FieldError was replaced with StreamError (raised when stream returns less than requested amount) and FormatFieldError (raised by FormatField class, for example if building Float from non-float value and struct.pack complaining).

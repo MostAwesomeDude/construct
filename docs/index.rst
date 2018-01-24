@@ -120,6 +120,7 @@ User Guide
    transition29
    basics
    advanced
+   compilation
    bitwise
    adapters
    meta
