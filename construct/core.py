@@ -619,7 +619,7 @@ class FormatField(Bytes):
         code.append("""
             from struct import pack, unpack, calcsize
         """)
-        return "unpack(%r, read_bytes(io, %r))[0]" % (self.fmtstr, self.length)
+        return "unpack(%r, read_bytes(io, %s))[0]" % (self.fmtstr, self.length)
 
 
 class BytesInteger(Construct):
@@ -1254,18 +1254,8 @@ class Range(Subconstruct):
         raise SizeofError("cannot calculate size, unless element count and size is fixed")
     def _compileparse(self, code):
         if not self.min == self.max:
-            raise NotImplementedError("Range compiles only for Array instances, min==max")
+            raise NotImplementedError("Range compiles only for Array instances")
         return "[%s for i in range(%s)]" % (self.subcon._compileparse(code), self.max)
-        # fname = "parse_range_%s" % code.allocateId()
-        # block = """
-        #     def %s(io, context):
-        #         this = ListContainer()
-        #         for ???
-        #         return this
-        # """ % (fname,)
-        # (sc._compileparse(code))
-        # code.append(block)
-        # return "%s(io, this)" % (fname,)
 
 
 def GreedyRange(subcon):
@@ -1850,10 +1840,6 @@ def Padding(length, pattern=b"\x00"):
         4
     """
     return Padded(length, Pass, pattern=pattern)
-    # macro = Padded(length, Pass, pattern=pattern)
-    # def _compileparse(self, code):
-    #     return "[read_bytes(io, %r), None][1]" % (length, )
-    # return CompilableMacro(macro, _compileparse)
 
 
 class Padded(Subconstruct):
@@ -1911,7 +1897,7 @@ class Padded(Subconstruct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
     def _compileparse(self, code):
-        return "[%s, read_bytes(io, %r - %s)][0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
+        return "[%s, read_bytes(io, %s - %s)][0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
 
 
 class Aligned(Subconstruct):
@@ -1961,7 +1947,7 @@ class Aligned(Subconstruct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
     def _compileparse(self, code):
-        return "[%s, read_bytes(io, -%s %% %r)][0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
+        return "[%s, read_bytes(io, -%s %% %s)][0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
 
 
 def AlignedStruct(modulus, *subcons, **kw):
@@ -2284,7 +2270,7 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
         {True:thensubcon, False:elsesubcon},
     )
     def _compileparse(self, code):
-        return "(%s if %r else %s)" % (thensubcon._compileparse(code), predicate, elsesubcon._compileparse(code), )
+        return "(%s if %s else %s)" % (thensubcon._compileparse(code), predicate, elsesubcon._compileparse(code), )
     return CompilableMacro(macro, _compileparse)
 
 
@@ -2496,7 +2482,7 @@ class Seek(Construct):
     def _compileparse(self, code):
         if callable(self.at) or callable(self.whence):
             raise NotImplementedError("Seek does not compile non-constant at or whence")
-        return "io.seek(%r, %r)" % (self.at, self.whence, )
+        return "io.seek(%s, %s)" % (self.at, self.whence, )
 
 
 @singleton
