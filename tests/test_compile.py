@@ -43,6 +43,7 @@ class TestCompile(unittest.TestCase):
             "focusedseq1" / FocusedSeq(0, Byte, Byte),
             "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
             # "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
+            # "numpy1" / RestreamData(this.numpy_data, Numpy),
             "numpy0" / If(False, Numpy),
             "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
             "namedtuple2" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
