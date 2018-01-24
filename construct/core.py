@@ -576,7 +576,7 @@ def Bytewise(subcon):
 #===============================================================================
 # integers and floats
 #===============================================================================
-class FormatField(Bytes):
+class FormatField(Construct):
     r"""
     Field that uses ``struct`` module to pack and unpack data. This is used to implement basic Int* and Float* fields, but cannot pack 24-bit integers for example, which is left to BytesInteger.
 
@@ -595,16 +595,17 @@ class FormatField(Bytes):
         >>> d.sizeof()
         2
     """
-    __slots__ = ["fmtstr"]
+    __slots__ = ["fmtstr","length"]
     def __init__(self, endianity, format):
         if endianity not in list("=<>"):
             raise ValueError("endianity must be like: = < >", endianity)
         if format not in list("fdBHLQbhlq"):
             raise ValueError("format must be like: f d B H L Q b h l q", format)
-        super(FormatField, self).__init__(packer.calcsize(endianity+format))
+        super(FormatField, self).__init__()
         self.fmtstr = endianity+format
+        self.length = packer.calcsize(endianity+format)
     def _parse(self, stream, context, path):
-        data = _read_stream(stream, self.sizeof())
+        data = _read_stream(stream, self.length)
         try:
             return packer.unpack(self.fmtstr, data)[0]
         except Exception:
@@ -614,7 +615,9 @@ class FormatField(Bytes):
             data = packer.pack(self.fmtstr, obj)
         except Exception:
             raise FormatFieldError("packer %r error during building, given value %r" % (self.fmtstr, obj))
-        _write_stream(stream, self.sizeof(), data)
+        _write_stream(stream, self.length, data)
+    def _sizeof(self, context, path):
+        return self.length
     def _compileparse(self, code):
         code.append("""
             from struct import pack, unpack, calcsize
