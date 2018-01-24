@@ -1050,12 +1050,14 @@ class Struct(Construct):
         block = """
             def %s(io, context):
                 this = Container()
+                this._ = context
         """ % (fname, )
         for sc in self.subcons:
             block += """
                 %s%s
             """ % ("this.%s = " % sc.name if sc.name else "", sc._compileparse(code))
         block += """
+                del this._
                 return this
         """
         code.append(block)
