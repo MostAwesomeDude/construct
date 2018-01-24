@@ -1104,12 +1104,10 @@ class Sequence(Struct):
                 subobj = sc._parse(stream, context, path)
                 if sc.flagembedded:
                     obj.extend(subobj)
-                    context[i] = subobj
                 else:
                     obj.append(subobj)
-                    if sc.name:
-                        context[sc.name] = subobj
-                    context[i] = subobj
+                if sc.name:
+                    context[sc.name] = subobj
             except StopIteration:
                 break
         return obj
@@ -1122,16 +1120,14 @@ class Sequence(Struct):
                     subobj = objiter
                 else:
                     subobj = next(objiter)
-                    if sc.name:
-                        context[sc.name] = subobj
-                context[i] = subobj
+                if sc.name:
+                    context[sc.name] = subobj
                 buildret = sc._build(subobj, stream, context, path)
                 if buildret is not None:
                     if sc.flagembedded:
                         context.update(buildret)
                     if sc.name:
                         context[sc.name] = buildret
-                    context[i] = buildret
             except StopIteration:
                 break
     def _compileparse(self, code):
@@ -1667,10 +1663,11 @@ class FocusedSeq(Construct):
             index = [i for i,sc in enumerate(self.subcons) if sc.name == parsebuildfrom][0]  #IndexError check
         for i,sc in enumerate(self.subcons):
             parseret = sc._parse(stream, context, path)
-            context[i] = parseret
             if sc.name:
                 context[sc.name] = parseret
-        return context[index]
+            if i == index:
+                finalret = parseret
+        return finalret
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         parsebuildfrom = self.parsebuildfrom
@@ -1688,10 +1685,11 @@ class FocusedSeq(Construct):
         for i,sc in enumerate(self.subcons):
             buildret = sc._build(obj if i==index else None, stream, context, path)
             if buildret is not None:
-                context[i] = buildret
                 if sc.name:
                     context[sc.name] = buildret
-        return context[index]
+            if i == index:
+                finalret = buildret
+        return finalret
     def _sizeof(self, context, path):
         context = Container(_ = context)
         try:
