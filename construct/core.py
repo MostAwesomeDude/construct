@@ -715,8 +715,6 @@ class BitsInteger(Construct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
     def _compileparse(self, code):
-        if callable(self.length):
-            raise NotImplementedError("BitsInteger does not compile non-constant length")
         code.append("""
             from construct.lib import bits2integer, integer2bits
         """)
@@ -2480,8 +2478,6 @@ class Seek(Construct):
     def _sizeof(self, context, path):
         raise SizeofError("Seek seeks the stream, sizeof is not meaningful")
     def _compileparse(self, code):
-        if callable(self.at) or callable(self.whence):
-            raise NotImplementedError("Seek does not compile non-constant at or whence")
         return "io.seek(%s, %s)" % (self.at, self.whence, )
 
 
