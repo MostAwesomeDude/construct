@@ -604,17 +604,17 @@ class FormatField(Bytes):
         super(FormatField, self).__init__(packer.calcsize(endianity+format))
         self.fmtstr = endianity+format
     def _parse(self, stream, context, path):
+        data = _read_stream(stream, self.sizeof())
         try:
-            data = _read_stream(stream, self.sizeof())
             return packer.unpack(self.fmtstr, data)[0]
         except Exception:
             raise FormatFieldError("packer %r error during parsing" % self.fmtstr)
     def _build(self, obj, stream, context, path):
         try:
             data = packer.pack(self.fmtstr, obj)
-            _write_stream(stream, self.sizeof(), data)
         except Exception:
             raise FormatFieldError("packer %r error during building, given value %r" % (self.fmtstr, obj))
+        _write_stream(stream, self.sizeof(), data)
     def _compileparse(self, code):
         code.append("""
             from struct import pack, unpack, calcsize
