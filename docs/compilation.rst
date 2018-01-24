@@ -2,6 +2,8 @@
 Compilation feature
 ======================
 
+.. warning:: This feature is work in progress, and content of this page will change over next few weeks. Only about 1/4 is implemented at this point. Please check .compile() but do not be dissapointed if you see NotImplementedError. Enjoy.
+
 
 Overall
 =========
@@ -17,6 +19,8 @@ Compilation feature requires Construct 2.9 and Python 3.4. More importantly, you
 
 Restrictions
 ---------------
+
+.. warning:: This section lists items that are being currently implemented. Most items will be removed within next few weeks.
 
 compiled code only parses, no building yet implemented
 
@@ -106,18 +110,24 @@ Compiled parsing code:
         data = io.read(count)
         assert len(data) == count
         return data
+    from io import BytesIO
+    def restream(data, func):
+        return func(BytesIO(data))
+    from construct import Container
     from struct import pack, unpack, calcsize
     def parse_struct_1(io, context):
-        class FIELDS:
-            __slots__ = ['num8', 'num24', 'data']
-        this = FIELDS()
+        this = Container()
+        this._ = context
         this.num8 = unpack('>B', read_bytes(io, 1))[0]
         this.num24 = int.from_bytes(read_bytes(io, 3), byteorder='big', signed=False)
         this.data = read_bytes(io, this.num8)
+        del this._
         return this
     def parseall(io, context):
         this = context
         return parse_struct_1(io, this)
+    from construct import Compiled
+    compiledschema = Compiled(parseall)
 
 Non-compiled parsing code:
 
@@ -131,10 +141,10 @@ Non-compiled parsing code:
             raise StreamError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
         return data
 
-    class FormatField(Bytes):
+    class FormatField(Construct):
         def _parse(self, stream, context, path):
+            data = _read_stream(stream, self.length)
             try:
-                data = _read_stream(stream, self.sizeof())
                 return packer.unpack(self.fmtstr, data)[0]
             except Exception:
                 raise FormatFieldError("packer %r error during parsing" % self.fmtstr)
@@ -144,7 +154,7 @@ Non-compiled parsing code:
             length = self.length(context) if callable(self.length) else self.length
             data = _read_stream(stream, length)
             if self.swapped:
-                data = swapbytes(data, 1)
+                data = data[::-1]
             return bytes2integer(data, self.signed)
 
     class Bytes(Construct):

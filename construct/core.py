@@ -663,7 +663,7 @@ class BytesInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bytes(obj, length)
         if self.swapped:
-            data = swapbytes(data, 1)
+            data = data[::-1]
         _write_stream(stream, len(data), data)
     def _sizeof(self, context, path):
         try:
