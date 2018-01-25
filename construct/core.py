@@ -1792,9 +1792,15 @@ class FocusedSeq(Construct):
                 block += """
                 this.%s = result[-1]
                 """ % (sc.name, )
+        parsebuildfrom = self.parsebuildfrom
+        if isinstance(parsebuildfrom, int):
+            index = parsebuildfrom
+            self.subcons[index]  #IndexError check
+        if isinstance(parsebuildfrom, str):
+            index = [i for i,sc in enumerate(self.subcons) if sc.name == parsebuildfrom][0]  #IndexError check
         block += """
-                return %s
-        """ % ("result[%s]" % self.parsebuildfrom if isinstance(self.parsebuildfrom, int) else "this.%s" % self.parsebuildfrom, )
+                return result[%s]
+        """ % (index, )
         code.append(block)
         return "%s(io, this)" % (fname,)
 
