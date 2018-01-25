@@ -1309,7 +1309,7 @@ class Range(Subconstruct):
     def _compileparse(self, code):
         if not self.min == self.max:
             raise NotImplementedError("Range compiles only for Array instances")
-        return "[%s for i in range(%s)]" % (self.subcon._compileparse(code), self.max)
+        return "ListContainer(%s for i in range(%s))" % (self.subcon._compileparse(code), self.max)
 
 
 def GreedyRange(subcon):
@@ -2863,7 +2863,7 @@ def PrefixedArray(lengthfield, subcon):
         "items" / subcon[this.count],
     )
     def _compileparse(self, code):
-        return "[%s for i in range(%s)]" % (subcon._compileparse(code), lengthfield._compileparse(code), )
+        return "ListContainer(%s for i in range(%s))" % (subcon._compileparse(code), lengthfield._compileparse(code), )
     return CompilableMacro(macro, _compileparse)
 
 
