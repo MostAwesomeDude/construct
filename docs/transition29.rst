@@ -13,7 +13,7 @@ General classes
 
 Compiled CompilableMacro added (used internally)
 
-FocusedSeq fixed, context gets nested
+FocusedSeq uses nested context (alike Struct and Sequence)
 
 FieldError was replaced with StreamError (raised when stream returns less than requested amount) and FormatFieldError (raised by FormatField class, for example if building Float from non-float value and struct.pack complaining).
 

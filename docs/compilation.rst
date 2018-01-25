@@ -14,7 +14,7 @@ Construct 2.9 adds an experimental feature: compiling user made constructs into 
 Requirements
 ---------------
 
-Compilation feature requires Construct 2.9 and Python 3.4. More importantly, you should manually inspect the generated code for correctness and have a test suite of your own. Construct aims to be reliable, but there is inherent risk in using experimental features. The compiler makes some assumptions, and generates a code that "takes shortcuts".
+Compilation feature requires Construct 2.9 and Python 3.4. More importantly, you should manually inspect the generated code for correctness and have a test suite of your own. Construct aims to be reliable, but the compiler makes some assumptions, and generates a code that "takes shortcuts".
 
 
 Restrictions
@@ -22,39 +22,31 @@ Restrictions
 
 .. warning:: This section lists items that are being currently implemented. Most items will be removed within next few weeks.
 
-compiled code only parses, no building yet implemented
+Compiled classes only parse faster, building is not yet implemented (defers to core classes)
 
-Bytewise is not compilable
+Embedded CString Switch Enum FlagsEnum StopIf Pointer Peek Select Optional Switch Bytewise BitsSwapped are not yet implemented
+
+.. warning:: This section lists items are (probably) permanent.
+
+Lambdas (unlike `this` expressions) are not compilable
+
+Global string encoding is applied during compilation not parsing
+
+Some classes require fixed-sized subcons (otherwise raise NotImplementedError if compiled)
+
+Some classes require constant selectors like FocusedSeq Union (otherwise raise NotImplementedError if compiled)
+
+Adapters and validators are in general not compilable
 
 Range compiles only for Array instances
 
 RepeatUntil is not compilable
 
-Embedded is not compilable
-
-Select Optional Switch are not yet implemented
-
-StopIf is not compilable
-
-Pointer Peek Terminated are not yet implemented
-
 Restreamed Rebuffered are not compilable
 
 RawCopy Checksum Compressed are not compilable
 
-BitsSwapped is not yet implemented
-
 Lazy* OnDemand are not compilable
-
-Mapping* are not compilable
-
-Enum FlagsEnum are not yet implemented
-
-Adapters and validators are not compilable
-
-CString is not yet implemented
-
-Lambdas (unlike this expressions) are not compilable
 
 
 Compiling schemas
@@ -79,13 +71,18 @@ Compiled instance has a unique `source` field that holds the generated code as s
 
 Performance boost can be easily measured: 
 
->>> from timeit import timeit
->>> timeit(lambda: st.parse(sampledata))
->>> timeit(lambda: st2.parse(sampledata))
+>>> print(st.benchmark(sampledata))
+Timeit measurements:
+compiling:         0.26775643999280874
+parsing:           0.018463559012161568
+parsing compiled:  0.013872158000594936
+building:          0.01956615300150588
+building compiled: 0.018900188006227836
 
 Correctness can be automatically tested:
 
->>> assert st.parse(sampledata) == st2.parse(sampledata)
+>>> assert st.parse(sampledata) == st.compile().parse(sampledata)
+>>> assert st.build(sampleobj) == st.compile().build(sampleobj)
 
 
 Motivation

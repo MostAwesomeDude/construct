@@ -77,13 +77,20 @@ class TestCompile(unittest.TestCase):
             "greedystring" / Prefixed(Byte, GreedyString()),
         )
 
+        # d = Struct("num" / Byte)
+
         dc = d.compile()
         print(dc.source)
         if not ontravis:
             dc.tofile("tests/compiled.py")
 
         data = bytes(1000)
+        # obj = d.build(d.parse(data))
         assert d.parse(data) == dc.parse(data)
+        # assert d.parse(data) == dc.parse(obj)
+
+        # print(d.benchmark(data))
+        # assert False
 
 
     def test_numpy(self):

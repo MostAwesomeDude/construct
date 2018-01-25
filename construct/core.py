@@ -321,9 +321,7 @@ class Construct(object):
         except Exception:
             pass
 
-        return "Timeit measurements:\nparsing:   {}\nbuilding:  {}\ncompiling: {}\nparsing if compiled:  {}\nbuilding if compiled: {}\n".format(parsetime, buildtime, compiletime, parsetime2, buildtime2)
-
-
+        return "Timeit measurements:\ncompiling:         {}\nparsing:           {}\nparsing compiled:  {}\nbuilding:          {}\nbuilding compiled: {}\n".format(compiletime, parsetime, parsetime2, buildtime, buildtime2)
 
     def __rtruediv__(self, name):
         """
