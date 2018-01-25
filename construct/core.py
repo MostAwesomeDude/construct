@@ -120,25 +120,25 @@ class Construct(object):
 
     The external user API:
 
-     * ``parse()``
-     * ``parse_stream()``
-     * ``build()``
-     * ``build_stream()``
-     * ``sizeof()``
+    * ``parse()``
+    * ``parse_stream()``
+    * ``build()``
+    * ``build_stream()``
+    * ``sizeof()``
+    * ``compile()``
+    * ``benchmark()``
 
     Subclass authors should not override the external methods. Instead, another API is available:
 
-     * ``_parse()``
-     * ``_build()``
-     * ``_sizeof()``
+    * ``_parse()``
+    * ``_build()``
+    * ``_sizeof()``
+    * ``_compileparse()``
+    * ``_compilebuild()``
+    * ``__getstate__()``
+    * ``__setstate__()``
 
-    And stateful copying:
-
-     * ``__getstate__()``
-     * ``__setstate__()``
-
-    Attributes and Inheritance
-    ==========================
+    Attributes and Inheritance:
 
     All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can be a string, or None by default. A single underscore "_" is a reserved name, used as up-level in nested containers. The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced. The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are often inherited from inner subconstructs but that depends on each class behavior.
     """
