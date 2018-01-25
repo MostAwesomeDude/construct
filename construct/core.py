@@ -304,6 +304,27 @@ class Construct(object):
     def _compilebuild(self, code):
         raise NotImplementedError
 
+    def benchmark(self, sampledata):
+        from timeit import timeit
+        parsetime = timeit(lambda: self.parse(sampledata), number=1000)
+        obj = self.parse(sampledata)
+        buildtime = timeit(lambda: self.build(obj), number=1000)
+
+        try:
+            compiletime = "failed"
+            parsetime2 = "failed"
+            buildtime2 = "failed"
+            compiled = self.compile()
+            compiletime = timeit(lambda: self.compile(), number=1000)
+            parsetime2 = timeit(lambda: compiled.parse(sampledata), number=1000)
+            buildtime2 = timeit(lambda: compiled.build(obj), number=1000)
+        except Exception:
+            pass
+
+        return "Timeit measurements:\nparsing:   {}\nbuilding:  {}\ncompiling: {}\nparsing if compiled:  {}\nbuilding if compiled: {}\n".format(parsetime, buildtime, compiletime, parsetime2, buildtime2)
+
+
+
     def __rtruediv__(self, name):
         """
         Used for renaming subcons, usually part of a Struct, like "index" / Byte.

@@ -22,7 +22,7 @@ class TestCompile(unittest.TestCase):
             "int8" / FormatField(">", "B"),
             "int16_1" / BytesInteger(16, swapped=True),
             "int16_2" / BytesInteger(16, swapped=False),
-            "int16dynamic" / BytesInteger(this.num),
+            "int16dynamic" / BytesInteger(this.num+1),
             "bitsinteger1" / Bitwise(BitsInteger(8, swapped=False)),
             "bitsinteger2" / Bitwise(BitsInteger(8, swapped=True)),
             "varint" / VarInt,
@@ -36,7 +36,7 @@ class TestCompile(unittest.TestCase):
             "const1" / Const(bytes(4)),
             "const2" / Const(0, Int32ub),
             "computed" / Computed(this.num),
-            "rebuild" / Rebuild(Byte, len_(this.array)),
+            "rebuild" / Rebuild(Byte, len_(this.array1)),
             "default" / Default(Byte, 0),
             Check(this.num == 0),
             "error0" / If(False, Error),
@@ -84,6 +84,7 @@ class TestCompile(unittest.TestCase):
 
         data = bytes(1000)
         assert d.parse(data) == dc.parse(data)
+
 
     def test_numpy(self):
         d = Numpy
