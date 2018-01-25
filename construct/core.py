@@ -1029,9 +1029,11 @@ class Struct(Construct):
         >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
     """
     __slots__ = ["subcons"]
+
     def __init__(self, *subcons, **kw):
         super(Struct, self).__init__()
         self.subcons = list(subcons) + list(k/v for k,v in kw.items()) 
+
     def _parse(self, stream, context, path):
         obj = Container()
         context = Container(_ = context)
@@ -1049,6 +1051,7 @@ class Struct(Construct):
             except StopIteration:
                 break
         return obj
+
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         context.update(obj)
@@ -1075,6 +1078,7 @@ class Struct(Construct):
             except StopIteration:
                 break
         return context
+
     def _sizeof(self, context, path):
         try:
             def isStruct(sc):
@@ -1089,6 +1093,7 @@ class Struct(Construct):
             return sum(sc._sizeof(nest(context, sc), path) for sc in self.subcons)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
+
     def _compileparse(self, code):
         code.append("""
             from construct import Container
@@ -1145,6 +1150,7 @@ class Sequence(Struct):
         Alternative syntax, note this works ONLY on python 3.6+:
         >>> Sequence(a=Byte, b=Byte, c=Byte, d=Byte)
     """
+
     def _parse(self, stream, context, path):
         obj = ListContainer()
         context = Container(_ = context)
@@ -1160,6 +1166,7 @@ class Sequence(Struct):
             except StopIteration:
                 break
         return obj
+
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         objiter = iter(obj)
@@ -1179,6 +1186,7 @@ class Sequence(Struct):
                         context[sc.name] = buildret
             except StopIteration:
                 break
+
     def _compileparse(self, code):
         code.append("""
             from construct import Container, ListContainer
@@ -1240,10 +1248,12 @@ class Range(Subconstruct):
         >>> Byte[3:5], Byte[3:], Byte[:5], Byte[:]
     """
     __slots__ = ["min", "max"]
+
     def __init__(self, min, max, subcon):
         super(Range, self).__init__(subcon)
         self.min = min
         self.max = max
+
     def _parse(self, stream, context, path):
         min = self.min(context) if callable(self.min) else self.min
         max = self.max(context) if callable(self.max) else self.max
@@ -1264,6 +1274,7 @@ class Range(Subconstruct):
                 raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
             stream.seek(fallback)
         return obj
+
     def _build(self, obj, stream, context, path):
         min = self.min(context) if callable(self.min) else self.min
         max = self.max(context) if callable(self.max) else self.max
@@ -1286,6 +1297,7 @@ class Range(Subconstruct):
                 raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
             else:
                 raise
+
     def _sizeof(self, context, path):
         try:
             min = self.min(context) if callable(self.min) else self.min
@@ -1295,6 +1307,7 @@ class Range(Subconstruct):
         if min == max:
             return min * self.subcon._sizeof(context, path)
         raise SizeofError("cannot calculate size, unless element count and size is fixed")
+
     def _compileparse(self, code):
         if not self.min == self.max:
             raise NotImplementedError("Range compiles only for Array instances")
@@ -1696,10 +1709,12 @@ class FocusedSeq(Construct):
         >>> d.build(255)
         b'MZ\xff'
     """
+
     def __init__(self, parsebuildfrom, *subcons, **kw):
         super(FocusedSeq, self).__init__()
         self.parsebuildfrom = parsebuildfrom
         self.subcons = list(subcons) + list(k/v for k,v in kw.items())
+
     def _parse(self, stream, context, path):
         context = Container(_ = context)
         parsebuildfrom = self.parsebuildfrom
@@ -1717,6 +1732,7 @@ class FocusedSeq(Construct):
             if i == index:
                 finalret = parseret
         return finalret
+
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         parsebuildfrom = self.parsebuildfrom
@@ -1739,6 +1755,7 @@ class FocusedSeq(Construct):
             if i == index:
                 finalret = buildret
         return finalret
+
     def _sizeof(self, context, path):
         context = Container(_ = context)
         try:
@@ -1753,6 +1770,7 @@ class FocusedSeq(Construct):
         if isinstance(parsebuildfrom, str):
             index = [i for i,sc in enumerate(self.subcons) if sc.name == parsebuildfrom][0]  #IndexError check
         return self.subcons[index]._sizeof(context, path)
+
     def _compileparse(self, code):
         if callable(self.parsebuildfrom):
             raise NotImplementedError("FocusedSeq does not compile non-constant selectors")
