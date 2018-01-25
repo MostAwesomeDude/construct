@@ -24,6 +24,8 @@ Restrictions
 
 Compiled classes only parse faster, building is not yet implemented (defers to core classes)
 
+AssertionError is raised instead of ConstructError and derivatives
+
 Embedded CString Switch Enum FlagsEnum StopIf Pointer Peek Select Optional Switch Bytewise BitsSwapped are not yet implemented
 
 .. warning:: This section lists items are (probably) permanent.
@@ -37,6 +39,8 @@ Some classes require fixed-sized subcons (otherwise raise NotImplementedError if
 Some classes require constant selectors like FocusedSeq Union (otherwise raise NotImplementedError if compiled)
 
 Adapters and validators are in general not compilable
+
+Exceptions do not include the `path` info
 
 Range compiles only for Array instances
 
