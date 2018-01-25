@@ -283,7 +283,7 @@ class Construct(object):
         """ % (self._compileparse(code),))
         code.append("""
             from construct import Compiled
-            compiledschema = Compiled(parseall)
+            compiledschema = Compiled(None, parseall, None, None)
         """)
         code.appendnl()
 
@@ -295,6 +295,7 @@ class Construct(object):
 
         compiledschema = module.compiledschema
         compiledschema.source = source
+        compiledschema.defersubcon = self
         return compiledschema
 
     def _compileparse(self, code):
@@ -438,12 +439,30 @@ class Tunnel(Subconstruct):
 
 
 class Compiled(Construct):
-    __slots__ = ["source", "parsefunc"]
-    def __init__(self, parsefunc):
+    """Used internally."""
+    __slots__ = ["source", "parsefunc", "buildfunc", "defersubcon"]
+
+    def __init__(self, source, parsefunc, buildfunc, defersubcon):
+        self.source = source
         self.parsefunc = parsefunc
+        self.buildfunc = buildfunc
+        self.defersubcon = defersubcon
 
     def _parse(self, stream, context, path):
         return self.parsefunc(stream, context)
+
+    def _build(self, obj, stream, context, path):
+        # currently ignores buildfunc, since not implemented
+        return self.defersubcon._build(obj, stream, context, path)
+
+    def compile(self):
+        return self
+
+    def _compileparse(self, code):
+        raise ConstructError("Compiled instance can compile() but cannot _compileparse() or _compilebuild()")
+
+    def _compilebuild(self, code):
+        raise ConstructError("Compiled instance can compile() but cannot _compileparse() or _compilebuild()")
 
     def tofile(self, filename):
         with open(filename, 'wt') as f:
@@ -451,12 +470,18 @@ class Compiled(Construct):
 
 
 class CompilableMacro(Subconstruct):
+    """Used internally."""
     __slots__ = ["compileparsefunc"]
+
     def __init__(self, subcon, compileparsefunc):
         super(CompilableMacro, self).__init__(subcon)
         self.compileparsefunc = compileparsefunc
+
     def _compileparse(self, code):
         return self.compileparsefunc(self, code)
+
+    def _compilebuild(self, code):
+        raise NotImplementedError
 
 
 #===============================================================================
