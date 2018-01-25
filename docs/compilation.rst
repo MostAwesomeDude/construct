@@ -8,7 +8,7 @@ Compilation feature
 Overall
 =========
 
-Construct 2.9 adds an experimental feature: compiling user made constructs into faster (but less feature-rich) code. If you are familiar with Kaitai Struct, an alternative framework to Construct, Kaitai compiles its own yaml-based language schemas into Python modules. Construct on the other hand, defines schemas in Python and compiles it into also a Python module. Once you define a construct, you can use it to parse and build strings without compilation. Compilation has only one purpose: performance. Compiled constructs cannot do anything more than original constructs, in fact, they have restricted capabilities (some classes do not compile, or compile only under certain circumstances).
+Construct 2.9 adds an experimental feature: compiling user made constructs into faster (but less feature-rich) code. If you are familiar with Kaitai Struct, an alternative framework to Construct, Kaitai compiles yaml-based schemas into Python modules. Construct on the other hand, defines schemas in Python and compiles them into also Python modules. Once you define a construct, you can use it to parse and build strings without compilation. Compilation has only one purpose: performance. Compiled constructs cannot do anything more than original constructs, in fact, they have restricted capabilities (some classes do not compile, or compile only under certain circumstances).
 
 
 Requirements
@@ -20,37 +20,37 @@ Compilation feature requires Construct 2.9 and Python 3.4. More importantly, you
 Restrictions
 ---------------
 
-.. warning:: This section lists items that are being currently implemented. Most items will be removed within next few weeks.
+.. warning:: This section items are being implemented. Most items will be removed within next few weeks.
 
 Compiled classes only parse faster, building is not yet implemented (defers to core classes)
 
-AssertionError is raised instead of ConstructError and derivatives
+AssertionError and standard hierarchy exceptions are raised (core classes are resticted to ConstructError and its derivatives)
 
 Embedded CString Switch Enum FlagsEnum StopIf Pointer Peek Select Optional Switch Bytewise BitsSwapped are not yet implemented
-
-.. warning:: This section lists items are (probably) permanent.
-
-Lambdas (unlike `this` expressions) are not compilable
-
-Global string encoding is applied during compilation not parsing
-
-Some classes require fixed-sized subcons (otherwise raise NotImplementedError if compiled)
-
-Some classes require constant selectors like FocusedSeq Union (otherwise raise NotImplementedError if compiled)
-
-Adapters and validators are in general not compilable
-
-Exceptions do not include the `path` info
 
 Range compiles only for Array instances
 
 RepeatUntil is not compilable
 
-Restreamed Rebuffered are not compilable
-
 RawCopy Checksum Compressed are not compilable
 
 Lazy* OnDemand are not compilable
+
+.. warning:: This section items are (probably) permanent.
+
+Lambdas (unlike `this` expressions) are not compilable
+
+Global string encoding is applied during compilation (not parsing)
+
+Some classes require fixed-sized subcons (otherwise raise NotImplementedError if compiled)
+
+Some classes require constant selectors like FocusedSeq Union (otherwise raise NotImplementedError if compiled)
+
+Adapters and validators, and mappings are in general not compilable
+
+Exceptions do not include `path` information
+
+Restreamed Rebuffered are not compilable
 
 
 Compiling schemas
@@ -166,7 +166,7 @@ Non-compiled parsing code:
     class Renamed(Subconstruct):
         def _parse(self, stream, context, path):
             try:
-                path += " -> %s" % (self.name)
+                path += " -> %s" % (self.name,)
                 return self.subcon._parse(stream, context, path)
             except ConstructError as e:
                 if "\n" in str(e):
@@ -198,8 +198,14 @@ Function calls are relatively expensive, so inlined expression is faster than a 
 
 Literals like 1 and '>B' are faster than variable (or object field) lookup, or passing function arguments. Therefore each instance of FormatField compiles into a similar expression but with different format-strings and byte-counts inlined, usually literals.
 
-If statement (or conditional ternary operator) with two possible expressions is slower than just one or the other expression. Therefore, for example, BytesInteger does a lookup to check if field is swapped, but compiled BytesInteger simply inlines 'big' or 'little' literal. Moreover, Struct checks if each subcon has a name and then inserts a value into the context dictionary, but compiled Struct simply has an assignment or not. Also, since compiler does not support embedding, there is no checking if each subcon is embedded. Also compiler does not support StopIf class, so no exception catching is done.
+Passing parameters to functions is slower than just referring to variables in same scope. Therefore, for example, compiled Struct creates "this" variable that is accessible to all expressions generated by subcons, as it exists in same scope, but core Struct would call subcon._parse and pass entire context as parameter value, regardless whether that subcon even uses a context (for example FormatField VarInt have no need for a context).
 
-Building two identical dictionaries is slower than building just one. Struct maintains two dictionaries (called obj and context) which differ only by _ key, but compiled Struct does something simpler.
+If statement (or conditional ternary operator) with two possible expressions is slower than just one or the other expression. Therefore, for example, BytesInteger does a lookup to check if field is swapped, but compiled BytesInteger simply inlines 'big' or 'little' literal. Moreover, Struct checks if each subcon has a name and then inserts a value into the context dictionary, but compiled Struct simply has an assignment or not. Also, since compiler does not support embedding, there is no checking if each subcon is embedded. Also compiler does not support StopIf class, so no StopIteration exception catching is emitted.
+
+loop unrolling???
+
+Function calls that only defer to another function are only wasting CPU cycles. This relates specifically to Renamed class, which in compiled code emits same code as its subcon. Entire functionality of Renamed class (maintaining path information) is not supported in compiled code, where it would serve as mere subconstruct, just deferring to subcon.
+
+Building two identical dictionaries is slower than building just one. Struct maintains two dictionaries (called obj and context) which differ only by _ key, but compiled Struct does something simpler. (subject to change)
 
 This expressions (not lambdas) are expensive to compute but something like "this.field" in a compiled code is merely one object field lookup. Lambdas are not supported by compiler.

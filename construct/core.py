@@ -134,7 +134,7 @@ class Construct(object):
 
     Attributes and Inheritance:
 
-    All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can be a string, or None by default. A single underscore "_" is a reserved name, used as up-level in nested containers. The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced. The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are often inherited from inner subconstructs but that depends on each class behavior.
+    All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can be a string, or None by default. A single underscore "_" is a reserved name, used as up-level in nested containers. The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced. The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are often inherited from inner subconstructs but that depends on each class.
     """
 
     __slots__ = ["name", "flagbuildnone", "flagembedded"]
@@ -174,18 +174,36 @@ class Construct(object):
         return self2
 
     def parse(self, data, context=None, **kw):
-        """
-        Parse an in-memory buffer (often bytes object).
+        r"""
+        Parse an in-memory buffer (often bytes object). Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
 
-        Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
+        Whenever data cannot be read, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
+
+        Context entries are passed only as keyword parameters \*\*kw.
+        bug???
+
+        :param context: context entries, usually empty
+
+        :returns: some value, usually based on bytes read from the stream but sometimes it is computed from nothing or from the context dictionary, sometimes its non-deterministic
+
+        :raises ConstructError: raised for any reason
         """
         return self.parse_stream(io.BytesIO(data), context, **kw)
 
     def parse_stream(self, stream, context=None, **kw):
-        """
-        Parse a stream.
+        r"""
+        Parse a stream. Files, pipes, sockets, and other streaming sources of data are handled by this method.
 
-        Files, pipes, sockets, and other streaming sources of data are handled by this method.
+        Whenever data cannot be read, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
+
+        Context entries are passed only as keyword parameters \*\*kw.
+        bug???
+
+        :param context: context entries, usually empty
+
+        :returns: some value, usually based on bytes read from the stream but sometimes it is computed from nothing or from the context dictionary, sometimes its non-deterministic
+
+        :raises ConstructError: raised for any reason
         """
         context2 = Container()
         if context is not None:
@@ -197,26 +215,40 @@ class Construct(object):
     def _parse(self, stream, context, path):
         """
         Override in your subclass.
-
-        :returns: some value, usually based on bytes read from the stream but sometimes it is computed from nothing or from context
         """
         raise NotImplementedError
 
     def build(self, obj, context=None, **kw):
-        """
-        Build an object in memory.
+        r"""
+        Build an object in memory (a bytes object).
+
+        Whenever data cannot be written, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
+
+        Context entries are passed only as keyword parameters \*\*kw.
+        bug???
+
+        :param context: context entries, usually empty
 
         :returns: bytes
+
+        :raises ConstructError: raised for any reason
         """
         stream = io.BytesIO()
         self.build_stream(obj, stream, context, **kw)
         return stream.getvalue()
 
     def build_stream(self, obj, stream, context=None, **kw):
-        """
+        r"""
         Build an object directly into a stream.
 
-        :returns: None
+        Whenever data cannot be written, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
+
+        Context entries are passed only as keyword parameters \*\*kw.
+        bug???
+
+        :param context: context entries, usually empty
+
+        :raises ConstructError: raised for any reason
         """
         context2 = Container()
         if context is not None:
@@ -228,21 +260,25 @@ class Construct(object):
     def _build(self, obj, stream, context, path):
         """
         Override in your subclass.
-
-        :returns: None or a new value to put into the context, few fields use this internal functionality
         """
         raise NotImplementedError
 
     def sizeof(self, context=None, **kw):
-        """
+        r"""
         Calculate the size of this object, optionally using a context.
 
-        Some constructs have no fixed size and can only know their size for a given hunk of data. These constructs will raise an error if they are not passed a context.
+        Some constructs have fixed size (like FormatField), some have variable-size and can determine their size given a context entry (like Bytes(this.otherfield1)), and some cannot determine their size (like VarInt).
 
-        :param context: a container
+        Whenever size cannot be determined, SizeofError is raised. This method is NOT ALLOWED to raise any other exception, even if eg. context dictionary is missing a key, or subcon propagates ConstructError-derivative exception.
 
-        :returns: an integer for a fixed size field
-        :raises SizeofError: the size could not be determined, ever or just with actual context
+        Context entries are passed only as keyword parameters \*\*kw.
+        bug???
+
+        :param context: context entries, usually empty
+
+        :returns: integer if possible, SizeofError otherwise
+
+        :raises SizeofError: size could not be determined in actual context, or is impossible to be determined
         """
         if context is None:
             context = Container()
@@ -252,13 +288,21 @@ class Construct(object):
     def _sizeof(self, context, path):
         """
         Override in your subclass.
-
-        :returns: an integer for a fixed size field
-        :raises SizeofError: the size could not be determined, ever or just with actual context
         """
         raise SizeofError
 
     def compile(self):
+        """
+        Transforms a construct into another construct that does same thing (has same parsing and building semantics) but is faster (has better performance). Compiled instances compile into itself, obviously. This method returns a Compiled instance.
+
+        There are restrictions on what can be compiled (see documentation site, Compilation chapter). Some classes do not compile or compile only in certain circumstances.
+
+        Returned instance has additional ``source`` field and ``tofile`` method, aside of regular ``parse`` ``build`` ``sizeof``.
+
+        :returns: Compiled instance
+
+        :raises NotImplementedError: raised for any reason
+        """
         code = CodeGen()
         code.append("""
             def read_bytes(io, count):
@@ -293,12 +337,25 @@ class Construct(object):
         return compiledschema
 
     def _compileparse(self, code):
+        """
+        Override in your subclass.
+        """
         raise NotImplementedError
 
     def _compilebuild(self, code):
+        """
+        Override in your subclass.
+        """
         raise NotImplementedError
 
     def benchmark(self, sampledata):
+        """
+        Measures performance of your construct (its parsing and building runtime), both for this instance and its compiled equivalent (does not fail if its not compilable). Uses timeit module over 1000 samples.
+
+        You need to provide a sample data for parsing testing. This data gets parsed into an object that gets reused for building testing. Sizeof is not tested.
+
+        :returns: string containing runtimes and descriptions
+        """
         from timeit import timeit
         parsetime = timeit(lambda: self.parse(sampledata), number=1000)
         obj = self.parse(sampledata)
@@ -319,7 +376,7 @@ class Construct(object):
 
     def __rtruediv__(self, name):
         """
-        Used for renaming subcons, usually part of a Struct, like "index" / Byte.
+        Used for renaming subcons, usually part of a Struct, like Struct("index" / Byte).
         """
         if name is not None:
             if not isinstance(name, stringtypes):
@@ -346,7 +403,7 @@ class Construct(object):
 
     def __getitem__(self, count):
         """
-        Used for making Ranges like Byte[5] or Byte[:].
+        Used for making Arrays and Ranges like Byte[5] or Byte[:].
         """
         if isinstance(count, slice):
             if count.step is not None:
@@ -364,7 +421,7 @@ class Subconstruct(Construct):
     r"""
     Abstract subconstruct (wraps an inner construct, inheriting its name and flags). Parsing and building is by default deferred to subcon, same as sizeof.
 
-    :param subcon: the construct to wrap
+    :param subcon: Construct instance
     """
     __slots__ = ["subcon"]
     def __init__(self, subcon):
@@ -385,11 +442,11 @@ class Subconstruct(Construct):
 
 class Adapter(Subconstruct):
     r"""
-    Abstract adapter parent class.
+    Abstract adapter class.
 
     Needs to implement ``_decode()`` for parsing and ``_encode()`` for building.
 
-    :param subcon: the construct to wrap
+    :param subcon: Construct instance
     """
     def _parse(self, stream, context, path):
         return self._decode(self.subcon._parse(stream, context, path), context)
@@ -403,11 +460,11 @@ class Adapter(Subconstruct):
 
 class SymmetricAdapter(Adapter):
     r"""
-    Abstract adapter parent class.
+    Abstract adapter class.
 
     Needs to implement ``_decode()`` only, for both parsing and building.
 
-    :param subcon: the construct to wrap
+    :param subcon: Construct instance
     """
     def _encode(self, obj, context):
         return self._decode(obj, context)
@@ -419,7 +476,7 @@ class Validator(SymmetricAdapter):
 
     Needs to implement ``_validate()`` that returns a bool (or a truthy value)
 
-    :param subcon: the subcon to validate
+    :param subcon: Construct instance
     """
     def _decode(self, obj, context):
         if not self._validate(obj, context):
@@ -431,7 +488,7 @@ class Validator(SymmetricAdapter):
 
 class Tunnel(Subconstruct):
     r"""
-    Abstract class that reads entire stream when parsing, and writes all data when building, but serves as an adapter as well.
+    Abstract class that allows other constructs to read part of the stream as if they were reading the entrie stream. See Prefixed for example.
 
     Needs to implement ``_decode()`` for parsing and ``_encode()`` for building.
     """
@@ -478,6 +535,9 @@ class Compiled(Construct):
         raise ConstructError("Compiled instance can compile() but cannot _compileparse() or _compilebuild()")
 
     def tofile(self, filename):
+        """
+        Saves the ``source`` field into a text file (preferably with .py extension).
+        """
         with open(filename, 'wt') as f:
             f.write(self.source)
 
@@ -502,11 +562,15 @@ class CompilableMacro(Subconstruct):
 #===============================================================================
 class Bytes(Construct):
     r"""
-    Field consisting of a specified number of bytes. Builds from a bytes, or an integer (although deprecated and BytesInteger should be used instead).
+    Field consisting of a specified number of bytes. 
 
-    .. seealso:: Analog :func:`~construct.core.BytesInteger` that parses and builds from integers, as opposed to bytes.
+    Parses into a bytes (of given length). Builds into the stream directly (but checks that given object matches specified length). Can also build from an integer for convenience (although BytesInteger should be used instead). Size is the specified length.
 
-    :param length: an integer or a context lambda that returns such an integer
+    :param length: integer or context lambda
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -519,6 +583,10 @@ class Bytes(Construct):
         b'\x00\x00\x00\x00'
         >>> d.sizeof()
         4
+
+        # inside Struct, preceded by `field1` member
+        >>> d = Bytes(this.field1)
+        ...
     """
     __slots__ = ["length"]
     def __init__(self, length):
@@ -544,9 +612,9 @@ class Bytes(Construct):
 @singleton
 class GreedyBytes(Construct):
     r"""
-    Field that parses the stream to the end and builds into the stream as is.
+    Field consisting of unknown number of bytes. 
 
-    .. seealso:: Analog :func:`~construct.core.GreedyString` that parses and builds from strings using an encoding.
+    Parses the stream to the end. Builds into the stream directly (without checks). Size is undefined.
 
     Example::
 
@@ -565,13 +633,19 @@ class GreedyBytes(Construct):
 
 def Bitwise(subcon):
     r"""
-    Converts the stream from bytes to bits, and passes the bitstream to underlying subcon.
+    Converts the stream from bytes to bits, and passes the bitstream to underlying subcon. Bitstream is a stream that contains 8 times as many bytes, and each byte is either \\x00 or \\x01.
 
-    .. seealso:: Analog :func:`~construct.core.Bytewise` that transforms bits back to bytes.
+    Parsing building and size are deferred to subcon, although size gets divided by 8.
 
-    .. warning:: Do not use pointers inside this or other restreamed contexts.
+    Analog to :class:`~construct.core.Bytewise` that transforms bits back to bytes.
 
-    :param subcon: any field that works with bits like BitStruct or Bit/Nibble/Octet or BitsInteger
+    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
+
+    .. warning:: Do NOT use pointers inside Restreamed context.
+
+    :param subcon: Construct instance, any field that works with bits (like BitsInteger) or is bit-byte agnostic (like Struct or Flag)
+
+    See :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -594,9 +668,21 @@ def Bitwise(subcon):
 
 def Bytewise(subcon):
     r"""
-    Converts the stream from bits back to bytes. Must be used within Bitwise.
+    Converts the bitstream back to normal byte stream. Must be used within Bitwise.
 
-    :param subcon: any field that works with bytes
+    Parsing building and size are deferred to subcon, although size gets multiplied by 8.
+
+    Analog to :class:`~construct.core.Bitwise` that transforms bytes to bits.
+
+    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
+
+    .. warning:: Do NOT use pointers inside Restreamed context.
+
+    :param subcon: Construct instance, any field that works with bytes or is bit-byte agnostic
+
+    :raises NotImplementedError: compiled
+
+    See :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -616,16 +702,23 @@ def Bytewise(subcon):
 #===============================================================================
 class FormatField(Construct):
     r"""
-    Field that uses ``struct`` module to pack and unpack data. This is used to implement basic Int* and Float* fields, but cannot pack 24-bit integers for example, which is left to BytesInteger.
+    Field that uses `struct` module to pack and unpack CPU-sized integers and floats. This is used to implement most Int* Float* fields, but for example cannot pack 24-bit integers, which is left to :class:`~construct.core.BytesInteger` class.
 
-    See ``struct`` documentation for instructions on crafting format strings.
+    See `struct module <https://docs.python.org/3/library/struct.html>`_ documentation for instructions on crafting format strings.
 
-    :param endianity: endianness character like < > =
-    :param format: format character like f d B H L Q b h l q
+    Parses into an integer. Builds from an integer into specified byte count and endianness. Size is determined by `struct` module according to specified format string.
+
+    :param endianity: string, character like: < > =
+    :param format: string, character like: f d B H L Q b h l q
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises FormatFieldError: wrong format string, or struct.(un)pack complained about the value
+
+    bug???
 
     Example::
 
-        >>> d = FormatField(">", "H")
+        >>> d = FormatField(">", "H") or Int16ub
         >>> d.parse(b"\x01\x00")
         256
         >>> d.build(256)
@@ -665,13 +758,20 @@ class FormatField(Construct):
 
 class BytesInteger(Construct):
     r"""
-    Field that builds from integers as opposed to bytes. Similar to Int* fields but can have arbitrary size.
+    Field that packs arbitrarily large integers. Some Int24* fields use this class.
 
-    .. seealso:: Analog :func:`~construct.core.BitsInteger` that operates on bits.
+    Parses into an integer. Builds from an integer into specified byte count and endianness. Size is specified in ctor.
 
-    :param length: number of bytes in the field, and integer or a context function that returns such an integer
-    :param signed: whether the value is signed (two's complement), default is False (unsigned)
-    :param swapped: whether to swap byte order (little endian), default is False (big endian)
+    Analog to :class:`~construct.core.BitsInteger` that operates on bits. In fact, ``BytesInteger(n)`` is same as ``Bitwise(BitsInteger(8*n))`` and ``BitsInteger(n)`` is same as ``Bytewise(BytesInteger(n//8)))`` .
+
+    :param length: integer or context lambda, number of bytes in the field
+    :param signed: bool, whether the value is signed (two's complement), default is False (unsigned)
+    :param swapped: bool, whether to swap byte order (little endian), default is False (big endian)
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises BitIntegerError: given a negative value when field is not signed
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -714,15 +814,26 @@ class BytesInteger(Construct):
 
 class BitsInteger(Construct):
     r"""
-    Field that builds from integers as opposed to bytes. Similar to Bit/Nibble/Octet fields but can have arbitrary sizes. Must be enclosed in Bitwise.
+    Field that packs arbitrarily large (or small) integers. Some fields (Bit Nibble Octet) use this class. Must be enclosed in :class:`~construct.core.Bitwise` context.
 
-    :param length: number of bits in the field, an integer or a context function that returns such an integer
-    :param signed: whether the value is signed (two's complement), default is False (unsigned)
-    :param swapped: whether to swap byte order (little endian), default is False (big endian)
+    Parses into an integer. Builds from an integer into specified bit count and endianness. Size (in bits) is specified in ctor.
+
+    Note that little-endianness is only defined for multiples of 8 bits.
+
+    Analog to :class:`~construct.core.BytesInteger` that operates on bytes. In fact, ``BytesInteger(n)`` is same as ``Bitwise(BitsInteger(8*n))`` and ``BitsInteger(n)`` is same as ``Bytewise(BytesInteger(n//8)))`` .
+
+    :param length: integer or context lambda, number of bits in the field
+    :param signed: bool, whether the value is signed (two's complement), default is False (unsigned)
+    :param swapped: bool, whether to swap byte order (little endian), default is False (big endian)
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises BitIntegerError: building and given a negative value when field is not signed
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
-        >>> d = Bitwise(BitsInteger(8))
+        >>> d = Bitwise(BitsInteger(8)) or Bitwise(Octet)
         >>> d.parse(b"\x10")
         16
         >>> d.build(255)
@@ -942,18 +1053,19 @@ def Int24sn():
 @singleton
 class VarInt(Construct):
     r"""
-    Varint encoded integer. Each 7 bits of the number are encoded in one byte of the stream, where leftmost (MSB) bit is unset when byte is terminal.
+    VarInt encoded integer. Each 7 bits of the number are encoded in one byte of the stream, where leftmost bit (MSB) is unset when byte is terminal. Scheme is defined at Google site related to `Protocol Buffers <https://developers.google.com/protocol-buffers/docs/encoding>`_.
 
     Can only encode non-negative numbers.
 
-    Scheme defined at Google's site:
-    https://developers.google.com/protocol-buffers/docs/encoding
-    https://techoverflow.net/blog/2013/01/25/efficiently-encoding-variable-length-integers-in-cc/
+    Parses into an integer. Builds from an integer. Size is undefined.
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    bug???
 
     Example::
 
-        >>> VarInt.build(16)
-        b'\x10'
+        >>> VarInt.build(1)
+        b'\x01'
         >>> VarInt.build(2**100)
         b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04'
     """
@@ -984,27 +1096,32 @@ class VarInt(Construct):
 #===============================================================================
 class Struct(Construct):
     r"""
-    Sequence of usually named constructs, similar to structs in C. The elements are parsed and built in the order they are defined. If a member is anonymous (its name is None) then it gets parsed and its value discarded, or it gets build from nothing (from None).
+    Sequence of usually named constructs, similar to structs in C. The members are parsed and build in the order they are defined. If a member is anonymous (its name is None) then it gets parsed and the value discarded, or it gets build from nothing (from None).
 
-    Some fields do not need to be named, since they are built without value anyway. See Const Padding Pass Terminated for examples of such fields.
+    Some fields do not need to be named, since they are built without value anyway. See Const Padding Check Error Pass Terminated Seek for examples of such fields.
 
-    Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
+    :class:`~construct.core.Embedded` fields do not need to be named.
 
-    Operator + can also be used to make Structs.
+    Operator + can also be used to make Structs (although not recommended).
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges members with parent's members.
+    Parses into a Container (dict with attribute and key access) where keys match subcon names. If field has embedded flag, its assuned to parse into a dict which entries get merged with result dict. Builds from a dict (not necessarily a Container) where each member gets a value from the dict matching the subcon name. If field has build-from-none flag, it gets build even when there is no mathing entry in the dict. If field has embedded flag, it gets build from the entire dict itself. Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
 
-    :param subcons: subcons that make up this structure, some can be anonymous
+    This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
+
+    :param \*subcons: Construct instances, list of members, some can be anonymous
+    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    bug??? KeyError
 
     Example::
 
-        >>> d = Struct("a"/Int8ul, "data"/Bytes(2), "data2"/Bytes(this.a))
-        >>> d.parse(b"\x01abc")
-        Container(a=1)(data=b'ab')(data2=b'c')
-        >>> d.build(_)
-        b'\x01abc'
-        >>> d.build(dict(a=5, data=b"??", data2=b"hello"))
-        b'\x05??hello'
+        >>> d = Struct("num"/Int8ub, "data"/Bytes(this.num))
+        >>> d.parse(b"\x04DATA")
+        Container(num=4)(data=b"DATA")
+        >>> d.build(dict(num=4, data=b"DATA"))
+        b"\x04DATA"
 
         >>> d = Struct(Const(b"MZ"), Padding(2), Pass, Terminated)
         >>> d.build({})
@@ -1017,7 +1134,7 @@ class Struct(Construct):
         Alternative syntax (not recommended):
         >>> ("a"/Byte + "b"/Byte + "c"/Byte + "d"/Byte)
 
-        Alternative syntax, note this works ONLY on python 3.6+:
+        Alternative syntax, but requires Python 3.6:
         >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
     """
     __slots__ = ["subcons"]
@@ -1110,36 +1227,35 @@ class Struct(Construct):
 
 class Sequence(Struct):
     r"""
-    Sequence of unnamed constructs. The elements are parsed and built in the order they are defined. If a member is named, its parsed value gets inserted into the context. This allows using members that refer to previous members values.
+    Sequence of usually un-named constructs. The members are parsed and build in the order they are defined. If a member is named, its parsed value gets inserted into the context. This allows using members that refer to previous members.
 
-    Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
+    :class:`~construct.core.Embedded` fields do not need to be named.
 
-    Operator >> can also be used to make Sequences.
+    Operator >> can also be used to make Sequences (although not recommended).
 
-    .. seealso:: Can be nested easily, and embedded using :func:`~construct.core.Embedded` wrapper that merges entries with parent's entries.
+    Parses into a ListContainer (list with pretty-printing) where values are in same order as subcons. If field has embedded flag, its assumed to parse into a list which elements get merged with result list. Builds from a list (not necessarily a ListContainer) where each subcon is given the element at respective position. If field has embedded flag, it gets build from a following subset of entire list. Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
 
-    :param subcons: subcons that make up this sequence, some can be named
+    This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
+
+    :param \*subcons: Construct instances, list of members, some can be named
+    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    bug??? KeyError
 
     Example::
 
-        >>> d = (Byte >> Byte)
-        >>> d.parse(b'\x01\x02')
-        [1, 2]
-        >>> d.build([1, 2])
-        b'\x01\x02'
-        >>> d.sizeof()
-        2
-
-        >>> d = Sequence(Byte, CString(), Float32b)
-        >>> d.build([255, b"hello", 123.0])
-        b'\xffhello\x00B\xf6\x00\x00'
+        >>> d = Sequence(Byte, Float32b)
+        >>> d.build([0, 1.23])
+        b'\x00?\x9dp\xa4'
         >>> d.parse(_)
-        [255, b'hello', 123.0]
+        [0, 1.2300000190734863] # a ListContainer
 
         Alternative syntax (not recommended):
         >>> (Byte >> "Byte >> "c"/Byte >> "d"/Byte)
 
-        Alternative syntax, note this works ONLY on python 3.6+:
+        Alternative syntax, but requires Python 3.6:
         >>> Sequence(a=Byte, b=Byte, c=Byte, d=Byte)
     """
 
@@ -1212,17 +1328,25 @@ class Sequence(Struct):
 #===============================================================================
 class Range(Subconstruct):
     r"""
-    Homogenous array of elements. The array will iterate through between ``min`` to ``max`` times. If an exception occurs (EOF, validation error) then repeater exits cleanly. If less than ``min`` elements were parsed or more than ``max`` elements were provided for building, error is raised. 
+    Homogenous array of elements, similar to C# generic T[], but works with unknown count of elements using following rules.
 
-    Operator [] can be used to make instances.
+    Parses into a ListContainer (a list). Parsing stops when either max count was reached or an exception occured inside subcon. If count is less than min, raises RangeError. Builds from a list. If given list has more than max elements, raises RangeError. Size is defined as min (max) multiplied by subcon size, but only if min==max and subcon is fixed size.
 
-    .. seealso:: Analog to :func:`~construct.core.GreedyRange` that parses until end of stream.
+    nesting???
 
-    :param min: the minimal count, an integer or a context lambda
-    :param max: the maximal count, an integer or a context lambda
-    :param subcon: the subcon to process individual elements
+    Operator [] can be used to make Array and Range instances (recommended).
 
-    :raises RangeError: when consumed or produced too little or too many elements
+    This class is used internally to implement :class:`~construct.core.GreedyRange`.
+
+    :param min: integer or context lambda, the minimal count
+    :param max: integer or context lambda, the maximal count
+    :param subcon: Construct instance, subcon to process individual elements
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises RangeError: consumed or produced too little or too many elements, or specified min and max are not valid
+    :raises NotImplementedError: compiled (unless its Array)
+
+    Can propagate any exception from the lambdas, possibly non-ConstructError.
 
     Example::
 
@@ -1237,7 +1361,9 @@ class Range(Subconstruct):
         construct.core.RangeError: expected from 3 to 5 elements, found 6
 
         Alternative syntax (recommended):
-        >>> Byte[3:5], Byte[3:], Byte[:5], Byte[:]
+        >>> Bytes[5] creates Array
+        >>> Byte[3:5], Byte[3:], Byte[:5] create Range
+        >>> Byte[:] creates GreedyRange
     """
     __slots__ = ["min", "max"]
 
@@ -1303,16 +1429,18 @@ class Range(Subconstruct):
     def _compileparse(self, code):
         if not self.min == self.max:
             raise NotImplementedError("Range compiles only for Array instances")
-        return "ListContainer(%s for i in range(%s))" % (self.subcon._compileparse(code), self.max)
+        return "ListContainer((%s) for i in range(%s))" % (self.subcon._compileparse(code), self.max)
 
 
 def GreedyRange(subcon):
     r"""
-    Homogenous array of elements that parses until end of stream and builds from all elements. 
+    Homogenous array of elements, similar to C# generic T[], but works with unknown count of elements by parsing until end of stream.
 
-    Operator [] can be used to make instances.
+    Semantics are like for Range(0, 2**64, subcon).
 
-    :param subcon: the subcon to process individual elements
+    :param subcon: Construct instance, subcon to process individual elements
+
+    See :class:`~construct.core.Range` for raisable exceptions.
 
     Example::
 
@@ -1323,50 +1451,64 @@ def GreedyRange(subcon):
         [0, 1, 2, 3, 4, 5, 6, 7]
 
         Alternative syntax (recommended):
-        >>> Byte[3:5], Byte[3:], Byte[:5], Byte[:]
+        >>> Bytes[5] creates Array
+        >>> Byte[3:5], Byte[3:], Byte[:5] create Range
+        >>> Byte[:] creates GreedyRange
     """
     return Range(0, 2**64, subcon)
 
 
 def Array(count, subcon):
     r"""
-    Homogenous array of elements. The array will iterate through exactly ``count`` elements. This is just a macro around `Range`. 
+    Homogenous array of elements, similar to C# generic T[].
 
-    Operator [] can be used to make instances.
+    Semantics are like for Range(count, count, subcon).
 
-    :param count: an integer or a context function that returns such an integer
-    :param subcon: the subcon to process individual elements
+    :param count: integer or context lambda, strict amount of elements
+    :param subcon: Construct instance, subcon to process individual elements
+
+    See :class:`~construct.core.Range` for raisable exceptions.
 
     Example::
 
-        >>> d = Array(5,5,Byte) or Byte[5]
+        >>> d = Array(5, Byte) or Byte[5]
         >>> d.build(range(5))
         b'\x00\x01\x02\x03\x04'
         >>> d.parse(_)
         [0, 1, 2, 3, 4]
 
         Alternative syntax (recommended):
-        >>> Byte[3:5], Byte[3:], Byte[:5], Byte[:]
+        >>> Bytes[5] creates Array
+        >>> Byte[3:5], Byte[3:], Byte[:5] create Range
+        >>> Byte[:] creates GreedyRange
     """
     return Range(count, count, subcon)
 
 
 class RepeatUntil(Subconstruct):
     r"""
-    Homogenous array that repeats until the predicate indicates it to stop. Note that the last element (that predicate indicated as True) is included in the return list.
+    Homogenous array of elements, similar to C# generic IEnumerable<T>, that repeats until the predicate indicates it to stop. Note that the last element (that predicate indicated as True) is included in the return list.
 
-    :param predicate: a predicate function that takes (obj, list, context) and returns True to break or False to continue (or a truthy value)
-    :param subcon: the subcon used to parse and build each element
+    Parse iterates indefinately until last element passed the predicate. Build iterates indefinately over given list, until an element passed the precicate (or raises RangeError if no element passed it). Size is undefined.
+
+    :param predicate: lambda that takes (obj, list, context) and returns True to break or False to continue (or a truthy value)
+    :param subcon: Construct instance, subcon used to parse and build each element
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises RangeError: consumed all elements but neither passed the predicate
+    :raises NotImplementedError: compiled
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
-        >>> d = RepeatUntil(lambda x,lst,ctx: x>7, Byte)
+        >>> d = RepeatUntil(lambda x,lst,ctx: x > 7, Byte)
         >>> d.build(range(20))
         b'\x00\x01\x02\x03\x04\x05\x06\x07\x08'
         >>> d.parse(b"\x01\xff\x02")
         [1, 255]
 
-        >>> d = RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte)
+        >>> d = RepeatUntil(lambda x,lst,ctx: lst[-2:] == [0,0], Byte)
         >>> d.parse(b"\x01\x00\x00\xff")
         [1, 0, 0]
     """
@@ -1397,11 +1539,13 @@ class RepeatUntil(Subconstruct):
 #===============================================================================
 class Embedded(Subconstruct):
     r"""
-    Embeds a struct into the enclosing struct, merging fields. Can also embed sequences into sequences, merging items. Name is inherited from subcon.
+    Special wrapper that allows outer Struct or Sequence to see a field as embedded. Embedded does not change a field, only wraps it like a candy with a flag.
 
     .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
 
-    :param subcon: the inner struct to embed inside outer struct or sequence
+    Parsing building and size are deferred to subcon.
+
+    :param subcon: Construct instance, field to embed inside outer struct or sequence
 
     Example::
 
@@ -1416,17 +1560,19 @@ class Embedded(Subconstruct):
 
 class Renamed(Subconstruct):
     r"""
-    Renames an existing construct. This creates a wrapper so underlying subcon retains it's original name, which by default is just None. Can be used to give same construct few different names. Used internally by / operator.
+    Special wrapper that allows outer Struct or Sequence to see a field as having a name (or a different name). Library classes do not have names (its None). Renamed does not change a field, only wraps it like a candy with a label. Used internally by / operator.
 
-    Also this wrapper is responsible for building a path (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. Fields that are not named do not appear in the path string.
+    Also this wrapper is responsible for building a path info (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. Fields that are not named do not appear in the path string.
 
-    :param newname: the new name, as string
-    :param subcon: the subcon to rename
+    Parsing building and size are deferred to subcon.
+
+    :param newname: string
+    :param subcon: Construct instance, field to rename
 
     Example::
 
-        >>> "name" / Int32ul
-        <Renamed: name>
+        >>> "number" / Int32ub
+        <Renamed: number>
     """
     def __init__(self, newname, subcon):
         super(Renamed, self).__init__(subcon)
@@ -1464,16 +1610,17 @@ class Renamed(Subconstruct):
 #===============================================================================
 class Const(Subconstruct):
     r"""
-    Field enforcing a constant value. It is used for file signatures, to validate that the given pattern exists. When parsed, the value must strictly match.
+    Field enforcing a constant. It is used for file signatures, to validate that the given pattern exists. Data in the stream must strictly match the specified value.
 
-    Usually a member of a Struct, where it can be anonymous (so it does not appear in parsed dictionary for simplicity).
+    Note that a variable sized subcon may still provide positive verification. Const does not consume a precomputed amount of bytes, but depends on the subcon to read the appropriate amount (eg. VarInt is acceptable). Whatever subcon parses into, gets compared against the specified value.
 
-    Note that a variable length subcon may still provide positive verification. Const does not consume a precomputed amount of bytes (and hence does NOT require a fixed sized lenghtfield), but depends on the subcon to read the appropriate amount (eg. VarInt is acceptable).
+    Parses using subcon and return its value (after checking). Builds using subcon from nothing (or given object, if not None). Size is deferred to subcon.
 
-    :param value: the expected value, or a bytes literal
-    :param subcon: optional, the subcon used to build value from, Bytes if value was a bytes literal
+    :param value: expected value, usually a bytes literal
+    :param subcon: optional, Construct instance, subcon used to build value from, assumed to be Bytes if value parameter was a bytes literal
 
-    :raises ConstError: when parsed data does not match specified value, or building from wrong value
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises ConstError: parsed data does not match specified value, or building from wrong value
 
     Example::
 
@@ -1483,9 +1630,9 @@ class Const(Subconstruct):
         >>> d.parse(b"JPEG")
         construct.core.ConstError: expected b'IHDR' but parsed b'JPEG'
 
-        >>> d = Const(16, Int32ul)
+        >>> d = Const(255, Int32ul)
         >>> d.build(None)
-        b'\x10\x00\x00\x00'
+        b'\xff\x00\x00\x00'
     """
     __slots__ = ["value"]
     def __init__(self, value, subcon=None):
@@ -1516,13 +1663,13 @@ class Const(Subconstruct):
 
 class Computed(Construct):
     r"""
-    Field computing a value. Underlying byte stream is unaffected. When parsing, the context function provides the value. Constant literal value can also be provided.
+    Field computing a value from the context dictionary or some outer source like os.urandom or random module. Underlying byte stream is unaffected. The source can be non-deterministic.
 
-    Building does not require a value, the value gets computed from context, the same as during parsing.
+    Parsing and Building return the value returned by the context lambda (although a constant value can also be used). Size is defined as 0 because parsing and building does not consume or produce bytes into the stream.
 
-    Size is defined as 0 because parsing and building does not consume or produce bytes.
+    :param func: context lambda or constant value
 
-    :param func: a context function or a constant value
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
         >>> d = Struct(
@@ -1535,6 +1682,9 @@ class Computed(Construct):
         >>> d.parse(b"12")
         Container(width=49)(height=50)(total=2450)
 
+        >>> d = Computed(7)
+        >>> d.parse(b"")
+        7
         >>> d = Computed(lambda ctx: 7)
         >>> d.parse(b"")
         7
@@ -1561,13 +1711,18 @@ class Computed(Construct):
 
 class Rebuild(Subconstruct):
     r"""
-    Parses the field like normal, but computes the value used for building from a context function. Constant value can also be used instead.
+    Field where building does not require a value, because the value gets recomputed when needed. Comes handy when building a Struct from a dict with missing keys.
 
-    Building does not require a value, because the value gets recomputed anyway.
-
-    Size is the same as subcon size.
+    Parsing defers to subcon. Building is defered to subcon, but it builds from a value provided by the context lambda (or constant). Size is defered to subcon.
 
     .. seealso:: Useful for length and count fields when :class:`~construct.core.Prefixed` and :class:`~construct.core.PrefixedArray` cannot be used.
+
+    :param subcon: Construct instance, subcon to defer to
+    :param func: context lambda or constant value
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -1593,11 +1748,16 @@ class Rebuild(Subconstruct):
 
 class Default(Subconstruct):
     r"""
-    Allows to make a field have a default value, which comes handly when building a Struct from a dict with missing keys.
+    Field where building does not require a value, because the value gets taken from default. Comes handy when building a Struct from a dict with missing keys.
 
-    Building does not require a value, but can accept one.
+    Parsing defers to subcon. Building is defered to subcon, but it builds from a default (if given object is None) or from given object. Building does not require a value, but can accept one. Size is defered to subcon.
 
-    Size is the same as subcon size.
+    :param subcon: Construct instance, subcon to defer to
+    :param value: context lambda or constant value
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -1626,9 +1786,13 @@ class Check(Construct):
     r"""
     Checks for a condition, and raises ValidationError if the check fails.
 
-    :param func: a context function returning a bool (or truthy value)
+    Parsing and building return nothing (but check the condition). Size is defined as 0. Stream is not affected by either operation.
 
-    :raises ValidationError: when condition fails
+    :param func: bool or context lambda, that gets run on parsing and building
+
+    :raises ValidationError: lambda returned false
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -1660,14 +1824,16 @@ class Check(Construct):
 @singleton
 class Error(Construct):
     r"""
-    Raises an exception when triggered by parse or build. Can be used as a sentinel that blows a whistle when a conditional branch goes the wrong way, or to raise an error explicitly the declarative way.
+    Raises ExplicitError, unconditionally.
 
-    :raises ExplicitError: when parsed or build
+    Parsing and building always raise ExplicitError. Size is undefined.
+
+    :raises ExplicitError: unconditionally, on parsing and building
 
     Example::
 
-        >>> d = ("x"/Byte >> IfThenElse(this.x > 0, Byte, Error))
-        >>> d.parse(b"\xff\x05")
+        >>> d = Struct("num"/Byte, Error)
+        >>> d.parse(b"data...")
         construct.core.ExplicitError: Error field was activated during parsing
     """
     def __init__(self):
@@ -1687,19 +1853,39 @@ class Error(Construct):
 
 class FocusedSeq(Construct):
     r"""
-    Parses and builds a sequence where only one subcon value is returned from parsing or taken into building, other fields are parsed and discarded or built from nothing.
+    Allows constructing more elaborate "adapters" than Adapter class.
 
-    :param parsebuildfrom: which subcon to use, an integer index or string name, or a context lambda returning either
-    :param \*subcons: a list of members
-    :param \*\*kw: a list of members (works ONLY on python 3.6)
+    Parse does parse all subcons in sequence, but returns only the element that was selected (discards other values). Build does build all subcons in sequence, where each gets build from nothing (except the selected subcon which is given the object). Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
+
+    This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
+
+    This class is used internally to implement :class:`~construct.core.PrefixedArray`.
+
+    :param parsebuildfrom: integer index or string name or context lambda, selects a subcon
+    :param \*subcons: Construct instances, list of members, some can be named
+    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises IndexError: selector does not match with members, integer out of bounds, or name not found among named members
+
+    bug???
+
+    :raises NotImplementedError: compiled with non-constant selector
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Excample::
 
-        >>> d = FocusedSeq(1 or "num", Const(b"MZ"), "num"/Byte, Terminated)
-        >>> d.parse(b"MZ\xff")
+        >>> d = FocusedSeq(1 or "num", Const(b"SIG"), "num"/Byte, Terminated)
+        >>> d.parse(b"SIG\xff")
         255
         >>> d.build(255)
-        b'MZ\xff'
+        b'SIG\xff'
+
+        PrefixedArray <--> FocusedSeq(1,
+            "count" / Rebuild(lengthfield, len_(this.items)),
+            "items" / subcon[this.count],
+        )
     """
 
     def __init__(self, parsebuildfrom, *subcons, **kw):
@@ -1804,7 +1990,12 @@ class Numpy(Construct):
     r"""
     Preserves numpy arrays (both shape, dtype and values).
 
-    :raises ImportError: when numpy cannot be imported during parsing or building
+    Parses using `numpy.load() <https://docs.scipy.org/doc/numpy/reference/generated/numpy.load.html#numpy.load>`_ and builds using `numpy.save() <https://docs.scipy.org/doc/numpy/reference/generated/numpy.save.html#numpy.save>`_ functions, using Numpy binary protocol. Size is undefined.
+
+    :raises ImportError: numpy could not be imported during parsing or building
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    Can propagate numpy.load() and numpy.save() exceptions.
 
     Example::
 
@@ -1829,9 +2020,20 @@ class Numpy(Construct):
 
 class NamedTuple(Adapter):
     r"""
-    Both arrays, structs, and sequences can be mapped to a namedtuple from collections module. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of string names. Just like the standard namedtuple.
+    Both arrays, structs, and sequences can be mapped to a namedtuple from `collections module <https://docs.python.org/3/library/collections.html#collections.namedtuple>`_. To create a named tuple, you need to provide a name and a sequence of fields, either a string with space-separated names or a list of string names, like the standard namedtuple.
 
-    :raises AdaptationError: when subcon is not either Struct Sequence Range
+    Parses into a collections.namedtuple instance, and builds from such instance (although it also builds from lists and dicts). Size is undefined.
+
+    :param tuplename: string
+    :param tuplefields: string or list of strings
+    :param subcon: Construct instance, either Struct Sequence Array/Range
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises AdaptationError: subcon is neither Struct Sequence Array/Range
+
+    Can propagate collections exceptions.
+
+    bug??? NamedTupleError
 
     Example::
 
@@ -1883,12 +2085,17 @@ class NamedTuple(Adapter):
 #===============================================================================
 def Padding(length, pattern=b"\x00"):
     r"""
-    Padding field that adds bytes when building, discards bytes when parsing.
+    Appends null bytes.
 
-    :param length: length of the padding, an integer or a context function returning such an integer
-    :param pattern: padding pattern as b-character, default is \\x00
+    Parsing consumes specified amount of bytes and discards it. Building writes specified pattern byte multiplied into specified length. Size is same as specified.
 
-    :raises PaddingError: when strict is set and actual parsed pattern differs from specified
+    :param length: integer or context lambda, length of the padding
+    :param pattern: b-character, padding pattern, default is \\x00
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises PaddingError: length was negative
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -1905,9 +2112,20 @@ def Padding(length, pattern=b"\x00"):
 
 class Padded(Subconstruct):
     r"""
-    Appends additional null bytes to achieve a fixed length. Fails if actual data is longer than specified length. Note that subcon can actually be variable size, it is the eventual size during building that determines actual padding.
+    Appends additional null bytes to achieve a length.
 
-    :raises PaddingError: when parsed or build data is longer than the length
+    Note that subcon can actually be variable size, it is the eventual amount of bytes that is read or written during parsing or building that determines actual padding.
+
+    Parsing first parses subcon, then consumes an amount of bytes to sum up to specified length, and discards it. Building first builds subcon, then writes specified pattern byte to sum up to specified length. Size is same as specified.
+
+    :param length: integer or context lambda, length of the padding
+    :param subcon: Construct instance
+    :param pattern: b-character, padding pattern, default is \\x00
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises PaddingError: length was negative, or subcon read or written more than the length (would cause negative pad)
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -1965,9 +2183,18 @@ class Aligned(Subconstruct):
     r"""
     Appends additional null bytes to achieve a length that is shortest multiple of a modulus.
 
-    :param modulus: the modulus to final length, an integer or a context function returning such an integer
-    :param subcon: the subcon to align
-    :param pattern: optional, the padding pattern, a b-character (default is \x00)
+    Note that subcon can actually be variable size, it is the eventual amount of bytes that is read or written during parsing or building that determines actual padding.
+
+    Parsing first parses subcon, then consumes an amount of bytes to sum up to specified length, and discards it. Building first builds subcon, then writes specified pattern byte to sum up to specified length. Size is subcon size plus modulo remainder, unless SizeofError was raised.
+
+    :param modulus: integer or context lambda, modulus to final length
+    :param subcon: Construct instance
+    :param pattern: optional, b-character, padding pattern, default is \\x00
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises PaddingError: modulus was zero or negative
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -2013,13 +2240,13 @@ class Aligned(Subconstruct):
 
 def AlignedStruct(modulus, *subcons, **kw):
     r"""
-    Makes a structure where each field is aligned to the same modulus (it is a struct of aligned fields, not an aligned struct).
+    Makes a structure where each field is aligned to the same modulus (it is a struct of aligned fields, NOT an aligned struct).
 
-    .. seealso:: Uses :func:`~construct.core.Aligned` and :func:`~construct.core.Struct`.
+    See :class:`~construct.core.Aligned` and :class:`~construct.core.Struct` for semantics and raisable exceptions.
 
-    :param modulus: passed to each member
-    :param \*subcons: subcons that make up the Struct
-    :param \*\*kw: named subcons, extend the Struct
+    :param modulus: integer or context lambda, passed to each member
+    :param \*subcons: Construct instances, list of members, some can be anonymous
+    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
 
     Example::
 
@@ -2039,11 +2266,14 @@ def BitStruct(*subcons):
     r"""
     Makes a structure inside a Bitwise.
 
-    .. seealso:: Uses :func:`~construct.core.Bitwise` and :func:`~construct.core.Struct`.
+    See :class:`~construct.core.Bitwise` and :class:`~construct.core.Struct` for semantics and raisable exceptions.
 
-    :param \*subcons: the subcons that make up this structure
+    :param \*subcons: Construct instances, list of members, some can be anonymous
+    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
 
     Example::
+
+        BitStruct  <-->  Bitwise(Struct(...))
 
         >>> d = BitStruct(
         ...     "a" / Flag,
@@ -2063,9 +2293,10 @@ def EmbeddedBitStruct(*subcons):
     r"""
     Makes an embedded BitStruct.
 
-    .. seealso:: Uses :func:`~construct.core.Bitwise` and :func:`~construct.core.Embedded` and :func:`~construct.core.Struct`.
+    See :class:`~construct.core.Bitwise` and :class:`~construct.core.Embedded` and :class:`~construct.core.Struct` for semantics and raisable exceptions.
 
-    :param \*subcons: the subcons that make up this structure
+    :param \*subcons: Construct instances, list of members, some can be anonymous
+    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
 
     Example::
 
@@ -2079,15 +2310,26 @@ def EmbeddedBitStruct(*subcons):
 #===============================================================================
 class Union(Construct):
     r"""
-    Treats the same data as multiple constructs (similar to C union statement) so you can look at the data in multiple views.
+    Treats the same data as multiple constructs (similar to C union) so you can look at the data in multiple views.
 
-    When parsing, all fields read the same data bytes, but stream ultimately gets reverted to initial offset, unless parsefrom selects a subcon by index or name. 
-    When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
+    :class:`~construct.core.Embedded` fields do not need to be named.
 
-    .. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset, not seeked to any common denominator between subcons.
+    Parses subcons in sequence, and reverts the stream back to original position after each subcon. Afterwards, advances the stream by selected subcon. Builds from any subcon that has a matching key in given dict. Size is same as selected subcon.
 
-    :param parsefrom: how to leave stream after parsing, can be integer index or string name selecting a subcon, None (leaves stream at initial offset, the default), a context lambda returning either of previously mentioned
-    :param subcons: subconstructs (order and name sensitive)
+    This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
+
+    .. warning:: If you skip `parsefrom` parameter then stream will be left back at starting offset, not seeked to any common denominator.
+
+    :param parsefrom: how to leave stream after parsing, can be integer index or string name selecting a subcon, or None (leaves stream at initial offset, the default), or context lambda
+    :param \*subcons: Construct instances, list of members, some can be anonymous
+    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises UnionError: selector does not match any subcon, or dict given to build does not contain any keys matching any subcon
+
+    bug??? KeyError
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -2097,7 +2339,7 @@ class Union(Construct):
         >>> d.build(dict(chars=range(8)))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
-        Alternative syntax, note this works ONLY on python 3.6+:
+        Alternative syntax, but requires Python 3.6:
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     """
     __slots__ = ["subcons","parsefrom"]
@@ -2214,10 +2456,16 @@ class Union(Construct):
 
 class Select(Construct):
     r"""
-    Selects the first matching subconstruct. It will literally try each of the subconstructs, until one matches.
+    Selects the first matching subconstruct.
 
-    :param subcons: the subcons to try (order sensitive)
-    :param includename: indicates whether to include the name of the selected subcon in the return value of parsing, default is False
+    Parses and builds by literally trying each subcon in sequence until one of them parses or builds without exception. Stream gets reverted back to original position after each failed attempt. Size is not defined.
+
+    :param \*subcons: Construct instances, list of members, some can be anonymous
+    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+    :param includename: indicates whether to include name of selected subcon in the return value of parsing, default is False
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises SelectError: neither subcon succeded when parsing or building
 
     Example::
 
@@ -2227,7 +2475,7 @@ class Select(Construct):
         >>> d.build(u"Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
-        Alternative syntax, note this works ONLY on python 3.6+:
+        Alternative syntax, but requires Python 3.6:
         >>> Select(num=Int32ub, text=CString(encoding="utf8"))
     """
     __slots__ = ["subcons", "includename"]
@@ -2271,13 +2519,15 @@ class Select(Construct):
 
 def Optional(subcon):
     r"""
-    Makes an optional construct, that tries to parse the subcon. If parsing fails, returns None. If building fails, writes nothing.
+    Makes an optional field.
 
-    Size cannot be computed, because whether bytes are consumed or produced depends on actual data and context.
+    Parsing attempts to parse subcon. If sub-parsing fails, returns None and reports success. Building attempts to build subcon. If sub-building fails, writes nothing and reports success. Size is undefined, because whether bytes would be consumed or produced depends on actual data and actual context.
 
-    :param subcon: the subcon to optionally parse or build
+    :param subcon: Construct instance
 
     Example::
+
+        Optional  <-->  Select(subcon, Pass)
 
         >>> d = Optional(Int64ul)
         >>> d.parse(b"12345678")
@@ -2294,17 +2544,27 @@ def Optional(subcon):
 
 def If(predicate, subcon):
     r"""
-    An if-then conditional construct. If the context predicate indicates True, the `subcon` will be used for parsing and building, otherwise parsing returns None and building is no-op. Note that the predicate has no access to parsed value, it computes only on context.
+    If-then conditional construct.
 
-    :param predicate: a function taking context and returning a bool
-    :param subcon: the subcon that will be used if the predicate returns True
+    Parsing evaluates condition, if True then subcon is parsed, otherwise just returns None. Building also evaluates condition, if True then subcon gets build from, otherwise does nothing. Size is undefined.
+
+    wrong??? size is Switch sizeof?
+
+    :param predicate: bool or context lambda (or a truthy value)
+    :param subcon: Construct instance, used if condition indicates True
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
+        If  <-->  IfThenElse(predicate, subcon, Pass)
+
         >>> d = If(this.x > 0, Byte)
-        >>> d.build(255, dict(x=1))
+        >>> d.build(255, x=1)
         b'\xff'
-        >>> d.build(255, dict(x=0))
+        >>> d.build(255, x=0)
         b''
     """
     return IfThenElse(predicate, subcon, Pass)
@@ -2312,11 +2572,20 @@ def If(predicate, subcon):
 
 def IfThenElse(predicate, thensubcon, elsesubcon):
     r"""
-    An if-then-else conditional construct. One of the two subcons is used for parsing or building, depending whether the predicate returns a truthy or falsey value for given context. Constant truthy value can also be used.
+    If-then-else conditional construct, similar to ternary operator.
 
-    :param predicate: a context function that returns a bool (or truthy value)
-    :param thensubcon: the subcon that will be used if the predicate indicates True
-    :param elsesubcon: the subcon that will be used if the predicate indicates False
+    Parsing and building evaluates condition, and defers to either subcon depending on the value.
+    Size is computed the same way.
+
+    wrong??? size is Switch sizeof?
+
+    :param predicate: bool or context lambda (or a truthy value)
+    :param thensubcon: Construct instance, used if condition indicates True
+    :param elsesubcon: Construct instance, used if condition indicates False
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -2337,34 +2606,39 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
 
 class Switch(Construct):
     r"""
-    A conditional branch. Switch will choose the case to follow based on the return value of keyfunc. If no case is matched and no default value is given, SwitchError will be raised.
+    A conditional branch.
+
+    Parsing and building evaluate keyfunc and select a subcon based on the value and dictionary entries. Dictionary (cases) maps values into subcons. If no case matches and no default field is given, SwitchError is raised. Note that default is a Construct instance, not a dictionary key. Size is evaluated in same way as parsing and building.
 
     .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Same applies to If and IfThenElse macros.
 
-    :param keyfunc: a context function that returns a key which will choose a case, or a constant
-    :param cases: a dictionary mapping keys to subcons
-    :param default: a default field to use when the key is not found in the cases. if not supplied, an exception will be raised when the key is not found. Pass can be used for do-nothing
-    :param includekey: whether to include the key in the return value of parsing, default is False
+    :param keyfunc: context lambda or constant, that matches some key in cases
+    :param cases: dict mapping keys to Construct instances
+    :param default: optional, Construct instance, used when keyfunc is not found in cases, Pass is a possible value for this parameter, default is a class that raises SwitchError
+    :param includekey: optional, bool, whether to include the key in return value when parsing, default is False
 
-    :raises SwitchError: when actual value is not in the dict nor a default is given
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises SwitchError: keyfunc value is not in the dict and no default was given
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
         >>> d = Switch(this.n, { 1:Int8ub, 2:Int16ub, 4:Int32ub })
-        >>> d.build(5, dict(n=1))
+        >>> d.build(5, n=1)
         b'\x05'
-        >>> d.build(5, dict(n=4))
+        >>> d.build(5, n=4)
         b'\x00\x00\x00\x05'
     """
 
     @singleton
     class NoDefault(Construct):
         def _parse(self, stream, context, path):
-            raise SwitchError("no default case defined")
+            raise SwitchError("no default case defined, parsing failed")
         def _build(self, obj, stream, context, path):
-            raise SwitchError("no default case defined")
+            raise SwitchError("no default case defined, building failed")
         def _sizeof(self, context, path):
-            raise SwitchError("no default case defined")
+            raise SwitchError("no default case defined, sizeof failed")
 
     __slots__ = ["subcons", "keyfunc", "cases", "default", "includekey"]
     def __init__(self, keyfunc, cases, default=NoDefault, includekey=False):
@@ -2400,9 +2674,15 @@ class Switch(Construct):
 
 class StopIf(Construct):
     r"""
-    Checks for a condition, and stops a Struct/Sequence/Range from parsing or building further.
+    Checks for a condition, and stops Struct Sequence Range from parsing or building further.
 
-    :param condfunc: a context function returning a bool (or truthy value)
+    Parsing and building check the condition, and raise StopIteration if indicated. Size is not defined.
+
+    :param condfunc: bool or context lambda (or truthy value)
+
+    :raises StopIteration: used internally
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -2421,7 +2701,7 @@ class StopIf(Construct):
         if self.condfunc(context):
             raise StopIteration
     def _sizeof(self, context, path):
-        return SizeofError("Struct/Sequence/Range cannot compute size because StopIf is runtime-dependant")
+        return SizeofError("StopIf cannot determine size because it depends on actual context which then depends on actual data and outer constructs")
 
 
 #===============================================================================
@@ -2429,14 +2709,21 @@ class StopIf(Construct):
 #===============================================================================
 class Pointer(Subconstruct):
     r"""
-    Changes the stream position to a given offset, where the construction should take place, and restores the stream position when finished.
+    Jumps in the stream forth and back for one field.
 
-    Offset can also be negative, indicating a position from EOF backwards.
+    Parsing and building seeks the stream to new location, processes subcon, and seeks back to original location. Size is not defined.
 
-    Size is defined as unknown, instead of previous 0.
+    Offset can be positive, indicating a position from stream beginning forward, or negative, indicating a position from EOF backwards.
 
-    :param offset: an integer or a context function that returns a stream position, where the construction would take place
-    :param subcon: the subcon to use at the offset
+    :param offset: integer or context lambda, positive or negative
+    :param subcon: Construct instance
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises StreamError: stream is not seekable and tellable
+
+    bug???
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -2470,13 +2757,18 @@ class Pointer(Subconstruct):
 
 class Peek(Subconstruct):
     r"""
-    Peeks at the stream. Parses without changing the stream position, or rather measures stream position before parsing and seeks back to that position afterwards. If the end of the stream is reached when reading, returns None. Building is no-op.
+    Peeks at the stream.
 
-    Size is defined as 0 because build does not put anything into the stream. 
+    Parsing sub-parses (and returns None if failed), then reverts stream to original position. Building does nothing (its NOT deferred). Size is defined as 0 because there is no building.
+    
+    This class is used in :class:`~construct.core.Union` class to parse each member.
 
-    .. seealso:: The :func:`~construct.core.Union` class uses Peek to parse each member.
+    :param subcon: Construct instance
 
-    :param subcon: the subcon to peek at
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises StreamError: stream is not seekable and tellable
+
+    bug???
 
     Example::
 
@@ -2507,12 +2799,20 @@ class Peek(Subconstruct):
 
 class Seek(Construct):
     r"""
-    Sets a new stream position when parsing or building. Seeks are useful when many other fields follow the jump. Pointer works when there is only one field to look at, but when there is more to be done, Seek may come useful.
+    Seeks the stream.
 
-    .. seealso:: Analog :func:`~construct.core.Pointer` wrapper that has same side effect but also processes a subcon.
+    Parsing and building seek the stream to given location (and whence), and return stream.seek() return value. Size is not defined.
 
-    :param at: where to jump to, can be an integer or a context lambda returning such an integer
-    :param whence: is the offset from beginning (0) or from current position (1) or from ending (2), can be an integer or a context lambda returning such an integer, default is 0
+    .. seealso:: Analog :class:`~construct.core.Pointer` wrapper that has same side effect but also processes a subcon, and also seeks back.
+
+    :param at: integer or context lambda, where to jump to
+    :param whence: optional, integer or context lambda, is the offset from beginning (0) or from current position (1) or from EOF (2), default is 0
+
+    :raises StreamError: stream is not seekable
+
+    bug???
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -2539,7 +2839,7 @@ class Seek(Construct):
         whence = self.whence(context) if callable(self.whence) else self.whence
         return stream.seek(at, whence)
     def _sizeof(self, context, path):
-        raise SizeofError("Seek seeks the stream, sizeof is not meaningful")
+        raise SizeofError("Seek only moves the stream, size is not meaningful")
     def _compileparse(self, code):
         return "io.seek(%s, %s)" % (self.at, self.whence, )
 
@@ -2547,21 +2847,23 @@ class Seek(Construct):
 @singleton
 class Tell(Construct):
     r"""
-    Gets the stream position when parsing or building.
+    Tells the stream.
 
-    Tell is useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute field.
+    Parsing and building return current stream offset using using stream.tell(). Size is defined as 0 because parsing and building does not consume or add into the stream.
 
-    Size is defined as 0 because parsing and building does not consume or add into the stream.
+    Tell is useful for adjusting relative offsets to absolute positions, or to measure sizes of Constructs. To get an absolute pointer, use a Tell plus a relative offset. To get a size, place two Tells and measure their difference using a Compute field. However, its recommended to use :class:`~construct.core.RawCopy` instead of manually extracting two positions and computing difference.
 
-    .. seealso:: Its better to use :func:`~construct.core.RawCopy` instead of manually extracting two positions and computing difference.
+    :raises StreamError: stream is not tellable
+
+    bug???
 
     Example::
 
         >>> d = Struct("num"/VarInt, "offset"/Tell)
+        >>> d.parse(b"X")
+        Container(num=88)(offset=1)
         >>> d.build(dict(num=88))
         b'X'
-        >>> d.parse(_)
-        Container(num=88)(offset=1)
     """
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -2579,9 +2881,9 @@ class Tell(Construct):
 @singleton
 class Pass(Construct):
     r"""
-    No-op construct, useful as default cases for Switch and Enum. 
+    No-op construct, useful as default cases for Switch and Enum.
 
-    Returns None on parsing, puts nothing on building, size is 0 by definition. Building does not require a value, and any provided value gets discarded.
+    Parsing returns None. Building does nothing. Size is 0 by definition.
 
     Example::
 
@@ -2608,9 +2910,11 @@ class Pass(Construct):
 @singleton
 class Terminated(Construct):
     r"""
-    Asserts that end of stream has been reached at the point it was placed. You can use this to ensure no more unparsed data follows in the stream.
+    Asserts end of stream (EOF). You can use it to ensure no more unparsed data follows in the stream.
 
-    This construct is only meaningful for parsing. Building does nothing. Size is 0.
+    Parsing checks if stream reached EOF, and raises TerminatedError if not. Building does nothing. Size is defined as 0 because parsing and building does not consume or add into the stream.
+
+    :raises TerminatedError: stream not at EOF when parsing
 
     Example::
 
@@ -2641,18 +2945,22 @@ class Restreamed(Subconstruct):
     r"""
     Transforms bytes between the underlying stream and the subcon.
 
-    When the parsing or building is done, the wrapper stream is closed. If read buffer or write buffer is not empty, error is raised.
+    Used internally to implement :class:`~construct.core.Bitwise` :class:`~construct.core.Bytewise` :class:`~construct.core.ByteSwapped` :class:`~construct.core.BitsSwapped` .
 
-    .. seealso:: Both :func:`~construct.core.Bitwise` and :func:`~construct.core.Bytewise` are implemented using Restreamed.
+    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
 
-    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail after parsing/building. Also do NOT use pointers inside.
+    .. warning:: Do NOT use pointers inside Restreamed context.
 
-    :param subcon: the subcon which will operate on the buffer
-    :param encoder: a function that takes bytes and returns bytes (used when building)
-    :param encoderunit: ratio as integer, encoder takes that many bytes at once
-    :param decoder: a function that takes bytes and returns bytes (used when parsing)
-    :param decoderunit: ratio as integer, decoder takes that many bytes at once
-    :param sizecomputer: a function that computes amount of bytes outputed by some bytes
+    :param subcon: Construct instance, subcon which will operate on the buffer
+    :param encoder: function that takes bytes and returns bytes (used when building)
+    :param encoderunit: integer ratio, encoder takes that many bytes at once
+    :param decoder: function that takes bytes and returns bytes (used when parsing)
+    :param decoderunit: integer ratio, decoder takes that many bytes at once
+    :param sizecomputer: function that computes amount of bytes outputed
+
+    raises???
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -2680,19 +2988,21 @@ class Restreamed(Subconstruct):
         return buildret
     def _sizeof(self, context, path):
         if self.sizecomputer is None:
-            raise SizeofError("cannot calculate size")
+            raise SizeofError("Restreamed cannot calculate size without a sizecomputer")
         else:
             return self.sizecomputer(self.subcon._sizeof(context, path))
 
 
 class Rebuffered(Subconstruct):
     r"""
-    Caches bytes from the underlying stream, so it becomes seekable and tellable. Also makes the stream blocking, in case it came from a socket or a pipe. Optionally, stream can forget bytes that went a certain amount of bytes beyond the current offset, allowing only a limited seeking capability while allowing to process an endless stream.
+    Caches bytes from underlying stream, so it becomes seekable and tellable, and also becomes blocking on reading. Useful for processing non-file streams like pipes, sockets, etc.
 
     .. warning:: Experimental implementation. May not be mature enough.
 
-    :param subcon: the subcon which will operate on the buffered stream
-    :param tailcutoff: optional, amount of bytes kept in buffer, by default buffers everything
+    :param subcon: Construct instance, subcon which will operate on the buffered stream
+    :param tailcutoff: optional, integer, amount of bytes kept in buffer, by default buffers everything
+
+    raises???
 
     Example::
 
@@ -2715,11 +3025,18 @@ class Rebuffered(Subconstruct):
 #===============================================================================
 class RawCopy(Subconstruct):
     r"""
-    Returns a dict containing both parsed subcon, the raw bytes that were consumed by it, starting and ending offset in the stream, and the amount of bytes. Builds either from raw bytes or a value used by subcon.
+    Used to obtain byte representation of a field (aside of object value).
 
-    Context does contain a dict with data (if built from raw bytes) or with both (if built from value or parsed).
+    Returns a dict containing both parsed subcon value, the raw bytes that were consumed by subcon, starting and ending offset in the stream, and amount in bytes. Builds either from raw bytes representation or a value used by subcon. Size is same as subcon.
 
-    :raises ConstructError: when building and neither data or value is given
+    Object is a dictionary with either "data" or "value" keys, or both.
+
+    :param subcon: Construct instance
+
+    :raises ConstructError: building and neither data or value was given
+    :raises StreamError: stream is not seekable and tellable
+
+    bug??? no RawCopyError yet
 
     Example::
 
@@ -2754,14 +3071,18 @@ class RawCopy(Subconstruct):
             stream.seek(offset1)
             data = _read_stream(stream, offset2-offset1)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
-        raise ConstructError('both data and value keys are missing, cannot build')
+        raise ConstructError('RawCopy cannot build, both data and value keys are missing')
 
 
 def ByteSwapped(subcon):
     r"""
-    Swap the byte order within boundaries of the given subcon. Requires a fixed sized subcon.
+    Swap the byte order within boundaries of given subcon. Requires a fixed sized subcon.
 
-    :param subcon: the subcon on top of byte swapped bytes
+    :param subcon: Construct instance, subcon on top of byte swapped bytes
+
+    :raises SizeofError: ctor or compiler could not compute subcon size
+
+    See :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -2778,9 +3099,13 @@ def ByteSwapped(subcon):
 
 def BitsSwapped(subcon):
     r"""
-    Swap the bit order within each byte within boundaries of the given subcon. Does NOT require a fixed sized subcon.
+    Swap the bit order within each byte within boundaries of given subcon. Does NOT require a fixed sized subcon.
 
-    :param subcon: the subcon on top of bit swapped bytes
+    :param subcon: Construct instance, subcon on top of bit swapped bytes
+
+    :raises SizeofError: compiler could not compute subcon size
+
+    See :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -2798,13 +3123,20 @@ def BitsSwapped(subcon):
 
 class Prefixed(Subconstruct):
     r"""
-    Parses the length field. Then reads that amount of bytes and parses the subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes. When building, data is prefixed by its length. Optionally, length field can include its own size.
+    Prefixes a field with byte count.
 
-    .. seealso:: The :class:`~construct.core.VarInt` encoding should be preferred over `Int*` fixed sized fields. VarInt is more compact and never overflows.
+    Parses the length field. Then reads that amount of bytes, and parses subcon using only those bytes. Constructs that consume entire remaining stream are constrained to consuming only the specified amount of bytes (a substream). When building, data gets prefixed by its length. Optionally, length field can include its own size. Size is the sum of both fields sizes, unless either raises SizeofError.
 
-    :param lengthfield: a subcon used for storing the length
-    :param subcon: the subcon used for storing the value
-    :param includelength: optional, whether length field should include own size
+    Analog to :class:`~construct.core.PrefixedArray` which prefixes with an element count, instead of byte count. Semantics is similar but implementation is different.
+
+    .. seealso:: :class:`~construct.core.VarInt` is recommended for new protocols, as its more compact and never overflows.
+
+    :param lengthfield: Construct instance, field used for storing the length
+    :param subcon: Construct instance, subcon used for storing the value
+    :param includelength: optional, bool, whether length field should include its own size, default is False
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises NotImplementedError: compiled with includelength on
 
     Example::
 
@@ -2845,10 +3177,13 @@ class Prefixed(Subconstruct):
 
 def PrefixedArray(lengthfield, subcon):
     r"""
-    Homogenous array prefixed by item count (as opposed to prefixed by byte count, see :func:`~construct.core.Prefixed`).
+    Prefixes an array with item count (as opposed to prefixed by byte count, see :class:`~construct.core.Prefixed`).
 
-    :param lengthfield: field parsing and building an integer
-    :param subcon: subcon to process individual elements
+    :param lengthfield: Construct instance, field used for storing the element count
+    :param subcon: Construct instance, subcon used for storing each element
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises RangeError: consumed or produced too little elements
 
     Example::
 
@@ -2863,17 +3198,23 @@ def PrefixedArray(lengthfield, subcon):
         "items" / subcon[this.count],
     )
     def _compileparse(self, code):
-        return "ListContainer(%s for i in range(%s))" % (subcon._compileparse(code), lengthfield._compileparse(code), )
+        return "ListContainer((%s) for i in range(%s))" % (subcon._compileparse(code), lengthfield._compileparse(code), )
     return CompilableMacro(macro, _compileparse)
 
 
 class Checksum(Construct):
     r"""
-    Field that is build or validated by a hash of a given byte range.
+    Field that is build or validated by a hash of a given byte range. Usually used with :class:`~construct.core.RawCopy` .
+
+    semantics???
 
     :param checksumfield: a subcon field that reads the checksum, usually Bytes(int)
-    :param hashfunc: a function taking bytes and returning whatever checksumfield takes when building
-    :param bytesfunc: a function taking context and returning the bytes or object to be hashed, usually like this.rawcopy1.data
+    :param hashfunc: function that takes bytes and returns whatever checksumfield takes when building, usually from hashlib module
+    :param bytesfunc: context lambda that returns bytes (or object) to be hashed, usually like this.rawcopy1.data
+
+    :raises ChecksumError: parsing and actual checksum does not match actual data
+
+    Can propagate any exception from the lambdas, possibly non-ConstructError.
 
     Example::
 
@@ -2913,15 +3254,20 @@ class Checksum(Construct):
 
 class Compressed(Tunnel):
     r"""
-    Compresses and decompresses underlying stream when processing the subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :func:`~construct.core.Prefixed` or entire stream.
+    Compresses and decompresses underlying stream when processing subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :class:`~construct.core.Prefixed` .
 
-    :param subcon: the subcon used for storing the value
-    :param encoding: any of the module names like zlib/gzip/bzip2/lzma, otherwise any of codecs module bytes<->bytes encodings, usually requires some Python version
-    :param level: optional, an integer between 0..9, lzma discards it
+    :param subcon: Construct instance, subcon used for storing the value
+    :param encoding: string, any of module names like zlib/gzip/bzip2/lzma, otherwise any of codecs module bytes<->bytes encodings, each codec usually requires some Python version
+    :param level: optional, integer between 0..9, although lzma discards it, some encoders allow different compression levels
+
+    :raises ImportError: needed module could not be imported by ctor
 
     Example::
 
-        Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
+        >>> d = Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
+        >>> d.build(bytes(100))
+        b'\x0cx\x9cc`\xa0=\x00\x00\x00d\x00\x01'
+
    """
     __slots__ = ["encoding", "level", "lib"]
     def __init__(self, subcon, encoding, level=None):
@@ -2961,12 +3307,11 @@ class Compressed(Tunnel):
 #===============================================================================
 class LazyStruct(Construct):
     r"""
-    Equivalent to Struct construct, however fixed size members are parsed on demand, others are parsed immediately. If entire struct is fixed size then entire parse is essentially one stream seek.
+    Equivalent to :class:`~construct.core.Struct` regarding semantics, however fixed size members are parsed on demand, others are parsed immediately.
 
-    .. seealso:: Equivalent to :func:`~construct.core.Struct`.
+    .. note:: For performance, if entire struct is fixed size then entire parsing is only one stream seek.
 
-    .. warning:: Struct members that depend on earlier context entries do not work properly, because since Struct is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
-
+    .. warning:: Members that depend on earlier (named) context entries do not work properly, because since this class is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
     """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes", "keys"]
     def __init__(self, *subcons, **kw):
@@ -3053,10 +3398,9 @@ class LazyStruct(Construct):
 
 class LazyRange(Construct):
     r"""
-    Equivalent to Range construct, but members are parsed on demand. Works only with fixed size subcon. Entire parse is essentially one stream seek.
+    Equivalent to :class:`~construct.core.Range` regarding semantics, however fixed size members are parsed on demand, others are parsed immediately.
 
-    .. seealso:: Equivalent to :func:`~construct.core.Range`.
-
+    .. note:: Works only with fixed size subcon. Performance wise, entire parse is essentially one stream seek.
     """
     __slots__ = ["subcon", "min", "max", "subsize"]
     def __init__(self, min, max, subcon):
@@ -3113,10 +3457,11 @@ class LazyRange(Construct):
 
 class LazySequence(Construct):
     r"""
-    Equivalent to Sequence construct, however fixed size members are parsed on demand, others are parsed immediately. If entire sequence is fixed size then entire parse is essentially one seek.
+    Equivalent to :class:`~construct.core.Sequence` regarding semantics, however fixed size members are parsed on demand, others are parsed immediately.
 
-    .. seealso:: Equivalent to :func:`~construct.core.Sequence`.
+    .. note:: For performance, if entire sequence is fixed size then entire parsing is only one stream seek.
 
+    .. warning:: Members that depend on earlier (named) context entries do not work properly, because since this class is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
     """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes"]
     def __init__(self, *subcons, **kw):
@@ -3198,9 +3543,13 @@ class LazySequence(Construct):
 
 class OnDemand(Subconstruct):
     r"""
-    Allows for lazy parsing of one field. When parsing, it will return a parameterless function that when called, will return the parsed value. Object is cached after first parsing, so non-deterministic subcons will be affected. Works only with fixed size subcon.
+    Allows for lazy parsing of one field.
 
-    :param subcon: the subcon to read/write on demand, must be fixed size
+    Parsing returns a parameterless lambda that when called, parses subcon at then-current stream offset and returns parsed value. Object is cached after first parsing, so non-deterministic subcons will be affected. Builds from both the parameterless lambda and subcon acceptable value. Size is same as subcon, unless it raises SizeofError.
+
+    .. note:: Works only with fixed size subcon.
+
+    :param subcon: Construct instance, must be fixed size
 
     Example::
 
@@ -3239,9 +3588,9 @@ class OnDemand(Subconstruct):
 
 class LazyBound(Construct):
     r"""
-    Lazy-bound construct that binds to the construct only at runtime. Useful for recursive data structures (like linked lists or trees), where a construct needs to refer to itself (while it does not exist yet).
+    Lazy-bound construct that binds to the construct only at runtime. Useful for recursive data structures (like linked-lists or trees), where a construct needs to refer to itself (while it does not exist yet).
 
-    :param subconfunc: a context function returning a Construct (derived) instance, can also return Pass or itself
+    :param subconfunc: context lambda returning a Construct instance, can also return Pass or itself
 
     Example::
 
@@ -3284,11 +3633,13 @@ class Mapping(Adapter):
     r"""
     Adapter that maps objects to other objects. Translates objects before parsing and before building.
 
-    :param subcon: the subcon to map
-    :param decoding: the decoding (parsing) mapping as a dict
-    :param encoding: the encoding (building) mapping as a dict
-    :param decdefault: the default return value when object is not found in the mapping, if no object is given an exception is raised, if ``Pass`` is used, the unmapped object will be passed as-is
-    :param encdefault: the default return value when object is not found in the mapping, if no object is given an exception is raised, if ``Pass`` is used, the unmapped object will be passed as-is
+    .. note:: It used to be used internally by Flag IfThenElse etc but became deprecated.
+
+    :param subcon: Construct instance, subcon to map to/from
+    :param decoding: dict, for decoding (parsing) mapping
+    :param encoding: dict, for encoding (building) mapping
+    :param decdefault: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
+    :param encdefault: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
 
     Example::
 
@@ -3306,7 +3657,7 @@ class Mapping(Adapter):
             return self.encoding[obj]
         except (KeyError, TypeError):
             if self.encdefault is NotImplemented:
-                raise MappingError("no encoding mapping for %r" % (obj,))
+                raise MappingError("building failed, no encoding mapping for %r" % (obj,))
             if self.encdefault is Pass:
                 return obj
             return self.encdefault
@@ -3315,7 +3666,7 @@ class Mapping(Adapter):
             return self.decoding[obj]
         except (KeyError, TypeError):
             if self.decdefault is NotImplemented:
-                raise MappingError("no decoding mapping for %r" % (obj,))
+                raise MappingError("parsing failed, no decoding mapping for %r" % (obj,))
             if self.decdefault is Pass:
                 return obj
             return self.decdefault
@@ -3325,11 +3676,11 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
     r"""
     Defines a symmetric mapping, same mapping is used on parsing and building.
 
-    .. seealso:: Based on :func:`~construct.core.Mapping`.
+    This is just a macro around :class:`~construct.core.Mapping`.
 
-    :param subcon: the subcon to map
-    :param encoding: the mapping as a dict
-    :param decdefault: the default return value when object is not found in the mapping, if no object is given an exception is raised, if ``Pass`` is used, the unmapped object will be passed as-is
+    :param subcon: Construct instance, subcon to map to/from
+    :param mapping: dict, for decoding (parsing) mapping
+    :param default: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
 
     Example::
 
@@ -3346,7 +3697,9 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
 @singleton
 class Flag(Construct):
     r"""
-    One byte (or one bit) field that maps to True or False. Other non-zero bytes are also considered True.
+    One byte (or one bit) field that maps to True or False. Other non-zero bytes are also considered True. Size is defined as 1.
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
 
     Example::
 
@@ -3369,11 +3722,14 @@ class Enum(Subconstruct):
     r"""
     Translates unicode label names to subcon values, and vice versa. 
 
-    :param subcon: the subcon to map
-    :param \*\*mapping: keyword arguments which serve as the mapping
-    :param default: an optional, keyword-only argument that specifies the default value to use when an unknown labels gets build, can overlap with some existing label, if Pass then parsing returns "default" label and building skips stream
+    semantics???
+    Size is same as subcon, unless it raises SizeofError.
 
-    :raises MappingError: when label (during building) or value (during parsing) cannot be translated, and no default was provided
+    :param subcon: Construct instance, subcon to map to/from
+    :param default: optional, keyword-only argument that specifies the default value to use when an unknown label gets build, can overlap with some existing label, if ``Pass`` then parsing returns "default" label and building skips stream
+    :param \*\*mapping: dict, mapping string names to values
+
+    :raises MappingError: label (during building) or value (during parsing) cannot be translated, and no default was provided
 
     Example::
 
@@ -3406,7 +3762,7 @@ class Enum(Subconstruct):
             obj = self.decmapping[obj2]
         except KeyError:
             if self.default is NotImplemented:
-                raise MappingError("no mapping for %r, no default either" % (obj2,))
+                raise MappingError("parsing failed, no mapping for %r, no default either" % (obj2,))
             if self.default is Pass:
                 return "default"
             return "default"
@@ -3416,7 +3772,7 @@ class Enum(Subconstruct):
             obj2 = self.encmapping[obj]
         except KeyError:
             if self.default is NotImplemented:
-                raise MappingError("no mapping for %r, no default either" % (obj,))
+                raise MappingError("building failed, no mapping for %r, no default either" % (obj,))
             if self.default is Pass:
                 return
             obj = "default"
@@ -3427,10 +3783,13 @@ class Enum(Subconstruct):
 
 class FlagsEnum(Adapter):
     r"""
-    Set of flag values mapping. Each flag is extracted from the number, resulting in a FlagsContainer dict that has each key assigned True or False.
+    Translates unicode label names to subcon integer (sub)values, and vice versa.
 
-    :param subcon: the subcon to extract
-    :param \*\*flags: a dictionary mapping flag-names to their value
+    semantics???
+    Size is same as subcon, unless it raises SizeofError.
+
+    :param subcon: Construct instance, must operate on integers
+    :param \*\*flags: dict, mapping string names to integer values
 
     Example::
 
@@ -3450,9 +3809,9 @@ class FlagsEnum(Adapter):
                     flags |= self.flags[name]
             return flags
         except AttributeError:
-            raise MappingError("not a mapping type: %r" % (obj,))
+            raise MappingError("building failed, object is not a dictionary: %r" % (obj,))
         except KeyError:
-            raise MappingError("unknown flag: %s" % (name,))
+            raise MappingError("building failed, unknown flag: %s" % (name,))
     def _decode(self, obj, context):
         obj2 = FlagsContainer()
         for name,value in self.flags.items():
@@ -3467,15 +3826,16 @@ class ExprAdapter(Adapter):
     r"""
     A generic adapter that takes ``encoder`` and ``decoder`` as parameters. You can use ExprAdapter instead of writing a full-blown class when only a simple lambda is needed.
 
-    :param subcon: the subcon to adapt
-    :param encoder: a function that takes (obj, context) and returns an encoded version of obj, or None for identity
-    :param decoder: a function that takes (obj, context) and returns an decoded version of obj, or None for identity
+    :param subcon: Construct instance, subcon to adapt
+    :param encoder: lambda that takes (obj, context) and returns an encoded version of obj, or None for identity function
+    :param decoder: lambda that takes (obj, context) and returns an decoded version of obj, or None for identity function
 
     Example::
 
-        Ident = ExprAdapter(Byte,
-            encoder = lambda obj,ctx: obj+1,
-            decoder = lambda obj,ctx: obj-1, )
+        # adds +1 to build values and subtracts -1 from parsed objects
+        ExprAdapter(Byte,
+            encoder = lambda x,ctx: x+1,
+            decoder = lambda x,ctx: x-1 )
     """
     __slots__ = ["_encode", "_decode"]
     def __init__(self, subcon, encoder, decoder):
@@ -3486,6 +3846,19 @@ class ExprAdapter(Adapter):
 
 
 class ExprSymmetricAdapter(ExprAdapter):
+    """
+    Macro around :class:`~construct.core.ExprAdapter`.
+
+    :param subcon: Construct instance, subcon to adapt
+    :param encoder: lambda that takes (obj, context) and returns both encoded version and decoded version of obj, or None for identity function
+
+    implement???
+
+    Example::
+
+        # unsets 4 out of 8 bits in parsed and build values
+        ExprSymmetricAdapter(Byte, encoder = lambda x,ctx: x & 0b00001111)
+    """
     def __init__(self, subcon, encoder):
         super(ExprAdapter, self).__init__(subcon)
         ident = lambda obj,ctx: obj
@@ -3495,15 +3868,15 @@ class ExprSymmetricAdapter(ExprAdapter):
 
 class ExprValidator(Validator):
     r"""
-    A generic adapter that takes ``validator`` as parameter. You can use ExprValidator instead of writing a full-blown class when only a simple expression is needed.
+    A generic adapter that takes ``validator`` as parameter. You can use ExprValidator instead of writing a full-blown class when only a simple lambda is needed.
 
-    :param subcon: the subcon to adapt
-    :param encoder: a function that takes (obj, context) and returns a bool
+    :param subcon: Construct instance, subcon to adapt
+    :param encoder: lambda that takes (obj, context) and returns a bool
 
     Example::
 
-        OneOf = ExprValidator(Byte,
-            validator = lambda obj,ctx: obj in [1,3,5])
+        ExprValidator(Byte, validator = lambda obj,ctx: obj in [1,3,5])
+        OneOf(Byte, [1,3,5])
     """
     def __init__(self, subcon, validator):
         super(ExprValidator, self).__init__(subcon)
@@ -3512,14 +3885,16 @@ class ExprValidator(Validator):
 
 def OneOf(subcon, valids):
     r"""
-    Validates that the object is one of the listed values, both during parsing and building. Note that providing a set instead of a list may increase performance.
+    Validates that the object is one of the listed values, both during parsing and building.
 
-    Notice that `OneOf(dtype, [value])` is essentially equivalent to `Const(dtype, value)`.
+    .. note:: For performance, it attempts to convert valids into a set, but if items are not hashable, it reverts to using original collection.
 
-    :param subcon: a construct to validate
-    :param valids: a collection implementing __contains__
+    implement???
 
-    :raises ValidationError: when actual value is not among valids
+    :param subcon: Construct instance, subcon to validate
+    :param valids: collection implementing __contains__, usually a list or set
+
+    :raises ValidationError: parsed or build value is not among valids
 
     Example::
 
@@ -3527,13 +3902,7 @@ def OneOf(subcon, valids):
         >>> d.parse(b"\x01")
         1
         >>> d.parse(b"\xff")
-        construct.core.ValidationError: ('object failed validation', 255)
-
-        >>> d = OneOf(Bytes(2), b"1234567890")
-        >>> d.parse(b"78")
-        b'78'
-        >>> d.parse(b"19")
-        construct.core.ValidationError: ('invalid object', b'19')
+        construct.core.ValidationError: object failed validation: 255
     """
     return ExprValidator(subcon, lambda obj,ctx: obj in valids)
 
@@ -3542,10 +3911,14 @@ def NoneOf(subcon, invalids):
     r"""
     Validates that the object is none of the listed values, both during parsing and building.
 
-    :param subcon: a construct to validate
-    :param valids: a collection implementing __contains__
+    .. note:: For performance, it attempts to convert valids into a set, but if items are not hashable, it reverts to using original collection.
 
-    :raises ValidationError: when actual value is among invalids
+    implement???
+
+    :param subcon: Construct instance, subcon to validate
+    :param invalids: collection implementing __contains__, usually a list or set
+
+    :raises ValidationError: parsed or build value is among invalids
 
     """
     return ExprValidator(subcon, lambda obj,ctx: obj not in invalids)
@@ -3553,10 +3926,12 @@ def NoneOf(subcon, invalids):
 
 def Filter(predicate, subcon):
     r"""
-    Filters a list leaving only the elements that passed through the validator.
+    Filters a list leaving only the elements that passed through the predicate.
 
-    :param subcon: a construct to validate, usually a Range Array Sequence
-    :param predicate: a function taking (obj, context) and returning a bool
+    :param subcon: Construct instance, usually a Range Array Sequence
+    :param predicate: lambda that takes (obj, context) and returns a bool
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -3571,18 +3946,18 @@ def Filter(predicate, subcon):
 
 class Slicing(Adapter):
     r"""
-    Adapter for slicing a list (getting a slice from that list). Works with Range and Sequence and their lazy equivalents.
+    Adapter for slicing a list. Works with Range and Sequence and their lazy equivalents.
 
-    :param subcon: the subcon to slice
-    :param count: expected number of elements, needed during building
-    :param start: start index (or None for entire list)
-    :param stop: stop index (or None for up-to-end)
-    :param step: step (or 1 for every element)
-    :param empty: value to fill the list with during building
+    :param subcon: Construct instance, subcon to slice
+    :param count: integer, expected number of elements, needed during building
+    :param start: integer for start index (or None for entire list)
+    :param stop: integer for stop index (or None for up-to-end)
+    :param step: integer, step (or 1 for every element)
+    :param empty: object, value to fill the list with, during building
 
     Example::
 
-        ???
+        example???
     """
     __slots__ = ["count", "start", "stop", "step", "empty"]
     def __init__(self, subcon, count, start, stop, step=1, empty=None):
@@ -3610,14 +3985,14 @@ class Indexing(Adapter):
     r"""
     Adapter for indexing a list (getting a single item from that list). Works with Range and Sequence and their lazy equivalents.
 
-    :param subcon: the subcon to index
-    :param count: expected number of elements, needed during building
-    :param index: the index of the list to get
-    :param empty: value to fill the list with during building
+    :param subcon: Construct instance, subcon to index
+    :param count: integer, expected number of elements, needed during building
+    :param index: integer, index of the list to get
+    :param empty: object, value to fill the list with, during building
 
     Example::
 
-        ???
+        example???
     """
     __slots__ = ["count", "index", "empty"]
     def __init__(self, subcon, count, index, empty=None):
@@ -3635,7 +4010,7 @@ class Indexing(Adapter):
 
 def Hex(subcon):
     r"""
-    Adapter for hex-dumping bytes. It returns a hex dump when parsing, and un-dumps when building.
+    Adapter for (un)hexlifying bytes.
 
     Example::
 
@@ -3653,10 +4028,9 @@ def Hex(subcon):
 
 def HexDump(subcon, linesize=16):
     r"""
-    Adapter for hex-dumping bytes. It returns a hex dump when parsing, and un-dumps when building.
+    Adapter for (un)hexdumping bytes. A hex-dump is a string with X bytes per newline, each line shows both offset, ascii representation, and hexadecimal representation.
 
-    :param linesize: default 16 bytes per line
-    :param buildraw: by default build takes the same format that parse returns, set to build from a bytes directly
+    :param linesize: optional, integer, default is 16 bytes per line
 
     Example::
 
@@ -3678,9 +4052,9 @@ globalstringencoding = None
 
 def setglobalstringencoding(encoding):
     r"""
-    Sets the encoding globally for all String/PascalString/CString/GreedyString instances, but an encoding specified expiciltly in a particular construct supersedes it.
+    Sets the encoding globally for all String PascalString CString GreedyString instances, but an encoding specified expiciltly in a particular construct supersedes it.
 
-    :param encoding: a string like "utf8", or None which means working with bytes (not unicode)
+    :param encoding: string like "utf8", or None (disable global override)
     """
     global globalstringencoding
     globalstringencoding = encoding
@@ -3760,18 +4134,26 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
     r"""
     Configurable, fixed-length or variable-length string field.
 
-    When parsing, the byte string is stripped of pad character (as specified) from the direction (as specified) then decoded (as specified). Length is a constant integer or a context function.
+    When parsing, the byte string is stripped of byte character (as specified) from the direction (as specified) then decoded (as specified). Length is an integer or context lambda.
     When building, the string is encoded (as specified) then padded (as specified) from the direction (as specified) or trimmed (as specified).
+    Size is same as length parameter.
 
     The padding character and direction must be specified for padding to work. The trim direction must be specified for trimming to work.
 
     If encoding is not specified, it works with bytes (not unicode strings).
 
-    :param length: length in bytes (not unicode characters), as integer or context function
-    :param encoding: encoding (eg. "utf8") or None for bytes
-    :param padchar: bytes character to pad out strings (by default b"\x00")
-    :param paddir: direction to pad out strings (one of: right left both)
-    :param trimdir: direction to trim strings (one of: right left)
+    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+
+    :param length: integer or context lambda, length in bytes (not unicode characters)
+    :param encoding: string for encoding like "utf8", or None for bytes
+    :param padchar: bytes character to pad out strings, by default b"\\x00"
+    :param paddir: string, direction to pad out strings (one of: right left both)
+    :param trimdir: string, direction to trim strings (one of: right left)
+
+    :raises StringError: building a unicode string but no encoding
+    :raises StringError: padchar paddir trimdir are not valid
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
 
@@ -3806,10 +4188,16 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
 
 def PascalString(lengthfield, encoding=None):
     r"""
-    Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ul). VarInt is recommended for new designs. Stored length is in bytes, not characters.
+    Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). VarInt is recommended for new designs. Stored length is in bytes, not characters.
 
-    :param lengthfield: a field used to parse and build the length (eg. VarInt Int64ul)
-    :param encoding: encoding (eg. "utf8"), or None for bytes
+    Size is not defined.
+
+    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString.
+
+    :param lengthfield: Construct instance, field used to parse and build the length (likw VarInt Int64ub)
+    :param encoding: string for encoding like "utf8", or None for bytes
+
+    :raises StringError: building a unicode string but no encoding
 
     Example::
 
@@ -3824,14 +4212,18 @@ def PascalString(lengthfield, encoding=None):
 
 def CString(terminators=b"\x00", encoding=None):
     r"""
-    String ending in a terminator byte.
+    String ending in a terminating null byte (or bytes in case of UTF16 UTF32).
 
-    By default, the terminator is the \x00 byte character. Terminators field can be a longer bytes, and any one of the characters breaks parsing. First terminator byte is used when building.
+    reimplement???
 
-    :param terminators: sequence of valid terminators, first is used when building, all are used when parsing
-    :param encoding: encoding (eg. "utf8"), or None for bytes
+    By default, the terminator is the \\x00 byte character. Terminators field can be a longer bytes, and any one of the characters breaks parsing. First terminator byte is used when building.
 
-    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with string classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+
+    :param terminators: ??? sequence of valid terminators, first is used when building, all are used when parsing
+    :param encoding: string for encoding like "utf8", or None for bytes
+
+    :raises StringError: building a unicode string but no encoding
 
     Example::
 
@@ -3851,11 +4243,15 @@ def CString(terminators=b"\x00", encoding=None):
 
 def GreedyString(encoding=None):
     r"""
-    String that reads the rest of the stream until EOF, and writes a given string as is. If no encoding is specified, this is essentially GreedyBytes.
+    String that reads entire stream until EOF, and writes a given string as-is. If no encoding is specified, this is essentially GreedyBytes.
 
-    :param encoding: encoding (eg. "utf8"), or None for bytes
+    Analog to :class:`~construct.core.GreedyBytes` , and identical when no enoding is used.
 
-    .. seealso:: Analog to :class:`~construct.core.GreedyBytes` and the same when no enoding is used.
+    .. note:: Encodings like UTF16 or UTF32 work fine with GreedyString.
+
+    :param encoding: string for encoding like "utf8", or None for bytes
+
+    :raises StringError: building a unicode string but no encoding
 
     Example::
 

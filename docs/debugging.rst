@@ -29,6 +29,8 @@ The Probe simply dumps information to the screen. It will help you inspect the c
     ================================================================================
     Container(count=5)(items=[97, 98, 99, 100, 101])
 
+::
+
     >>> (Byte >> Probe()).parse(b"?")
     ================================================================================
     Probe <unnamed 1>
@@ -100,6 +102,7 @@ The Debugger is a pdb-based full python debugger. Unlike Probe, Debugger is a su
 
 When an exception occurs while parsing, you can go up (using u) to the level of the debugger and set self.retval to the desired return value. This allows you to hot-fix the error. Then use q to quit the debugger prompt and resume normal execution with the fixed value. However, if you don't set self.retval, the exception will propagate up.
 
+
 ::
 
     >>> Debugger(Byte[3]).build([])
@@ -116,10 +119,12 @@ When an exception occurs while parsing, you can go up (using u) to the level of 
     (Pdb) 
     ================================================================================
 
-    >>> format = Struct(
-    ...     "spam" / Debugger(Enum(Byte, A=1,B=2,C=3)),
+::
+
+    >>> st = Struct(
+    ...     "spam" / Debugger(Enum(Byte, A=1, B=2, C=3)),
     ... )
-    >>> format.parse(b"\xff")
+    >>> st.parse(b"\xff")
     ================================================================================
     Debugging exception of <Mapping: None>:
       File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py", line 2578, in _decode
@@ -142,5 +147,3 @@ When an exception occurs while parsing, you can go up (using u) to the level of 
     -> raise MappingError("no decoding mapping for %r" % (obj,))
     (Pdb) self.retval = "???"
     (Pdb) q
-
-

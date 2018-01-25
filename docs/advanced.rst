@@ -62,9 +62,15 @@ b'39217839219...'
 Strings
 ========
 
-.. warning:: Strings in Construct work very much like strings in other languages. Be warned however, that Python 2 used byte strings that are now called `bytes`. Python 3 introduced unicode strings which require an encoding to be used, utf-8 being the best option. When no encoding is provided on Python 3, those constructs work on byte strings similar to Bytes and GreedyBytes fields. Encoding can be set once, globally using :func:`~construct.core.setglobalstringencoding` or provided with each field separately.
+.. warning:: Python 2 used byte strings that are now called `bytes`. Python 3 introduced `unicode` strings which require an encoding to be used to be writtable to binary streams and files, UTF8 being the best option, but UTF16 and UTF32 being also supported. If you are using Python 2, which is not recommended, you need to figure this out.
 
-.. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with string classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky. 
+.. warning:: Encoding needs to be specified explicitly, however if you specify None instead of "utf8", those constructs work on byte strings (not unicode), similar to Bytes and GreedyBytes fields.
+
+.. note:: Encoding can be set once, globally using :func:`~construct.core.setglobalstringencoding` or provided with each field separately.
+
+.. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+
+.. note:: Encodings like UTF16 or UTF32 work fine with PascalString and GreedyString.
 
 String is a fixed-length construct that pads builded string with null bytes, and strips those same null bytes when parsing. Note that some encodings do not work properly because they return null bytes within the encoded stream, utf-16 and utf-32 for example.
 
@@ -100,8 +106,8 @@ Last but not least, GreedyString does the same thing as GreedyBytes. It reads un
 '329817392189'
 
 
-Other short fields
-===================
+Mappings
+==========
 
 Booleans are flags:
 

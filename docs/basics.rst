@@ -85,7 +85,7 @@ b'XYZ\x00\x00'
 >>> test.parse(_)
 Container()
 
-Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
+Note that this syntax works ONLY on Python 3.6 due to ordered keyword arguments:
 
 >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
 
@@ -190,6 +190,8 @@ Like Structs, Sequences are compatible with the Embedded wrapper. Embedding one 
 >>> nseq.parse(b"abcd")
 [97, 98, 99, 100]
 
+.. seealso:: The :func:`~construct.core.Embedded` macro.
+
 
 Repeaters
 =========
@@ -212,7 +214,7 @@ construct.core.RangeError: expected 3 to 5, found 2
 >>> Byte[3:5].build([1,2,3,4,5,6,7])
 construct.core.RangeError: expected from 3 to 5 elements, found 7
 
-GreedyRange is essentially a Range from 0 to infinity.
+GreedyRange is essentially a Range from 0 to 2**64.
 
 >>> Byte[:].parse(b"dsadhsaui")
 [100, 115, 97, 100, 104, 115, 97, 117, 105]

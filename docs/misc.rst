@@ -21,7 +21,9 @@ Renamed
 
 Adds a name string to a field (which by default is None). This class is only used internally and you should use the / operator instead. Naming fields is needed when working with Structs and sometimes Sequences.
 
->>> "num"/Byte  <-->  Renamed("num",Byte)
+::
+
+	"num"/Byte  <-->  Renamed("num",Byte)
 
 
 Miscellaneous
@@ -108,7 +110,7 @@ Or there is a collection and a count provided and the count is expected to match
 
 >>> st = Struct(count=Byte, items=Byte[this.count])
 >>> st.build(dict(count=9090, items=[]))
-FieldError: packer '>B' error during building, given value 9090
+FormatFieldError: packer '>B' error during building, given value 9090
 >>> st = Struct(integrity=Check(this.count == len_(this.items)), count=Byte, items=Byte[this.count])
 >>> st.build(dict(count=9090, items=[]))
 ValidationError: check failed during building
@@ -169,7 +171,7 @@ Treats the same data as multiple constructs (similar to C union statement) so yo
 
 When parsing, all fields read the same data bytes, but stream remains at initial offset (or rather seeks back to original position after each subcon was parsed), unless parsefrom selects a subcon by index or name. When building, the first subcon that can find an entry in the dict (or builds from None, so it does not require an entry) is automatically selected.
 
-.. warning:: If you skip the `parsefrom` parameter then stream will be left back at the starting offset. Many users fail to use this class properly.
+.. warning:: If you skip `parsefrom` parameter then stream will be left back at starting offset, not seeked to any common denominator.
 
 >>> d = Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8])
 >>> d.parse(b"12345678")
@@ -179,7 +181,7 @@ b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
 ::
 
-    Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
+    Note that this syntax works ONLY on Python 3.6 due to ordered keyword arguments:
     >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
 
 Select
@@ -194,7 +196,7 @@ b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
 ::
 
-    Note that this syntax works ONLY on python 3.6 due to unordered keyword arguments:
+    Note that this syntax works ONLY on Python 3.6 due to ordered keyword arguments:
     >>> Select(num=Int32ub, text=CString(encoding="utf8"))
 
 Optional
@@ -218,9 +220,9 @@ If
 
 Parses or builds the subconstruct only if a certain condition is met. Otherwise, returns a None when parsing and puts nothing when building. The condition is a lambda that computes on the context just like in Computed examples.
 
->>> If(this.x > 0, Byte).build(255, dict(x=1))
+>>> If(this.x > 0, Byte).build(255, x=1)
 b'\xff'
->>> If(this.x > 0, Byte).build(255, dict(x=0))
+>>> If(this.x > 0, Byte).build(255, x=0)
 b''
 
 
@@ -229,9 +231,9 @@ IfThenElse
 
 Branches the construction path based on a given condition. If the condition is met, the ``thensubcon`` is used, otherwise the ``elsesubcon`` is used. Fields like Pass or Error can be used here. Just for your curiosity, If is just a macro around this class.
 
->>> IfThenElse(this.x > 0, VarInt, Byte).build(255, dict(x=1))
+>>> IfThenElse(this.x > 0, VarInt, Byte).build(255, x=1)
 b'\xff\x01'
->>> IfThenElse(this.x > 0, VarInt, Byte).build(255, dict(x=0))
+>>> IfThenElse(this.x > 0, VarInt, Byte).build(255, x=0)
 b'\xff'
 
 Switch
@@ -241,9 +243,9 @@ Branches the construction based on a return value from a function. This is a mor
 
 .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
 
->>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, dict(n=1))
+>>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, n=1)
 b'\x05'
->>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, dict(n=2))
+>>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, n=2)
 b'\x00\x00\x00\x05'
 
 

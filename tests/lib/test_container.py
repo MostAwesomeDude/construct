@@ -18,7 +18,7 @@ class TestContainer(unittest.TestCase):
         d = Container(a=1)
         assert c == d
 
-    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6 and pypy")
+    @pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
     def test_ctor_orderedkw(self):
         c = Container(a=1)(b=2)(c=3)(d=4)
         d = Container(a=1, b=2, c=3, d=4)

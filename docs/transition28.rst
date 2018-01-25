@@ -71,8 +71,6 @@ Struct uses syntax like ``Struct("num"/Int32ub, "text"/CString())`` and ``"num"/
 
 Sequence uses syntax like ``Byte >> Int16ul`` and ``Sequence(Byte, Int16ul)``
 
-Range uses syntax like ``Byte[2]`` and ``Byte[:]``
-
 On Python 3.6 you can also use syntax like ``Struct(num=Int32ub, text=CString())`` and ``Sequence(num=Int32ub, text=CString())``
 
 
@@ -81,9 +79,11 @@ Ranges and Arrays
 
 Array uses syntax like ``Byte[10]`` and ``Array(10, Byte)``
 
-PrefixedArray takes explicit `lengthfield` before subcon
+Range uses syntax like ``Byte[5:]`` and ``Byte[:5]`` and ``Range(min=5, max=2**64, Byte)``
 
-Range uses syntax like ``Byte[0:10]`` ``Byte[:]`` and ``Range(min=?, max=?, Byte)``
+GreedyRange uses syntax like ``Byte[:]`` and ``GreedyRange(Byte)``
+
+PrefixedArray takes explicit `lengthfield` before subcon
 
 OpenRange and GreedyRange were dropped
 
@@ -114,6 +114,8 @@ Aligned takes explicit `modulus` before the subcon
 Padded was added, also takes explicit `modulus` before the subcon
 
 Padding remains
+
+Padding and Padded dropped `strict` parameter
 
 
 

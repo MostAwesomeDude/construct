@@ -34,16 +34,18 @@ def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"
 
 class Container(dict):
     r"""
-    Generic ordered dictionary that allows both key and attribute access, and preserve key order by insertion. Also it uses __call__ method to chain add keys, because \*\*kw does not preserve order (unless PY36). Equality does NOT check item order.
+    Generic ordered dictionary that allows both key and attribute access, and preserves key order by insertion. Adding keys is preferred using \*\*kw (requires Python 3.6). Equality does NOT check item order. Also provides regex searching.
 
-    Struct and Sequence, and few other parsers return a container, and since their members have order, so do keys.
+	This container is mostly used by Struct construct, since its members have order, so do the values parsed.
 
     Example::
 
         # empty dict
         >>> Container()
-        # This syntax always works
+        # list of pairs, not recommended
         >>> Container([ ("name","anonymous"), ("age",21) ])
+        # list of dictionaries, not recommended
+        >>> Container(dict1, dict2, dict3)
         # This syntax requires Python 3.6
         >>> Container(name="anonymous", age=21)
         # This syntax is for internal use only
@@ -233,7 +235,7 @@ class Container(dict):
 
 class FlagsContainer(Container):
     r"""
-    Container made to represent a FlagsEnum, but equality does NOT check order. Provides pretty-printing for flags. Only set flags are displayed.
+    Container class derivative, extended for representing FlagsEnum. Equality does NOT check item order. Provides pretty-printing for flags, showing only values set to True. Also provides regex searching.
     """
 
     @recursion_lock()
@@ -249,7 +251,7 @@ class FlagsContainer(Container):
 
 class ListContainer(list):
     r"""
-    A generic container for lists. Provides pretty-printing.
+    Generic container like list. Provides pretty-printing. Also provides regex searching.
     """
 
     @recursion_lock()
@@ -289,7 +291,7 @@ class ListContainer(list):
 
 class LazyContainer(object):
     r"""
-    Lazy equivalent to Container. Each key is either associated with info how to parse a value (before first access) or a cached value.
+    Lazy equivalent to Container. Each key is either associated with how to parse each value (before first access) or a cached value.
     """
     __slots__ = ["keysbackend", "offsetmap", "cached", "stream", "addoffset", "context"]
 
@@ -344,7 +346,7 @@ class LazyContainer(object):
 
 class LazyRangeContainer(ListContainer):
     r"""
-    Lazy equivalent to ListContainer. Each key is either associated with info how to parse a value (before first access) or a cached value.
+    Lazy equivalent to ListContainer. Each key is either associated with how to parse a value (before first access) or a cached value.
     """
     __slots__ = ["subcon", "subsize", "count", "stream", "addoffset", "context", "cached", "offsetmap"]
 
@@ -380,7 +382,7 @@ class LazyRangeContainer(ListContainer):
 
 class LazySequenceContainer(LazyRangeContainer):
     r"""
-    Lazy equivalent to ListContainer. Each key is either associated with info how to parse a value (before first access) or a cached value.
+    Lazy equivalent to ListContainer. Each key is either associated with how to parse a value (before first access) or a cached value.
     """
     __slots__ = ["count", "offsetmap", "cached", "stream", "addoffset", "context"]
 

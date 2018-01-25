@@ -59,15 +59,15 @@ Container(length1=49)(inner=Container(length2=50)(sum=99))
 Using `this` expression
 ===========================
 
-Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided even a better syntax. The `this` singleton object can be used to build a lambda expression. All four examples below are equivalent, but last is recommended:
+Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided even a better syntax. The `this` singleton object can be used to build a lambda expression. All four examples below are equivalent, but first is recommended:
 
->>> lambda ctx: ctx["_"]["field"]
+>>> this._.field
 ...
 >>> lambda ctx: ctx._.field
 ...
 >>> this["_"]["field"]
 ...
->>> this._.field
+>>> lambda ctx: ctx["_"]["field"]
 
 Of course, `this` can be mixed with other calculations. When evaluating, each instance of `this` is replaced by context Container which supports attribute access to keys.
 
@@ -75,14 +75,14 @@ Of course, `this` can be mixed with other calculations. When evaluating, each in
 
 
 
-Using `len_` built-in alikes
+Using `len_` expreession
 ============================
 
-There used to be a bit of a hassle when you used built-in functions like `len sum min max` on context items. Built-in `len` takes a list and returns an int but `len_` analog takes a lambda and returns a lambda. This allows to use this kind of shorthand:
+There used to be a bit of a hassle when you used built-in functions like `len sum min max` on context items. Built-in `len` takes a list and returns an integer but `len_` analog takes a lambda and returns a lambda. This allows to use this kind of shorthand:
 
->>> lambda ctx: len(ctx.items)
-...
 >>> len_(this.items)
+...
+>>> lambda ctx: len(ctx.items)
 
 These can be used in newly added Rebuild wrappers that compute count/length fields from another items-alike field:
 
@@ -93,7 +93,7 @@ These can be used in newly added Rebuild wrappers that compute count/length fiel
 >>> st.build(dict(items=[1,2,3,4,5]))
 b'\x05\x01\x02\x03\x04\x05'
 
-Incidentally, when the count field is directly before the items field you can also use PrefixedArray. However in some protocols these fields are separate and the other approach is good:
+Incidentally, when the count field is directly before the items field you can also use PrefixedArray. However in some protocols these fields are separate.
 
 >>> PrefixedArray(Byte, Byte).build([1,2,3])
 b'\x03\x01\x02\x03'
@@ -160,7 +160,7 @@ Container(type='INT2')(data=255)
 >>> st.parse(b"\x04\abcdef\x00\x00\x00\x00")
 Container(type='STRING')(data=b'\x07bcdef')
 
-When the condition is not found in the switching table, and a default construct is not given, an exception is raised (SwitchError). In order to specify a default construct, set default (a keyword argument) when creating the Switch. Note that default is a construct, not a value.
+When the key is not found in the switching table, and a default construct is not given, an exception is raised (SwitchError). In order to specify a default construct, set default (a keyword argument) when creating the Switch. Note that default is a construct, not a value.
 
 >>> st = Struct(
 ...     "type" / Byte,
@@ -195,6 +195,6 @@ Logical ``and or not`` operators cannot be used in this expressions. You have to
 ...
 >>> lambda ctx: not ctx.flag1 or ctx.flag2 and ctx.flag3
 
-Contains operator ``in`` cannot be used in this expressions, you have to use a lambda expression:
+Contains operator ``in`` cannot be used in this expressions, you have to use a lambda:
 
 >>> lambda ctx: ctx.value in (1, 2, 3)

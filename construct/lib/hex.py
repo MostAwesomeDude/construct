@@ -19,6 +19,8 @@ def hexdump(data, linesize):
     0040   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
     0050   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
     0060   30 30 30 30                                       0000             
+
+    (newlines dont render corretly in documentation page)
     """
     if len(data) < 16**4:
         fmt = "%%04X   %%-%ds   %%s" % (3 * linesize - 1,)
@@ -38,7 +40,7 @@ def hexdump(data, linesize):
 
 def hexundump(data, linesize):
     r"""
-    Reverse of ``hexdump()``.
+    Reverse of `hexdump`.
     """
     raw = []
     for line in data.split("\n"):

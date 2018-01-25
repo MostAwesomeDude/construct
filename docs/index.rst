@@ -37,13 +37,13 @@ Construct
 
     <strong>Sticky</strong><br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5.5</a> is legacy. If you are maintaining a project that depended on this library for a long time, you should probably use this version. This branch is not actively maintained, not even bugfixes.<br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5</a> is legacy. If you are maintaining a project that depended on this library for a long time, you could use this version. This branch is not actively maintained, not even bugfixes.<br/>
     <br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8</a> was released on September, 2016. There are significant API and implementation changes. Fields are now name-less and operators / >> [] are used to create Structs Sequences and Ranges. Most classes changed interface and behavior. You should read entire documentation again.<br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8</a> was released on September, 2016. There are significant API and implementation changes. Most classes changed interface and behavior. Documentation was entirely rewritten.<br/>
     <br/>
 
-    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches. Good quality extensions to test suite are highly welcomed.<br/>
+    Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches. Good quality test cases are highly welcomed.<br/>
     </div>
 
 
@@ -137,9 +137,12 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
+   api/abstract
+   api/exceptions
    api/bytes
    api/numerics
    api/strings
+   api/mappings
    api/structs
    api/repeaters
    api/special
@@ -149,6 +152,7 @@ API Reference
    api/streaming
    api/tunneling
    api/lazy
+   api/adapters
    api/debugging
 
    api/core

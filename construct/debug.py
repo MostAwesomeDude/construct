@@ -1,7 +1,3 @@
-"""
-Debugging utilities for constructs
-"""
-
 import sys, traceback, pdb, inspect
 from construct import *
 from construct.lib import *
@@ -9,13 +5,13 @@ from construct.lib import *
 
 class Probe(Construct):
     r"""
-    A probe: dumps the context, stack frames, and stream content to the screen to aid the debugging process.
+    A probe: dumps the context, stack frames, and stream content (peek) to the screen to aid the debugging process.
 
-    :param name: the display name
-    :param show_stream: whether or not to show stream contents. default is True. the stream must be seekable.
-    :param show_context: whether or not to show the context. default is True.
-    :param show_stack: whether or not to show the upper stack frames. default is True.
-    :param stream_lookahead: the number of bytes to dump when show_stack is set. default is 100.
+    :param name: optional, string, display name
+    :param show_stream: optional, bool, whether or not to show stream contents (peek), default is True
+    :param show_context: optional, bool, whether or not to show the context, default is True
+    :param show_stack: optional, bool, whether or not to show the upper stack frames, default is True
+    :param stream_lookahead: optional, integer, number of bytes to dump when show_stack is set, default is 128
     
     Example::
 
@@ -34,6 +30,8 @@ class Probe(Construct):
                 101
         ================================================================================
         Container(count=5)(items=[97, 98, 99, 100, 101])
+
+    ::
 
         >>> d = (Byte >> Probe())
         >>> d.parse(b"?")
@@ -110,7 +108,9 @@ class Probe(Construct):
 
 def ProbeInto(func):
     r"""
-    ProbeInto looks inside the context and extracts a part of it using a lambda instead of printing the entire context.
+    ProbeInto looks inside the context and extracts a (sub)key out of it using a lambda for printing. See :class:`~construct.debug.Probe` .
+
+    :param func: context lambda, see example
 
     Example::
 
@@ -131,7 +131,7 @@ class Debugger(Subconstruct):
     r"""
     A pdb-based debugger. When an exception occurs in the subcon, a debugger will appear and allow you to debug the error (and even fix it on-the-fly).
     
-    :param subcon: the subcon to debug
+    :param subcon: Construct instance, subcon to debug
     
     Example::
     
@@ -149,10 +149,12 @@ class Debugger(Subconstruct):
         (Pdb) 
         ================================================================================
 
-        >>> format = Struct(
+    ::
+
+        >>> st = Struct(
         ...     "spam" / Debugger(Enum(Byte, A=1, B=2, C=3)),
         ... )
-        >>> format.parse(b"\xff")
+        >>> st.parse(b"\xff")
         ================================================================================
         Debugging exception of <Mapping: None>:
           File "/home/arkadiusz/Dokumenty/GitHub/construct/construct/core.py", line 2578, in _decode
@@ -210,4 +212,3 @@ class Debugger(Subconstruct):
             print(msg)
         pdb.post_mortem(sys.exc_info()[2])
         print("================================================================================")
-

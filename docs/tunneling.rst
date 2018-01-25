@@ -70,6 +70,6 @@ Data can be easily checksummed. Note that checksum field does not need to be Byt
 
 Also data can be easily compressed. Supported encodings include zlib/gzip/bzip2/lzma and entire codecs module. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :func:`~construct.core.Prefixed` or entire stream.
 
->>> Compressed(GreedyBytes, "zlib")
->>> Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
->>> Compressed(Struct(...), "zlib")
+>>> d = Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
+>>> d.build(bytes(100))
+b'\x0cx\x9cc`\xa0=\x00\x00\x00d\x00\x01'

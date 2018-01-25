@@ -2,4 +2,6 @@
 Core API: Debugging
 ================================
 
-.. automodule:: construct.debug
+.. autofunction:: construct.Probe
+.. autofunction:: construct.ProbeInto
+.. autofunction:: construct.Debugger
