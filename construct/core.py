@@ -1439,7 +1439,7 @@ class Renamed(Subconstruct):
         self.name = newname
     def _parse(self, stream, context, path):
         try:
-            path += " -> %s" % (self.name)
+            path += " -> %s" % (self.name,)
             return self.subcon._parse(stream, context, path)
         except ConstructError as e:
             if "\n" in str(e):
@@ -1447,7 +1447,7 @@ class Renamed(Subconstruct):
             raise e.__class__("%s\n    %s" % (e, path))
     def _build(self, obj, stream, context, path):
         try:
-            path += " -> %s" % (self.name)
+            path += " -> %s" % (self.name,)
             return self.subcon._build(obj, stream, context, path)
         except ConstructError as e:
             if "\n" in str(e):
@@ -1455,7 +1455,7 @@ class Renamed(Subconstruct):
             raise e.__class__("%s\n    %s" % (e, path))
     def _sizeof(self, context, path):
         try:
-            path += " -> %s" % (self.name)
+            path += " -> %s" % (self.name,)
             return self.subcon._sizeof(context, path)
         except ConstructError as e:
             if "\n" in str(e):
