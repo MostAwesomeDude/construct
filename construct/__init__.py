@@ -119,7 +119,6 @@ __all__ = [
     'OnDemand',
     'OneOf',
     'Optional',
-    'Packer',
     'Padded',
     'Padding',
     'PaddingError',

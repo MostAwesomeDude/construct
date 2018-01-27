@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct as packer
-from struct import Struct as Packer
-from struct import error as PackerError
-from io import BytesIO, StringIO
-from binascii import hexlify, unhexlify
-import collections
-import sys
+import struct, io, binascii, collections, sys
 
 from construct.lib import *
 from construct.expr import *
@@ -185,7 +179,7 @@ class Construct(object):
 
         Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
         """
-        return self.parse_stream(BytesIO(data), context, **kw)
+        return self.parse_stream(io.BytesIO(data), context, **kw)
 
     def parse_stream(self, stream, context=None, **kw):
         """
@@ -214,7 +208,7 @@ class Construct(object):
 
         :returns: bytes
         """
-        stream = BytesIO()
+        stream = io.BytesIO()
         self.build_stream(obj, stream, context, **kw)
         return stream.getvalue()
 
@@ -647,18 +641,18 @@ class FormatField(Construct):
             raise ValueError("format must be like: f d B H L Q b h l q", format)
         super(FormatField, self).__init__()
         self.fmtstr = endianity+format
-        self.length = packer.calcsize(endianity+format)
+        self.length = struct.calcsize(endianity+format)
     def _parse(self, stream, context, path):
         data = _read_stream(stream, self.length)
         try:
-            return packer.unpack(self.fmtstr, data)[0]
+            return struct.unpack(self.fmtstr, data)[0]
         except Exception:
-            raise FormatFieldError("packer %r error during parsing" % self.fmtstr)
+            raise FormatFieldError("struct %r error during parsing" % self.fmtstr)
     def _build(self, obj, stream, context, path):
         try:
-            data = packer.pack(self.fmtstr, obj)
+            data = struct.pack(self.fmtstr, obj)
         except Exception:
-            raise FormatFieldError("packer %r error during building, given value %r" % (self.fmtstr, obj))
+            raise FormatFieldError("struct %r error during building, given value %r" % (self.fmtstr, obj))
         _write_stream(stream, self.length, data)
     def _sizeof(self, context, path):
         return self.length
@@ -2829,10 +2823,10 @@ class Prefixed(Subconstruct):
         length = self.lengthfield._parse(stream, context, path)
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
-        stream2 = BytesIO(_read_stream(stream, length))
+        stream2 = io.BytesIO(_read_stream(stream, length))
         return self.subcon._parse(stream2, context, path)
     def _build(self, obj, stream, context, path):
-        stream2 = BytesIO()
+        stream2 = io.BytesIO()
         obj = self.subcon._build(obj, stream2, context, path)
         data = stream2.getvalue()
         length = len(data)
@@ -2906,8 +2900,8 @@ class Checksum(Construct):
         hash2 = self.hashfunc(self.bytesfunc(context))
         if hash1 != hash2:
             raise ChecksumError("wrong checksum, read %r, computed %r" % (
-                hash1 if not isinstance(hash1,bytes) else hexlify(hash1),
-                hash2 if not isinstance(hash2,bytes) else hexlify(hash2), ))
+                hash1 if not isinstance(hash1,bytes) else binascii.hexlify(hash1),
+                hash2 if not isinstance(hash2,bytes) else binascii.hexlify(hash2), ))
         return hash1
     def _build(self, obj, stream, context, path):
         hash2 = self.hashfunc(self.bytesfunc(context))
@@ -3652,8 +3646,8 @@ def Hex(subcon):
         b'\x01\x02\x03\x04'
     """
     return ExprAdapter(subcon,
-        encoder = lambda obj,ctx: None if subcon.flagbuildnone else unhexlify(obj),
-        decoder = lambda obj,ctx: hexlify(obj),
+        encoder = lambda obj,ctx: None if subcon.flagbuildnone else binascii.unhexlify(obj),
+        decoder = lambda obj,ctx: binascii.hexlify(obj),
     )
 
 
