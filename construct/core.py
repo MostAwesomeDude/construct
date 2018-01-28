@@ -306,7 +306,7 @@ class Construct(object):
         """ % (self._compileparse(code),))
         code.append("""
             from construct import Compiled
-            compiledschema = Compiled(None, parseall, None, None)
+            compiledschema = Compiled(None, None, parseall)
         """)
         code.appendnl()
 
@@ -495,20 +495,32 @@ class Tunnel(Subconstruct):
 
 class Compiled(Construct):
     """Used internally."""
-    __slots__ = ["source", "parsefunc", "buildfunc", "defersubcon"]
+    __slots__ = ["source", "defersubcon", "parsefunc", "buildfunc", "sizefunc"]
 
-    def __init__(self, source, parsefunc, buildfunc, defersubcon):
+    def __init__(self, source, defersubcon, parsefunc=None, buildfunc=None, sizefunc=None):
         self.source = source
+        self.defersubcon = defersubcon
         self.parsefunc = parsefunc
         self.buildfunc = buildfunc
-        self.defersubcon = defersubcon
+        self.sizefunc = sizefunc
 
     def _parse(self, stream, context, path):
-        return self.parsefunc(stream, context)
+        if self.parsefunc:
+            return self.parsefunc(stream, context)
+        else:
+            return self.defersubcon._parse(stream, context, path)
 
     def _build(self, obj, stream, context, path):
-        # currently ignores buildfunc, since not implemented
-        return self.defersubcon._build(obj, stream, context, path)
+        if self.buildfunc:
+            return self.buildfunc(obj, stream, context)
+        else:
+            return self.defersubcon._build(obj, stream, context, path)
+
+    def _sizeof(self, context, path):
+        if self.sizefunc:
+            return self.sizefunc(context)
+        else:
+            return self.defersubcon._sizeof(context, path)
 
     def compile(self):
         return self
