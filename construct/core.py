@@ -11,39 +11,39 @@ from construct.expr import *
 #===============================================================================
 class ConstructError(Exception):
     pass
-class StreamError(ConstructError):
-    pass
-class FormatFieldError(ConstructError):
-    pass
 class SizeofError(ConstructError):
     pass
 class AdaptationError(ConstructError):
     pass
-class RangeError(ConstructError):
-    pass
-class SwitchError(ConstructError):
-    pass
-class SelectError(ConstructError):
-    pass
-class UnionError(ConstructError):
-    pass
-class TerminatedError(ConstructError):
-    pass
-class PaddingError(ConstructError):
-    pass
-class ConstError(ConstructError):
-    pass
-class StringError(ConstructError):
-    pass
-class ChecksumError(ConstructError):
-    pass
 class ValidationError(ConstructError):
+    pass
+class StreamError(ConstructError):
+    pass
+class FormatFieldError(ConstructError):
     pass
 class IntegerError(ConstructError):
     pass
+class StringError(ConstructError):
+    pass
 class MappingError(ConstructError):
     pass
+class RangeError(ConstructError):
+    pass
+class ConstError(ConstructError):
+    pass
 class ExplicitError(ConstructError):
+    pass
+class UnionError(ConstructError):
+    pass
+class SelectError(ConstructError):
+    pass
+class SwitchError(ConstructError):
+    pass
+class PaddingError(ConstructError):
+    pass
+class TerminatedError(ConstructError):
+    pass
+class ChecksumError(ConstructError):
     pass
 
 
