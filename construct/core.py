@@ -1321,8 +1321,6 @@ class Range(Subconstruct):
 
     Parses into a ListContainer (a list). Parsing stops when either max count was reached or an exception occured inside subcon. If count is less than min, raises RangeError. Builds from a list. If given list has more than max elements, raises RangeError. Size is defined as min (max) multiplied by subcon size, but only if min==max and subcon is fixed size.
 
-    nesting???
-
     Operator [] can be used to make Array and Range instances (recommended).
 
     This class is used internally to implement :class:`~construct.core.GreedyRange`.
@@ -1367,11 +1365,10 @@ class Range(Subconstruct):
         if not 0 <= min <= max:
             raise RangeError("unsane min %s and max %s" % (min, max))
         obj = ListContainer()
-        context = Container(_ = context)
         try:
             while len(obj) < max:
                 fallback = stream.tell()
-                obj.append(self.subcon._parse(stream, context._, path))
+                obj.append(self.subcon._parse(stream, context, path))
         except StopIteration:
             pass
         except ExplicitError:
@@ -1391,10 +1388,9 @@ class Range(Subconstruct):
             raise RangeError("expected sequence type, found %s" % type(obj))
         if not min <= len(obj) <= max:
             raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
-        context = Container(_ = context)
         try:
             for i,subobj in enumerate(obj):
-                self.subcon._build(subobj, stream, context._, path)
+                self.subcon._build(subobj, stream, context, path)
         except StopIteration:
             pass
         except ExplicitError:
