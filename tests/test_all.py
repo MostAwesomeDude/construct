@@ -130,6 +130,7 @@ class TestCore(unittest.TestCase):
         common(BytesInteger(4), b"\x00\x00\x00\xff", 255, 4)
         common(BytesInteger(4, signed=True), b"\xff\xff\xff\xff", -1, 4)
         assert raises(BytesInteger(this.missing).sizeof) == SizeofError
+        assert raises(BytesInteger(4, signed=False).build, -1) == IntegerError
 
     def test_bitsinteger(self):
         assert BitsInteger(8).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == 255
@@ -138,6 +139,7 @@ class TestCore(unittest.TestCase):
         assert BitsInteger(8, signed=True).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == -1
         assert BitsInteger(8, signed=True).build(-1) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
         assert raises(BitsInteger(this.missing).sizeof) == SizeofError
+        assert raises(BitsInteger(8, signed=False).build, -1) == IntegerError
 
     def test_varint(self):
         common(VarInt, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10", 2**123, SizeofError)
@@ -148,7 +150,7 @@ class TestCore(unittest.TestCase):
             common(VarInt, int2byte(n), n, SizeofError)
 
         assert raises(VarInt.parse, b"") == StreamError
-        assert raises(VarInt.build, -1) == ValueError
+        assert raises(VarInt.build, -1) == IntegerError
 
     def test_array(self):
         assert Byte[4].parse(b"1234") == [49,50,51,52]

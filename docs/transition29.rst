@@ -26,3 +26,5 @@ Exceptions
 -------------
 
 FieldError was replaced with StreamError (raised when stream returns less than requested amount) and FormatFieldError (raised by FormatField class, for example if building Float from non-float value and struct.pack complains).
+
+BitIntegerError was replaced with IntegerError

@@ -39,7 +39,7 @@ class ChecksumError(ConstructError):
     pass
 class ValidationError(ConstructError):
     pass
-class BitIntegerError(ConstructError):
+class IntegerError(ConstructError):
     pass
 class MappingError(ConstructError):
     pass
@@ -716,8 +716,6 @@ class FormatField(Construct):
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises FormatFieldError: wrong format string, or struct.(un)pack complained about the value
 
-    bug???
-
     Example::
 
         >>> d = FormatField(">", "H") or Int16ub
@@ -768,7 +766,7 @@ class BytesInteger(Construct):
     :param swapped: bool, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises BitIntegerError: given a negative value when field is not signed
+    :raises IntegerError: given a negative value when field is not signed
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -796,7 +794,7 @@ class BytesInteger(Construct):
         return bytes2integer(data, self.signed)
     def _build(self, obj, stream, context, path):
         if obj < 0 and not self.signed:
-            raise BitIntegerError("object is negative, but field is not signed", obj)
+            raise IntegerError("value is negative, but field is not signed", obj)
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bytes(obj, length)
         if self.swapped:
@@ -826,7 +824,7 @@ class BitsInteger(Construct):
     :param swapped: bool, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises BitIntegerError: building and given a negative value when field is not signed
+    :raises IntegerError: given a negative value when field is not signed
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -854,7 +852,7 @@ class BitsInteger(Construct):
         return bits2integer(data, self.signed)
     def _build(self, obj, stream, context, path):
         if obj < 0 and not self.signed:
-            raise BitIntegerError("object is negative, but field is not signed", obj)
+            raise IntegerError("value is negative, but field is not signed", obj)
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bits(obj, length)
         if self.swapped:
@@ -1056,7 +1054,7 @@ class VarInt(Construct):
     Parses into an integer. Builds from an integer. Size is undefined.
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    bug???
+    :raises IntegerError: given a negative value
 
     Example::
 
@@ -1078,7 +1076,7 @@ class VarInt(Construct):
         return num
     def _build(self, obj, stream, context, path):
         if obj < 0:
-            raise ValueError("varint cannot build from negative number: %r" % (obj,))
+            raise IntegerError("varint cannot build from negative number: %r" % (obj,))
         while obj > 0b01111111:
             _write_stream(stream, 1, int2byte(0b10000000 | (obj & 0b01111111)))
             obj >>= 7
