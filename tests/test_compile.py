@@ -40,8 +40,8 @@ class TestCompile(unittest.TestCase):
             "default" / Default(Byte, 0),
             Check(this.num == 0),
             "error0" / If(False, Error),
-            "focusedseq1" / FocusedSeq(0, Byte, Byte),
-            "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
+            # "focusedseq1" / FocusedSeq(0, Byte, Byte),
+            # "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
             # "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
             # "numpy1" / RestreamData(this.numpy_data, Numpy),
             "numpy0" / If(False, Numpy),
@@ -85,19 +85,7 @@ class TestCompile(unittest.TestCase):
             dc.tofile("tests/compiled.py")
 
         data = bytes(1000)
-        # obj = d.build(d.parse(data))
-        assert d.parse(data) == dc.parse(data)
-        # assert d.parse(data) == dc.parse(obj)
+        d.testcompiled(data)
 
         # print(d.benchmark(data))
         # assert False
-
-
-    def test_numpy(self):
-        d = Numpy
-        dc = d.compile()
-        print(dc.source)
-        if not ontravis:
-            dc.tofile("tests/compiled_numpy.py")
-        data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
-        dc.parse(data)

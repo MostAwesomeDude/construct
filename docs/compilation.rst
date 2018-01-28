@@ -85,8 +85,7 @@ building compiled: 0.018900188006227836
 
 Correctness can be automatically tested:
 
->>> assert st.parse(sampledata) == st.compile().parse(sampledata)
->>> assert st.build(sampleobj) == st.compile().build(sampleobj)
+>>> st.testcompiled(sampledata)
 
 
 Motivation

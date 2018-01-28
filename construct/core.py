@@ -343,8 +343,8 @@ class Construct(object):
         """
         from timeit import timeit
         parsetime = timeit(lambda: self.parse(sampledata), number=1000)
-        obj = self.parse(sampledata)
-        buildtime = timeit(lambda: self.build(obj), number=1000)
+        sampleobj = self.parse(sampledata)
+        buildtime = timeit(lambda: self.build(sampleobj), number=1000)
 
         try:
             compiletime = "failed"
@@ -353,11 +353,22 @@ class Construct(object):
             compiled = self.compile()
             compiletime = timeit(lambda: self.compile(), number=1000)
             parsetime2 = timeit(lambda: compiled.parse(sampledata), number=1000)
-            buildtime2 = timeit(lambda: compiled.build(obj), number=1000)
+            buildtime2 = timeit(lambda: compiled.build(sampleobj), number=1000)
         except Exception:
             pass
 
         return "Timeit measurements:\ncompiling:         {}\nparsing:           {}\nparsing compiled:  {}\nbuilding:          {}\nbuilding compiled: {}\n".format(compiletime, parsetime, parsetime2, buildtime, buildtime2)
+
+    def testcompiled(self, sampledata):
+        """
+        Checks correctness of compiled equivalent class by comparing parse and build results of both this and compiled instances.
+
+        You need to provide a sample data for parsing testing. This data gets parsed into an object that gets reused for building testing. Sizeof is not tested.
+        """
+        sampleobj = self.parse(sampledata)
+        compiled = self.compile()
+        assert self.parse(sampledata) == compiled.parse(sampledata)
+        assert self.build(sampleobj) == compiled.build(sampleobj)
 
     def __rtruediv__(self, name):
         """
