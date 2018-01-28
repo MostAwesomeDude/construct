@@ -368,6 +368,11 @@ class TestCore(unittest.TestCase):
         common(Struct(sig=Const(b"MZ")), b"MZ", Container(sig=b"MZ"), 2)
         assert Struct(sig=Const(b"MZ")).build({}) == b"MZ"
 
+    @pytest.mark.xfail(PY2, reason="non-prefixed string literals are unicode on Python 3")
+    def test_const_nonbytes(self):
+        # fool-proofing
+        assert raises(lambda: Const("no prefix string")) == StringError
+
     def test_switch(self):
         assert Switch(5, {1:Byte, 5:Int16ub}).parse(b"\x00\x02") == 2
         assert Switch(6, {1:Byte, 5:Int16ub}, default=Byte).parse(b"\x00\x02") == 0

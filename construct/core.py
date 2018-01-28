@@ -1610,6 +1610,7 @@ class Const(Subconstruct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises ConstError: parsed data does not match specified value, or building from wrong value
+    :raises StringError: given non-bytes value, perhaps unicode
 
     Example::
 
@@ -1626,6 +1627,8 @@ class Const(Subconstruct):
     __slots__ = ["value"]
     def __init__(self, value, subcon=None):
         if subcon is None:
+            if not isinstance(value, bytestringtype):
+                raise StringError("given non-bytes value, perhaps unicode? %r" % (value,))
             subcon = Bytes(len(value))
         super(Const, self).__init__(subcon)
         self.value = value
