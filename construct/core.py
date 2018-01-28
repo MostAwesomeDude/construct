@@ -1183,19 +1183,25 @@ class Struct(Construct):
         return context
 
     def _sizeof(self, context, path):
+        context = Container(_ = context)
         try:
-            def isStruct(sc):
-                return isStruct(sc.subcon) if isinstance(sc, Renamed) else isinstance(sc, Struct)
-            def nest(context, sc):
-                if isStruct(sc) and not sc.flagembedded and sc.name in context:
-                    context2 = context[sc.name]
-                    context2["_"] = context
-                    return context2
-                else:
-                    return context
-            return sum(sc._sizeof(nest(context, sc), path) for sc in self.subcons)
+            return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
+
+        # try:
+        #     def isStruct(sc):
+        #         return isStruct(sc.subcon) if isinstance(sc, Renamed) else isinstance(sc, Struct)
+        #     def nest(context, sc):
+        #         if isStruct(sc) and not sc.flagembedded and sc.name in context:
+        #             context2 = context[sc.name]
+        #             context2["_"] = context
+        #             return context2
+        #         else:
+        #             return context
+        #     return sum(sc._sizeof(nest(context, sc), path) for sc in self.subcons)
+        # except (KeyError, AttributeError):
+        #     raise SizeofError("cannot calculate size, key not found in context")
 
     def _compileparse(self, code):
         fname = "parse_struct_%s" % code.allocateId()

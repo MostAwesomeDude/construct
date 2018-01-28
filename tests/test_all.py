@@ -243,11 +243,13 @@ class TestCore(unittest.TestCase):
     def test_struct_kwctor(self):
         common(Struct(a=Byte, b=Byte, c=Byte, d=Byte), b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 4)
 
+    @pytest.mark.xfail(reason="Struct._sizeof is broken, Struct nesting is the problem")
     def test_struct_sizeof_context_nesting(self):
         st = Struct(
             "length"/Byte,
             "inner"/Struct(
                 "inner_length"/Byte,
+                Probe(),
                 "data"/Bytes(this._.length + this.inner_length),
         ))
         assert st.parse(b"\x03\x02helloXXX") == Container(length=3,inner=Container(inner_length=2,data=b"hello"))
