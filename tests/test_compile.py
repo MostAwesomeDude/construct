@@ -40,8 +40,8 @@ class TestCompile(unittest.TestCase):
             "default" / Default(Byte, 0),
             Check(this.num == 0),
             "error0" / If(False, Error),
-            # "focusedseq1" / FocusedSeq(0, Byte, Byte),
-            # "focusedseq2" / FocusedSeq("first", "first" / Byte, Byte),
+            "focusedseq1" / FocusedSeq(1, Const(bytes(4)), Byte),
+            "focusedseq2" / FocusedSeq("num", Const(bytes(4)), "num"/Byte),
             # "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
             # "numpy1" / RestreamData(this.numpy_data, Numpy),
             "numpy0" / If(False, Numpy),
@@ -84,11 +84,12 @@ class TestCompile(unittest.TestCase):
 
         data = bytes(1000)
 
-        sampleobj = d.parse(data)
-        assert d.parse(data) == dc.parse(data)
-        assert d.build(sampleobj) == dc.build(sampleobj)
+        # sampleobj = d.parse(data)
+        # print(sampleobj)
+        # assert d.parse(data) == dc.parse(data)
+        # assert d.build(sampleobj) == dc.build(sampleobj)
 
-        # d.testcompiled(data)
+        d.testcompiled(data)
 
         # print(d.benchmark(data))
         # assert False
