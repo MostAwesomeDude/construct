@@ -36,11 +36,12 @@ Construct
     background-color: rgba(255, 255, 202, 0.69); border-radius: 5px;">
 
     <strong>Sticky</strong><br/>
-
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.5</a> is legacy. If you are maintaining a project that depended on this library for a long time, you could use this version. This branch is not actively maintained, not even bugfixes.<br/>
     <br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.8</a> was released on September, 2016. There are significant API and implementation changes. Most classes changed interface and behavior. Documentation was entirely rewritten.<br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.9</a> was released in January 2018. It adds compiler feature (for better performance!), and other major upgrades. Documentation was overhauled (see Core API pages!). See Transition page.<br/>
+    <br/>
+
+    <font color="#0066ff"><strong>Any improvements to the compiler are welcomed!</strong></font><br/>
     <br/>
 
     Please use the <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches. Good quality test cases are highly welcomed.<br/>
