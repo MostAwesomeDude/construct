@@ -94,9 +94,6 @@ class CodeGen:
         self.blocks.append("")
 
     def defer(self, name):
-        self.append("""
-            from construct import %s
-        """ % name)
         return "%s._parse(io, None, None)" % name
 
     def toString(self):
@@ -290,24 +287,24 @@ class Construct(object):
         """
         code = CodeGen()
         code.append("""
+            from io import BytesIO
+            from struct import pack, unpack, calcsize
+            import collections
+            from construct import *
+            from construct.lib import *
             def read_bytes(io, count):
                 assert count >= 0
                 data = io.read(count)
                 assert len(data) == count
                 return data
-            from io import BytesIO
             def restream(data, func):
                 return func(BytesIO(data))
         """)
         code.append("""
-            def parseall(io, context):
-                this = context
+            def parseall(io, this):
                 return %s
-        """ % (self._compileparse(code),))
-        code.append("""
-            from construct import Compiled
             compiledschema = Compiled(None, None, parseall)
-        """)
+        """ % (self._compileparse(code),))
         code.appendnl()
 
         source = code.toString()
@@ -667,9 +664,6 @@ def Bitwise(subcon):
     """
     macro = Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
     def _compileparse(self, code):
-        code.append("""
-            from construct.lib import bits2bytes, bytes2bits
-        """)
         return "restream(bytes2bits(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof()//8, subcon._compileparse(code), )
     return CompilableMacro(macro, _compileparse)
 
@@ -758,9 +752,6 @@ class FormatField(Construct):
     def _sizeof(self, context, path):
         return self.length
     def _compileparse(self, code):
-        code.append("""
-            from struct import pack, unpack, calcsize
-        """)
         return "unpack(%r, read_bytes(io, %s))[0]" % (self.fmtstr, self.length)
 
 
@@ -875,9 +866,6 @@ class BitsInteger(Construct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
     def _compileparse(self, code):
-        code.append("""
-            from construct.lib import bits2integer, integer2bits
-        """)
         return "bits2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed, )
 
 
@@ -1212,14 +1200,10 @@ class Struct(Construct):
             raise SizeofError("cannot calculate size, key not found in context")
 
     def _compileparse(self, code):
-        code.append("""
-            from construct import Container
-        """)
         fname = "parse_struct_%s" % code.allocateId()
         block = """
-            def %s(io, context):
-                this = Container()
-                this._ = context
+            def %s(io, this):
+                this = Container(_ = this)
         """ % (fname, )
         for sc in self.subcons:
             block += """
@@ -1304,17 +1288,14 @@ class Sequence(Struct):
                 break
 
     def _compileparse(self, code):
-        code.append("""
-            from construct import Container, ListContainer
-        """)
         fname = "parse_sequence_%s" % code.allocateId()
         block = """
-            def %s(io, context):
+            def %s(io, this):
                 result = ListContainer()
         """ % (fname,)
         if any(sc.name for sc in self.subcons):
             block += """
-                this = Container()
+                this = Container(_ = this)
             """
         for sc in self.subcons:
             block += """
@@ -1960,17 +1941,14 @@ class FocusedSeq(Construct):
     def _compileparse(self, code):
         if callable(self.parsebuildfrom):
             raise NotImplementedError("FocusedSeq does not compile non-constant selectors")
-        code.append("""
-            from construct import Container
-        """)
         fname = "parse_focusedseq_%s" % code.allocateId()
         block = """
-            def %s(io, context):
+            def %s(io, this):
                 result = []
         """ % (fname, )
         if any(sc.name for sc in self.subcons):
             block += """
-                this = Container()
+                this = Container(_ = this)
             """
         for sc in self.subcons:
             block += """
@@ -2070,9 +2048,6 @@ class NamedTuple(Adapter):
             return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name}
         raise AdaptationError("can only decode and encode from lists and dicts")
     def _compileparse(self, code):
-        code.append("""
-            import collections
-        """)
         code.append("""
             def parse_namedtuple(value, factory):
                 if isinstance(value, list):
@@ -2425,13 +2400,10 @@ class Union(Construct):
     def _compileparse(self, code):
         if callable(self.parsefrom):
             raise NotImplementedError("Union does not compile non-constant parsefrom")
-        code.append("""
-            from construct import Container
-        """)
         fname = "parse_union_%s" % code.allocateId()
         block = """
-            def %s(io, context):
-                this = Container()
+            def %s(io, this):
+                this = Container(_ = this)
                 fallback = io.tell()
         """ % (fname, )
         index = -1
@@ -2456,6 +2428,7 @@ class Union(Construct):
                 io.seek(forward)
             """
         block += """
+                del this._
                 return this
         """
         code.append(block)

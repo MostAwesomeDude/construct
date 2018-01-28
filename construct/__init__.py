@@ -58,6 +58,8 @@ __all__ = [
     'Check',
     'Checksum',
     'ChecksumError',
+    'CompilableMacro',
+    'Compiled',
     'Compressed',
     'Computed',
     'Const',
