@@ -32,7 +32,7 @@ Using the context is easy. All meta constructs take a function as a parameter, w
 
 >>> st = Struct(
 ...     "count" / Byte,
-...     "data" / Bytes(lambda ctx: ctx["count"]),
+...     "data" / Bytes(this.count),
 ... )
 >>> st.parse(b"\x05abcde")
 Container(count=5)(data=b'abcde')
@@ -48,12 +48,23 @@ And here's how we use the special '_' name to get to the upper container in a ne
 ...     "length1" / Byte,
 ...     "inner" / Struct(
 ...         "length2" / Byte,
-...         "sum" / Computed(lambda ctx: ctx._.length1 + ctx.length2),
+...         "sum" / Computed(this._.length1 + this.length2),
 ...     ),
 ... )
 >>> st.parse(b"12")
 Container(length1=49)(inner=Container(length2=50)(sum=99))
 
+Context entries can also be passed directly through `parse` and `build` methods. However, one should take into account that some classes are nesting context (like Struct Sequence Union FocusedSeq), so entries passed to parse/build end up on upper level. Compare these two examples:
+
+>>> d = Bytes(this.n)
+>>> d.parse(bytes(100), n=4)
+b'\x00\x00\x00\x00'
+
+>>> d = Struct(
+...     "data" / Bytes(this._.n),
+... )
+>>> d.parse(bytes(100), n=4)
+Container(data=b'\x00\x00\x00\x00')
 
 
 Using `this` expression

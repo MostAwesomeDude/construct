@@ -13,7 +13,7 @@ Overall
 General classes
 -----------------
 
-All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*kw
+All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*kw (see `this chapter <https://construct.readthedocs.io/en/latest/meta.html>`_)
 
 Compiled CompilableMacro added (used internally)
 
