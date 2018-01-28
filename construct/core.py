@@ -2171,7 +2171,7 @@ class Aligned(Subconstruct):
     :param pattern: optional, b-character, padding pattern, default is \\x00
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises PaddingError: modulus was zero or negative
+    :raises PaddingError: modulus was less than 2
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -2192,6 +2192,8 @@ class Aligned(Subconstruct):
         self.pattern = pattern
     def _parse(self, stream, context, path):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
+        if modulus < 2:
+            raise PaddingError("expected modulo 2 or greater")
         position1 = stream.tell()
         obj = self.subcon._parse(stream, context, path)
         position2 = stream.tell()
@@ -2200,6 +2202,8 @@ class Aligned(Subconstruct):
         return obj
     def _build(self, obj, stream, context, path):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
+        if modulus < 2:
+            raise PaddingError("expected modulo 2 or greater")
         position1 = stream.tell()
         subobj = self.subcon._build(obj, stream, context, path)
         position2 = stream.tell()
@@ -2209,6 +2213,8 @@ class Aligned(Subconstruct):
     def _sizeof(self, context, path):
         try:
             modulus = self.modulus(context) if callable(self.modulus) else self.modulus
+            if modulus < 2:
+                raise PaddingError("expected modulo 2 or greater")
             subconlen = self.subcon._sizeof(context, path)
             return subconlen + (-subconlen % modulus)
         except (KeyError, AttributeError):
