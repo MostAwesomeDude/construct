@@ -248,8 +248,8 @@ class TestCore(unittest.TestCase):
                 "inner_length"/Byte,
                 "data"/Bytes(this._.length + this.inner_length),
         ))
-        assert st.parse(b"\x03\x02helloXXX") == Container(length=3)(inner=Container(inner_length=2)(data=b"hello"))
-        assert st.sizeof(Container(length=3)(inner=Container(inner_length=2))) == 7
+        assert st.parse(b"\x03\x02helloXXX") == Container(length=3,inner=Container(inner_length=2,data=b"hello"))
+        assert st.sizeof(length=3,inner=Container(inner_length=2)) == 7
 
         st = Struct(
             "a" / Byte,
@@ -261,8 +261,8 @@ class TestCore(unittest.TestCase):
             If(this.a == 1, Byte),
             If(this.inner.b == 1, Byte),
         )
-        assert st.sizeof(Container(a=0,inner=Container(b=0))) == 2
-        assert st.sizeof(Container(a=1,inner=Container(b=1))) == 6
+        assert st.sizeof(a=0,inner=Container(b=0)) == 2
+        assert st.sizeof(a=1,inner=Container(b=1)) == 6
 
     def test_sequence(self):
         common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
@@ -427,9 +427,9 @@ class TestCore(unittest.TestCase):
         assert Aligned(4, Int16ub).build(1) == b"\x00\x01\x00\x00"
         assert Aligned(4, Int32ub).build(1) == b"\x00\x00\x00\x01"
         assert Aligned(4, Int64ub).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
-        assert Aligned(this.m, Byte).parse(b"\xff\x00", dict(m=2)) == 255
-        assert Aligned(this.m, Byte).build(255, dict(m=2)) == b"\xff\x00"
-        assert Aligned(this.m, Byte).sizeof(dict(m=2)) == 2
+        assert Aligned(this.m, Byte).parse(b"\xff\x00", m=2) == 255
+        assert Aligned(this.m, Byte).build(255, m=2) == b"\xff\x00"
+        assert Aligned(this.m, Byte).sizeof(m=2) == 2
         assert raises(Aligned(this.m, Byte).sizeof) == SizeofError
 
     def test_alignedstruct(self):

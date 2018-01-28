@@ -173,44 +173,38 @@ class Construct(object):
         self2.__setstate__(self, self.__getstate__())
         return self2
 
-    def parse(self, data, context=None, **kw):
+    def parse(self, data, **kw):
         r"""
         Parse an in-memory buffer (often bytes object). Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
 
         Whenever data cannot be read, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
 
         Context entries are passed only as keyword parameters \*\*kw.
-        bug???
 
-        :param context: context entries, usually empty
+        :param \*\*kw: context entries, usually empty
 
         :returns: some value, usually based on bytes read from the stream but sometimes it is computed from nothing or from the context dictionary, sometimes its non-deterministic
 
         :raises ConstructError: raised for any reason
         """
-        return self.parse_stream(io.BytesIO(data), context, **kw)
+        return self.parse_stream(io.BytesIO(data), **kw)
 
-    def parse_stream(self, stream, context=None, **kw):
+    def parse_stream(self, stream, **kw):
         r"""
         Parse a stream. Files, pipes, sockets, and other streaming sources of data are handled by this method.
 
         Whenever data cannot be read, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
 
         Context entries are passed only as keyword parameters \*\*kw.
-        bug???
 
-        :param context: context entries, usually empty
+        :param \*\*kw: context entries, usually empty
 
         :returns: some value, usually based on bytes read from the stream but sometimes it is computed from nothing or from the context dictionary, sometimes its non-deterministic
 
         :raises ConstructError: raised for any reason
         """
-        context2 = Container()
-        if context is not None:
-            context2.update(context)
-        context2.update(kw)
-
-        return self._parse(stream, context2, "(parsing)")
+        context = Container(**kw)
+        return self._parse(stream, context, "(parsing)")
 
     def _parse(self, stream, context, path):
         """
@@ -218,44 +212,38 @@ class Construct(object):
         """
         raise NotImplementedError
 
-    def build(self, obj, context=None, **kw):
+    def build(self, obj, **kw):
         r"""
         Build an object in memory (a bytes object).
 
         Whenever data cannot be written, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
 
         Context entries are passed only as keyword parameters \*\*kw.
-        bug???
 
-        :param context: context entries, usually empty
+        :param \*\*kw: context entries, usually empty
 
         :returns: bytes
 
         :raises ConstructError: raised for any reason
         """
         stream = io.BytesIO()
-        self.build_stream(obj, stream, context, **kw)
+        self.build_stream(obj, stream, **kw)
         return stream.getvalue()
 
-    def build_stream(self, obj, stream, context=None, **kw):
+    def build_stream(self, obj, stream, **kw):
         r"""
         Build an object directly into a stream.
 
         Whenever data cannot be written, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
 
         Context entries are passed only as keyword parameters \*\*kw.
-        bug???
 
-        :param context: context entries, usually empty
+        :param \*\*kw: context entries, usually empty
 
         :raises ConstructError: raised for any reason
         """
-        context2 = Container()
-        if context is not None:
-            context2.update(context)
-        context2.update(kw)
-
-        self._build(obj, stream, context2, "(building)")
+        context = Container(**kw)
+        self._build(obj, stream, context, "(building)")
 
     def _build(self, obj, stream, context, path):
         """
@@ -263,7 +251,7 @@ class Construct(object):
         """
         raise NotImplementedError
 
-    def sizeof(self, context=None, **kw):
+    def sizeof(self, **kw):
         r"""
         Calculate the size of this object, optionally using a context.
 
@@ -272,17 +260,14 @@ class Construct(object):
         Whenever size cannot be determined, SizeofError is raised. This method is NOT ALLOWED to raise any other exception, even if eg. context dictionary is missing a key, or subcon propagates ConstructError-derivative exception.
 
         Context entries are passed only as keyword parameters \*\*kw.
-        bug???
 
-        :param context: context entries, usually empty
+        :param \*\*kw: context entries, usually empty
 
-        :returns: integer if possible, SizeofError otherwise
+        :returns: integer if computable, SizeofError otherwise
 
         :raises SizeofError: size could not be determined in actual context, or is impossible to be determined
         """
-        if context is None:
-            context = Container()
-        context.update(kw)
+        context = Container(**kw)
         return self._sizeof(context, "(sizeof)")
 
     def _sizeof(self, context, path):
@@ -495,9 +480,9 @@ class Tunnel(Subconstruct):
     def _parse(self, stream, context, path):
         data = stream.read()  # reads entire stream
         data = self._decode(data, context)
-        return self.subcon.parse(data, context)
+        return self.subcon.parse(data, **context)
     def _build(self, obj, stream, context, path):
-        data = self.subcon.build(obj, context)
+        data = self.subcon.build(obj, **context)
         data = self._encode(data, context)
         _write_stream(stream, len(data), data)
     def _sizeof(self, context, path):
@@ -2506,7 +2491,7 @@ class Select(Construct):
         else:
             for sc in self.subcons:
                 try:
-                    data = sc.build(obj, context)
+                    data = sc.build(obj, **context)
                 except ExplicitError:
                     raise
                 except Exception:
