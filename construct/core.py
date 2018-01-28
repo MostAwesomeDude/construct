@@ -412,7 +412,7 @@ class Construct(object):
             max = 2**64 if count.stop is None else count.stop
             return Range(min, max, self)
         elif isinstance(count, int) or callable(count):
-            return Range(count, count, self)
+            return Array(count, self)
         else:
             raise TypeError("expected an int, a context lambda, or a slice thereof, but found %r" % count)
 
@@ -1362,7 +1362,7 @@ class Range(Subconstruct):
 
         Alternative syntax (recommended):
         >>> Bytes[5] creates Array
-        >>> Byte[3:5], Byte[3:], Byte[:5] create Range
+        >>> Byte[3:5], Byte[3:], Byte[:5] creates Range
         >>> Byte[:] creates GreedyRange
     """
     __slots__ = ["min", "max"]
@@ -1452,7 +1452,7 @@ def GreedyRange(subcon):
 
         Alternative syntax (recommended):
         >>> Bytes[5] creates Array
-        >>> Byte[3:5], Byte[3:], Byte[:5] create Range
+        >>> Byte[3:5], Byte[3:], Byte[:5] creates Range
         >>> Byte[:] creates GreedyRange
     """
     return Range(0, 2**64, subcon)
@@ -1479,7 +1479,7 @@ def Array(count, subcon):
 
         Alternative syntax (recommended):
         >>> Bytes[5] creates Array
-        >>> Byte[3:5], Byte[3:], Byte[:5] create Range
+        >>> Byte[3:5], Byte[3:], Byte[:5] creates Range
         >>> Byte[:] creates GreedyRange
     """
     return Range(count, count, subcon)
