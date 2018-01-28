@@ -613,13 +613,16 @@ class TestCore(unittest.TestCase):
         assert Union(None, "a"/Bytes(2), "b"/Int16ub).build(dict(b=0x0102)) == b"\x01\x02"
         assert Union(None, "a"/Bytes(2), "b"/Int16ub, Pass).build(dict()) == b""
         assert raises(Union(None, "a"/Bytes(2), "b"/Int16ub).build, dict()) == UnionError
+        # build skips parsefrom, invalid or not
+        # assert raises(Union(123, Pass).build, None) == None
+        # assert raises(Union("missing", Pass).build, None) == None
 
         assert raises(Union(None, Byte).sizeof) == SizeofError
         assert raises(Union(None, VarInt).sizeof) == SizeofError
-        assert Union(0, Byte, VarInt).sizeof() == 1
+        assert raises(Union(0, Byte, VarInt).sizeof) == SizeofError
         assert raises(Union(1, Byte, VarInt).sizeof) == SizeofError
-        assert raises(Union(123, Pass).sizeof) == IndexError
-        assert raises(Union("missing", Pass).sizeof) == KeyError
+        assert raises(Union(123, Pass).sizeof) == SizeofError
+        assert raises(Union("missing", Pass).sizeof) == SizeofError
         assert raises(Union(this.missing, Pass).sizeof) == SizeofError
 
         assert (Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x01]

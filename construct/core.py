@@ -2297,7 +2297,7 @@ class Union(Construct):
 
     :class:`~construct.core.Embedded` fields do not need to be named.
 
-    Parses subcons in sequence, and reverts the stream back to original position after each subcon. Afterwards, advances the stream by selected subcon. Builds from any subcon that has a matching key in given dict. Size is same as selected subcon.
+    Parses subcons in sequence, and reverts the stream back to original position after each subcon. Afterwards, advances the stream by selected subcon. Builds from any subcon that has a matching key in given dict. Size is undefined (because parsefrom is not used for building).
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
@@ -2309,8 +2309,8 @@ class Union(Construct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises UnionError: selector does not match any subcon, or dict given to build does not contain any keys matching any subcon
-
-    bug??? KeyError
+    :raises IndexError: selector does not match any subcon
+    :raises KeyError: selector does not match any subcon
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -2326,12 +2326,14 @@ class Union(Construct):
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     """
     __slots__ = ["subcons","parsefrom"]
+
     def __init__(self, parsefrom, *subcons, **kw):
         if isinstance(parsefrom, Construct):
             raise UnionError("parsefrom should be either: None int str context-function")
         super(Union, self).__init__()
         self.subcons = list(subcons) + list(k/v for k,v in kw.items())
         self.parsefrom = parsefrom
+
     def _parse(self, stream, context, path):
         obj = Container()
         context = Container(_ = context)
@@ -2355,8 +2357,9 @@ class Union(Construct):
         if callable(parsefrom):
             parsefrom = parsefrom(context)
         if parsefrom is not None:
-            stream.seek(forwards[parsefrom])
+            stream.seek(forwards[parsefrom]) # raises KeyError
         return obj
+
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         context.update(obj)
@@ -2380,23 +2383,11 @@ class Union(Construct):
                         context[sc.name] = buildret
                 return buildret
         else:
-            raise UnionError("cannot build, none of subcons %s were found in the dictionary %s" % ([sc.name for sc in self.subcons], obj))
+            raise UnionError("cannot build, none of subcons were found in the dictionary %r" % (obj, ))
+
     def _sizeof(self, context, path):
-        parsefrom = self.parsefrom
-        try:
-            if callable(parsefrom):
-                parsefrom = parsefrom(context)
-        except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
-        if parsefrom is None:
-            raise SizeofError("cannot calculate size, parsefrom is None")
-        if isinstance(parsefrom, int):
-            sc = self.subcons[parsefrom]
-            return sc._sizeof(context, path)
-        if isinstance(parsefrom, str):
-            sc = {sc.name:sc for sc in self.subcons if sc.name}[parsefrom]
-            return sc._sizeof(context, path)
-        raise UnionError("parsefrom should be either: None int str context-function")
+        raise SizeofError("Union builds depending on actual object dict, size is unknown")
+
     def _compileparse(self, code):
         if callable(self.parsefrom):
             raise NotImplementedError("Union does not compile non-constant parsefrom")
@@ -2409,8 +2400,9 @@ class Union(Construct):
         index = -1
         if isinstance(self.parsefrom, int):
             index = self.parsefrom
+            self.subcons[index] # raises IndexError
         if isinstance(self.parsefrom, str):
-            index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[self.parsefrom]
+            index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[self.parsefrom] # raises KeyError
         for i,sc in enumerate(self.subcons):
             block += """
                 %s%s
