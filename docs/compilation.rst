@@ -77,11 +77,11 @@ Performance boost can be easily measured:
 
 >>> print(st.benchmark(sampledata))
 Timeit measurements:
-compiling:         0.26775643999280874
-parsing:           0.018463559012161568
-parsing compiled:  0.013872158000594936
-building:          0.01956615300150588
-building compiled: 0.018900188006227836
+compiling:         0.00452083740001398872 sec/call
+parsing:           0.00062362513400148595 sec/call
+parsing compiled:  0.00030551492700033121 sec/call
+building:          0.00068562510999981897 sec/call
+building compiled: 0.00068885248700098598 sec/call
 
 Correctness can be automatically tested:
 

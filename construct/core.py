@@ -342,22 +342,22 @@ class Construct(object):
         :returns: string containing runtimes and descriptions
         """
         from timeit import timeit
-        parsetime = timeit(lambda: self.parse(sampledata), number=1000)
+        parsetime = timeit(lambda: self.parse(sampledata), number=1000)/1000
         sampleobj = self.parse(sampledata)
-        buildtime = timeit(lambda: self.build(sampleobj), number=1000)
+        buildtime = timeit(lambda: self.build(sampleobj), number=1000)/1000
 
         try:
             compiletime = "failed"
             parsetime2 = "failed"
             buildtime2 = "failed"
             compiled = self.compile()
-            compiletime = timeit(lambda: self.compile(), number=1000)
-            parsetime2 = timeit(lambda: compiled.parse(sampledata), number=1000)
-            buildtime2 = timeit(lambda: compiled.build(sampleobj), number=1000)
+            compiletime = timeit(lambda: self.compile(), number=100)/100
+            parsetime2 = timeit(lambda: compiled.parse(sampledata), number=1000)/1000
+            buildtime2 = timeit(lambda: compiled.build(sampleobj), number=1000)/1000
         except Exception:
             pass
 
-        return "Timeit measurements:\ncompiling:         {}\nparsing:           {}\nparsing compiled:  {}\nbuilding:          {}\nbuilding compiled: {}\n".format(compiletime, parsetime, parsetime2, buildtime, buildtime2)
+        return "Timeit measurements:\ncompiling:         {:.20f} sec/call\nparsing:           {:.20f} sec/call\nparsing compiled:  {:.20f} sec/call\nbuilding:          {:.20f} sec/call\nbuilding compiled: {:.20f} sec/call\n".format(compiletime, parsetime, parsetime2, buildtime, buildtime2)
 
     def testcompiled(self, sampledata):
         """
