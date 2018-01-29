@@ -15,9 +15,13 @@ General classes
 
 All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*kw (see `this chapter <https://construct.readthedocs.io/en/latest/meta.html>`_)
 
+All constructs: `compile benchmark testcompiled` methods were added (see `this chapter <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
+
 Compiled CompilableMacro added (used internally)
 
-FocusedSeq uses nested context (alike Struct and Sequence)
+Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
+
+If IfThenElse renamed `predicate` parameter to `condfunc`
 
 HexString removed
 
@@ -27,4 +31,12 @@ Exceptions
 
 FieldError was replaced with StreamError (raised when stream returns less than requested amount) and FormatFieldError (raised by FormatField class, for example if building Float from non-float value and struct.pack complains).
 
+StringError can be raised by most classes, when expected bytes but given unicode value
+
 BitIntegerError was replaced with IntegerError
+
+Struct Sequence can raise IndexError and KeyError when dictionaries are missing entries
+
+RepeatError added
+
+RawCopyError added
