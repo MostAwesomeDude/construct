@@ -18,6 +18,8 @@ class TestCompile(unittest.TestCase):
             "greedybytes" / Prefixed(Byte, GreedyBytes),
             "bitwise1" / Bitwise(BitsInteger(8, swapped=False)),
             "bitwise2" / Bitwise(BitsInteger(8, swapped=True)),
+            "bytewise1" / Bitwise(Bytewise(BytesInteger(16, swapped=True))),
+            "bytewise2" / Bitwise(Bytewise(BytesInteger(16, swapped=False))),
 
             "int8" / FormatField(">", "B"),
             "int16_1" / BytesInteger(16, swapped=True),

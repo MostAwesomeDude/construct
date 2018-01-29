@@ -729,8 +729,10 @@ def Bytewise(subcon):
         >>> d.sizeof()
         1
     """
-    return Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
-
+    macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
+    def _compileparse(self, code):
+        return "restream(bits2bytes(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof()*8, subcon._compileparse(code), )
+    return CompilableMacro(macro, _compileparse)
 
 #===============================================================================
 # integers and floats
