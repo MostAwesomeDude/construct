@@ -67,6 +67,13 @@ def _read_stream(stream, length):
     return data
 
 
+def _read_stream_entire(stream):
+    try:
+        return stream.read()
+    except Exception:
+        raise StreamError("stream.read() failed when reading entire stream until EOF")
+
+
 def _write_stream(stream, length, data):
     if length < 0:
         raise StreamError("length must be >= 0", length)
@@ -75,6 +82,20 @@ def _write_stream(stream, length, data):
     written = stream.write(data)
     if written is not None and written != length:
         raise StreamError("could not write bytes, expected %d, written %d" % (length, written))
+
+
+def _seek_stream(stream, offset, whence=0):
+    try:
+        return stream.seek(offset, whence)
+    except Exception:
+        raise StreamError("stream.seek failed: offset %s whence %s" % (offset, whence,))
+
+
+def _tell_stream(stream):
+    try:
+        return stream.tell()
+    except Exception:
+        raise StreamError("stream.tell failed")
 
 
 class CodeGen:
@@ -490,7 +511,7 @@ class Tunnel(Subconstruct):
     Needs to implement ``_decode()`` for parsing and ``_encode()`` for building.
     """
     def _parse(self, stream, context, path):
-        data = stream.read()  # reads entire stream
+        data = _read_stream_entire(stream)  # reads entire stream
         data = self._decode(data, context)
         return self.subcon.parse(data, **context)
     def _build(self, obj, stream, context, path):
@@ -625,6 +646,8 @@ class GreedyBytes(Construct):
 
     Parses the stream to the end. Builds into the stream directly (without checks). Size is undefined.
 
+    :raises StreamError: stream failed when reading until EOF
+
     Example::
 
         >>> GreedyBytes.parse(b"asislight")
@@ -633,7 +656,7 @@ class GreedyBytes(Construct):
         b'asislight'
     """
     def _parse(self, stream, context, path):
-        return stream.read()
+        return _read_stream_entire(stream)
     def _build(self, obj, stream, context, path):
         stream.write(obj)
     def _compileparse(self, code):
@@ -1336,6 +1359,7 @@ class Range(Subconstruct):
     :param subcon: Construct instance, subcon to process individual elements
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises StreamError: stream is not seekable and tellable
     :raises RangeError: consumed or produced too little or too many elements, or specified min and max are not valid
     :raises NotImplementedError: compiled (unless its Array)
 
@@ -1373,7 +1397,7 @@ class Range(Subconstruct):
         obj = ListContainer()
         try:
             while len(obj) < max:
-                fallback = stream.tell()
+                fallback = _tell_stream(stream)
                 obj.append(self.subcon._parse(stream, context, path))
         except StopIteration:
             pass
@@ -1382,7 +1406,7 @@ class Range(Subconstruct):
         except Exception:
             if len(obj) < min:
                 raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
-            stream.seek(fallback)
+            _seek_stream(stream, fallback)
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -2129,9 +2153,9 @@ class Padded(Subconstruct):
         self.pattern = pattern
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
-        position1 = stream.tell()
+        position1 = _tell_stream(stream)
         obj = self.subcon._parse(stream, context, path)
-        position2 = stream.tell()
+        position2 = _tell_stream(stream)
         padlen = length - (position2 - position1)
         if padlen < 0:
             raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length))
@@ -2139,9 +2163,9 @@ class Padded(Subconstruct):
         return obj
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
-        position1 = stream.tell()
+        position1 = _tell_stream(stream)
         subobj = self.subcon._build(obj, stream, context, path)
-        position2 = stream.tell()
+        position2 = _tell_stream(stream)
         padlen = length - (position2 - position1)
         if padlen < 0:
             raise PaddingError("subcon build %d bytes but was allowed only %d" % (position2-position1, length))
@@ -2192,9 +2216,9 @@ class Aligned(Subconstruct):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         if modulus < 2:
             raise PaddingError("expected modulo 2 or greater")
-        position1 = stream.tell()
+        position1 = _tell_stream(stream)
         obj = self.subcon._parse(stream, context, path)
-        position2 = stream.tell()
+        position2 = _tell_stream(stream)
         pad = -(position2 - position1) % modulus
         _read_stream(stream, pad)
         return obj
@@ -2202,9 +2226,9 @@ class Aligned(Subconstruct):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         if modulus < 2:
             raise PaddingError("expected modulo 2 or greater")
-        position1 = stream.tell()
+        position1 = _tell_stream(stream)
         subobj = self.subcon._build(obj, stream, context, path)
-        position2 = stream.tell()
+        position2 = _tell_stream(stream)
         pad = -(position2 - position1) % modulus
         _write_stream(stream, pad, self.pattern * pad)
         return subobj
@@ -2308,6 +2332,7 @@ class Union(Construct):
     :param \*\*kw: Construct instances, list of members (requires Python 3.6)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises StreamError: stream is not seekable and tellable
     :raises UnionError: selector does not match any subcon, or dict given to build does not contain any keys matching any subcon
     :raises IndexError: selector does not match any subcon
     :raises KeyError: selector does not match any subcon
@@ -2337,7 +2362,7 @@ class Union(Construct):
     def _parse(self, stream, context, path):
         obj = Container()
         context = Container(_ = context)
-        fallback = stream.tell()
+        fallback = _tell_stream(stream)
         forwards = {}
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
@@ -2349,15 +2374,15 @@ class Union(Construct):
                 if sc.name:
                     obj[sc.name] = subobj
                     context[sc.name] = subobj
-            forwards[i] = stream.tell()
+            forwards[i] = _tell_stream(stream)
             if sc.name:
-                forwards[sc.name] = stream.tell()
-            stream.seek(fallback)
+                forwards[sc.name] = _tell_stream(stream)
+            _seek_stream(stream, fallback)
         parsefrom = self.parsefrom
         if callable(parsefrom):
             parsefrom = parsefrom(context)
         if parsefrom is not None:
-            stream.seek(forwards[parsefrom]) # raises KeyError
+            _seek_stream(stream, forwards[parsefrom]) # raises KeyError
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -2438,6 +2463,7 @@ class Select(Construct):
     :param includename: indicates whether to include name of selected subcon in the return value of parsing, default is False
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises StreamError: stream is not seekable and tellable
     :raises SelectError: neither subcon succeded when parsing or building
 
     Example::
@@ -2460,13 +2486,13 @@ class Select(Construct):
         self.includename = kw.pop("includename", False)
     def _parse(self, stream, context, path):
         for sc in self.subcons:
-            fallback = stream.tell()
+            fallback = _tell_stream(stream)
             try:
                 obj = sc._parse(stream, context, path)
             except ExplicitError:
                 raise
             except ConstructError:
-                stream.seek(fallback)
+                _seek_stream(stream, fallback)
             else:
                 return (sc.name,obj) if self.includename else obj
         raise SelectError("no subconstruct matched")
@@ -2690,8 +2716,6 @@ class Pointer(Subconstruct):
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
 
-    bug???
-
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Example::
@@ -2708,17 +2732,17 @@ class Pointer(Subconstruct):
         self.offset = offset
     def _parse(self, stream, context, path):
         offset = self.offset(context) if callable(self.offset) else self.offset
-        fallback = stream.tell()
-        stream.seek(offset, 2 if offset < 0 else 0)
+        fallback = _tell_stream(stream)
+        _seek_stream(stream, offset, 2 if offset < 0 else 0)
         obj = self.subcon._parse(stream, context, path)
-        stream.seek(fallback)
+        _seek_stream(stream, fallback)
         return obj
     def _build(self, obj, stream, context, path):
         offset = self.offset(context) if callable(self.offset) else self.offset
-        fallback = stream.tell()
-        stream.seek(offset, 2 if offset < 0 else 0)
+        fallback = _tell_stream(stream)
+        _seek_stream(stream, offset, 2 if offset < 0 else 0)
         buildret = self.subcon._build(obj, stream, context, path)
-        stream.seek(fallback)
+        _seek_stream(stream, fallback)
         return buildret
     def _sizeof(self, context, path):
         raise SizeofError
@@ -2737,8 +2761,6 @@ class Peek(Subconstruct):
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
 
-    bug???
-
     Example::
 
         >>> d = Sequence(Peek(Int8ub), Peek(Int16ub))
@@ -2751,7 +2773,7 @@ class Peek(Subconstruct):
         super(Peek, self).__init__(subcon)
         self.flagbuildnone = True
     def _parse(self, stream, context, path):
-        fallback = stream.tell()
+        fallback = _tell_stream(stream)
         try:
             return self.subcon._parse(stream, context, path)
         except ExplicitError:
@@ -2759,7 +2781,7 @@ class Peek(Subconstruct):
         except ConstructError:
             pass
         finally:
-            stream.seek(fallback)
+            _seek_stream(stream, fallback)
     def _build(self, obj, stream, context, path):
         pass
     def _sizeof(self, context, path):
@@ -2778,8 +2800,6 @@ class Seek(Construct):
     :param whence: optional, integer or context lambda, is the offset from beginning (0) or from current position (1) or from EOF (2), default is 0
 
     :raises StreamError: stream is not seekable
-
-    bug???
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -2802,11 +2822,11 @@ class Seek(Construct):
     def _parse(self, stream, context, path):
         at = self.at(context) if callable(self.at) else self.at
         whence = self.whence(context) if callable(self.whence) else self.whence
-        return stream.seek(at, whence)
+        return _seek_stream(stream, at, whence)
     def _build(self, obj, stream, context, path):
         at = self.at(context) if callable(self.at) else self.at
         whence = self.whence(context) if callable(self.whence) else self.whence
-        return stream.seek(at, whence)
+        return _seek_stream(stream, at, whence)
     def _sizeof(self, context, path):
         raise SizeofError("Seek only moves the stream, size is not meaningful")
     def _compileparse(self, code):
@@ -2824,8 +2844,6 @@ class Tell(Construct):
 
     :raises StreamError: stream is not tellable
 
-    bug???
-
     Example::
 
         >>> d = Struct("num"/VarInt, "offset"/Tell)
@@ -2838,9 +2856,9 @@ class Tell(Construct):
         super(self.__class__, self).__init__()
         self.flagbuildnone = True
     def _parse(self, stream, context, path):
-        return stream.tell()
+        return _tell_stream(stream)
     def _build(self, obj, stream, context, path):
-        return stream.tell()
+        return _tell_stream(stream)
     def _sizeof(self, context, path):
         return 0
     def _compileparse(self, code):
@@ -3016,26 +3034,26 @@ class RawCopy(Subconstruct):
         '\xff'
     """
     def _parse(self, stream, context, path):
-        offset1 = stream.tell()
+        offset1 = _tell_stream(stream)
         obj = self.subcon._parse(stream, context, path)
-        offset2 = stream.tell()
-        stream.seek(offset1)
+        offset2 = _tell_stream(stream)
+        _seek_stream(stream, offset1)
         data = _read_stream(stream, offset2-offset1)
         return Container(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
     def _build(self, obj, stream, context, path):
         if 'data' in obj:
             data = obj['data']
-            offset1 = stream.tell()
+            offset1 = _tell_stream(stream)
             _write_stream(stream, len(data), data)
-            offset2 = stream.tell()
+            offset2 = _tell_stream(stream)
             return Container(obj, data=data, offset1=offset1, offset2=offset2, length=len(data))
         if 'value' in obj:
             value = obj['value']
-            offset1 = stream.tell()
+            offset1 = _tell_stream(stream)
             ret = self.subcon._build(value, stream, context, path)
             value = value if ret is None else ret
-            offset2 = stream.tell()
-            stream.seek(offset1)
+            offset2 = _tell_stream(stream)
+            _seek_stream(stream, offset1)
             data = _read_stream(stream, offset2-offset1)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         raise RawCopyError('RawCopy cannot build, both data and value keys are missing')
@@ -3227,6 +3245,7 @@ class Compressed(Tunnel):
     :param encoding: string, any of module names like zlib/gzip/bzip2/lzma, otherwise any of codecs module bytes<->bytes encodings, each codec usually requires some Python version
     :param level: optional, integer between 0..9, although lzma discards it, some encoders allow different compression levels
 
+    :raises StreamError: stream failed when reading until EOF
     :raises ImportError: needed module could not be imported by ctor
 
     Example::
@@ -3279,6 +3298,8 @@ class LazyStruct(Construct):
     .. note:: For performance, if entire struct is fixed size then entire parsing is only one stream seek.
 
     .. warning:: Members that depend on earlier (named) context entries do not work properly, because since this class is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
+
+    :raises StreamError: stream is not seekable and tellable
     """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes", "keys"]
     def __init__(self, *subcons, **kw):
@@ -3311,14 +3332,14 @@ class LazyStruct(Construct):
 
     def _parse(self, stream, context, path):
         if self.offsetmap is not None:
-            position = stream.tell()
-            stream.seek(self.totalsize, 1)
+            position = _tell_stream(stream)
+            _seek_stream(stream, self.totalsize, 1)
             return LazyContainer(self.keys, self.offsetmap, {}, stream, position, context)
         context = Container(_ = context)
         offsetmap = {}
         keys = Container()
         values = {}
-        position = stream.tell()
+        position = _tell_stream(stream)
         for (sc,size) in zip(self.subcons, self.subsizes):
             if sc.flagembedded:
                 subobj = list(sc._parse(stream, context, path).items())
@@ -3334,8 +3355,8 @@ class LazyStruct(Construct):
             else:
                 if sc.name:
                     keys[sc.name] = None
-                    offsetmap[sc.name] = (stream.tell(), sc)
-                stream.seek(size, 1)
+                    offsetmap[sc.name] = (_tell_stream(stream), sc)
+                _seek_stream(stream, size, 1)
         return LazyContainer(list(keys.keys()), offsetmap, values, stream, 0, context)
 
     def _build(self, obj, stream, context, path):
@@ -3368,6 +3389,8 @@ class LazyRange(Construct):
     Equivalent to :class:`~construct.core.Range` regarding semantics, however fixed size members are parsed on demand, others are parsed immediately.
 
     .. note:: Works only with fixed size subcon. Performance wise, entire parse is essentially one stream seek.
+
+    :raises StreamError: stream is not seekable and tellable
     """
     __slots__ = ["subcon", "min", "max", "subsize"]
     def __init__(self, min, max, subcon):
@@ -3382,13 +3405,13 @@ class LazyRange(Construct):
         currentmax = self.max(context) if callable(self.max) else self.max
         if not 0 <= currentmin <= currentmax:
             raise RangeError("unsane min %s and max %s" % (currentmin, currentmax))
-        starts = stream.tell()
-        ends = stream.seek(0,2)
+        starts = _tell_stream(stream)
+        ends = _seek_stream(stream, 0, 2)
         remaining = ends - starts
         objcount = min(remaining//self.subsize, currentmax)
         if objcount < currentmin:
             raise RangeError("not enough bytes %d to read the min %d of %d bytes each" % (remaining, currentmin, self.subsize))
-        stream.seek(starts + objcount*self.subsize, 0)
+        _seek_stream(stream, starts + objcount*self.subsize, 0)
         return LazyRangeContainer(self.subcon, self.subsize, objcount, stream, starts, context)
 
     def _build(self, obj, stream, context, path):
@@ -3429,6 +3452,8 @@ class LazySequence(Construct):
     .. note:: For performance, if entire sequence is fixed size then entire parsing is only one stream seek.
 
     .. warning:: Members that depend on earlier (named) context entries do not work properly, because since this class is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
+
+    :raises StreamError: stream is not seekable and tellable
     """
     __slots__ = ["subcons", "offsetmap", "totalsize", "subsizes"]
     def __init__(self, *subcons, **kw):
@@ -3458,8 +3483,8 @@ class LazySequence(Construct):
     def _parse(self, stream, context, path):
         context = Container(_ = context)
         if self.totalsize is not None:
-            position = stream.tell()
-            stream.seek(self.totalsize, 1)
+            position = _tell_stream(stream)
+            _seek_stream(stream, self.totalsize, 1)
             return LazySequenceContainer(len(self.subcons), self.offsetmap, {}, stream, position, context)
         offsetmap = {}
         values = {}
@@ -3477,8 +3502,8 @@ class LazySequence(Construct):
                 context[i] = obj
                 i += 1
             else:
-                offsetmap[i] = (stream.tell(), sc)
-                stream.seek(size, 1)
+                offsetmap[i] = (_tell_stream(stream), sc)
+                _seek_stream(stream, size, 1)
                 i += 1
         return LazySequenceContainer(i, offsetmap, values, stream, 0, context)
 
@@ -3518,6 +3543,8 @@ class OnDemand(Subconstruct):
 
     :param subcon: Construct instance, must be fixed size
 
+    :raises StreamError: stream is not seekable and tellable
+
     Example::
 
         >>> d = OnDemand(Byte)
@@ -3536,15 +3563,15 @@ class OnDemand(Subconstruct):
         b'\xff'
     """
     def _parse(self, stream, context, path):
-        offset = stream.tell()
-        stream.seek(self.subcon._sizeof(context, path), 1)
+        offset = _tell_stream(stream)
+        _seek_stream(stream, self.subcon._sizeof(context, path), 1)
         cache = {}
         def effectuate():
             if not cache:
-                fallback = stream.tell()
-                stream.seek(offset)
+                fallback = _tell_stream(stream)
+                _seek_stream(stream, offset)
                 obj = self.subcon._parse(stream, context, path)
-                stream.seek(fallback)
+                _seek_stream(stream, fallback)
                 cache["value"] = obj
             return cache["value"]
         return effectuate
@@ -4216,6 +4243,7 @@ def GreedyString(encoding=None):
 
     :param encoding: string for encoding like "utf8", or None for bytes
 
+    :raises StreamError: stream failed when reading until EOF
     :raises StringError: building a unicode string but no encoding
 
     Example::
