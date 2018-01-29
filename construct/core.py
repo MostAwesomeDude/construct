@@ -43,6 +43,8 @@ class PaddingError(ConstructError):
     pass
 class TerminatedError(ConstructError):
     pass
+class RawCopyError(ConstructError):
+    pass
 class ChecksumError(ConstructError):
     pass
 
@@ -3002,10 +3004,8 @@ class RawCopy(Subconstruct):
 
     :param subcon: Construct instance
 
-    :raises ConstructError: building and neither data or value was given
     :raises StreamError: stream is not seekable and tellable
-
-    bug??? no RawCopyError yet
+    :raises RawCopyError: building and neither data or value was given
 
     Example::
 
@@ -3040,7 +3040,7 @@ class RawCopy(Subconstruct):
             stream.seek(offset1)
             data = _read_stream(stream, offset2-offset1)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
-        raise ConstructError('RawCopy cannot build, both data and value keys are missing')
+        raise RawCopyError('RawCopy cannot build, both data and value keys are missing')
 
 
 def ByteSwapped(subcon):

@@ -29,4 +29,5 @@ Core API: Exception types
 
 .. autofunction:: construct.TerminatedError
 
+.. autofunction:: construct.RawCopyError
 .. autofunction:: construct.ChecksumError
