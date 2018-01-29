@@ -1405,7 +1405,7 @@ class Range(Subconstruct):
         min = self.min(context) if callable(self.min) else self.min
         max = self.max(context) if callable(self.max) else self.max
         if not 0 <= min <= max:
-            raise RangeError("unsane min %s and max %s" % (min, max))
+            raise RangeError("invalid min %s and max %s" % (min, max))
         obj = ListContainer()
         try:
             while len(obj) < max:
@@ -1425,7 +1425,7 @@ class Range(Subconstruct):
         min = self.min(context) if callable(self.min) else self.min
         max = self.max(context) if callable(self.max) else self.max
         if not 0 <= min <= max:
-            raise RangeError("unsane min %s and max %s" % (min, max))
+            raise RangeError("invalid min %s and max %s" % (min, max))
         if not min <= len(obj) <= max:
             raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
         try:
@@ -1483,16 +1483,22 @@ def GreedyRange(subcon):
     return Range(0, 2**64, subcon)
 
 
-def Array(count, subcon):
+class Array(Subconstruct):
     r"""
     Homogenous array of elements, similar to C# generic T[].
 
-    Semantics are like for Range(count, count, subcon).
+    Parses into a ListContainer (a list). Parsing and building stops when either count items were procssed or StopIteration was raised. Builds from a list. If given list has more or less than count elements, raises RangeError. Size is defined as count multiplied by subcon size, but only if subcon is fixed size.
+
+    Operator [] can be used to make Array and Range instances (recommended).
 
     :param count: integer or context lambda, strict amount of elements
     :param subcon: Construct instance, subcon to process individual elements
 
-    See :class:`~construct.core.Range` for raisable exceptions.
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises RangeError: specified count is not valid
+    :raises RangeError: given object has different length than specified count
+
+    Can propagate any exception from the lambdas, possibly non-ConstructError.
 
     Example::
 
@@ -1507,7 +1513,51 @@ def Array(count, subcon):
         >>> Byte[3:5], Byte[3:], Byte[:5] creates Range
         >>> Byte[:] creates GreedyRange
     """
-    return Range(count, count, subcon)
+    __slots__ = ["count"]
+
+    def __init__(self, count, subcon):
+        super(Array, self).__init__(subcon)
+        self.count = count
+
+    def _parse(self, stream, context, path):
+        count = self.count
+        if callable(count):
+            count = count(context)
+        if not 0 <= count:
+            raise RangeError("invalid count %s" % (count,))
+        obj = ListContainer()
+        try:
+            for i in range(count):
+                obj.append(self.subcon._parse(stream, context, path))
+        except StopIteration:
+            pass
+        return obj
+
+    def _build(self, obj, stream, context, path):
+        count = self.count
+        if callable(count):
+            count = count(context)
+        if not 0 <= count:
+            raise RangeError("invalid count %s" % (count,))
+        if not len(obj) == count:
+            raise RangeError("expected %d elements, found %d" % (count, len(obj)))
+        try:
+            for subobj in obj:
+                self.subcon._build(subobj, stream, context, path)
+        except StopIteration:
+            pass
+
+    def _sizeof(self, context, path):
+        try:
+            count = self.count
+            if callable(count):
+                count = count(context)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
+        return count * self.subcon._sizeof(context, path)
+
+    def _compileparse(self, code):
+        return "ListContainer((%s) for i in range(%s))" % (self.subcon._compileparse(code), self.count)
 
 
 class RepeatUntil(Subconstruct):
@@ -2049,8 +2099,6 @@ class NamedTuple(Adapter):
 
     Can propagate collections exceptions.
 
-    bug??? NamedTupleError
-
     Example::
 
         >>> d = NamedTuple("coord", "x y z", Byte[3])
@@ -2059,24 +2107,29 @@ class NamedTuple(Adapter):
         >>> d.parse(b"123")
         coord(x=49, y=50, z=51)
     """
+    __slots__ = ["tuplename", "tuplefields"]
+
     def __init__(self, tuplename, tuplefields, subcon):
         super(NamedTuple, self).__init__(subcon)
         self.tuplename = tuplename
         self.tuplefields = tuplefields
         import collections
         self.factory = collections.namedtuple(tuplename, tuplefields)
+
     def _decode(self, obj, context):
         if isinstance(obj, list):
             return self.factory(*obj)
         if isinstance(obj, dict):
             return self.factory(**obj)
         raise AdaptationError("can only decode and encode from lists and dicts")
+
     def _encode(self, obj, context):
-        if isinstance(self.subcon, (Sequence,Range)):
+        if isinstance(self.subcon, (Sequence,Array,Range)):
             return list(obj)
         if isinstance(self.subcon, Struct):
             return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name}
         raise AdaptationError("can only decode and encode from lists and dicts")
+
     def _compileparse(self, code):
         code.append("""
             def parse_namedtuple(value, factory):

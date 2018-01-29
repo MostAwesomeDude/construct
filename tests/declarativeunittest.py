@@ -2,11 +2,12 @@
 import unittest, pytest
 import os, math, random, collections, itertools, io, hashlib, binascii
 
-ontravis = 'TRAVIS' in os.environ
-ident = lambda x: x
-
 from construct import *
 from construct.lib import *
+
+ontravis = "TRAVIS" in os.environ
+ident = lambda x: x
+devzero = open("/dev/zero", "rb")
 
 
 def raises(func, *args, **kw):

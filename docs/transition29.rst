@@ -21,6 +21,8 @@ Compiled CompilableMacro added (used internally)
 
 Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
 
+Array reimplemented without Range, does not use stream.tell()
+
 If IfThenElse renamed `predicate` parameter to `condfunc`
 
 HexString removed

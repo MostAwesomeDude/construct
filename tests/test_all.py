@@ -159,14 +159,14 @@ class TestCore(unittest.TestCase):
         assert Array(3,Byte).parse(b"\x01\x02\x03") == [1,2,3]
         assert Array(3,Byte).build([1,2,3]) == b"\x01\x02\x03"
         assert Array(3,Byte).parse(b"\x01\x02\x03additionalgarbage") == [1,2,3]
-        assert raises(Array(3,Byte).parse, b"") == RangeError
+        assert raises(Array(3,Byte).parse, b"") == StreamError
         assert raises(Array(3,Byte).build, [1,2]) == RangeError
         assert raises(Array(3,Byte).build, [1,2,3,4,5,6,7,8]) == RangeError
         assert Array(3,Byte).sizeof() == 3
 
         assert Array(3, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
         assert Array(3, Byte).parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
-        assert raises(Array(3, Byte).parse, b"", n=3) == RangeError
+        assert raises(Array(3, Byte).parse, b"", n=3) == StreamError
         assert Array(3, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
         assert raises(Array(3, Byte).build, [1,2], n=3) == RangeError
         assert Array(this.n, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
@@ -174,13 +174,16 @@ class TestCore(unittest.TestCase):
         assert raises(Array(this.n, Byte).sizeof) == SizeofError
         assert Array(this.n, Byte).sizeof(n=4) == 4
 
+    def test_array_nontellable(self):
+        assert Array(5, Byte).parse_stream(devzero) == [0,0,0,0,0]
+
     def test_prefixedarray(self):
         common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
         assert PrefixedArray(Byte, Byte).parse(b"\x03\x01\x02\x03") == [1,2,3]
         assert PrefixedArray(Byte, Byte).parse(b"\x00") == []
         assert PrefixedArray(Byte, Byte).build([1,2,3]) == b"\x03\x01\x02\x03"
         assert raises(PrefixedArray(Byte, Byte).parse, b"") == StreamError
-        assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == RangeError
+        assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == StreamError
         assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
 
     def test_range(self):
@@ -207,6 +210,10 @@ class TestCore(unittest.TestCase):
         assert Range(1, 1, Byte).sizeof() == 1
         assert raises(Range(1, 1, VarInt).sizeof) == SizeofError
         assert raises(Range(1, 9, Byte).sizeof) == SizeofError
+
+    @pytest.mark.xfail(PY2, reason="for unknown reason, fails only on PY2")
+    def test_range_nontellable(self):
+        assert Range(5, 5, Byte).parse_stream(devzero) == [0,0,0,0,0]
 
     def test_greedyrange(self):
         common(GreedyRange(Byte), b"", [], SizeofError)
