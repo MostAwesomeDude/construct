@@ -4110,11 +4110,11 @@ class StringPaddedTrimmed(Adapter):
     def _encode(self, obj, context):
         length = self.length(context) if callable(self.length) else self.length
         if self.paddir == "right":
-            obj = obj.ljust(length, self.padchar[0:1])
+            obj = obj.ljust(length, self.padchar)
         if self.paddir == "left":
-            obj = obj.rjust(length, self.padchar[0:1])
+            obj = obj.rjust(length, self.padchar)
         if self.paddir == "center":
-            obj = obj.center(length, self.padchar[0:1])
+            obj = obj.center(length, self.padchar)
         if len(obj) > length:
             if self.trimdir == "right":
                 obj = obj[:length]
