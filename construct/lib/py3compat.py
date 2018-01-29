@@ -17,6 +17,7 @@ supportscompiler = PY >= (3,4)
 
 if PY3:
     stringtypes = (bytes, str, )
+    integertypes = (int, )
     bytestringtype = bytes
 
     def int2byte(i):
@@ -60,6 +61,7 @@ if PY3:
 
 else:
     stringtypes = (str, unicode, )
+    integertypes = (int, long, )
     bytestringtype = str
 
     def int2byte(i):

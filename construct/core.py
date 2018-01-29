@@ -793,7 +793,7 @@ class BytesInteger(Construct):
     :param swapped: bool, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: given a negative value when field is not signed
+    :raises IntegerError: given a negative value when field is not signed, or not an integer
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -820,6 +820,8 @@ class BytesInteger(Construct):
             data = data[::-1]
         return bytes2integer(data, self.signed)
     def _build(self, obj, stream, context, path):
+        if not isinstance(obj, integertypes):
+            raise IntegerError("value is not an integer")
         if obj < 0 and not self.signed:
             raise IntegerError("value is negative, but field is not signed", obj)
         length = self.length(context) if callable(self.length) else self.length
@@ -851,7 +853,7 @@ class BitsInteger(Construct):
     :param swapped: bool, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: given a negative value when field is not signed
+    :raises IntegerError: given a negative value when field is not signed, or not an integer
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -878,6 +880,8 @@ class BitsInteger(Construct):
             data = swapbytes(data, 8)
         return bits2integer(data, self.signed)
     def _build(self, obj, stream, context, path):
+        if not isinstance(obj, integertypes):
+            raise IntegerError("value is not an integer")
         if obj < 0 and not self.signed:
             raise IntegerError("value is negative, but field is not signed", obj)
         length = self.length(context) if callable(self.length) else self.length
@@ -1081,7 +1085,7 @@ class VarInt(Construct):
     Parses into an integer. Builds from an integer. Size is undefined.
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: given a negative value
+    :raises IntegerError: given a negative value, or not an integer
 
     Example::
 
@@ -1102,6 +1106,8 @@ class VarInt(Construct):
             num = (num << 7) | b
         return num
     def _build(self, obj, stream, context, path):
+        if not isinstance(obj, integertypes):
+            raise IntegerError("value is not an integer")
         if obj < 0:
             raise IntegerError("varint cannot build from negative number: %r" % (obj,))
         while obj > 0b01111111:
@@ -2095,6 +2101,7 @@ def Padding(length, pattern=b"\x00"):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises PaddingError: length was negative
+    :raises PaddingError: pattern was not bytes (b-character)
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -2125,6 +2132,7 @@ class Padded(Subconstruct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises PaddingError: length was negative, or subcon read or written more than the length (would cause negative pad)
+    :raises PaddingError: pattern was not bytes (b-character)
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -2194,6 +2202,7 @@ class Aligned(Subconstruct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises PaddingError: modulus was less than 2
+    :raises PaddingError: pattern was not bytes (b-character)
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
