@@ -139,3 +139,8 @@ def swapbytes(data, linesize=8):
     if linesize < 1:
         raise ValueError("linesize must be a positive number")
     return b"".join(data[i:i+linesize] for i in reversed(range(0,len(data),linesize)))
+
+
+S = {int2byte(i):bits2bytes(bytes2bits(int2byte(i))[::-1]) for i in range(256)}
+def swapbits(data):
+    return b"".join(S[b] for b in iteratebytes(data))

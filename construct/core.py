@@ -3163,11 +3163,11 @@ def BitsSwapped(subcon):
         '\x01\x00\x00\x00\x00\x00\x00\x00'
     """
     macro = Restreamed(subcon,
-        lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
-        lambda s: bits2bytes(bytes2bits(s)[::-1]), 1,
+        lambda s: swapbits(s), 1,
+        lambda s: swapbits(s), 1,
         lambda n: n)
     def _compileparse(self, code):
-        return "restream(bits2bytes(bytes2bits(read_bytes(io, %s))[::-1]), lambda io: %s)" % (subcon.sizeof(), subcon._compileparse(code), )
+        return "restream(swapbits(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof(), subcon._compileparse(code), )
     return CompilableMacro(macro, _compileparse)
 
 
