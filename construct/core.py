@@ -4141,11 +4141,22 @@ def HexDump(subcon, linesize=16):
 globalstringencoding = None
 
 
+@singleton
+class StringsAsBytes:
+    pass
+
+
 def setglobalstringencoding(encoding):
     r"""
-    Sets the encoding globally for all String PascalString CString GreedyString instances, but an encoding specified expiciltly in a particular construct supersedes it.
+    Sets the encoding globally for all String PascalString CString GreedyString instances.
 
-    :param encoding: string like "utf8", or None (disable global override)
+    Note that encoding specified expiciltly in a particular construct supersedes it.
+
+    Note also that global encoding is applied during parsing and building (not class instantiation).
+
+    See :class:`~construct.core.StringsAsBytes` for non-encoding, using on Python 2.
+
+    :param encoding: string like "utf8", or StringsAsBytes, or None (disable global override)
     """
     global globalstringencoding
     globalstringencoding = encoding
@@ -4154,24 +4165,38 @@ def setglobalstringencoding(encoding):
 class StringEncoded(Adapter):
     """Used internally."""
     __slots__ = ["encoding"]
+
     def __init__(self, subcon, encoding):
         super(StringEncoded, self).__init__(subcon)
         self.encoding = encoding
+
     def _decode(self, obj, context):
         encoding = self.encoding or globalstringencoding
-        if encoding:
-            obj = obj.decode(encoding)
-        return obj
+        if isinstance(encoding, str):
+            return obj.decode(encoding)
+        if isinstance(encoding, StringsAsBytes.__class__):
+            if not isinstance(obj, bytestringtype):
+                raise StringError("decoding must result in bytes type")
+            return obj
+        raise StringError("String* classes require explicit encoding")
+
     def _encode(self, obj, context):
         encoding = self.encoding or globalstringencoding
-        if encoding:
-            obj = obj.encode(encoding)
-        if not isinstance(obj, bytestringtype):
-            raise StringError("encoding must result in bytes type")
-        return obj
+        if isinstance(encoding, str):
+            return obj.encode(encoding)
+        if isinstance(encoding, StringsAsBytes.__class__):
+            if not isinstance(obj, bytestringtype):
+                raise StringError("encoding must result in bytes type")
+            return obj
+        raise StringError("String* classes require explicit encoding")
+
     def _compileparse(self, code):
         encoding = self.encoding or globalstringencoding
-        return "(%s).decode(%r)" % (self.subcon._compileparse(code), encoding, ) if encoding else "%s" % (self.subcon._compileparse(code), )
+        if isinstance(encoding, str):
+            return "(%s).decode(%r)" % (self.subcon._compileparse(code), encoding, )
+        if isinstance(encoding, StringsAsBytes.__class__):
+            return "(%s)" % (self.subcon._compileparse(code), )
+        raise StringError("String* classes require explicit encoding")
 
 
 class StringPaddedTrimmed(Adapter):
@@ -4241,6 +4266,7 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
     :param paddir: string, direction to pad out strings (one of: right left both)
     :param trimdir: string, direction to trim strings (one of: right left)
 
+    :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
     :raises StringError: padchar paddir trimdir are not valid
 
@@ -4248,7 +4274,7 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
 
     Example::
 
-        >>> d = String(10)
+        >>> d = String(10, encoding=StringsAsBytes)
         >>> d.build(b"hello")
         b'hello\x00\x00\x00\x00\x00'
         >>> d.parse(_)
@@ -4262,13 +4288,13 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
         >>> d.parse(_)
         u'Афон'
 
-        >>> d = String(10, padchar=b"XYZ", paddir="center")
+        >>> d = String(10, encoding=StringsAsBytes, padchar=b"XYZ", paddir="center")
         >>> d.build(b"abc")
         b'XXXabcXXXX'
         >>> d.parse(b"XYZabcXYZY")
         b'abc'
 
-        >>> d = String(10, trimdir="right")
+        >>> d = String(10, encoding=StringsAsBytes, trimdir="right")
         >>> d.build(b"12345678901234567890")
         b'1234567890'
     """
@@ -4288,6 +4314,7 @@ def PascalString(lengthfield, encoding=None):
     :param lengthfield: Construct instance, field used to parse and build the length (likw VarInt Int64ub)
     :param encoding: string for encoding like "utf8", or None for bytes
 
+    :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
 
     Example::
@@ -4314,6 +4341,7 @@ def CString(terminators=b"\x00", encoding=None):
     :param terminators: ??? sequence of valid terminators, first is used when building, all are used when parsing
     :param encoding: string for encoding like "utf8", or None for bytes
 
+    :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
 
     Example::
@@ -4342,8 +4370,9 @@ def GreedyString(encoding=None):
 
     :param encoding: string for encoding like "utf8", or None for bytes
 
-    :raises StreamError: stream failed when reading until EOF
+    :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
+    :raises StreamError: stream failed when reading until EOF
 
     Example::
 

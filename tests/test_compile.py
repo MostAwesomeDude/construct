@@ -73,11 +73,12 @@ class TestCompile(unittest.TestCase):
 
             "flag" / Flag,
 
-            "string1" / String(10),
+            "string1" / String(10, encoding=StringsAsBytes),
             "string2" / String(10, encoding="utf8"),
-            "pascalstring1" / PascalString(Byte),
+            "pascalstring1" / PascalString(Byte, encoding=StringsAsBytes),
             "pascalstring2" / PascalString(Byte, encoding="utf8"),
-            "greedystring" / Prefixed(Byte, GreedyString()),
+            "greedystring1" / Prefixed(Byte, GreedyString(encoding=StringsAsBytes)),
+            "greedystring2" / Prefixed(Byte, GreedyString(encoding="utf8")),
         )
 
         dc = d.compile()

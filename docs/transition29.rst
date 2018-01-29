@@ -19,6 +19,8 @@ All constructs: `compile benchmark testcompiled` methods were added (see `this c
 
 Compiled CompilableMacro added (used internally)
 
+String* classes require explicit encoding (see `this page <https://construct.readthedocs.io/en/latest/api/strings.html>`_)
+
 Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
 
 Array reimplemented without Range, does not use stream.tell()

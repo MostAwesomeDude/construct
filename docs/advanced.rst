@@ -68,9 +68,7 @@ Strings
 
     Unprefixed string literals like "data" are on Python 3 interpreted as unicode (not bytes). If you look at the documentation on this site, you will notice that most examples use b"\\x00" literals (so called b-strings). Unicode strings are processed by String* classes, and require explicit encoding like "utf8".
 
-.. warning:: Encoding needs to be specified explicitly, however if you specify None instead of "utf8", those constructs work on byte strings (not unicode), similar to Bytes and GreedyBytes fields.
-
-.. note:: Encoding can be set once, globally using :func:`~construct.core.setglobalstringencoding` or provided with each field separately.
+.. warning:: Encoding needs to be specified explicitly, however  :func:`~construct.core.setglobalstringencoding` can be used for that as well. Encodings like "utf8" are recommended. `StringsAsBytes` can be used to specify non-encoding.
 
 .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
 
@@ -78,7 +76,7 @@ Strings
 
 String is a fixed-length construct that pads builded string with null bytes, and strips those same null bytes when parsing. Note that some encodings do not work properly because they return null bytes within the encoded stream, utf-16 and utf-32 for example.
 
->>> String(10).build(b"hello")
+>>> String(10, encoding=StringsAsBytes).build(b"hello")
 b'hello\x00\x00\x00\x00\x00'
 
 >>> String(10, encoding="utf8").build("Афон")
@@ -88,10 +86,10 @@ You can use different bytes for padding (although they will break any encoding u
 
 To be honest, using this class is not recommended. There are safer ways to handle variable length strings.
 
->>> String(10, padchar=b"XYZ", paddir="center").build(b"abc")
+>>> String(10, encoding=StringsAsBytes, padchar=b"XYZ", paddir="center").build(b"abc")
 b'XXXabcXXXX'
 
->>> String(10, trimdir="right").build(b"12345678901234567890")
+>>> String(10, encoding=StringsAsBytes, trimdir="right").build(b"12345678901234567890")
 b'1234567890'
 
 PascalString is a variable length string that is prefixed by a length field. This scheme was invented in Pascal language that put Byte field instead of C convention of appending null \\0 byte at the end. Note that the length field can be variable length itself, as shown below. VarInt should be preferred when building new protocols.

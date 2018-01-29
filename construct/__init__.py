@@ -162,6 +162,7 @@ __all__ = [
     'StreamError',
     'String',
     'StringError',
+    'StringsAsBytes',
     'Struct',
     'Subconstruct',
     'sum_',

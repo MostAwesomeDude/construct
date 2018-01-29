@@ -737,36 +737,41 @@ class TestCore(unittest.TestCase):
         assert raises(d.sizeof) == SizeofError
 
     def test_string(self):
-        assert String(5).parse(b"hello") == b"hello"
-        assert String(5).build(b"hello") == b"hello"
-        assert raises(String(5).parse, b"") == StreamError
-        assert String(5).build(b"") == b"\x00\x00\x00\x00\x00"
+        assert raises(lambda: String(5).parse(b"hello")) == StringError
+        assert raises(lambda: String(5).build(u"hello")) == StringError
+        assert raises(lambda: String(5).sizeof()) == None # StringEncoded does not affext sizeof
+
+        assert String(5, encoding=StringsAsBytes).parse(b"hello") == b"hello"
+        assert String(5, encoding=StringsAsBytes).build(b"hello") == b"hello"
+        assert raises(String(5, encoding=StringsAsBytes).parse, b"") == StreamError
+        assert String(5, encoding=StringsAsBytes).build(b"") == b"\x00\x00\x00\x00\x00"
         assert String(12, encoding="utf8").parse(b"hello joh\xd4\x83n") == u"hello joh\u0503n"
         assert String(12, encoding="utf8").build(u"hello joh\u0503n") == b"hello joh\xd4\x83n"
         assert String(12, encoding="utf8").sizeof() == 12
-        assert raises(String(5).build, u"hello") == StringError    # missing encoding
-        assert String(10, padchar=b"X", paddir="right").parse(b"helloXXXXX") == b"hello"
-        assert String(10, padchar=b"X", paddir="left").parse(b"XXXXXhello") == b"hello"
-        assert String(10, padchar=b"X", paddir="center").parse(b"XXhelloXXX") == b"hello"
-        assert String(10, padchar=b"X", paddir="right").build(b"hello") == b"helloXXXXX"
-        assert String(10, padchar=b"X", paddir="left").build(b"hello") == b"XXXXXhello"
-        assert String(10, padchar=b"X", paddir="center").build(b"hello") == b"XXhelloXXX"
-        assert raises(String, 10, padchar=u"X", encoding="utf8") == StringError     # missing encoding
-        assert String(5, trimdir="right").build(b"1234567890") == b"12345"
-        assert String(5, trimdir="left").build(b"1234567890") == b"67890"
-        assert String(5, padchar=b"X", paddir="left", encoding="utf8").sizeof() == 5
-        assert String(5).sizeof() == 5
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="right").parse(b"helloXXXXX") == b"hello"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="left").parse(b"XXXXXhello") == b"hello"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="center").parse(b"XXhelloXXX") == b"hello"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="right").build(b"hello") == b"helloXXXXX"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="left").build(b"hello") == b"XXXXXhello"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="center").build(b"hello") == b"XXhelloXXX"
+        assert raises(String, 10, encoding="utf8", padchar=u"X") == StringError
+        assert String(5, encoding=StringsAsBytes, trimdir="right").build(b"1234567890") == b"12345"
+        assert String(5, encoding=StringsAsBytes, trimdir="left").build(b"1234567890") == b"67890"
+        assert String(5, encoding="utf8", padchar=b"X", paddir="left").sizeof() == 5
+        assert String(5, encoding=StringsAsBytes).sizeof() == 5
 
     def test_pascalstring(self):
+        setglobalstringencoding(StringsAsBytes)
         common(PascalString(Byte), b"\x05hello", b"hello")
         common(PascalString(Byte, encoding="utf8"), b"\x05hello", u"hello")
         common(PascalString(Int16ub), b"\x00\x05hello", b"hello")
         common(PascalString(VarInt), b"\x05hello", b"hello")
-
         common(PascalString(Byte), b"\x00", b"")
         common(PascalString(Byte, encoding="utf8"), b"\x00", u"")
+        setglobalstringencoding(None)
 
     def test_cstring(self):
+        setglobalstringencoding(StringsAsBytes)
         assert CString().parse(b"hello\x00") == b"hello"
         assert CString().build(b"hello") == b"hello\x00"
         assert CString(encoding="utf8").parse(b"hello\x00") == u"hello"
@@ -778,8 +783,10 @@ class TestCore(unittest.TestCase):
         assert CString(encoding="utf16").build(u"hello") == b"\xff\xfeh\x00"
         assert raises(CString(encoding="utf16").parse, b'\xff\xfeh\x00') == UnicodeDecodeError
         assert raises(CString().sizeof) == SizeofError
+        setglobalstringencoding(None)
 
     def test_greedystring(self):
+        setglobalstringencoding(StringsAsBytes)
         assert GreedyString().parse(b"hello\x00") == b"hello\x00"
         assert GreedyString().build(b"hello\x00") == b"hello\x00"
         assert GreedyString().parse(b"") == b""
@@ -789,6 +796,7 @@ class TestCore(unittest.TestCase):
         assert GreedyString(encoding="utf8").build(u"hello\x00") == b"hello\x00"
         assert GreedyString(encoding="utf8").build(u"") == b""
         assert raises(GreedyString().sizeof) == SizeofError
+        setglobalstringencoding(None)
 
     def test_globally_encoded_strings(self):
         setglobalstringencoding("utf8")
@@ -882,8 +890,8 @@ class TestCore(unittest.TestCase):
         assert LazyStruct().parse(b"") == Struct().parse(b"")
         assert LazyStruct().build({}) == Struct().build({})
         assert LazyStruct().sizeof() == Struct().sizeof()
-        assert LazyStruct("a"/Byte, "b"/CString()).build(dict(a=1,b=b"abc")) == b"\x01abc\x00"
-        assert raises(LazyStruct("a"/Byte, "b"/CString()).sizeof) == SizeofError
+        assert LazyStruct("a"/Byte, "b"/CString(encoding=StringsAsBytes)).build(dict(a=1,b=b"abc")) == b"\x01abc\x00"
+        assert raises(LazyStruct("a"/Byte, "b"/CString(encoding=StringsAsBytes)).sizeof) == SizeofError
         assert LazyStruct("a"/Byte).build(dict(a=1)) == b"\x01"
         assert LazyStruct("a"/Byte).sizeof() == 1
         assert LazyStruct(Pass, Computed(0), Terminated).build(dict()) == b""
@@ -894,8 +902,8 @@ class TestCore(unittest.TestCase):
 
         assert dict(LazyStruct("a"/Byte).parse(b"\x01")) == dict(a=1)
         assert LazyStruct("a"/Byte).build(dict(a=1)) == b"\x01"
-        assert dict(LazyStruct("a"/Byte,"b"/CString()).parse(b"\x01abc\x00")) == dict(a=1,b=b"abc")
-        assert LazyStruct("a"/Byte,"b"/CString()).build(dict(a=1,b=b"abc")) == b"\x01abc\x00"
+        assert dict(LazyStruct("a"/Byte,"b"/CString(encoding=StringsAsBytes)).parse(b"\x01abc\x00")) == dict(a=1,b=b"abc")
+        assert LazyStruct("a"/Byte,"b"/CString(encoding=StringsAsBytes)).build(dict(a=1,b=b"abc")) == b"\x01abc\x00"
         assert dict(LazyStruct(Pass, Computed(0), Terminated).parse(b"")) == dict()
         assert LazyStruct(Pass, Computed(0), Terminated).build(dict()) == b""
 
@@ -1234,6 +1242,7 @@ class TestCore(unittest.TestCase):
         assert test.parse(b'\x87\x0f').value == 34575
 
     def test_from_issue_71(self):
+        setglobalstringencoding(StringsAsBytes)
         Inner = Struct(
             'name' / PascalString(Byte),
             'occupation' / PascalString(Byte),
@@ -1251,6 +1260,7 @@ class TestCore(unittest.TestCase):
         payload = Inner.build(dict(name=b"unknown", occupation=b"worker"))
         payload_len = len(payload)
         Outer.build(Container(payload=Container(data=payload), payload_len=payload_len, serial=12345, struct_type=9001))
+        setglobalstringencoding(None)
 
     def test_from_issue_28(self):
 
