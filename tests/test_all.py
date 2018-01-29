@@ -186,6 +186,12 @@ class TestCore(unittest.TestCase):
         assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == StreamError
         assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
 
+    def test_restreamdata(self):
+        assert RestreamData(b"\xff", Byte).parse(b"") == 255
+        assert RestreamData(b"\xff", Byte).parse(b"\x00") == 255
+        assert RestreamData(b"\xff", Byte).build(0) == b"\x00"
+        assert RestreamData(b"\xff", Byte).sizeof() == 1
+
     def test_range(self):
         assert Byte[2:4].parse(b"1234567890") == [49,50,51,52]
         assert Byte[2:4].build([49,50,51,52]) == b"1234"

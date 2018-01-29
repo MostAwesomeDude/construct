@@ -42,7 +42,7 @@ class TestCompile(unittest.TestCase):
             "error0" / If(False, Error),
             "focusedseq1" / FocusedSeq(1, Const(bytes(4)), Byte),
             "focusedseq2" / FocusedSeq("num", Const(bytes(4)), "num"/Byte),
-            # "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
+            "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
             # "numpy1" / RestreamData(this.numpy_data, Numpy),
             "numpy0" / If(False, Numpy),
             "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),

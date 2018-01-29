@@ -145,6 +145,7 @@ __all__ = [
     'Renamed',
     'RepeatError',
     'RepeatUntil',
+    'RestreamData',
     'Restreamed',
     'RestreamedBytesIO',
     'Seek',

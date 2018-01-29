@@ -25,6 +25,8 @@ Array reimplemented without Range, does not use stream.tell()
 
 If IfThenElse renamed `predicate` parameter to `condfunc`
 
+RestreamData added
+
 HexString removed
 
 

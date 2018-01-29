@@ -3252,6 +3252,38 @@ def PrefixedArray(lengthfield, subcon):
     return CompilableMacro(macro, _compileparse)
 
 
+class RestreamData(Subconstruct):
+    """
+    Parses a field on external data.
+
+    Parsing defers to subcon, but provides it a separate stream based on bytes data provided by datafunc (a bytes literal or context lambda). Building and sizeof are deferred to subcon.
+
+    :param datafunc: bytes or context lambda, provides data for subcon to parse
+    :param subcon: Construct instance, subcon used for storing the value
+
+    Can propagate any exception from the lambdas, possibly non-ConstructError.
+
+    Example::
+
+        >>> RestreamData(b"\xff", Byte).parse(b"")
+        255
+    """
+    __slots__ = ["datafunc"]
+    def __init__(self, datafunc, subcon):
+        super(RestreamData, self).__init__(subcon)
+        self.datafunc = datafunc
+
+    def _parse(self, stream, context, path):
+        data = self.datafunc
+        if callable(data):
+            data = data(context)
+        stream2 = io.BytesIO(data)
+        return self.subcon._parse(stream2, context, path)
+
+    def _compileparse(self, code):
+        return "restream(%r, lambda io: %s)" % (self.datafunc, self.subcon._compileparse(code), )
+
+
 class Checksum(Construct):
     r"""
     Field that is build or validated by a hash of a given byte range. Usually used with :class:`~construct.core.RawCopy` .
