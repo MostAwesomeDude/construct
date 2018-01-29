@@ -3760,6 +3760,8 @@ class FlagsEnum(Adapter):
     :param subcon: Construct instance, must operate on integers
     :param \*\*flags: dict, mapping string names to integer values
 
+    Can raise arbitrary exceptions when computing | and & and value is non-integer.
+
     Example::
 
         >>> d = FlagsEnum(Byte, a=1, b=2, c=4, d=8)
