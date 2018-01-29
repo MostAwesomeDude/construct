@@ -29,6 +29,8 @@ class MappingError(ConstructError):
     pass
 class RangeError(ConstructError):
     pass
+class RepeatError(ConstructError):
+    pass
 class ConstError(ConstructError):
     pass
 class ExplicitError(ConstructError):
@@ -1478,13 +1480,13 @@ class RepeatUntil(Subconstruct):
     r"""
     Homogenous array of elements, similar to C# generic IEnumerable<T>, that repeats until the predicate indicates it to stop. Note that the last element (that predicate indicated as True) is included in the return list.
 
-    Parse iterates indefinately until last element passed the predicate. Build iterates indefinately over given list, until an element passed the precicate (or raises RangeError if no element passed it). Size is undefined.
+    Parse iterates indefinately until last element passed the predicate. Build iterates indefinately over given list, until an element passed the precicate (or raises RepeatError if no element passed it). Size is undefined.
 
     :param predicate: lambda that takes (obj, list, context) and returns True to break or False to continue (or a truthy value)
     :param subcon: Construct instance, subcon used to parse and build each element
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises RangeError: consumed all elements but neither passed the predicate
+    :raises RepeatError: consumed all elements in the stream but neither passed the predicate
     :raises NotImplementedError: compiled
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
@@ -1518,7 +1520,7 @@ class RepeatUntil(Subconstruct):
             if self.predicate(subobj, obj[:i+1], context):
                 break
         else:
-            raise RangeError("expected any item to match predicate, when building")
+            raise RepeatError("expected any item to match predicate, when building")
     def _sizeof(self, context, path):
         raise SizeofError("cannot calculate size, amount depends on actual data")
 

@@ -143,6 +143,7 @@ __all__ = [
     'Rebuild',
     'release_date',
     'Renamed',
+    'RepeatError',
     'RepeatUntil',
     'Restreamed',
     'RestreamedBytesIO',

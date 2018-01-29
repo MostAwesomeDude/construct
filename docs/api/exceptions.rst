@@ -17,6 +17,7 @@ Core API: Exception types
 .. autofunction:: construct.MappingError
 
 .. autofunction:: construct.RangeError
+.. autofunction:: construct.RepeatError
 
 .. autofunction:: construct.ConstError
 .. autofunction:: construct.ExplicitError
