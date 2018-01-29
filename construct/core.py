@@ -1333,11 +1333,8 @@ class Sequence(Struct):
         block = """
             def %s(io, this):
                 result = ListContainer()
-        """ % (fname,)
-        if any(sc.name for sc in self.subcons):
-            block += """
                 this = Container(_ = this)
-            """
+        """ % (fname,)
         for sc in self.subcons:
             block += """
                 result.append(%s)
@@ -2025,11 +2022,8 @@ class FocusedSeq(Construct):
         block = """
             def %s(io, this):
                 result = []
-        """ % (fname, )
-        if any(sc.name for sc in self.subcons):
-            block += """
                 this = Container(_ = this)
-            """
+        """ % (fname, )
         for sc in self.subcons:
             block += """
                 result.append(%s)
