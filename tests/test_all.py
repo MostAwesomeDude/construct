@@ -1059,7 +1059,7 @@ class TestCore(unittest.TestCase):
 
     def test_restreamed_partial_read(self):
         d = Restreamed(Bytes(255), ident, 1, ident, 1, ident)
-        assert raises(d.parse, b"") == IOError
+        assert raises(d.parse, b"") == StreamError
 
     def test_rebuffered(self):
         data = b"0" * 1000
@@ -1342,7 +1342,7 @@ class TestCore(unittest.TestCase):
 
     def test_hanging_issue_280(self):
         st = BitStruct('a'/BitsInteger(20), 'b'/BitsInteger(12))
-        assert raises(st.parse, b'\x00') == IOError
+        assert raises(st.parse, b'\x00') == StreamError
 
     def test_nonbytes_checksum_issue_323(self):
         st = Struct(
