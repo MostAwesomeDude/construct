@@ -1108,8 +1108,7 @@ class Struct(Construct):
     :param \*\*kw: Construct instances, list of members (requires Python 3.6)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-
-    bug??? KeyError
+    :raises KeyError: building a subcon but found no corresponding key in dictionary
 
     Example::
 
@@ -1167,7 +1166,7 @@ class Struct(Construct):
                 elif sc.flagbuildnone:
                     subobj = obj.get(sc.name, None)
                 else:
-                    subobj = obj[sc.name]
+                    subobj = obj[sc.name] # raises KeyError
 
                 if sc.flagembedded:
                     context.update(subobj)
@@ -1239,8 +1238,7 @@ class Sequence(Struct):
     :param \*\*kw: Construct instances, list of members (requires Python 3.6)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-
-    bug??? KeyError
+    :raises KeyError: building a subcon but found no corresponding key in dictionary
 
     Example::
 
