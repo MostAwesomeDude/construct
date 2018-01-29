@@ -62,7 +62,11 @@ b'39217839219...'
 Strings
 ========
 
-.. warning:: Python 2 used byte strings that are now called `bytes`. Python 3 introduced `unicode` strings which require an encoding to be used to be writtable to binary streams and files, UTF8 being the best option, but UTF16 and UTF32 being also supported. If you are using Python 2, which is not recommended, you need to figure this out.
+.. warning::
+
+    Python 3 known problem:
+
+    Unprefixed string literals like "data" are on Python 3 interpreted as unicode (not bytes). If you look at the documentation on this site, you will notice that most examples use b"\\x00" literals (so called b-strings). Unicode strings are processed by String* classes, and require explicit encoding like "utf8".
 
 .. warning:: Encoding needs to be specified explicitly, however if you specify None instead of "utf8", those constructs work on byte strings (not unicode), similar to Bytes and GreedyBytes fields.
 
@@ -125,3 +129,21 @@ FlagsEnum decomposes an integer value into a set of string labels:
 
 >>> FlagsEnum(Byte, a=1, b=2, c=4, d=8).parse(b"\x03")
 Container(c=False)(b=True)(a=True)(d=False)
+
+
+Processing files (or data)
+===========================
+
+.. warning::
+
+    Python 3 known problem:
+
+    Opening a file without mode like ``open(filename)`` implies text mode, which cannot be parsed or build.
+
+Constructs can parse both in-memory data (bytes) and binary files:
+
+>>> d = Struct(...)
+>>> d.parse(bytes(1000))
+
+>>> with open('/dev/zero', 'rb') as f:
+...     d.parse_stream(f)
