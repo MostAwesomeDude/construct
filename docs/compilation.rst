@@ -26,9 +26,9 @@ Compiled classes only parse faster, building is not yet implemented (defers to c
 
 AssertionError and standard hierarchy exceptions are raised (core classes are resticted to ConstructError and its derivatives)
 
-Embedded CString Switch Enum FlagsEnum StopIf Pointer Peek Select Optional Switch Bytewise BitsSwapped are not yet implemented
+Embedded CString Switch Enum FlagsEnum StopIf Pointer Peek Select Optional Switch are not yet implemented
 
-Range compiles only for Array instances
+Range is not compilable yet (Array is compilable)
 
 RepeatUntil is not compilable
 
@@ -38,7 +38,9 @@ RawCopy Checksum Compressed are not compilable
 
 Lambdas (unlike `this` expressions) are not compilable
 
-Global string encoding is applied during compilation (not parsing and building)
+Global string encoding is applied during compilation (not during parsing and building)
+
+Sizeof is applied during compilation (not during parsing and building)
 
 Some classes require fixed-sized subcons (otherwise raise NotImplementedError if compiled)
 
@@ -48,7 +50,7 @@ Adapters and validators, and mappings are in general not compilable
 
 Exceptions do not include `path` information
 
-Restreamed Rebuffered are not compilable
+Restreamed Rebuffered are not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
 
 Lazy* OnDemand are not compilable
 
