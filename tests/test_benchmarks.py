@@ -10,12 +10,20 @@ def test_bytes_parse(benchmark):
     d = Bytes(100)
     benchmark(d.parse, bytes(100))
 
+def test_bytes_parse_compiled(benchmark):
+    d = Bytes(100).compile()
+    benchmark(d.parse, bytes(100))
+
 def test_bytes_build(benchmark):
     d = Bytes(100)
     benchmark(d.build, bytes(100))
 
 def test_greedybytes_parse(benchmark):
     d = GreedyBytes
+    benchmark(d.parse, bytes(100))
+
+def test_greedybytes_parse_compiled(benchmark):
+    d = GreedyBytes.compile()
     benchmark(d.parse, bytes(100))
 
 def test_greedybytes_build(benchmark):
@@ -29,12 +37,20 @@ def test_formatfield_parse(benchmark):
     d = FormatField(">", "L")
     benchmark(d.parse, bytes(4))
 
+def test_formatfield_parse_compiled(benchmark):
+    d = FormatField(">", "L").compile()
+    benchmark(d.parse, bytes(4))
+
 def test_formatfield_build(benchmark):
     d = FormatField(">", "L")
     benchmark(d.build, 0)
 
 def test_bytesinteger_parse(benchmark):
     d = BytesInteger(4)
+    benchmark(d.parse, bytes(4))
+
+def test_bytesinteger_parse_compiled(benchmark):
+    d = BytesInteger(4).compile()
     benchmark(d.parse, bytes(4))
 
 def test_bytesinteger_build(benchmark):
@@ -45,12 +61,20 @@ def test_bitsinteger_parse(benchmark):
     d = Bitwise(BitsInteger(32, swapped=True))
     benchmark(d.parse, bytes(4))
 
+def test_bitsinteger_parse_compiled(benchmark):
+    d = Bitwise(BitsInteger(32, swapped=True)).compile()
+    benchmark(d.parse, bytes(4))
+
 def test_bitsinteger_build(benchmark):
     d = Bitwise(BitsInteger(32, swapped=True))
     benchmark(d.build, 0)
 
 def test_varint_parse(benchmark):
     d = VarInt
+    benchmark(d.parse, b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04')
+
+def test_varint_parse_compiled(benchmark):
+    d = VarInt.compile()
     benchmark(d.parse, b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04')
 
 def test_varint_build(benchmark):
@@ -61,6 +85,10 @@ def test_struct_parse(benchmark):
     d = Struct("a"/Byte, "b"/Byte, "c"/Byte, "d"/Byte, "e"/Byte)
     benchmark(d.parse, bytes(5))
 
+def test_struct_parse_compiled(benchmark):
+    d = Struct("a"/Byte, "b"/Byte, "c"/Byte, "d"/Byte, "e"/Byte).compile()
+    benchmark(d.parse, bytes(5))
+
 def test_struct_build(benchmark):
     d = Struct("a"/Byte, "b"/Byte, "c"/Byte, "d"/Byte, "e"/Byte)
     benchmark(d.build, dict(a=0, b=0, c=0, d=0, e=0))
@@ -69,12 +97,20 @@ def test_sequence_parse(benchmark):
     d = Sequence(Byte, Byte, Byte, Byte, Byte)
     benchmark(d.parse, bytes(5))
 
+def test_sequence_parse_compiled(benchmark):
+    d = Sequence(Byte, Byte, Byte, Byte, Byte).compile()
+    benchmark(d.parse, bytes(5))
+
 def test_sequence_build(benchmark):
     d = Sequence(Byte, Byte, Byte, Byte, Byte)
     benchmark(d.build, [0]*5)
 
 def test_range_parse(benchmark):
     d = Array(100, Byte)
+    benchmark(d.parse, bytes(100))
+
+def test_range_parse_compiled(benchmark):
+    d = Array(100, Byte).compile()
     benchmark(d.parse, bytes(100))
 
 def test_range_build(benchmark):
@@ -89,12 +125,20 @@ def test_repeatuntil_parse(benchmark):
     d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte)
     benchmark(d.parse, bytes(20))
 
+def test_repeatuntil_parse_compiled(benchmark):
+    d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte).compile()
+    benchmark(d.parse, bytes(20))
+
 def test_repeatuntil_build(benchmark):
     d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte)
     benchmark(d.build, [0]*20)
 
 def test_const_parse(benchmark):
     d = Const(bytes(4))
+    benchmark(d.parse, bytes(4))
+
+def test_const_parse_compiled(benchmark):
+    d = Const(bytes(4)).compile()
     benchmark(d.parse, bytes(4))
 
 def test_const_build(benchmark):
@@ -105,12 +149,20 @@ def test_computed_parse(benchmark):
     d = Computed(this.entry)
     benchmark(d.parse, bytes(), entry=1)
 
+def test_computed_parse_compiled(benchmark):
+    d = Computed(this.entry).compile()
+    benchmark(d.parse, bytes(), entry=1)
+
 def test_computed_build(benchmark):
     d = Computed(this.entry)
     benchmark(d.build, None, entry=1)
 
 def test_rebuild_parse(benchmark):
     d = Rebuild(Int32ub, 0)
+    benchmark(d.parse, bytes(4))
+
+def test_rebuild_parse_compiled(benchmark):
+    d = Rebuild(Int32ub, 0).compile()
     benchmark(d.parse, bytes(4))
 
 def test_rebuild_build(benchmark):
@@ -121,6 +173,10 @@ def test_default_parse(benchmark):
     d = Default(Int32ub, 0)
     benchmark(d.parse, bytes(4))
 
+def test_default_parse_compiled(benchmark):
+    d = Default(Int32ub, 0).compile()
+    benchmark(d.parse, bytes(4))
+
 def test_default_build(benchmark):
     d = Default(Int32ub, 0)
     benchmark(d.build, None)
@@ -129,11 +185,20 @@ def test_check_parse(benchmark):
     d = Check(this.entry == 1)
     benchmark(d.parse, bytes(4), entry=1)
 
+def test_check_parse_compiled(benchmark):
+    d = Check(this.entry == 1).compile()
+    benchmark(d.parse, bytes(4), entry=1)
+
 def test_check_build(benchmark):
     d = Check(this.entry == 1)
     benchmark(d.build, None, entry=1)
 
 # Error
+
+
+
+
+
 
 def test_focusedseq_parse(benchmark):
     d = FocusedSeq("num", Const(bytes(2)), "num"/Byte, Terminated)
