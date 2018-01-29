@@ -3009,9 +3009,9 @@ class Restreamed(Subconstruct):
     :param decoderunit: integer ratio, decoder takes that many bytes at once
     :param sizecomputer: function that computes amount of bytes outputed
 
-    raises???
-
     Can propagate any exception from the lambda, possibly non-ConstructError.
+
+    Can also raise arbitrary exceptions in its implementation.
 
     Example::
 
@@ -3053,7 +3053,7 @@ class Rebuffered(Subconstruct):
     :param subcon: Construct instance, subcon which will operate on the buffered stream
     :param tailcutoff: optional, integer, amount of bytes kept in buffer, by default buffers everything
 
-    raises???
+    Can also raise arbitrary exceptions in its implementation.
 
     Example::
 
