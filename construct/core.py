@@ -2245,7 +2245,7 @@ def AlignedStruct(modulus, *subcons, **kw):
     return Struct(*[Aligned(modulus, sc) for sc in subcons])
 
 
-def BitStruct(*subcons):
+def BitStruct(*subcons, **kw):
     r"""
     Makes a structure inside a Bitwise.
 
@@ -2269,10 +2269,10 @@ def BitStruct(*subcons):
         >>> d.sizeof()
         2
     """
-    return Bitwise(Struct(*subcons))
+    return Bitwise(Struct(*subcons, **kw))
 
 
-def EmbeddedBitStruct(*subcons):
+def EmbeddedBitStruct(*subcons, **kw):
     r"""
     Makes an embedded BitStruct.
 
@@ -2283,9 +2283,9 @@ def EmbeddedBitStruct(*subcons):
 
     Example::
 
-        EmbeddedBitStruct  <-->  Bitwise(Embedded(Struct(...)))
+        EmbeddedBitStruct  <-->  Embedded(Bitwise(Struct(...)))
     """
-    return Bitwise(Embedded(Struct(*subcons)))
+    return Embedded(Bitwise(Struct(*subcons, **kw)))
 
 
 #===============================================================================

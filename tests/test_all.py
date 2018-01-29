@@ -507,7 +507,7 @@ class TestCore(unittest.TestCase):
     def test_bitstruct_from_issue_39(self):
         d = Struct(
             "len" / Byte,
-            EmbeddedBitStruct("data" / BitsInteger(lambda ctx: ctx._.len)),
+            EmbeddedBitStruct("data" / BitsInteger(this._.len)),
         )
         assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
         assert d.build(dict(len=8,data=255)) == b"\x08\xff"
