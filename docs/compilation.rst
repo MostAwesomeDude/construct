@@ -20,7 +20,7 @@ Compilation feature requires Construct 2.9 and Python 3.4. More importantly, you
 Restrictions
 ---------------
 
-.. warning:: This section items are being implemented. Most items will be removed within next few weeks.
+.. warning:: These items are being implemented. Most items will be removed within next few weeks.
 
 Compiled classes only parse faster, building is not yet implemented (defers to core classes)
 
@@ -34,13 +34,11 @@ RepeatUntil is not compilable
 
 RawCopy Checksum Compressed are not compilable
 
-Lazy* OnDemand are not compilable
-
-.. warning:: This section items are (probably) permanent.
+.. warning:: These items are (probably) permanent.
 
 Lambdas (unlike `this` expressions) are not compilable
 
-Global string encoding is applied during compilation (not parsing)
+Global string encoding is applied during compilation (not parsing and building)
 
 Some classes require fixed-sized subcons (otherwise raise NotImplementedError if compiled)
 
@@ -51,6 +49,8 @@ Adapters and validators, and mappings are in general not compilable
 Exceptions do not include `path` information
 
 Restreamed Rebuffered are not compilable
+
+Lazy* OnDemand are not compilable
 
 
 Compiling schemas
