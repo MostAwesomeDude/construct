@@ -2238,7 +2238,7 @@ class Padded(Subconstruct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
     def _compileparse(self, code):
-        return "[%s, read_bytes(io, %s - %s)][0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
+        return "(%s, read_bytes(io, %s - %s))[0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
 
 
 class Aligned(Subconstruct):
@@ -2304,7 +2304,7 @@ class Aligned(Subconstruct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
     def _compileparse(self, code):
-        return "[%s, read_bytes(io, -%s %% %s)][0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
+        return "(%s, read_bytes(io, -%s %% %s))[0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
 
 
 def AlignedStruct(modulus, *subcons, **kw):
