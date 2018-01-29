@@ -22,7 +22,8 @@ def test_greedybytes_build(benchmark):
     d = GreedyBytes
     benchmark(d.build, bytes(100))
 
-
+# Bitwise
+# Bytewise
 
 def test_formatfield_parse(benchmark):
     d = FormatField(">", "L")
@@ -56,8 +57,6 @@ def test_varint_build(benchmark):
     d = VarInt
     benchmark(d.build, 2**64)
 
-
-
 def test_struct_parse(benchmark):
     d = Struct("a"/Byte, "b"/Byte, "c"/Byte, "d"/Byte, "e"/Byte)
     benchmark(d.parse, bytes(5))
@@ -82,6 +81,10 @@ def test_range_build(benchmark):
     d = Array(100, Byte)
     benchmark(d.build, [0]*100)
 
+# GreedyRange
+
+# Array
+
 def test_repeatuntil_parse(benchmark):
     d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte)
     benchmark(d.parse, bytes(20))
@@ -89,8 +92,6 @@ def test_repeatuntil_parse(benchmark):
 def test_repeatuntil_build(benchmark):
     d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte)
     benchmark(d.build, [0]*20)
-
-
 
 def test_const_parse(benchmark):
     d = Const(bytes(4))
@@ -132,6 +133,8 @@ def test_check_build(benchmark):
     d = Check(this.entry == 1)
     benchmark(d.build, None, entry=1)
 
+# Error
+
 def test_focusedseq_parse(benchmark):
     d = FocusedSeq("num", Const(bytes(2)), "num"/Byte, Terminated)
     benchmark(d.parse, bytes(3))
@@ -144,7 +147,9 @@ def test_numpy_parse(benchmark):
     d = Numpy
     benchmark(d.parse, b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00")
 
+# NamedTuple
 
+# Padding
 
 def test_padded_parse(benchmark):
     d = Padded(4, Byte)
@@ -162,7 +167,9 @@ def test_aligned_build(benchmark):
     d = Aligned(4, Byte)
     benchmark(d.build, 0)
 
-
+# AlignedStruct
+# BitStruct
+# EmbeddedBitStruct
 
 def test_union_parse(benchmark):
     d = Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8])
@@ -180,6 +187,10 @@ def test_select_build(benchmark):
     d = Select(Int32ub, CString(encoding="utf8"))
     benchmark(d.build, "")
 
+# Optional
+# If
+# IfThenElse
+
 def test_switch_parse(benchmark):
     d = Switch(this.n, { 1:Int8ub, 2:Int16ub, 4:Int32ub })
     benchmark(d.parse, bytes(4), n=4)
@@ -188,7 +199,7 @@ def test_switch_build(benchmark):
     d = Switch(this.n, { 1:Int8ub, 2:Int16ub, 4:Int32ub })
     benchmark(d.build, 0, n=4)
 
-
+# StopIf
 
 def test_pointer_parse(benchmark):
     d = Pointer(8, Bytes(4))
@@ -206,6 +217,13 @@ def test_peek_build(benchmark):
     d = Sequence(Peek(Int8ub), Peek(Int16ub))
     benchmark(d.build, [0,0])
 
+# Seek
+# Tell
+# Pass
+# Terminated
+# Restreamed
+# Rebuffered
+
 def test_rawcopy_parse(benchmark):
     d = RawCopy(Byte)
     benchmark(d.parse, bytes(1))
@@ -217,6 +235,9 @@ def test_rawcopy_build1(benchmark):
 def test_rawcopy_build2(benchmark):
     d = RawCopy(Byte)
     benchmark(d.build, dict(value=0))
+
+# ByteSwapped
+# BitsSwapped
 
 def test_prefixed_parse(benchmark):
     d = Prefixed(Byte, GreedyBytes)
@@ -234,7 +255,8 @@ def test_prefixedarray_build(benchmark):
     d = PrefixedArray(Byte, Byte)
     benchmark(d.build, [0]*8)
 
-
+# Checksum
+# Compressed
 
 def test_lazystruct_parse(benchmark):
     d = LazyStruct("a"/Byte, "b"/Byte, "c"/Byte, "d"/Byte, "e"/Byte)
@@ -257,7 +279,8 @@ def test_lazyrange_parse(benchmark):
         x = d.parse(bytes(100))
         [x[i] for i in range(100)]
 
-
+# OnDemand
+# LazyBound
 
 def test_flag_parse(benchmark):
     d = Flag
@@ -283,6 +306,18 @@ def test_flagsenum_build(benchmark):
     d = FlagsEnum(Byte, a=1, b=2, c=4, d=8)
     benchmark(d.build, FlagsContainer(a=False, b=False, c=False, d=False))
 
+# Mapping
+# SymmetricMapping
+
+# ExprAdapter
+# ExprSymmetricAdapter
+# ExprValidator
+# OneOf
+# NoneOf
+# Filter
+# Slicing
+# Indexing
+
 def test_hex_parse(benchmark):
     d = Hex(GreedyBytes)
     benchmark(d.parse, bytes(100))
@@ -298,8 +333,6 @@ def test_hexdump_parse(benchmark):
 def test_hexdump_build(benchmark):
     d = HexDump(GreedyBytes)
     benchmark(d.build, hexdump(bytes(100), 16))
-
-
 
 def test_string_parse(benchmark):
     d = String(10, encoding="utf8")
@@ -324,3 +357,5 @@ def test_cstring_parse(benchmark):
 def test_cstring_build(benchmark):
     d = CString(encoding="utf8")
     benchmark(d.build, u"Афон")
+
+# GreedyString
