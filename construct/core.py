@@ -3858,9 +3858,7 @@ def OneOf(subcon, valids):
     r"""
     Validates that the object is one of the listed values, both during parsing and building.
 
-    .. note:: For performance, it attempts to convert valids into a set, but if items are not hashable, it reverts to using original collection.
-
-    implement???
+    .. note:: For performance, you should provide a set/frozenset but if items are not hashable, then a list would work the same, just slower.
 
     :param subcon: Construct instance, subcon to validate
     :param valids: collection implementing __contains__, usually a list or set
@@ -3882,9 +3880,7 @@ def NoneOf(subcon, invalids):
     r"""
     Validates that the object is none of the listed values, both during parsing and building.
 
-    .. note:: For performance, it attempts to convert valids into a set, but if items are not hashable, it reverts to using original collection.
-
-    implement???
+    .. note:: For performance, you should provide a set/frozenset but if items are not hashable, then a list would work the same, just slower.
 
     :param subcon: Construct instance, subcon to validate
     :param invalids: collection implementing __contains__, usually a list or set
