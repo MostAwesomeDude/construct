@@ -2515,15 +2515,13 @@ def Optional(subcon):
     return Select(subcon, Pass)
 
 
-def If(predicate, subcon):
+def If(condfunc, subcon):
     r"""
     If-then conditional construct.
 
-    Parsing evaluates condition, if True then subcon is parsed, otherwise just returns None. Building also evaluates condition, if True then subcon gets build from, otherwise does nothing. Size is undefined.
+    Parsing evaluates condition, if True then subcon is parsed, otherwise just returns None. Building also evaluates condition, if True then subcon gets build from, otherwise does nothing. Size is either same as subcon or 0, depending how condfunc evaluates.
 
-    wrong??? size is Switch sizeof?
-
-    :param predicate: bool or context lambda (or a truthy value)
+    :param condfunc: bool or context lambda (or a truthy value)
     :param subcon: Construct instance, used if condition indicates True
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
@@ -2532,7 +2530,7 @@ def If(predicate, subcon):
 
     Example::
 
-        If  <-->  IfThenElse(predicate, subcon, Pass)
+        If <--> IfThenElse(condfunc, subcon, Pass)
 
         >>> d = If(this.x > 0, Byte)
         >>> d.build(255, x=1)
@@ -2540,19 +2538,17 @@ def If(predicate, subcon):
         >>> d.build(255, x=0)
         b''
     """
-    return IfThenElse(predicate, subcon, Pass)
+    return IfThenElse(condfunc, subcon, Pass)
 
 
-def IfThenElse(predicate, thensubcon, elsesubcon):
+def IfThenElse(condfunc, thensubcon, elsesubcon):
     r"""
     If-then-else conditional construct, similar to ternary operator.
 
     Parsing and building evaluates condition, and defers to either subcon depending on the value.
     Size is computed the same way.
 
-    wrong??? size is Switch sizeof?
-
-    :param predicate: bool or context lambda (or a truthy value)
+    :param condfunc: bool or context lambda (or a truthy value)
     :param thensubcon: Construct instance, used if condition indicates True
     :param elsesubcon: Construct instance, used if condition indicates False
 
@@ -2569,11 +2565,11 @@ def IfThenElse(predicate, thensubcon, elsesubcon):
         b'\xff'
     """
     macro = Switch(
-        lambda ctx: bool(predicate(ctx)) if callable(predicate) else bool(predicate),
+        lambda ctx: bool(condfunc(ctx)) if callable(condfunc) else bool(condfunc),
         {True:thensubcon, False:elsesubcon},
     )
     def _compileparse(self, code):
-        return "(%s if %s else %s)" % (thensubcon._compileparse(code), predicate, elsesubcon._compileparse(code), )
+        return "(%s if %s else %s)" % (thensubcon._compileparse(code), condfunc, elsesubcon._compileparse(code), )
     return CompilableMacro(macro, _compileparse)
 
 
