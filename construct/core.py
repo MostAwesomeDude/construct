@@ -1250,7 +1250,7 @@ class Struct(Construct):
         for sc in self.subcons:
             block += """
                 %s%s
-            """ % ("this.%s = " % sc.name if sc.name else "", sc._compileparse(code))
+            """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
         block += """
                 del this._
                 return this
@@ -1341,7 +1341,7 @@ class Sequence(Struct):
             """ % (sc._compileparse(code))
             if sc.name:
                 block += """
-                this.%s = result[-1]
+                this[%r] = result[-1]
                 """ % (sc.name, )
         block += """
                 return result
@@ -2030,7 +2030,7 @@ class FocusedSeq(Construct):
             """ % (sc._compileparse(code), )
             if sc.name:
                 block += """
-                this.%s = result[-1]
+                this[%r] = result[-1]
                 """ % (sc.name, )
         parsebuildfrom = self.parsebuildfrom
         if isinstance(parsebuildfrom, int):
@@ -2493,7 +2493,7 @@ class Union(Construct):
         for i,sc in enumerate(self.subcons):
             block += """
                 %s%s
-            """ % ("this.%s = " % sc.name if sc.name else "", sc._compileparse(code))
+            """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
             if i == index:
                 block += """
                 forward = io.tell()
