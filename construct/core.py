@@ -1390,12 +1390,10 @@ class Range(Subconstruct):
         max = self.max(context) if callable(self.max) else self.max
         if not 0 <= min <= max:
             raise RangeError("unsane min %s and max %s" % (min, max))
-        if not isinstance(obj, collections.Sequence):
-            raise RangeError("expected sequence type, found %s" % type(obj))
         if not min <= len(obj) <= max:
             raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
         try:
-            for i,subobj in enumerate(obj):
+            for subobj in obj:
                 self.subcon._build(subobj, stream, context, path)
         except StopIteration:
             pass
@@ -1515,7 +1513,7 @@ class RepeatUntil(Subconstruct):
             if self.predicate(subobj, obj, context):
                 return obj
     def _build(self, obj, stream, context, path):
-        for i, subobj in enumerate(obj):
+        for i,subobj in enumerate(obj):
             self.subcon._build(subobj, stream, context, path)
             if self.predicate(subobj, obj[:i+1], context):
                 break

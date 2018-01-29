@@ -201,12 +201,9 @@ class TestCore(unittest.TestCase):
         assert Range(3, 5, Byte).build([1,2,3,4,5]) == b"\x01\x02\x03\x04\x05"
         assert raises(Range(3, 5, Byte).build, [1,2]) == RangeError
         assert raises(Range(3, 5, Byte).build, [1,2,3,4,5,6]) == RangeError
-        assert raises(Range(3, 5, Byte).build, 0) == RangeError
         assert raises(Range(3, 5, Byte).sizeof) == SizeofError
         assert Range(0, 100, Struct("id"/Byte)).parse(b'\x01\x02') == [Container(id=1),Container(id=2)]
         assert Range(0, 100, Struct("id"/Byte)).build([dict(id=i) for i in range(5)]) == b'\x00\x01\x02\x03\x04'
-        assert raises(Range(0, 100, Struct("id"/Byte)).build, dict(id=1)) == RangeError
-        assert raises(Range(0, 100, Struct("id"/Byte)).sizeof) == SizeofError
         assert Range(1, 1, Byte).sizeof() == 1
         assert raises(Range(1, 1, VarInt).sizeof) == SizeofError
         assert raises(Range(1, 9, Byte).sizeof) == SizeofError
