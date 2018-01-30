@@ -121,9 +121,6 @@ class CodeGen:
         if block not in self.blocks:
             self.blocks.append(block)
 
-    def appendnl(self):
-        self.blocks.append("")
-
     def defer(self, name):
         return "%s._parse(io, this, None)" % name
 
@@ -135,7 +132,7 @@ class CodeGen:
         return cname
 
     def toString(self):
-        return "\n".join(self.blocks)
+        return "\n".join(self.blocks + [""])
 
 
 #===============================================================================
@@ -325,11 +322,11 @@ class Construct(object):
         """
         code = CodeGen()
         code.append("""
+            from construct import *
+            from construct.lib import *
             from io import BytesIO
             from struct import pack, unpack, calcsize
             import collections
-            from construct import *
-            from construct.lib import *
             def read_bytes(io, count):
                 assert count >= 0
                 data = io.read(count)
@@ -343,7 +340,6 @@ class Construct(object):
                 return %s
             compiledschema = Compiled(None, None, parseall)
         """ % (self._compileparse(code),))
-        code.appendnl()
 
         source = code.toString()
         from types import ModuleType
