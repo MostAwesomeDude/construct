@@ -68,13 +68,25 @@ Strings
 
     Unprefixed string literals like "data" are on Python 3 interpreted as unicode (not bytes). If you look at the documentation on this site, you will notice that most examples use b"\\x00" literals (so called b-strings). Unicode strings are processed by String* classes, and require explicit encoding like "utf8".
 
-.. warning:: Encoding needs to be specified explicitly, however  :func:`~construct.core.setglobalstringencoding` can be used for that as well. Encodings like "utf8" are recommended. `StringsAsBytes` can be used to specify non-encoding.
+.. warning::
 
-.. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+    Python 2 known problem:
 
-.. note:: Encodings like UTF16 or UTF32 work fine with PascalString and GreedyString.
+    Encoding needs to be specified explicitly, although  :func:`~construct.core.setglobalstringencoding` can be used for that as well. Encodings like UTF8 UTF16 UTF32 are recommended. `StringsAsBytes` can be used to specify non-encoding (to allow `str` on Python 2).
 
-String is a fixed-length construct that pads builded string with null bytes, and strips those same null bytes when parsing. Note that some encodings do not work properly because they return null bytes within the encoded stream, utf-16 and utf-32 for example.
+.. warning::
+
+    Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+
+    **UTF16 UTF32 will be supported soon.**
+
+.. note::
+
+    Encodings like UTF16 or UTF32 work fine with PascalString and GreedyString.
+
+String is a fixed-length construct that pads built string with null bytes, and strips those same null bytes when parsing. Strings can also be trimmed when building. If you supply a too long string, the construct will chop it off apart instead of raising a StringError.
+
+To be honest, using this class is not recommended. There are safer ways to handle variable length strings.
 
 >>> String(10, encoding=StringsAsBytes).build(b"hello")
 b'hello\x00\x00\x00\x00\x00'
@@ -82,27 +94,23 @@ b'hello\x00\x00\x00\x00\x00'
 >>> String(10, encoding="utf8").build("Афон")
 b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00\x00'
 
-You can use different bytes for padding (although they will break any encoding using those within the stream). Strings can also be trimmed when building. If you supply a too long string, the construct will chop it off apart instead of raising a StringError.
-
-To be honest, using this class is not recommended. There are safer ways to handle variable length strings.
-
 >>> String(10, encoding=StringsAsBytes, padchar=b"XYZ", paddir="center").build(b"abc")
 b'XXXabcXXXX'
 
 >>> String(10, encoding=StringsAsBytes, trimdir="right").build(b"12345678901234567890")
 b'1234567890'
 
-PascalString is a variable length string that is prefixed by a length field. This scheme was invented in Pascal language that put Byte field instead of C convention of appending null \\0 byte at the end. Note that the length field can be variable length itself, as shown below. VarInt should be preferred when building new protocols.
+PascalString is a variable length string that is prefixed by a length field. This scheme was invented in Pascal language that put Byte field instead of C convention of appending null \\0 byte at the end. Note that the length field does not need to be Byte, and can also be variable length itself, as shown below. VarInt is recommended when designing new protocols.
 
 >>> PascalString(VarInt, encoding="utf8").build("Афон")
 b'\x08\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'
 
-CString is an another variable length string, that always ends with a null \\0 terminating byte at the end. This scheme was invented in C language and is known in the computer science community very well. One of the authors, Kernighan or Ritchie, admitted that it was one of the most regretable design decisions in history.
+CString is another string representation, that always ends with a null \\0 terminating byte at the end. This scheme was invented in C language and is known in the computer science community very well. One of the authors, Kernighan or Ritchie, admitted that it was one of the most regretable design decisions in history.
 
 >>> CString(encoding="utf8").build(b"hello")
 b'hello\x00'
 
-Last but not least, GreedyString does the same thing as GreedyBytes. It reads until the end of stream and then decodes it using the specified encoding. Tunneling is discussed later.
+Last would be GreedyString which does the same thing as GreedyBytes, plus encoding. It reads until the end of stream and then decodes data using specified encoding. Greedy* classes are usually used with tunneling constructs, which are discussed in a later chapter.
 
 >>> GreedyString(encoding="utf8").parse(b"329817392189")
 '329817392189'
@@ -116,7 +124,7 @@ Booleans are flags:
 >>> Flag.parse(b"\x01")
 True
 
-Enums translate between string names and usually integer values:
+Enums translate between string names and (usually) integer values:
 
 >>> Enum(Byte, g=8, h=11).parse(b"\x08")
 'g'

@@ -19,7 +19,7 @@ All constructs: `compile benchmark testcompiled` methods were added (see `this c
 
 Compiled CompilableMacro Decompiled added (used internally)
 
-String* classes require explicit encoding (see `this page <https://construct.readthedocs.io/en/latest/api/strings.html>`_)
+String* classes require explicit encoding (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
 Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
 

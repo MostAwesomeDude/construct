@@ -694,7 +694,7 @@ def Bitwise(subcon):
 
     .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
 
-    .. warning:: Do NOT use pointers inside Restreamed context.
+    .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
 
     :param subcon: Construct instance, any field that works with bits (like BitsInteger) or is bit-byte agnostic (like Struct or Flag)
 
@@ -726,7 +726,7 @@ def Bytewise(subcon):
 
     .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
 
-    .. warning:: Do NOT use pointers inside Restreamed context.
+    .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
 
     :param subcon: Construct instance, any field that works with bytes or is bit-byte agnostic
 
@@ -1154,13 +1154,9 @@ class StringsAsBytes:
 
 def setglobalstringencoding(encoding):
     r"""
-    Sets the encoding globally for all String PascalString CString GreedyString instances.
+    Sets the encoding globally for all String PascalString CString GreedyString instances. Note that encoding specified expiciltly in a particular construct supersedes it. Note also that global encoding is applied during parsing and building (not class instantiation).
 
-    Note that encoding specified expiciltly in a particular construct supersedes it.
-
-    Note also that global encoding is applied during parsing and building (not class instantiation).
-
-    See :class:`~construct.core.StringsAsBytes` for non-encoding, using on Python 2.
+    See :class:`~construct.core.StringsAsBytes` for non-encoding, allowing using `str` on Python 2.
 
     :param encoding: string like "utf8", or StringsAsBytes, or None (disable global override)
     """
@@ -1260,14 +1256,10 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
     When building, the string is encoded (as specified) then padded (as specified) from the direction (as specified) or trimmed (as specified).
     Size is same as length parameter.
 
-    The padding character and direction must be specified for padding to work. The trim direction must be specified for trimming to work.
-
-    If encoding is not specified, it works with bytes (not unicode strings).
-
     .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
 
     :param length: integer or context lambda, length in bytes (not unicode characters)
-    :param encoding: string for encoding like "utf8", or None for bytes
+    :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
     :param padchar: bytes character to pad out strings, by default b"\\x00"
     :param paddir: string, direction to pad out strings (one of: right left both)
     :param trimdir: string, direction to trim strings (one of: right left)
@@ -1311,14 +1303,14 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
 
 def PascalString(lengthfield, encoding=None):
     r"""
-    Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). VarInt is recommended for new designs. Stored length is in bytes, not characters.
+    Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). VarInt is recommended when designing new protocols. Stored length is in bytes, not characters.
 
     Size is not defined.
 
-    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString.
+    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString and GreedyString.
 
     :param lengthfield: Construct instance, field used to parse and build the length (likw VarInt Int64ub)
-    :param encoding: string for encoding like "utf8", or None for bytes
+    :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
 
     :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
@@ -1336,7 +1328,7 @@ def PascalString(lengthfield, encoding=None):
 
 def CString(terminators=b"\x00", encoding=None):
     r"""
-    String ending in a terminating null byte (or bytes in case of UTF16 UTF32).
+    String ending in a terminating null byte (or null bytes in case of UTF16 UTF32).
 
     reimplement???
 
@@ -1345,7 +1337,7 @@ def CString(terminators=b"\x00", encoding=None):
     .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
 
     :param terminators: ??? sequence of valid terminators, first is used when building, all are used when parsing
-    :param encoding: string for encoding like "utf8", or None for bytes
+    :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
 
     :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
@@ -1372,9 +1364,9 @@ def GreedyString(encoding=None):
 
     Analog to :class:`~construct.core.GreedyBytes` , and identical when no enoding is used.
 
-    .. note:: Encodings like UTF16 or UTF32 work fine with GreedyString.
+    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString and GreedyString.
 
-    :param encoding: string for encoding like "utf8", or None for bytes
+    :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
 
     :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
@@ -3462,7 +3454,7 @@ class Restreamed(Subconstruct):
 
     .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
 
-    .. warning:: Do NOT use pointers inside Restreamed context.
+    .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
 
     :param subcon: Construct instance, subcon which will operate on the buffer
     :param encoder: function that takes bytes and returns bytes (used when building)

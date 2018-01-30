@@ -54,7 +54,7 @@ And here's how we use the special '_' name to get to the upper container in a ne
 >>> st.parse(b"12")
 Container(length1=49)(inner=Container(length2=50)(sum=99))
 
-Context entries can also be passed directly through `parse` and `build` methods. However, one should take into account that some classes are nesting context (like Struct Sequence Union FocusedSeq), so entries passed to parse/build end up on upper level. Compare these two examples:
+Context entries can also be passed directly through `parse` and `build` methods. However, one should take into account that some classes are nesting context (like Struct Sequence Union FocusedSeq), so entries passed to these end up on upper level. Compare these two examples:
 
 >>> d = Bytes(this.n)
 >>> d.parse(bytes(100), n=4)
@@ -68,9 +68,9 @@ Container(data=b'\x00\x00\x00\x00')
 
 
 Using `this` expression
-===========================
+============================
 
-Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided even a better syntax. The `this` singleton object can be used to build a lambda expression. All four examples below are equivalent, but first is recommended:
+Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided an even better syntax. The `this` singleton object can be used to build a lambda expression. All four examples below are equivalent, but first is recommended:
 
 >>> this._.field
 ...
@@ -80,22 +80,11 @@ Certain classes take a number of elements, or something similar, and allow a cal
 ...
 >>> lambda ctx: ctx["_"]["field"]
 
-Of course, `this` can be mixed with other calculations. When evaluating, each instance of `this` is replaced by context Container which supports attribute access to keys.
+Of course, `this` expression can be mixed with other calculations. When evaluating, each instance of `this` is replaced by context Container which supports attribute access to keys.
 
 >>> this.width * this.height - this.offset
 
-
-
-Using `len_` expreession
-============================
-
-There used to be a bit of a hassle when you used built-in functions like `len sum min max` on context items. Built-in `len` takes a list and returns an integer but `len_` analog takes a lambda and returns a lambda. This allows to use this kind of shorthand:
-
->>> len_(this.items)
-...
->>> lambda ctx: len(ctx.items)
-
-These can be used in newly added Rebuild wrappers that compute count/length fields from another items-alike field:
+When creating an Array ("items" field), rather than specifying a constant count, you can use a previous field value as count.
 
 >>> st = Struct(
 ...     "count" / Rebuild(Byte, len_(this.items)),
@@ -104,57 +93,7 @@ These can be used in newly added Rebuild wrappers that compute count/length fiel
 >>> st.build(dict(items=[1,2,3,4,5]))
 b'\x05\x01\x02\x03\x04\x05'
 
-Incidentally, when the count field is directly before the items field you can also use PrefixedArray. However in some protocols these fields are separate.
-
->>> PrefixedArray(Byte, Byte).build([1,2,3])
-b'\x03\x01\x02\x03'
-
-
-
-
-Using `obj_` expression
-=======================
-
-There is also an analog that takes both (obj, context) unlike the `this` singleton which only takes a context:
-
->>> obj_ > 0
-...
->>> lambda obj,ctx: obj > 0
-
-These can be used in few classes that use (obj, context) lambdas:
-
->>> RepeatUntil(obj_ == 0, Byte).build([1,2,0,1,0])
-b'\x01\x02\x00'
-
-
-
-Array
------
-
-When creating an Array, rather than specifying a constant length, you can instead specify that it repeats a variable number of times.
-
-::
-
-    PrefixedArray  <-->  FocusedSeq(1,
-        "count" / Rebuild(lengthfield, len_(this.items)),
-        "items" / subcon[this.count],
-    )
-
-
-RepeatUntil
------------
-
-A repeater that repeats until a condition is met. Null terminated strings are probably not the best example, as you should use CString there, but here is a list of integers with terminating 0 value.
-
->>> loop = RepeatUntil(obj_ == 0, Byte)
->>> loop.parse(b"aioweqnjkscs\x00")
-[97, 105, 111, 119, 101, 113, 110, 106, 107, 115, 99, 115, 0]
-
-
-Switch
-------
-
-Branches the construction path based on a condition, similarly to C's switch statement.
+Switch can branch the construction path based on previously parsed value.
 
 >>> st = Struct(
 ...     "type" / Enum(Byte, INT1=1, INT2=2, INT4=3, STRING=4),
@@ -171,34 +110,53 @@ Container(type='INT2')(data=255)
 >>> st.parse(b"\x04\abcdef\x00\x00\x00\x00")
 Container(type='STRING')(data=b'\x07bcdef')
 
-When the key is not found in the switching table, and a default construct is not given, an exception is raised (SwitchError). In order to specify a default construct, set default (a keyword argument) when creating the Switch. Note that default is a construct, not a value.
+
+
+Using `len_` expreession
+============================
+
+There used to be a bit of a hassle when you used built-in functions like `len sum min max` on context items. Built-in `len` takes a list and returns an integer but `len_` analog takes a lambda and returns a lambda. This allows you to use this kind of shorthand:
+
+>>> len_(this.items)
+...
+>>> lambda ctx: len(ctx.items)
+
+These can be used in newly added Rebuild wrappers that compute count/length fields from another list-alike field:
 
 >>> st = Struct(
-...     "type" / Byte,
-...     "data" / Switch(this.type, {
-...         1 : Int8ul,
-...         2 : Int8sl,
-...     }, default = Int8ul),
+...     "count" / Rebuild(Byte, len_(this.items)),
+...     "items" / Byte[this.count],
 ... )
->>> st.parse(b"\xff\x01")
-Container(type=255)(data=1)
+>>> st.build(dict(items=[1,2,3,4,5]))
+b'\x05\x01\x02\x03\x04\x05'
 
-When you want to ignore/skip errors, you can use the Pass construct, which is a no-op construct. Pass will simply return None, without reading anything from the stream. Pass will also not put anything into the stream.
 
->>> st = Struct(
-...     "type" / Byte,
-...     "data" / Switch(this.type, {
-...         1 : Int8ul,
-...         2 : Int8sl,
-...     }, default = Pass),
-... )
->>> st.parse(b"??????")
-Container(type=63)(data=None)
+
+Using `obj_` expression (outdated)
+============================
+
+There is also an analog that takes both (obj, context) unlike the `this` singleton which only takes a context:
+
+>>> obj_ > 0
+...
+>>> lambda obj,ctx: obj > 0
+
+These can be used in at least one construct:
+
+>>> RepeatUntil(obj_ == 0, Byte).parse(b"aioweqnjkscs\x00")
+[97, 105, 111, 119, 101, 113, 110, 106, 107, 115, 99, 115, 0]
+
+
+
+Using `lst_` expreession (outdated)
+============================
+
+TBA
 
 
 
 Known deficiencies
-==================
+============================
 
 Logical ``and or not`` operators cannot be used in this expressions. You have to either use a lambda or equivalent bitwise operators:
 

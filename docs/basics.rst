@@ -221,11 +221,11 @@ GreedyRange is essentially a Range from 0 to 2**64.
 >>> Byte[:].min
 0
 >>> Byte[:].max
-9223372036854775807
+18446744073709551616
 
 RepeatUntil is different than the others. Each element is tested by a lambda predicate. The predicate signals when a given element is the terminal element. The repeater inserts all previous items along with the terminal one, and returns just the same.
 
-Note that all elements accumulated during parsing are provided as additional lambda parameter.
+Note that all elements accumulated during parsing are provided as additional lambda parameter (second in order).
 
 >>> RepeatUntil(lambda obj,lst,ctx: obj > 10, Byte).parse(b"\x01\x05\x08\xff\x01\x02\x03")
 [1, 5, 8, 255]
