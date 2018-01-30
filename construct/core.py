@@ -1992,9 +1992,11 @@ class Range(Subconstruct):
         raise SizeofError("cannot calculate size, unless element count and size is fixed")
 
     def _compileparse(self, code):
-        if not self.min == self.max:
-            raise NotImplementedError("Range compiles only for Array instances")
-        return "ListContainer((%s) for i in range(%s))" % (self.subcon._compileparse(code), self.max)
+        cname = "decompiled_%s" % code.allocateId()
+        code.append("""
+            %s = Range(%s, %s, %s)
+        """ % (cname, self.min, self.max, code.decompile(self.subcon), ))
+        return code.defer(cname)
 
 
 def GreedyRange(subcon):

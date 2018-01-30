@@ -32,8 +32,12 @@ class TestCompile(unittest.TestCase):
             "struct" / Struct("field" / Byte),
             "sequence1" / Sequence(Byte, Byte),
             "sequence2" / Sequence("num1" / Byte, "num2" / Byte),
+
             "array1" / Array(5, Byte),
             "array2" / Array(this.num, Byte),
+            "range1" / Range(0, 5, Byte),
+            "greedyrange0" / Prefixed(Byte, GreedyRange(Byte)),
+            # RepeatUntil
 
             "const1" / Const(bytes(4)),
             "const2" / Const(0, Int32ub),
