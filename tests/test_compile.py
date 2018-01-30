@@ -66,6 +66,8 @@ class TestCompile(unittest.TestCase):
             "pass1" / Pass,
             "terminated0" / Prefixed(Byte, Terminated),
 
+            "rawcopy1" / RawCopy(Byte),
+            "rawcopy2" / RawCopy(RawCopy(RawCopy(Byte))),
             "bytesswapped" / ByteSwapped(BytesInteger(8)),
             "bitsswapped" / BitsSwapped(BytesInteger(8)),
             "prefixed" / Prefixed(Byte, GreedyBytes),

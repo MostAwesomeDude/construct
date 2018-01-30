@@ -125,7 +125,14 @@ class CodeGen:
         self.blocks.append("")
 
     def defer(self, name):
-        return "%s._parse(io, None, None)" % name
+        return "%s._parse(io, this, None)" % name
+
+    def decompile(self, con):
+        cname = "decompiled_%s" % self.allocateId()
+        self.append("""
+            %s = Decompiled(lambda io,this: %s)
+        """ % (cname, con._compileparse(self), ))
+        return cname
 
     def toString(self):
         return "\n".join(self.blocks)
@@ -591,6 +598,18 @@ class CompilableMacro(Subconstruct):
 
     def _compilebuild(self, code):
         raise NotImplementedError
+
+
+class Decompiled(Construct):
+    """Used internally."""
+    __slots__ = ["parsefunc"]
+
+    def __init__(self, parsefunc):
+        super(Decompiled, self).__init__()
+        self.parsefunc = parsefunc
+
+    def _parse(self, stream, context, path):
+        return self.parsefunc(stream, context)
 
 
 #===============================================================================
@@ -3542,6 +3561,7 @@ class RawCopy(Subconstruct):
         >>> d.build(dict(value=255))
         '\xff'
     """
+
     def _parse(self, stream, context, path):
         offset1 = _tell_stream(stream)
         obj = self.subcon._parse(stream, context, path)
@@ -3549,6 +3569,7 @@ class RawCopy(Subconstruct):
         _seek_stream(stream, offset1)
         data = _read_stream(stream, offset2-offset1)
         return Container(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
+
     def _build(self, obj, stream, context, path):
         if 'data' in obj:
             data = obj['data']
@@ -3566,6 +3587,13 @@ class RawCopy(Subconstruct):
             data = _read_stream(stream, offset2-offset1)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         raise RawCopyError('RawCopy cannot build, both data and value keys are missing')
+
+    def _compileparse(self, code):
+        cname = "decompiled_%s" % code.allocateId()
+        code.append("""
+            %s = RawCopy(%s)
+        """ % (cname, code.decompile(self.subcon), ))
+        return code.defer(cname)
 
 
 def ByteSwapped(subcon):

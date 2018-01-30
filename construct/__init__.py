@@ -68,6 +68,7 @@ __all__ = [
     'Container',
     'CString',
     'Debugger',
+    'Decompiled',
     'Default',
     'Double',
     'Embedded',

@@ -17,7 +17,7 @@ All constructs: `parse build sizeof` methods take context entries ONLY as keywor
 
 All constructs: `compile benchmark testcompiled` methods were added (see `this chapter <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
 
-Compiled CompilableMacro added (used internally)
+Compiled CompilableMacro Decompiled added (used internally)
 
 String* classes require explicit encoding (see `this page <https://construct.readthedocs.io/en/latest/api/strings.html>`_)
 
