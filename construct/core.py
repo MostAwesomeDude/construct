@@ -959,7 +959,7 @@ class BitsInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = _read_stream(stream, length)
         if self.swapped:
-            if length % 8:
+            if length & 7:
                 raise IntegerError("little-endianness is only defined for multiples of 8 bits")
             data = swapbytes(data)
         return bits2integer(data, self.signed)
@@ -972,7 +972,7 @@ class BitsInteger(Construct):
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bits(obj, length)
         if self.swapped:
-            if length % 8:
+            if length & 7:
                 raise IntegerError("little-endianness is only defined for multiples of 8 bits")
             data = swapbytes(data)
         _write_stream(stream, len(data), data)

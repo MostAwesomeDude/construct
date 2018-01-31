@@ -1,5 +1,5 @@
 from declarativeunittest import *
-from construct import *
+from construct.lib.bitstream import *
 
 
 class TestBitstream(unittest.TestCase):
