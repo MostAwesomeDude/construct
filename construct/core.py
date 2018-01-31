@@ -4590,7 +4590,7 @@ def Hex(subcon):
     """
     return ExprAdapter(subcon,
         encoder = lambda obj,ctx: None if subcon.flagbuildnone else binascii.unhexlify(obj),
-        decoder = lambda obj,ctx: binascii.hexlify(obj),
+        decoder = lambda obj,ctx: None if obj is None else binascii.hexlify(obj),
     )
 
 
@@ -4608,7 +4608,7 @@ def HexDump(subcon, linesize=16):
     """
     return ExprAdapter(subcon,
         encoder = lambda obj,ctx: None if subcon.flagbuildnone else hexundump(obj, linesize=linesize),
-        decoder = lambda obj,ctx: hexdump(obj, linesize=linesize),
+        decoder = lambda obj,ctx: None if obj is None else hexdump(obj, linesize=linesize),
     )
 
 
