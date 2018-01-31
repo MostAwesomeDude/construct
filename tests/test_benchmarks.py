@@ -5,7 +5,6 @@ from construct import *
 from construct.lib import *
 
 
-
 def test_bytes_parse(benchmark):
     d = Bytes(100)
     benchmark(d.parse, bytes(100))

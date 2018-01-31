@@ -1,7 +1,6 @@
-import unittest
-from declarativeunittest import raises
-
+from declarativeunittest import *
 from construct import *
+from construct.lib import *
 
 
 class TestSearch(unittest.TestCase):

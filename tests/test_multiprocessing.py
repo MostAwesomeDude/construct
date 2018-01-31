@@ -1,16 +1,12 @@
-import unittest, pytest, os
-from declarativeunittest import raises
-ontravis = 'TRAVIS' in os.environ
-
+from declarativeunittest import *
 from construct import *
 from construct.lib import *
-
-import multiprocessing
 
 
 class TestMultiprocessing(unittest.TestCase):
 
     def test_it(self):
+        import multiprocessing
 
         def worker(q):
             obj = q.get()
