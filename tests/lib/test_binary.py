@@ -50,10 +50,9 @@ class TestBinary(unittest.TestCase):
         assert raises(bits2bytes, b"\x00\x00\x00\x00\x00\x00\x00") == ValueError
 
     def test_swapbytes(self):
-        assert swapbytes(b"aaaabbbbcccc", 4) == b"ccccbbbbaaaa"
-        assert swapbytes(b"abcdefgh", 2) == b"ghefcdab"
-        assert swapbytes(b"00011011", 2) == b"11100100"
-        assert swapbytes(b"", 2) == b""
-        assert raises(swapbytes, b"12345678", 7) == ValueError
-        assert raises(swapbytes, b"12345678", -4) == ValueError
+        assert swapbytes(b"0000000011111111") == b"1111111100000000"
+        assert swapbytes(b"") == b""
+        assert raises(swapbytes, b"1") == ValueError
 
+    def test_swapbits(self):
+        assert swapbits(b'\xf0') == b'\x0f'

@@ -47,10 +47,10 @@ def integer2bytes(number, width):
     return b"".join(acc)
 
 
-D = {b"0":0, b"\x00":0, b"1":1, b"\x01":1}
+ONEBIT2INTEGER_CACHE = {b"0":0, b"\x00":0, b"1":1, b"\x01":1}
 def onebit2integer(b):
     try:
-        return D[b]
+        return ONEBIT2INTEGER_CACHE[b]
     except KeyError:
         raise ValueError(r"bit was not recognized as one of: 0 1 \x00 \x01")
 
@@ -97,6 +97,7 @@ def bytes2integer(data, signed=False):
         return number
 
 
+BYTES2BITS_CACHE = {i:integer2bits(i,8) for i in range(256)}
 def bytes2bits(data):
     r""" 
     Converts between bit and byte representations in b-strings.
@@ -106,9 +107,10 @@ def bytes2bits(data):
         >>> bytes2bits(b'ab')
         b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
     """
-    return b"".join(integer2bits(c,8) for c in iterateints(data))
+    return b"".join(BYTES2BITS_CACHE[b] for b in iterateints(data))
 
 
+BITS2BYTES_CACHE = {bytes2bits(int2byte(i)):int2byte(i) for i in range(256)}
 def bits2bytes(data):
     r""" 
     Converts between bit and byte representations in b-strings.
@@ -120,27 +122,31 @@ def bits2bytes(data):
     """
     if len(data) & 7:
         raise ValueError("data length must be a multiple of 8")
-    return b"".join(int2byte(bits2integer(data[i:i+8])) for i in range(0,len(data),8))
+    return b"".join(BITS2BYTES_CACHE[data[i:i+8]] for i in range(0,len(data),8))
 
 
-def swapbytes(data, linesize=8):
+def swapbytes(data):
     r"""
-    Performs an endianness swap on a b-string.
+    Performs an endianness swap on a bit-string bytes. Its length must be multiple of 8.
 
     Example:
 
-        >>> swapbytes(b'00011011', 2)
-        b'11100100'
-        >>> swapbytes(b'0000000011111111', 8)
+        >>> swapbytes(b'0000000011111111')
         b'1111111100000000'
     """
-    if len(data) % linesize:
-        raise ValueError("data length must be multiple of linesize")
-    if linesize < 1:
-        raise ValueError("linesize must be a positive number")
-    return b"".join(data[i:i+linesize] for i in reversed(range(0,len(data),linesize)))
+    if len(data) & 7:
+        raise ValueError("data length must be multiple of 8")
+    return b"".join(data[i:i+8] for i in reversed(range(0,len(data),8)))
 
 
-S = {int2byte(i):bits2bytes(bytes2bits(int2byte(i))[::-1]) for i in range(256)}
+SWAPBITS_CACHE = {i:bits2bytes(bytes2bits(int2byte(i))[::-1]) for i in range(256)}
 def swapbits(data):
-    return b"".join(S[b] for b in iteratebytes(data))
+    r"""
+    Performs a bit-reversal on bytes.
+
+    Example:
+
+        >>> swapbits(b'\xf0')
+        b'\x0f'
+    """
+    return b"".join(SWAPBITS_CACHE[b] for b in iterateints(data))
