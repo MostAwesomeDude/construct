@@ -4,9 +4,9 @@ from sys import maxsize
 
 
 class RestreamedBytesIO(object):
-    __slots__ = ["substream", "encoder", "encoderunit", "decoder", "decoderunit", "rbuffer", "wbuffer", "sincereadwritten"]
+    __slots__ = ["substream", "decoder", "decoderunit", "encoder", "encoderunit", "rbuffer", "wbuffer", "sincereadwritten"]
 
-    def __init__(self, substream, encoder, encoderunit, decoder, decoderunit):
+    def __init__(self, substream, decoder, decoderunit, encoder, encoderunit):
         self.substream = substream
         self.encoder = encoder
         self.encoderunit = encoderunit

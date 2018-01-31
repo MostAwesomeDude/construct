@@ -798,8 +798,8 @@ class TestCore(unittest.TestCase):
         assert Restreamed(Int16ub, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
         assert Restreamed(Int16ub, ident, 1, ident, 1, ident).sizeof() == 2
         assert raises(Restreamed(VarInt, ident, 1, ident, 1, ident).sizeof) == SizeofError
-        assert Restreamed(Bytes(2), None, None, lambda b: b*2, 1, None).parse(b"a") == b"aa"
-        assert Restreamed(Bytes(1), lambda b: b*2, 1, None, None, None).build(b"a") == b"aa"
+        assert Restreamed(Bytes(2), lambda b: b*2, 1, None, None, None).parse(b"a") == b"aa"
+        assert Restreamed(Bytes(1), None, None, lambda b: b*2, 1, None).build(b"a") == b"aa"
         assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
 
     def test_restreamed_partial_read(self):
@@ -1064,12 +1064,12 @@ class TestCore(unittest.TestCase):
             "next" / LazyBound(lambda ctx: Node), )
 
     def test_expradapter(self):
-        MulDiv = ExprAdapter(Byte, obj_ // 7, obj_ * 7)
+        MulDiv = ExprAdapter(Byte, obj_ * 7, obj_ // 7)
         assert MulDiv.parse(b"\x06") == 42
         assert MulDiv.build(42) == b"\x06"
         assert MulDiv.sizeof() == 1
 
-        Ident = ExprAdapter(Byte, obj_+1, obj_-1)
+        Ident = ExprAdapter(Byte, obj_-1, obj_+1)
         assert Ident.parse(b"\x02") == 1
         assert Ident.build(1) == b"\x02"
         assert Ident.sizeof() == 1

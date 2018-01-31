@@ -13,8 +13,8 @@ from construct.lib import *
 #===============================================================================
 
 MacAddress = ExprAdapter(Byte[6],
-    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split("-")],
     decoder = lambda obj,ctx: "-".join("%02x" % b for b in obj),
+    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split("-")],
 )
 
 ethernet_header = Struct(
@@ -114,8 +114,8 @@ mtp2_header = BitStruct(
 #===============================================================================
 
 IpAddress = ExprAdapter(Byte[4],
-    encoder = lambda obj,ctx: [int(x) for x in obj.split(".")],
     decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj),
+    encoder = lambda obj,ctx: [int(x) for x in obj.split(".")],
 )
 
 ProtocolEnum = Enum(Int8ub,
@@ -167,8 +167,8 @@ ProtocolEnum = Enum(Int8ub,
 )
 
 Ipv6Address = ExprAdapter(Byte[16],
-    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split(":")],
     decoder = lambda obj,ctx: ":".join("%02x" % b for b in obj),
+    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split(":")],
 )
 
 ipv6_header = Struct(

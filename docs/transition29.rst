@@ -29,6 +29,8 @@ If IfThenElse renamed `predicate` parameter to `condfunc`
 
 RestreamData added
 
+ExprAdapter Restreamed Mapping* classes changed parameters order (decoders before endcoders)
+
 HexString removed
 
 

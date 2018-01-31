@@ -756,7 +756,7 @@ def Bitwise(subcon):
         >>> d.sizeof()
         1
     """
-    macro = Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
+    macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
     def _emitparse(self, code):
         return "restream(bytes2bits(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof()//8, subcon._compileparse(code), )
     return CompilableMacro(macro, _emitparse)
@@ -790,7 +790,7 @@ def Bytewise(subcon):
         >>> d.sizeof()
         1
     """
-    macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
+    macro = Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n*8)
     def _emitparse(self, code):
         return "restream(bits2bytes(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof()*8, subcon._compileparse(code), )
     return CompilableMacro(macro, _emitparse)
@@ -1422,8 +1422,8 @@ def CString(terminators=b"\x00", encoding=None):
     return StringEncoded(
         ExprAdapter(
             RepeatUntil(lambda obj,lst,ctx: int2byte(obj) in terminators, Byte),
-            encoder = lambda obj,ctx: iterateints(obj+terminators),
-            decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1])),
+            decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1]),
+            encoder = lambda obj,ctx: iterateints(obj+terminators), ),
         encoding)
 
 
@@ -1573,6 +1573,12 @@ class FlagsEnum(Adapter):
         super(FlagsEnum, self).__init__(subcon)
         self.flags = flags
 
+    def _decode(self, obj, context):
+        obj2 = FlagsContainer()
+        for name,value in self.flags.items():
+            obj2[name] = bool(obj & value)
+        return obj2
+
     def _encode(self, obj, context):
         try:
             flags = 0
@@ -1584,12 +1590,6 @@ class FlagsEnum(Adapter):
             raise MappingError("building failed, object is not a dictionary: %r" % (obj,))
         except KeyError:
             raise MappingError("building failed, unknown flag: %s" % (name,))
-
-    def _decode(self, obj, context):
-        obj2 = FlagsContainer()
-        for name,value in self.flags.items():
-            obj2[name] = bool(obj & value)
-        return obj2
 
 
 class Mapping(Adapter):
@@ -1609,21 +1609,14 @@ class Mapping(Adapter):
         ???
     """
     __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
+
     def __init__(self, subcon, decoding, encoding, decdefault=NotImplemented, encdefault=NotImplemented):
         super(Mapping, self).__init__(subcon)
         self.decoding = decoding
         self.encoding = encoding
         self.decdefault = decdefault
         self.encdefault = encdefault
-    def _encode(self, obj, context):
-        try:
-            return self.encoding[obj]
-        except (KeyError, TypeError):
-            if self.encdefault is NotImplemented:
-                raise MappingError("building failed, no encoding mapping for %r" % (obj,))
-            if self.encdefault is Pass:
-                return obj
-            return self.encdefault
+
     def _decode(self, obj, context):
         try:
             return self.decoding[obj]
@@ -1633,6 +1626,16 @@ class Mapping(Adapter):
             if self.decdefault is Pass:
                 return obj
             return self.decdefault
+
+    def _encode(self, obj, context):
+        try:
+            return self.encoding[obj]
+        except (KeyError, TypeError):
+            if self.encdefault is NotImplemented:
+                raise MappingError("building failed, no encoding mapping for %r" % (obj,))
+            if self.encdefault is Pass:
+                return obj
+            return self.encdefault
 
 
 def SymmetricMapping(subcon, mapping, default=NotImplemented):
@@ -1650,10 +1653,10 @@ def SymmetricMapping(subcon, mapping, default=NotImplemented):
         ???
     """
     return Mapping(subcon,
-        encoding = mapping,
         decoding = dict((v,k) for k,v in mapping.items()),
-        encdefault = default,
+        encoding = mapping,
         decdefault = default,
+        encdefault = default,
     )
 
 
@@ -3677,25 +3680,24 @@ class Restreamed(Subconstruct):
         Bitwise  <--> Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
         Bytewise <--> Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
     """
+    __slots__ = ["decoder", "decoderunit", "encoder", "encoderunit", "sizecomputer"]
 
-    __slots__ = ["sizecomputer", "encoder", "encoderunit", "decoder", "decoderunit"]
-
-    def __init__(self, subcon, encoder, encoderunit, decoder, decoderunit, sizecomputer):
+    def __init__(self, subcon, decoder, decoderunit, encoder, encoderunit, sizecomputer):
         super(Restreamed, self).__init__(subcon)
-        self.encoder = encoder
-        self.encoderunit = encoderunit
         self.decoder = decoder
         self.decoderunit = decoderunit
+        self.encoder = encoder
+        self.encoderunit = encoderunit
         self.sizecomputer = sizecomputer
 
     def _parse(self, stream, context, path):
-        stream2 = RestreamedBytesIO(stream, self.encoder, self.encoderunit, self.decoder, self.decoderunit)
+        stream2 = RestreamedBytesIO(stream, self.decoder, self.decoderunit, self.encoder, self.encoderunit)
         obj = self.subcon._parse(stream2, context, path)
         stream2.close()
         return obj
 
     def _build(self, obj, stream, context, path):
-        stream2 = RestreamedBytesIO(stream, self.encoder, self.encoderunit, self.decoder, self.decoderunit)
+        stream2 = RestreamedBytesIO(stream, self.decoder, self.decoderunit, self.encoder, self.encoderunit)
         buildret = self.subcon._build(obj, stream2, context, path)
         stream2.close()
         return buildret
@@ -4344,6 +4346,7 @@ class OnDemand(Subconstruct):
         >>> d.build(_)
         b'\xff'
     """
+
     def _parse(self, stream, context, path):
         offset = _tell_stream(stream)
         _seek_stream(stream, self.subcon._sizeof(context, path), 1)
@@ -4357,6 +4360,7 @@ class OnDemand(Subconstruct):
                 cache["value"] = obj
             return cache["value"]
         return effectuate
+
     def _build(self, obj, stream, context, path):
         obj = obj() if callable(obj) else obj
         return self.subcon._build(obj, stream, context, path)
@@ -4388,13 +4392,17 @@ class LazyBound(Construct):
                     next = None
     """
     __slots__ = ["subconfunc"]
+
     def __init__(self, subconfunc):
         super(LazyBound, self).__init__()
         self.subconfunc = subconfunc
+
     def _parse(self, stream, context, path):
         return self.subconfunc(context)._parse(stream, context, path)
+
     def _build(self, obj, stream, context, path):
         return self.subconfunc(context)._build(obj, stream, context, path)
+
     def _sizeof(self, context, path):
         try:
             return self.subconfunc(context)._sizeof(context, path)
@@ -4420,12 +4428,12 @@ class ExprAdapter(Adapter):
             encoder = lambda x,ctx: x+1,
             decoder = lambda x,ctx: x-1 )
     """
-    __slots__ = ["_encode", "_decode"]
-    def __init__(self, subcon, encoder, decoder):
+    __slots__ = ["_decode","_encode"]
+    def __init__(self, subcon, decoder, encoder):
         super(ExprAdapter, self).__init__(subcon)
         ident = lambda obj,ctx: obj
-        self._encode = encoder if callable(encoder) else ident
         self._decode = decoder if callable(decoder) else ident
+        self._encode = encoder if callable(encoder) else ident
 
 
 class ExprSymmetricAdapter(ExprAdapter):
@@ -4445,8 +4453,8 @@ class ExprSymmetricAdapter(ExprAdapter):
     def __init__(self, subcon, encoder):
         super(ExprAdapter, self).__init__(subcon)
         ident = lambda obj,ctx: obj
+        self._decode = encoder if callable(encoder) else ident
         self._encode = encoder if callable(encoder) else ident
-        self._decode = self._encode
 
 
 class ExprValidator(Validator):
@@ -4546,6 +4554,8 @@ class Slicing(Adapter):
         self.stop = stop
         self.step = step
         self.empty = empty
+    def _decode(self, obj, context):
+        return obj[self.start:self.stop:self.step]
     def _encode(self, obj, context):
         if self.start is None:
             return obj
@@ -4556,8 +4566,6 @@ class Slicing(Adapter):
             output = [self.empty] * self.count
             output[self.start:self.stop:self.step] = obj
         return output
-    def _decode(self, obj, context):
-        return obj[self.start:self.stop:self.step]
 
 
 class Indexing(Adapter):
@@ -4579,12 +4587,12 @@ class Indexing(Adapter):
         self.count = count
         self.index = index
         self.empty = empty
+    def _decode(self, obj, context):
+        return obj[self.index]
     def _encode(self, obj, context):
         output = [self.empty] * self.count
         output[self.index] = obj
         return output
-    def _decode(self, obj, context):
-        return obj[self.index]
 
 
 def Hex(subcon):
@@ -4600,8 +4608,8 @@ def Hex(subcon):
         b'\x01\x02\x03\x04'
     """
     return ExprAdapter(subcon,
-        encoder = lambda obj,ctx: None if subcon.flagbuildnone else binascii.unhexlify(obj),
         decoder = lambda obj,ctx: None if obj is None else binascii.hexlify(obj),
+        encoder = lambda obj,ctx: None if subcon.flagbuildnone else binascii.unhexlify(obj),
     )
 
 
@@ -4618,8 +4626,8 @@ def HexDump(subcon, linesize=16):
         '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/       \n'
     """
     return ExprAdapter(subcon,
-        encoder = lambda obj,ctx: None if subcon.flagbuildnone else hexundump(obj, linesize=linesize),
         decoder = lambda obj,ctx: None if obj is None else hexdump(obj, linesize=linesize),
+        encoder = lambda obj,ctx: None if subcon.flagbuildnone else hexundump(obj, linesize=linesize),
     )
 
 
