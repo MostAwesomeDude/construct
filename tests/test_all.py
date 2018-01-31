@@ -170,6 +170,137 @@ class TestCore(unittest.TestCase):
         assert raises(VarInt.parse, b"") == StreamError
         assert raises(VarInt.build, -1) == IntegerError
 
+    def test_string(self):
+        assert raises(lambda: String(5).parse(b"hello")) == StringError
+        assert raises(lambda: String(5).build(u"hello")) == StringError
+        assert raises(lambda: String(5).sizeof()) == None # StringEncoded does not affext sizeof
+
+        assert String(5, encoding=StringsAsBytes).parse(b"hello") == b"hello"
+        assert String(5, encoding=StringsAsBytes).build(b"hello") == b"hello"
+        assert raises(String(5, encoding=StringsAsBytes).parse, b"") == StreamError
+        assert String(5, encoding=StringsAsBytes).build(b"") == b"\x00\x00\x00\x00\x00"
+        assert String(12, encoding="utf8").parse(b"hello joh\xd4\x83n") == u"hello joh\u0503n"
+        assert String(12, encoding="utf8").build(u"hello joh\u0503n") == b"hello joh\xd4\x83n"
+        assert String(12, encoding="utf8").sizeof() == 12
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="right").parse(b"helloXXXXX") == b"hello"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="left").parse(b"XXXXXhello") == b"hello"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="center").parse(b"XXhelloXXX") == b"hello"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="right").build(b"hello") == b"helloXXXXX"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="left").build(b"hello") == b"XXXXXhello"
+        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="center").build(b"hello") == b"XXhelloXXX"
+        assert raises(String, 10, encoding="utf8", padchar=u"X") == StringError
+        assert String(5, encoding=StringsAsBytes, trimdir="right").build(b"1234567890") == b"12345"
+        assert String(5, encoding=StringsAsBytes, trimdir="left").build(b"1234567890") == b"67890"
+        assert String(5, encoding="utf8", padchar=b"X", paddir="left").sizeof() == 5
+        assert String(5, encoding=StringsAsBytes).sizeof() == 5
+
+    def test_pascalstring(self):
+        setglobalstringencoding(StringsAsBytes)
+        common(PascalString(Byte), b"\x05hello", b"hello")
+        common(PascalString(Byte, encoding="utf8"), b"\x05hello", u"hello")
+        common(PascalString(Int16ub), b"\x00\x05hello", b"hello")
+        common(PascalString(VarInt), b"\x05hello", b"hello")
+        common(PascalString(Byte), b"\x00", b"")
+        common(PascalString(Byte, encoding="utf8"), b"\x00", u"")
+        setglobalstringencoding(None)
+
+    def test_cstring(self):
+        setglobalstringencoding(StringsAsBytes)
+        assert CString().parse(b"hello\x00") == b"hello"
+        assert CString().build(b"hello") == b"hello\x00"
+        assert CString(encoding="utf8").parse(b"hello\x00") == u"hello"
+        assert CString(encoding="utf8").build(u"hello") == b"hello\x00"
+        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloX") == u"hello"
+        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloY") == u"hello"
+        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloZ") == u"hello"
+        assert CString(terminators=b"XYZ", encoding="utf8").build(u"hello") == b"helloX"
+        assert CString(encoding="utf16").build(u"hello") == b"\xff\xfeh\x00"
+        assert raises(CString(encoding="utf16").parse, b'\xff\xfeh\x00') == UnicodeDecodeError
+        assert raises(CString().sizeof) == SizeofError
+        setglobalstringencoding(None)
+
+    def test_greedystring(self):
+        setglobalstringencoding(StringsAsBytes)
+        assert GreedyString().parse(b"hello\x00") == b"hello\x00"
+        assert GreedyString().build(b"hello\x00") == b"hello\x00"
+        assert GreedyString().parse(b"") == b""
+        assert GreedyString().build(b"") == b""
+        assert GreedyString(encoding="utf8").parse(b"hello\x00") == u"hello\x00"
+        assert GreedyString(encoding="utf8").parse(b"") == u""
+        assert GreedyString(encoding="utf8").build(u"hello\x00") == b"hello\x00"
+        assert GreedyString(encoding="utf8").build(u"") == b""
+        assert raises(GreedyString().sizeof) == SizeofError
+        setglobalstringencoding(None)
+
+    def test_globally_encoded_strings(self):
+        setglobalstringencoding("utf8")
+        assert String(20).build(u"Афон") == String(20, encoding="utf8").build(u"Афон")
+        assert PascalString(VarInt).build(u"Афон") == PascalString(VarInt, encoding="utf8").build(u"Афон")
+        assert CString().build(u"Афон") == CString(encoding="utf8").build(u"Афон")
+        assert GreedyString().build(u"Афон") == GreedyString(encoding="utf8").build(u"Афон")
+        setglobalstringencoding(None)
+
+    @pytest.mark.xfail(raises=AssertionError, reason="CString cannot support UTF16/32")
+    def test_badly_encoded_strings_1(self):
+        assert CString(encoding="utf-16-le").build("abcd") == "abcd".encode("utf-16-le")
+
+    @pytest.mark.xfail(raises=UnicodeDecodeError, reason="CString cannot support UTF16/32")
+    def test_badly_encoded_strings_2(self):
+        s = "abcd".encode("utf-16-le") + b"\x00\x00"
+        CString(encoding="utf-16-le").parse(s)
+
+    def test_flag(self):
+        common(Flag, b"\x00", False, 1)
+        common(Flag, b"\x01", True, 1)
+
+    def test_enum(self):
+        # Pass default no longer tested
+        assert Enum(Byte, q=3,r=4,t=5).parse(b"\x04") == "r"
+        assert Enum(Byte, q=3,r=4,t=5).build("r") == b"\x04"
+        assert Enum(Byte, q=3,r=4,t=5).build(4) == b"\x04"
+        assert raises(Enum(Byte, q=3,r=4,t=5).parse, b"\xff") == MappingError
+        assert raises(Enum(Byte, q=3,r=4,t=5).build, "unknown") == MappingError
+        assert Enum(Byte, q=3,r=4,t=5, default=255).build("unknown") == b"\xff"
+        assert Enum(Byte, q=3,r=4,t=5).sizeof() == 1
+
+    def test_enum_issue_298(self):
+        # also tests Enum when default case value overlaps with another label's value
+        st = Struct(
+            "ctrl" / Enum(Byte,
+                NAK = 0x15,
+                STX = 0x02,
+                default = 0x02,
+            ),
+            "optional" / If(this.ctrl == "NAK", Byte),
+        )
+        common(st, b"\x15\xff", Container(ctrl='NAK')(optional=255))
+        common(st, b"\x02", Container(ctrl='STX')(optional=None))
+
+        # FlagsEnum is not affected by same bug
+        st = Struct(
+            "flags" / FlagsEnum(Byte, a=1),
+            Check(lambda ctx: ctx.flags == FlagsContainer(a=1)),
+        )
+        st.parse(b"\x01")
+        st.build(dict(flags=FlagsContainer(a=1)))
+
+        # Flag is not affected by same bug
+        st = Struct(
+            "flag" / Flag,
+            Check(lambda ctx: ctx.flag == True),
+        )
+        st.parse(b"\x01")
+        st.build(dict(flag=True))
+
+    def test_flagsenum(self):
+        assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
+        assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).build(FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)) == b'\x81'
+        assert FlagsEnum(Byte, feature=4,output=2,input=1).parse(b'\x04') == FlagsContainer(output=False,feature=True,input=False)
+        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True, output=True, input=False)) == b'\x06'
+        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True)) == b'\x04'
+        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict()) == b'\x00'
+        assert raises(FlagsEnum(Byte, feature=4,output=2,input=1).build, dict(unknown=True)) == MappingError
+
     def test_struct(self):
         common(Struct("a"/Int16ul, "b"/Byte), b"\x01\x00\x02", Container(a=1,b=2), 3)
         common(Struct("a"/Struct("b"/Byte)), b"\x01", Container(a=Container(b=1)), 1)
@@ -327,10 +458,9 @@ class TestCore(unittest.TestCase):
         common(Struct(sig=Const(b"MZ")), b"MZ", Container(sig=b"MZ"), 2)
         assert Struct(sig=Const(b"MZ")).build({}) == b"MZ"
 
-    @pytest.mark.xfail(PY2, reason="non-prefixed string literals are unicode on Python 3")
     def test_const_nonbytes(self):
-        # fool-proofing
-        assert raises(lambda: Const("no prefix string")) == StringError
+        # non-prefixed string literals are unicode on Python 3
+        assert raises(lambda: Const(u"no prefix string")) == StringError
 
     def test_computed(self):
         assert Computed("moo").parse(b"") == "moo"
@@ -421,64 +551,6 @@ class TestCore(unittest.TestCase):
         assert Coord.parse(b"123") == coord(49,50,51)
         assert Coord.build(coord(49,50,51)) == b"123"
         assert Coord.sizeof() == 3
-
-    def test_padding(self):
-        common(Padding(4), b"\x00\x00\x00\x00", None, 4)
-        assert raises(Padding, 4, pattern=b"?????") == PaddingError
-        assert raises(Padding, 4, pattern=u"?") == PaddingError
-
-    def test_padded(self):
-        common(Padded(4, Byte), b"\x01\x00\x00\x00", 1, 4)
-        assert raises(Padded, 4, Byte, pattern=b"?????") == PaddingError
-        assert raises(Padded, 4, Byte, pattern=u"?") == PaddingError
-        assert Padded(4, VarInt).sizeof() == 4
-        assert Padded(4, Byte[this.missing]).sizeof() == 4
-
-    def test_aligned(self):
-        assert Aligned(4, Byte).parse(b"\x01\x00\x00\x00") == 1
-        assert Aligned(4, Byte).build(1) == b"\x01\x00\x00\x00"
-        assert Aligned(4, Byte).sizeof() == 4
-        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).parse(b"\x01\x00\x00\x00\x02") == Container(a=1)(b=2)
-        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x00\x00\x02"
-        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).sizeof() == 5
-        assert Aligned(4, Int8ub).build(1) == b"\x01\x00\x00\x00"
-        assert Aligned(4, Int16ub).build(1) == b"\x00\x01\x00\x00"
-        assert Aligned(4, Int32ub).build(1) == b"\x00\x00\x00\x01"
-        assert Aligned(4, Int64ub).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
-        assert Aligned(this.m, Byte).parse(b"\xff\x00", m=2) == 255
-        assert Aligned(this.m, Byte).build(255, m=2) == b"\xff\x00"
-        assert Aligned(this.m, Byte).sizeof(m=2) == 2
-        assert raises(Aligned(this.m, Byte).sizeof) == SizeofError
-
-    def test_alignedstruct(self):
-        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).parse(b"\x01\x00\x00\x00\x00\x05\x00\x00") == Container(a=1)(b=5)
-        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5)) == b"\x01\x00\x00\x00\x00\x05\x00\x00"
-
-    def test_bitstruct(self):
-        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).parse(b"\xe1\x1f") == Container(a=7)(b=False)(c=8)(d=31)
-        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).build(Container(a=7)(b=False)(c=8)(d=31)) == b"\xe1\x1f"
-        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).sizeof() == 2
-        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).parse(b"\xe1\x1f") == Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))
-        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof() == 2
-        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build(Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))) == b"\xe1\x1f"
-
-    def test_embeddedbitstruct(self):
-        d = Struct(
-            "len" / Byte,
-            EmbeddedBitStruct("data" / BitsInteger(8)),
-        )
-        assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
-        assert d.build(dict(len=8,data=255)) == b"\x08\xff"
-        assert d.sizeof() == 2
-
-    def test_bitstruct_from_issue_39(self):
-        d = Struct(
-            "len" / Byte,
-            EmbeddedBitStruct("data" / BitsInteger(this._.len)),
-        )
-        assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
-        assert d.build(dict(len=8,data=255)) == b"\x08\xff"
-        assert raises(d.sizeof) == SizeofError
 
     def test_union(self):
         assert Union(None, "a"/Bytes(2), "b"/Int16ub).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
@@ -612,6 +684,64 @@ class TestCore(unittest.TestCase):
         assert d.build([0]) == b"\x00"
         assert d.build([1]) == b"\x01"
         assert d.build([1,0,2]) == b"\x01\x00"
+
+    def test_padding(self):
+        common(Padding(4), b"\x00\x00\x00\x00", None, 4)
+        assert raises(Padding, 4, pattern=b"?????") == PaddingError
+        assert raises(Padding, 4, pattern=u"?") == PaddingError
+
+    def test_padded(self):
+        common(Padded(4, Byte), b"\x01\x00\x00\x00", 1, 4)
+        assert raises(Padded, 4, Byte, pattern=b"?????") == PaddingError
+        assert raises(Padded, 4, Byte, pattern=u"?") == PaddingError
+        assert Padded(4, VarInt).sizeof() == 4
+        assert Padded(4, Byte[this.missing]).sizeof() == 4
+
+    def test_aligned(self):
+        assert Aligned(4, Byte).parse(b"\x01\x00\x00\x00") == 1
+        assert Aligned(4, Byte).build(1) == b"\x01\x00\x00\x00"
+        assert Aligned(4, Byte).sizeof() == 4
+        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).parse(b"\x01\x00\x00\x00\x02") == Container(a=1)(b=2)
+        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x00\x00\x02"
+        assert Struct(Aligned(4, "a"/Byte), "b"/Byte).sizeof() == 5
+        assert Aligned(4, Int8ub).build(1) == b"\x01\x00\x00\x00"
+        assert Aligned(4, Int16ub).build(1) == b"\x00\x01\x00\x00"
+        assert Aligned(4, Int32ub).build(1) == b"\x00\x00\x00\x01"
+        assert Aligned(4, Int64ub).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
+        assert Aligned(this.m, Byte).parse(b"\xff\x00", m=2) == 255
+        assert Aligned(this.m, Byte).build(255, m=2) == b"\xff\x00"
+        assert Aligned(this.m, Byte).sizeof(m=2) == 2
+        assert raises(Aligned(this.m, Byte).sizeof) == SizeofError
+
+    def test_alignedstruct(self):
+        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).parse(b"\x01\x00\x00\x00\x00\x05\x00\x00") == Container(a=1)(b=5)
+        assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5)) == b"\x01\x00\x00\x00\x00\x05\x00\x00"
+
+    def test_bitstruct(self):
+        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).parse(b"\xe1\x1f") == Container(a=7)(b=False)(c=8)(d=31)
+        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).build(Container(a=7)(b=False)(c=8)(d=31)) == b"\xe1\x1f"
+        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).sizeof() == 2
+        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).parse(b"\xe1\x1f") == Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))
+        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof() == 2
+        assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build(Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))) == b"\xe1\x1f"
+
+    def test_embeddedbitstruct(self):
+        d = Struct(
+            "len" / Byte,
+            EmbeddedBitStruct("data" / BitsInteger(8)),
+        )
+        assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
+        assert d.build(dict(len=8,data=255)) == b"\x08\xff"
+        assert d.sizeof() == 2
+
+    def test_bitstruct_from_issue_39(self):
+        d = Struct(
+            "len" / Byte,
+            EmbeddedBitStruct("data" / BitsInteger(this._.len)),
+        )
+        assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
+        assert d.build(dict(len=8,data=255)) == b"\x08\xff"
+        assert raises(d.sizeof) == SizeofError
 
     def test_pointer(self):
         common(Pointer(2,             Byte), b"\x00\x00\x07", 7, SizeofError)
@@ -933,58 +1063,6 @@ class TestCore(unittest.TestCase):
             "value" / Int8ub,
             "next" / LazyBound(lambda ctx: Node), )
 
-    def test_flag(self):
-        common(Flag, b"\x00", False, 1)
-        common(Flag, b"\x01", True, 1)
-
-    def test_enum(self):
-        # Pass default no longer tested
-        assert Enum(Byte, q=3,r=4,t=5).parse(b"\x04") == "r"
-        assert Enum(Byte, q=3,r=4,t=5).build("r") == b"\x04"
-        assert Enum(Byte, q=3,r=4,t=5).build(4) == b"\x04"
-        assert raises(Enum(Byte, q=3,r=4,t=5).parse, b"\xff") == MappingError
-        assert raises(Enum(Byte, q=3,r=4,t=5).build, "unknown") == MappingError
-        assert Enum(Byte, q=3,r=4,t=5, default=255).build("unknown") == b"\xff"
-        assert Enum(Byte, q=3,r=4,t=5).sizeof() == 1
-
-    def test_enum_issue_298(self):
-        # also tests Enum when default case value overlaps with another label's value
-        st = Struct(
-            "ctrl" / Enum(Byte,
-                NAK = 0x15,
-                STX = 0x02,
-                default = 0x02,
-            ),
-            "optional" / If(this.ctrl == "NAK", Byte),
-        )
-        common(st, b"\x15\xff", Container(ctrl='NAK')(optional=255))
-        common(st, b"\x02", Container(ctrl='STX')(optional=None))
-
-        # FlagsEnum is not affected by same bug
-        st = Struct(
-            "flags" / FlagsEnum(Byte, a=1),
-            Check(lambda ctx: ctx.flags == FlagsContainer(a=1)),
-        )
-        st.parse(b"\x01")
-        st.build(dict(flags=FlagsContainer(a=1)))
-
-        # Flag is not affected by same bug
-        st = Struct(
-            "flag" / Flag,
-            Check(lambda ctx: ctx.flag == True),
-        )
-        st.parse(b"\x01")
-        st.build(dict(flag=True))
-
-    def test_flagsenum(self):
-        assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
-        assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).build(FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)) == b'\x81'
-        assert FlagsEnum(Byte, feature=4,output=2,input=1).parse(b'\x04') == FlagsContainer(output=False,feature=True,input=False)
-        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True, output=True, input=False)) == b'\x06'
-        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True)) == b'\x04'
-        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict()) == b'\x00'
-        assert raises(FlagsEnum(Byte, feature=4,output=2,input=1).build, dict(unknown=True)) == MappingError
-
     def test_expradapter(self):
         MulDiv = ExprAdapter(Byte, obj_ // 7, obj_ * 7)
         assert MulDiv.parse(b"\x06") == 42
@@ -1079,85 +1157,6 @@ class TestCore(unittest.TestCase):
         d = Struct(HexDump(Const(b"MZ")))
         assert d.parse(b"MZ") == Container()
         assert d.build(dict()) == b"MZ"
-
-    def test_string(self):
-        assert raises(lambda: String(5).parse(b"hello")) == StringError
-        assert raises(lambda: String(5).build(u"hello")) == StringError
-        assert raises(lambda: String(5).sizeof()) == None # StringEncoded does not affext sizeof
-
-        assert String(5, encoding=StringsAsBytes).parse(b"hello") == b"hello"
-        assert String(5, encoding=StringsAsBytes).build(b"hello") == b"hello"
-        assert raises(String(5, encoding=StringsAsBytes).parse, b"") == StreamError
-        assert String(5, encoding=StringsAsBytes).build(b"") == b"\x00\x00\x00\x00\x00"
-        assert String(12, encoding="utf8").parse(b"hello joh\xd4\x83n") == u"hello joh\u0503n"
-        assert String(12, encoding="utf8").build(u"hello joh\u0503n") == b"hello joh\xd4\x83n"
-        assert String(12, encoding="utf8").sizeof() == 12
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="right").parse(b"helloXXXXX") == b"hello"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="left").parse(b"XXXXXhello") == b"hello"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="center").parse(b"XXhelloXXX") == b"hello"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="right").build(b"hello") == b"helloXXXXX"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="left").build(b"hello") == b"XXXXXhello"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="center").build(b"hello") == b"XXhelloXXX"
-        assert raises(String, 10, encoding="utf8", padchar=u"X") == StringError
-        assert String(5, encoding=StringsAsBytes, trimdir="right").build(b"1234567890") == b"12345"
-        assert String(5, encoding=StringsAsBytes, trimdir="left").build(b"1234567890") == b"67890"
-        assert String(5, encoding="utf8", padchar=b"X", paddir="left").sizeof() == 5
-        assert String(5, encoding=StringsAsBytes).sizeof() == 5
-
-    def test_pascalstring(self):
-        setglobalstringencoding(StringsAsBytes)
-        common(PascalString(Byte), b"\x05hello", b"hello")
-        common(PascalString(Byte, encoding="utf8"), b"\x05hello", u"hello")
-        common(PascalString(Int16ub), b"\x00\x05hello", b"hello")
-        common(PascalString(VarInt), b"\x05hello", b"hello")
-        common(PascalString(Byte), b"\x00", b"")
-        common(PascalString(Byte, encoding="utf8"), b"\x00", u"")
-        setglobalstringencoding(None)
-
-    def test_cstring(self):
-        setglobalstringencoding(StringsAsBytes)
-        assert CString().parse(b"hello\x00") == b"hello"
-        assert CString().build(b"hello") == b"hello\x00"
-        assert CString(encoding="utf8").parse(b"hello\x00") == u"hello"
-        assert CString(encoding="utf8").build(u"hello") == b"hello\x00"
-        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloX") == u"hello"
-        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloY") == u"hello"
-        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloZ") == u"hello"
-        assert CString(terminators=b"XYZ", encoding="utf8").build(u"hello") == b"helloX"
-        assert CString(encoding="utf16").build(u"hello") == b"\xff\xfeh\x00"
-        assert raises(CString(encoding="utf16").parse, b'\xff\xfeh\x00') == UnicodeDecodeError
-        assert raises(CString().sizeof) == SizeofError
-        setglobalstringencoding(None)
-
-    def test_greedystring(self):
-        setglobalstringencoding(StringsAsBytes)
-        assert GreedyString().parse(b"hello\x00") == b"hello\x00"
-        assert GreedyString().build(b"hello\x00") == b"hello\x00"
-        assert GreedyString().parse(b"") == b""
-        assert GreedyString().build(b"") == b""
-        assert GreedyString(encoding="utf8").parse(b"hello\x00") == u"hello\x00"
-        assert GreedyString(encoding="utf8").parse(b"") == u""
-        assert GreedyString(encoding="utf8").build(u"hello\x00") == b"hello\x00"
-        assert GreedyString(encoding="utf8").build(u"") == b""
-        assert raises(GreedyString().sizeof) == SizeofError
-        setglobalstringencoding(None)
-
-    def test_globally_encoded_strings(self):
-        setglobalstringencoding("utf8")
-        assert String(20).build(u"Афон") == String(20, encoding="utf8").build(u"Афон")
-        assert PascalString(VarInt).build(u"Афон") == PascalString(VarInt, encoding="utf8").build(u"Афон")
-        assert CString().build(u"Афон") == CString(encoding="utf8").build(u"Афон")
-        assert GreedyString().build(u"Афон") == GreedyString(encoding="utf8").build(u"Афон")
-        setglobalstringencoding(None)
-
-    @pytest.mark.xfail(raises=AssertionError, reason="CString cannot support UTF16/32")
-    def test_badly_encoded_strings_1(self):
-        assert CString(encoding="utf-16-le").build("abcd") == "abcd".encode("utf-16-le")
-
-    @pytest.mark.xfail(raises=UnicodeDecodeError, reason="CString cannot support UTF16/32")
-    def test_badly_encoded_strings_2(self):
-        s = "abcd".encode("utf-16-le") + b"\x00\x00"
-        CString(encoding="utf-16-le").parse(s)
 
     def test_probe(self):
         Probe().parse(b"")
@@ -1462,4 +1461,3 @@ class TestCore(unittest.TestCase):
             assert FORMAT.parse(b'\x00').my_tell == 0
         for i in range(5):
             assert BIT_FORMAT.parse(b'\x00').my_tell == 0
-
