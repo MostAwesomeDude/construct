@@ -3107,7 +3107,7 @@ class Switch(Construct):
 
 class StopIf(Construct):
     r"""
-    Checks for a condition, and stops Struct Sequence Range from parsing or building further.
+    Checks for a condition, and stops certain classes (Struct Sequence Range FocusedSeq) from parsing or building further.
 
     Parsing and building check the condition, and raise StopIteration if indicated. Size is not defined.
 
@@ -3130,11 +3130,17 @@ class StopIf(Construct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        if self.condfunc(context):
+        condfunc = self.condfunc
+        if callable(condfunc):
+            condfunc = condfunc(context)
+        if condfunc:
             raise StopIteration
 
     def _build(self, obj, stream, context, path):
-        if self.condfunc(context):
+        condfunc = self.condfunc
+        if callable(condfunc):
+            condfunc = condfunc(context)
+        if condfunc:
             raise StopIteration
 
     def _sizeof(self, context, path):

@@ -593,23 +593,25 @@ class TestCore(unittest.TestCase):
         )
         assert st1.parse(b"") == st2.parse(b"")
 
-    @pytest.mark.xfail(reason="Struct.sizeof seems buggy?")
+    @pytest.mark.xfail(reason="unknown cause")
     def test_stopif(self):
-        st = Struct('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
-        common(st, b"\x00", Container(x=0))
-        common(st, b"\x01\x02", Container(x=1,y=2))
+        d = Struct("x"/Byte, StopIf(this.x == 0), Error)
+        common(d, b"\x00", Container(x=0))
+        common(d, b"\x01\x02", Container(x=1,y=2))
 
-        seq = Sequence('x'/Byte, StopIf(this.x == 0), 'y'/Byte)
-        common(seq, b"\x00", [0])
-        common(seq, b"\x01\x02", [1,None,2])
+        d = Sequence(Byte, StopIf(this.x == 0), Error)
+        common(d, b"\x00", [0])
+        common(d, b"\x01\x02", [1,None,2])
 
-        r = GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
-        assert r.parse(b"\x00???") == []
-        assert r.parse(b"\x01\x00???") == [1]
-        assert r.build([]) == b""
-        assert r.build([0]) == b"\x00"
-        assert r.build([1]) == b"\x01"
-        assert r.build([1,0,2]) == b"\x01\x00"
+        d = FocusedSeq(0, Byte, StopIf(this.x == 0), Error)
+        common(d, b"\x00", 0)
+
+        d = GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
+        assert d.parse(b"\x01\x00?????") == [1]
+        assert d.build([]) == b""
+        assert d.build([0]) == b"\x00"
+        assert d.build([1]) == b"\x01"
+        assert d.build([1,0,2]) == b"\x01\x00"
 
     def test_pointer(self):
         common(Pointer(2,             Byte), b"\x00\x00\x07", 7, SizeofError)
