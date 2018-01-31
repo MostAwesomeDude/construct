@@ -170,8 +170,13 @@ class Container(dict):
             return False
         if len(self) != len(other):
             return False
+        def isequal(v1, v2):
+            if v1.__class__.__name__ == "ndarray" or v2.__class__.__name__ == "ndarray":
+                import numpy
+                return numpy.array_equal(v1, v2)
+            return v1 == v2
         for k,v in self.items():
-            if k not in other or v != other[k]:
+            if k not in other or not isequal(v, other[k]):
                 return False
         return True
 
