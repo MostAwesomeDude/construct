@@ -112,10 +112,10 @@ Container(type='STRING')(data=b'\x07bcdef')
 
 
 
-Using `len_` expreession
+Using `len_` expression
 ============================
 
-There used to be a bit of a hassle when you used built-in functions like `len sum min max` on context items. Built-in `len` takes a list and returns an integer but `len_` analog takes a lambda and returns a lambda. This allows you to use this kind of shorthand:
+There used to be a bit of a hassle when you used built-in functions like `len sum min max abs` on context items. Built-in `len` takes a list and returns an integer but `len_` analog takes a lambda and returns a lambda. This allows you to use this kind of shorthand:
 
 >>> len_(this.items)
 ...
@@ -132,10 +132,10 @@ b'\x05\x01\x02\x03\x04\x05'
 
 
 
-Using `obj_` expression (outdated)
+Using `obj_` expression
 ============================
 
-There is also an analog that takes both (obj, context) unlike the `this` singleton which only takes a context:
+There is also an analog that takes (obj, context) or (obj, list, context) unlike `this` singleton which only takes a context (a single parameter):
 
 >>> obj_ > 0
 ...
@@ -148,17 +148,30 @@ These can be used in at least one construct:
 
 
 
-Using `lst_` expreession (outdated)
+Using `lst_` expression
 ============================
 
-TBA
+There is also a third expression that takes (obj, list, context) and computes on the second parameter (the list). In constructs that use lambdas with all 3 parameters, those constructs usually process lists of elements and the 2nd parameter ia a list of elements processed so far.
 
+These can be used in at least one construct: 
 
+>>> RepeatUntil(lst_[-1] == 0, Byte).parse(b"aioweqnjkscs\x00")
+[97, 105, 111, 119, 101, 113, 110, 106, 107, 115, 99, 115, 0]
+
+In that example, `lst_` gets substituted with following, at each iteration. Index -1 means last element:
+
+::
+
+    lst_ <- [97]
+    lst_ <- [97, 105]
+    lst_ <- [97, 105, 111]
+    lst_ <- [97, 105, 111, 119]
+    ...
 
 Known deficiencies
 ============================
 
-Logical ``and or not`` operators cannot be used in this expressions. You have to either use a lambda or equivalent bitwise operators:
+Logical ``and`` ``or`` ``not`` operators cannot be used in this expressions. You have to either use a lambda or equivalent bitwise operators:
 
 >>> ~this.flag1 | this.flag2 & this.flag3
 ...
@@ -167,3 +180,5 @@ Logical ``and or not`` operators cannot be used in this expressions. You have to
 Contains operator ``in`` cannot be used in this expressions, you have to use a lambda:
 
 >>> lambda ctx: ctx.value in (1, 2, 3)
+
+Lambdas (unlike this expressions) are not compilable.

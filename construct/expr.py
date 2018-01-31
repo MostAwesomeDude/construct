@@ -28,7 +28,6 @@ opnames = {
     operator.ne : "!=",
 }
 
-
 class ExprMixin(object):
     __slots__ = ()
     def __add__(self, other):
@@ -151,7 +150,6 @@ class Path(ExprMixin):
 
 this = Path("this")
 
-
 class FuncExpr(ExprMixin):
     def __init__(self, func, operand):
         self.func = func
@@ -175,7 +173,6 @@ sum_ = PathFunc(sum)
 min_ = PathFunc(min)
 max_ = PathFunc(max)
 abs_ = PathFunc(abs)
-
 
 class Path2(ExprMixin):
     def __init__(self, name=None, parent=None):
