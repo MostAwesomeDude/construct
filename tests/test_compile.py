@@ -25,6 +25,23 @@ class TestCompile(unittest.TestCase):
             "bitsinteger1" / Bitwise(BitsInteger(8, swapped=False)),
             "bitsinteger2" / Bitwise(BitsInteger(8, swapped=True)),
             "varint" / VarInt,
+            "byte" / Byte,
+            "float1" / Single,
+            "float2" / Double,
+
+            "string1" / String(10, encoding=StringsAsBytes),
+            "string2" / String(10, encoding="utf8"),
+            "pascalstring1" / PascalString(Byte, encoding=StringsAsBytes),
+            "pascalstring2" / PascalString(Byte, encoding="utf8"),
+            # CString
+            "greedystring1" / Prefixed(Byte, GreedyString(encoding=StringsAsBytes)),
+            "greedystring2" / Prefixed(Byte, GreedyString(encoding="utf8")),
+
+            "flag" / Flag,
+            # Enum
+            # FlagsEnum
+            # Mapping
+            # SymmetricMapping
 
             "struct" / Struct("field" / Byte),
             "sequence1" / Sequence(Byte, Byte),
@@ -52,20 +69,31 @@ class TestCompile(unittest.TestCase):
             "namedtuple2" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
             "namedtuple3" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
 
-            "padding" / Padding(2),
-            "paddedbyte" / Padded(4, Byte),
-            "alignedbyte" / Aligned(4, Byte),
-
             "union1" / Union(None, "char"/Byte),
             "union2" / Union(0, "char"/Byte),
             "union3" / Union("char", "char"/Byte),
+            # Select
+            # Optional
             "if1" / If(this.num == 0, Byte),
             "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
+            # Switch
+            # StopIf
 
+            "padding" / Padding(2),
+            "paddedbyte" / Padded(4, Byte),
+            "alignedbyte" / Aligned(4, Byte),
+            # AlignedStruct
+            # BitStruct
+            # EmbeddedBitStruct
+
+            # Pointer
+            # Peek
             "seek0" / Seek(0, 1),
             "tell" / Tell,
             "pass1" / Pass,
             "terminated0" / Prefixed(Byte, Terminated),
+            # Restreamed
+            # Rebuffered
 
             "rawcopy1" / RawCopy(Byte),
             "rawcopy2" / RawCopy(RawCopy(RawCopy(Byte))),
@@ -73,15 +101,17 @@ class TestCompile(unittest.TestCase):
             "bitsswapped" / BitsSwapped(BytesInteger(8)),
             "prefixed" / Prefixed(Byte, GreedyBytes),
             "prefixedarray" / PrefixedArray(Byte, Byte),
+            # RestreamData
+            # Checksum
+            # Compressed
 
-            "flag" / Flag,
+            # LazyStruct
+            # LazySequence
+            # LazyRange
+            # OnDemand
+            # LazyBound
 
-            "string1" / String(10, encoding=StringsAsBytes),
-            "string2" / String(10, encoding="utf8"),
-            "pascalstring1" / PascalString(Byte, encoding=StringsAsBytes),
-            "pascalstring2" / PascalString(Byte, encoding="utf8"),
-            "greedystring1" / Prefixed(Byte, GreedyString(encoding=StringsAsBytes)),
-            "greedystring2" / Prefixed(Byte, GreedyString(encoding="utf8")),
+            # adapters and validators
         )
 
         dc = d.compile()
