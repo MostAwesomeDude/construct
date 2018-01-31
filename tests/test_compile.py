@@ -66,8 +66,9 @@ class TestCompile(unittest.TestCase):
             # "numpy1" / RestreamData(this.numpy_data, Numpy),
             "numpy0" / If(False, Numpy),
             "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
-            "namedtuple2" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
-            "namedtuple3" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
+            "namedtuple2" / NamedTuple("coord", "x y z", Range(3, 3, Byte)),
+            "namedtuple3" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
+            "namedtuple4" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
 
             "union1" / Union(None, "char"/Byte),
             "union2" / Union(0, "char"/Byte),

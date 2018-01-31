@@ -2651,10 +2651,10 @@ class NamedTuple(Adapter):
 
     :param tuplename: string
     :param tuplefields: string or list of strings
-    :param subcon: Construct instance, either Struct Sequence Array/Range
+    :param subcon: Construct instance, either Struct Sequence Array Range
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises AdaptationError: subcon is neither Struct Sequence Array/Range
+    :raises AdaptationError: subcon is neither Struct Sequence Array Range
 
     Can propagate collections exceptions.
 
@@ -2669,6 +2669,8 @@ class NamedTuple(Adapter):
     __slots__ = ["tuplename", "tuplefields"]
 
     def __init__(self, tuplename, tuplefields, subcon):
+        if not isinstance(subcon, (Struct,Sequence,Array,Range)):
+            raise AdaptationError("subcon is neither Struct Sequence Array Range")
         super(NamedTuple, self).__init__(subcon)
         self.tuplename = tuplename
         self.tuplefields = tuplefields
@@ -2676,33 +2678,32 @@ class NamedTuple(Adapter):
         self.factory = collections.namedtuple(tuplename, tuplefields)
 
     def _decode(self, obj, context):
-        if isinstance(obj, list):
+        # Note: Sequence happens to be also a Struct, thus ordering
+        if isinstance(self.subcon, (Sequence,Array,Range)):
             return self.factory(*obj)
-        if isinstance(obj, dict):
+        if isinstance(self.subcon, Struct):
             return self.factory(**obj)
-        raise AdaptationError("can only decode and encode from lists and dicts")
+        raise AdaptationError("subcon is neither Struct Sequence Array Range")
 
     def _encode(self, obj, context):
+        # Note: Sequence happens to be also a Struct, thus ordering
         if isinstance(self.subcon, (Sequence,Array,Range)):
             return list(obj)
         if isinstance(self.subcon, Struct):
             return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name}
-        raise AdaptationError("can only decode and encode from lists and dicts")
+        raise AdaptationError("subcon is neither Struct Sequence Array Range")
 
     def _emitparse(self, code):
-        code.append("""
-            def parse_namedtuple(value, factory):
-                if isinstance(value, list):
-                    return factory(*value)
-                if isinstance(value, dict):
-                    return factory(**value)
-                assert False
-        """)
-        tuplename = "namedtuple_%s" % code.allocateId()
+        fname = "factory_%s" % code.allocateId()
         code.append("""
             %s = collections.namedtuple(%r, %r)
-        """ % (tuplename, self.tuplename, self.tuplefields, ))
-        return "parse_namedtuple(%s, %s)" % (self.subcon._compileparse(code), tuplename, )
+        """ % (fname, self.tuplename, self.tuplefields, ))
+        # Note: Sequence happens to be also a Struct, thus ordering
+        if isinstance(self.subcon, (Sequence,Array,Range)):
+            return "%s(*(%s))" % (fname, self.subcon._compileparse(code), )
+        if isinstance(self.subcon, Struct):
+            return "%s(**(%s))" % (fname, self.subcon._compileparse(code), )
+        raise AdaptationError("subcon is neither Struct Sequence Array Range")
 
 
 #===============================================================================

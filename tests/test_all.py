@@ -401,7 +401,13 @@ class TestCore(unittest.TestCase):
 
     def test_namedtuple(self):
         coord = collections.namedtuple("coord", "x y z")
+
         Coord = NamedTuple("coord", "x y z", Byte[3])
+        assert Coord.parse(b"123") == coord(49,50,51)
+        assert Coord.build(coord(49,50,51)) == b"123"
+        assert Coord.sizeof() == 3
+
+        Coord = NamedTuple("coord", "x y z", Range(3, 3, Byte))
         assert Coord.parse(b"123") == coord(49,50,51)
         assert Coord.build(coord(49,50,51)) == b"123"
         assert Coord.sizeof() == 3
