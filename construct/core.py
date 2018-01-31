@@ -2855,12 +2855,20 @@ class Union(Construct):
                 this = Container(_ = this)
                 fallback = io.tell()
         """ % (fname, )
-        index = -1
+        if isinstance(self.parsefrom, type(None)):
+            index = -1
+            skipfallback = False
+            skipforward = True
         if isinstance(self.parsefrom, int):
             index = self.parsefrom
             self.subcons[index] # raises IndexError
+            skipfallback = True
+            skipforward = self.subcons[index].sizeof() == self.subcons[-1].sizeof()
         if isinstance(self.parsefrom, str):
             index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[self.parsefrom] # raises KeyError
+            skipfallback = True
+            skipforward = self.subcons[index].sizeof() == self.subcons[-1].sizeof()
+
         for i,sc in enumerate(self.subcons):
             if sc.flagembedded:
                 block += """
@@ -2870,15 +2878,19 @@ class Union(Construct):
                 block += """
                 %s%s
                 """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
-            if i == index:
+            if i == index and not skipforward:
                 block += """
                 forward = io.tell()
                 """
-            if i < len(self.subcons)-1 or index == -1:
+            if i < len(self.subcons)-1:
                 block += """
                 io.seek(fallback)
                 """
-        if index != -1:
+        if not skipfallback:
+            block += """
+                io.seek(fallback)
+            """
+        if not skipforward:
             block += """
                 io.seek(forward)
             """

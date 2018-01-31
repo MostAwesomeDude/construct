@@ -72,9 +72,10 @@ class TestCompile(unittest.TestCase):
             "namedtuple3" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
             "namedtuple4" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
 
-            "union1" / Union(None, "char"/Byte),
-            "union2" / Union(0, "char"/Byte),
-            "union3" / Union("char", "char"/Byte),
+            "union1" / Union(None, "char"/Byte, "short"/Short, "int"/Int),
+            "union2" / Union(1, "char"/Byte, "short"/Short, "int"/Int),
+            "union3" / Union(0, "char1"/Byte, "char2"/Byte, "char3"/Byte),
+            "union4" / Union("char1", "char1"/Byte, "char2"/Byte, "char3"/Byte),
             "unionembedded" / Union(None, Embedded(Struct("char"/Byte))),
             # Select
             # Optional
