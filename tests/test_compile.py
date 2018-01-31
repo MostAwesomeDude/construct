@@ -6,8 +6,8 @@ from construct.lib import *
 @pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.4")
 class TestCompile(unittest.TestCase):
 
-    def test_all(self):
-        d = Struct(
+    def setUp(self):
+        self.example = Struct(
             "num" / Byte,
 
             "bytes1" / Bytes(4),
@@ -114,19 +114,39 @@ class TestCompile(unittest.TestCase):
             # adapters and validators
         )
 
-        dc = d.compile()
+    def test_compiles(self):
+        dc = self.example.compile()
         print(dc.source)
         if not ontravis:
             dc.tofile("tests/compiled.py")
 
+    def test_parsesbuilds(self):
+        d = self.example
         data = bytes(1000)
-
-        # sampleobj = d.parse(data)
-        # print(sampleobj)
-        # assert d.parse(data) == dc.parse(data)
-        # assert d.build(sampleobj) == dc.build(sampleobj)
-
         d.testcompiled(data)
 
-        # print(d.benchmark(data))
-        # assert False
+    # def test_benchmark_compiling(benchmark):
+    #     d = benchmark.example
+    #     benchmark(d.compile)
+
+    # def test_benchmark_parse(benchmark):
+    #     d = benchmark.example
+    #     data = bytes(1000)
+    #     benchmark(d.parse, data)
+
+    # def test_benchmark_parse_compiled(benchmark):
+    #     dc = benchmark.example.compile()
+    #     data = bytes(1000)
+    #     benchmark(dc.parse, data)
+
+    # def test_benchmark_build(benchmark):
+    #     d = benchmark.example
+    #     data = bytes(1000)
+    #     obj = d.parse(data)
+    #     benchmark(d.build, obj)
+
+    # def test_benchmark_build_compiled(benchmark):
+    #     dc = benchmark.example.compile()
+    #     data = bytes(1000)
+    #     obj = dc.parse(data)
+    #     benchmark(dc.build, obj)
