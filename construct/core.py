@@ -60,7 +60,7 @@ def singleton(arg):
 
 def _read_stream(stream, length):
     if length < 0:
-        raise StreamError("length must be >= 0", length)
+        raise StreamError("length must be non-negative, found %s" % length)
     try:
         data = stream.read(length)
     except Exception:
@@ -79,7 +79,7 @@ def _read_stream_entire(stream):
 
 def _write_stream(stream, length, data):
     if length < 0:
-        raise StreamError("length must be >= 0", length)
+        raise StreamError("length must be non-negative, found %s" % length)
     if len(data) != length:
         raise StreamError("could not write bytes, expected %d, found %d" % (length, len(data)))
     try:
