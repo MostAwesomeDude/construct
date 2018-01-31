@@ -44,8 +44,11 @@ class TestCompile(unittest.TestCase):
             # SymmetricMapping
 
             "struct" / Struct("field" / Byte),
+            "embeddedstruct" / Embedded(Struct("embeddedfield1" / Byte)),
             "sequence1" / Sequence(Byte, Byte),
             "sequence2" / Sequence("num1" / Byte, "num2" / Byte),
+            "embeddedsequence1" / Sequence(Embedded(Sequence(Byte, Byte))),
+            "embeddedsequence2" / Sequence(Embedded(Sequence("num1" / Byte, "num2" / Byte))),
 
             "array1" / Array(5, Byte),
             "array2" / Array(this.num, Byte),

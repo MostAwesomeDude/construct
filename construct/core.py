@@ -604,10 +604,10 @@ class Compiled(Construct):
         return self
 
     def _compileparse(self, code):
-        raise ConstructError("Compiled instance can compile() but cannot _compileparse() or _compilebuild()")
+        raise ConstructError("Compiled instance can compile() into self but cannot _compileparse() or _compilebuild()")
 
     def _compilebuild(self, code):
-        raise ConstructError("Compiled instance can compile() but cannot _compileparse() or _compilebuild()")
+        raise ConstructError("Compiled instance can compile() into self but cannot _compileparse() or _compilebuild()")
 
     def tofile(self, filename):
         """
@@ -1737,16 +1737,19 @@ class Struct(Construct):
                     subobj = obj[sc.name] # raises KeyError
 
                 if sc.flagembedded:
-                    context.update(subobj)
-                if sc.name:
-                    context[sc.name] = subobj
+                    if subobj is not None:
+                        context.update(subobj)
+                else:
+                    if sc.name:
+                        context[sc.name] = subobj
 
                 buildret = sc._build(subobj, stream, context, path)
                 if buildret is not None:
                     if sc.flagembedded:
                         context.update(buildret)
-                    if sc.name:
-                        context[sc.name] = buildret
+                    else:
+                        if sc.name:
+                            context[sc.name] = buildret
             except StopIteration:
                 break
         return context
@@ -1779,9 +1782,14 @@ class Struct(Construct):
                 this = Container(_ = this)
         """ % (fname, )
         for sc in self.subcons:
-            block += """
+            if sc.flagembedded:
+                block += """
+                this.update(%s)
+                """ % (sc._compileparse(code), )
+            else:
+                block += """
                 %s%s
-            """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
+                """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
         block += """
                 del this._
                 return this
@@ -1848,8 +1856,10 @@ class Sequence(Struct):
                     subobj = objiter
                 else:
                     subobj = next(objiter)
+
                 if sc.name:
                     context[sc.name] = subobj
+
                 buildret = sc._build(subobj, stream, context, path)
                 if buildret is not None:
                     if sc.flagembedded:
@@ -1867,9 +1877,14 @@ class Sequence(Struct):
                 this = Container(_ = this)
         """ % (fname,)
         for sc in self.subcons:
-            block += """
+            if sc.flagembedded:
+                block += """
+                result.extend(%s)
+                """ % (sc._compileparse(code))
+            else:
+                block += """
                 result.append(%s)
-            """ % (sc._compileparse(code))
+                """ % (sc._compileparse(code))
             if sc.name:
                 block += """
                 this[%r] = result[-1]
@@ -2158,9 +2173,13 @@ class Embedded(Subconstruct):
         >>> d.parse(b"abc")
         Container(a=97)(b=98)(c=99)
     """
+
     def __init__(self, subcon):
         super(Embedded, self).__init__(subcon)
         self.flagembedded = True
+
+    def _emitparse(self, code):
+        return self.subcon._compileparse(code)
 
 
 class Renamed(Subconstruct):
@@ -2179,9 +2198,11 @@ class Renamed(Subconstruct):
         >>> "number" / Int32ub
         <Renamed: number>
     """
+
     def __init__(self, newname, subcon):
         super(Renamed, self).__init__(subcon)
         self.name = newname
+
     def _parse(self, stream, context, path):
         try:
             path += " -> %s" % (self.name,)
@@ -2190,6 +2211,7 @@ class Renamed(Subconstruct):
             if "\n" in str(e):
                 raise
             raise e.__class__("%s\n    %s" % (e, path))
+
     def _build(self, obj, stream, context, path):
         try:
             path += " -> %s" % (self.name,)
@@ -2198,6 +2220,7 @@ class Renamed(Subconstruct):
             if "\n" in str(e):
                 raise
             raise e.__class__("%s\n    %s" % (e, path))
+
     def _sizeof(self, context, path):
         try:
             path += " -> %s" % (self.name,)
@@ -2206,7 +2229,8 @@ class Renamed(Subconstruct):
             if "\n" in str(e):
                 raise
             raise e.__class__("%s\n    %s" % (e, path))
-    def _compileparse(self, code):
+
+    def _emitparse(self, code):
         return self.subcon._compileparse(code)
 
 
