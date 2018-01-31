@@ -2809,25 +2809,30 @@ class Union(Construct):
         context = Container(_ = context)
         context.update(obj)
         for sc in self.subcons:
-            # no if embedded, bug!
-            if sc.flagbuildnone:
+            if sc.flagembedded:
+                subobj = obj
+            elif sc.flagbuildnone:
                 subobj = obj.get(sc.name, None)
-                buildret = sc._build(subobj, stream, context, path)
-                if buildret is not None:
-                    if sc.flagembedded:
-                        context.update(buildret)
-                    if sc.name:
-                        context[sc.name] = buildret
-                return buildret
             elif sc.name in obj:
-                context[sc.name] = obj[sc.name]
-                buildret = sc._build(obj[sc.name], stream, context, path)
-                if buildret is not None:
-                    if sc.flagembedded:
-                        context.update(buildret)
+                subobj = obj[sc.name]
+            else:
+                continue
+
+            if sc.flagembedded:
+                if subobj is not None:
+                    context.update(subobj)
+            else:
+                if sc.name:
+                    context[sc.name] = subobj
+
+            buildret = sc._build(subobj, stream, context, path)
+            if buildret is not None:
+                if sc.flagembedded:
+                    context.update(buildret)
+                else:
                     if sc.name:
                         context[sc.name] = buildret
-                return buildret
+            return buildret
         else:
             raise UnionError("cannot build, none of subcons were found in the dictionary %r" % (obj, ))
 
