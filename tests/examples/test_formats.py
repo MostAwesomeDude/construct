@@ -9,7 +9,6 @@ class TestFormats(unittest.TestCase):
     def test_png(self):
         commondump(png_file, "sample.png")
 
-    @pytest.mark.xfail(raises=StringError, reason="String* classes require explicit encoding")
     def test_emf(self):
         commondump(emf_file, "emf1.emf")
 
@@ -34,12 +33,10 @@ class TestFormats(unittest.TestCase):
     def test_snoop(self):
         commondump(snoop_file, "snoop1")
 
-    @pytest.mark.xfail(raises=StringError, reason="String* classes require explicit encoding")
     def test_pe32(self):
         commondump(pe32_file, "python.exe")
         commondump(pe32_file, "NOTEPAD.EXE")
         commondump(pe32_file, "sqlite3.dll")
 
-    @pytest.mark.xfail(raises=StringError, reason="String* classes require explicit encoding")
     def test_elf32(self):
         commondump(elf32_file, "ctypes.so")

@@ -31,7 +31,7 @@ def elf32_body(ElfInt16, ElfInt32):
     
     elf32_section_header = Struct(
         "name_offset" / ElfInt32,
-        "name" / Pointer(this._.strtab_data_offset + this.name_offset, CString()),
+        "name" / Pointer(this._.strtab_data_offset + this.name_offset, CString(encoding=StringsAsBytes)),
         "type" / Enum(ElfInt32, 
             NULL = 0,
             PROGBITS = 1,

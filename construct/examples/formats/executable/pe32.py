@@ -88,7 +88,7 @@ msdos_header = Struct(
 )
 
 symbol_table = "symbol_table" / Struct(
-    "name" / String(8, padchar=b"\x00"),
+    "name" / String(8, encoding=StringsAsBytes, padchar=b"\x00"),
     "value" / Int32ul,
     "section_number" / Enum(
         ExprAdapter(Int16sl,
@@ -293,7 +293,7 @@ optional_header = Struct(
 )
 
 section = "section" / Struct(
-    "name" / String(8, padchar=b"\x00"),
+    "name" / String(8, encoding=StringsAsBytes, padchar=b"\x00"),
     "virtual_size" / Int32ul,
     "virtual_address" / Int32ul,
     "raw_data_size" / Int32ul,

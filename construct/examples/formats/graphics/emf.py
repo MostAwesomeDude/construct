@@ -135,7 +135,7 @@ header_record = Struct(
     "device_width_mm" / Int32sl,          # Width of reference device in millimeters
     "device_height_mm" / Int32sl,         # Height of reference device in millimeters
     
-    "description" / Pointer(this.description_offset, String(this.description_size * 2)),
+    "description" / Pointer(this.description_offset, String(this.description_size * 2, encoding=StringsAsBytes)),
     
     # padding up to end of record
     Padding(this.record_size - 88),
