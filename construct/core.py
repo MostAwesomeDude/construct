@@ -2807,6 +2807,7 @@ class Union(Construct):
         context = Container(_ = context)
         context.update(obj)
         for sc in self.subcons:
+            # no if embedded, bug!
             if sc.flagbuildnone:
                 subobj = obj.get(sc.name, None)
                 buildret = sc._build(subobj, stream, context, path)
@@ -2847,9 +2848,14 @@ class Union(Construct):
         if isinstance(self.parsefrom, str):
             index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[self.parsefrom] # raises KeyError
         for i,sc in enumerate(self.subcons):
-            block += """
+            if sc.flagembedded:
+                block += """
+                this.update(%s)
+                """ % (sc._compileparse(code), )
+            else:
+                block += """
                 %s%s
-            """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
+                """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
             if i == index:
                 block += """
                 forward = io.tell()

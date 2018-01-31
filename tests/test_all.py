@@ -504,6 +504,7 @@ class TestCore(unittest.TestCase):
         assert (Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x01]
         assert (Union(0, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
         assert (Union("a", "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte).parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x02), 0x03]
+        # build is not tested?
 
         # regression check, so first subcon is not parsefrom by accident
         assert raises(Union, Byte, VarInt) == UnionError

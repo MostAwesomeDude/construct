@@ -76,6 +76,7 @@ class TestCompile(unittest.TestCase):
             "union1" / Union(None, "char"/Byte),
             "union2" / Union(0, "char"/Byte),
             "union3" / Union("char", "char"/Byte),
+            # "unionembedded" / Union(None, Embedded(Struct("char"/Byte))),
             # Select
             # Optional
             "if1" / If(this.num == 0, Byte),
