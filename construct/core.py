@@ -1227,6 +1227,15 @@ class StringsAsBytes:
     pass
 
 
+possiblestringencodings = dict(
+    StringsAsBytes=1,
+    ascii=1,
+    utf8=1, utf_8=1, U8=1,
+    utf16=2, utf_16=2, U16=2, utf_16_be=2, utf_16_le=2,
+    utf32=4, utf_32=4, U32=4, utf_32_be=4, utf_32_le=4,
+)
+
+
 def setglobalstringencoding(encoding):
     r"""
     Sets the encoding globally for all String PascalString CString GreedyString instances. Note that encoding specified expiciltly in a particular construct supersedes it. Note also that global encoding is applied during parsing and building (not class instantiation).
@@ -1327,6 +1336,76 @@ class StringPaddedTrimmed(Adapter):
         return "(%s).%s(%r)" % (self.subcon._compileparse(code), func, self.padchar)
 
 
+class StringNullTerminated(Construct):
+    """Used internally."""
+    __slots__ = ["encoding"]
+
+    def __init__(self, encoding=None):
+        super(StringNullTerminated, self).__init__()
+        self.encoding = encoding
+
+    def _parse(self, stream, context, path):
+        encoding = self.encoding or globalstringencoding
+        if encoding is StringsAsBytes:
+            encoding = "StringsAsBytes"
+        if encoding not in possiblestringencodings:
+            raise StringError("encoding not implemented: %r" % (encoding,))
+        unitsize = possiblestringencodings[encoding]
+        finalunit = b"\x00" * unitsize
+
+        result = []
+        while True:
+            unit = _read_stream(stream, unitsize)
+            if unit == finalunit:
+                break
+            result.append(unit)
+        return b"".join(result)
+
+    def _build(self, obj, stream, context, path):
+        encoding = self.encoding or globalstringencoding
+        if encoding is StringsAsBytes:
+            encoding = "StringsAsBytes"
+        if encoding not in possiblestringencodings:
+            raise StringError("encoding not implemented: %r" % (encoding,))
+        unitsize = possiblestringencodings[encoding]
+        finalunit = b"\x00" * unitsize
+
+        if len(obj) % unitsize:
+            raise StringError("string must be made of units sized %s" % (unitsize,))
+        data = obj + finalunit
+        _write_stream(stream, len(data), data)
+
+    def _emitdecompiled(self, code):
+        encoding = self.encoding or globalstringencoding
+        if encoding is StringsAsBytes:
+            encoding = "StringsAsBytes"
+        if encoding not in possiblestringencodings:
+            raise StringError("encoding not implemented: %r" % (encoding,))
+
+        return "StringNullTerminated(encoding=%r)" % (encoding,)
+
+    def _emitparse(self, code):
+        encoding = self.encoding or globalstringencoding
+        if encoding is StringsAsBytes:
+            encoding = "StringsAsBytes"
+        if encoding not in possiblestringencodings:
+            raise StringError("encoding not implemented: %r" % (encoding,))
+        unitsize = possiblestringencodings[encoding]
+        finalunit = b"\x00" * unitsize
+
+        code.append("""
+            def parse_nullterminatedstring(io, unitsize, finalunit):
+                result = []
+                while True:
+                    unit = read_bytes(io, unitsize)
+                    if unit == finalunit:
+                        break
+                    result.append(unit)
+                return b"".join(result)
+        """)
+        return "parse_nullterminatedstring(io, %r, %r)" % (unitsize, finalunit, )
+
+
 def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
     r"""
     Configurable, fixed-length or variable-length string field.
@@ -1335,7 +1414,7 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
     When building, the string is encoded (as specified) then padded (as specified) from the direction (as specified) or trimmed (as specified).
     Size is same as length parameter.
 
-    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String class. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
 
     :param length: integer or context lambda, length in bytes (not unicode characters)
     :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
@@ -1386,10 +1465,10 @@ def PascalString(lengthfield, encoding=None):
 
     Size is not defined.
 
-    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString and GreedyString.
+    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString CString GreedyString.
 
-    :param lengthfield: Construct instance, field used to parse and build the length (likw VarInt Int64ub)
-    :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
+    :param lengthfield: Construct instance, field used to parse and build the length (like VarInt Int64ub)
+    :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 
     :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
@@ -1405,18 +1484,13 @@ def PascalString(lengthfield, encoding=None):
     return StringEncoded(Prefixed(lengthfield, GreedyBytes), encoding)
 
 
-def CString(terminators=b"\x00", encoding=None):
+def CString(encoding=None):
     r"""
     String ending in a terminating null byte (or null bytes in case of UTF16 UTF32).
 
-    reimplement???
+    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString CString GreedyString.
 
-    By default, the terminator is the \\x00 byte character. Terminators field can be a longer bytes, and any one of the characters breaks parsing. First terminator byte is used when building.
-
-    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
-
-    :param terminators: ??? sequence of valid terminators, first is used when building, all are used when parsing
-    :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
+    :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 
     :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
@@ -1429,12 +1503,12 @@ def CString(terminators=b"\x00", encoding=None):
         >>> d.parse(_)
         u'Афон'
     """
-    return StringEncoded(
-        ExprAdapter(
-            RepeatUntil(lambda obj,lst,ctx: int2byte(obj) in terminators, Byte),
-            decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1]),
-            encoder = lambda obj,ctx: iterateints(obj+terminators), ),
-        encoding)
+    return StringEncoded(StringNullTerminated(encoding), encoding)
+        # ExprAdapter(
+        #     RepeatUntil(lambda obj,lst,ctx: int2byte(obj) in terminators, Byte),
+        #     decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1]),
+        #     encoder = lambda obj,ctx: iterateints(obj+terminators), ),
+        # encoding)
 
 
 def GreedyString(encoding=None):
@@ -1443,9 +1517,9 @@ def GreedyString(encoding=None):
 
     Analog to :class:`~construct.core.GreedyBytes` , and identical when no enoding is used.
 
-    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString and GreedyString.
+    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString CString GreedyString.
 
-    :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
+    :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 
     :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding

@@ -76,13 +76,13 @@ Strings
 
 .. warning::
 
-    Do not use >1 byte encodings like UTF16 or UTF32 with String and CString classes. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+    Do not use >1 byte encodings like UTF16 or UTF32 with String class. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
 
     **UTF16 UTF32 will be supported soon.**
 
 .. note::
 
-    Encodings like UTF16 or UTF32 work fine with PascalString and GreedyString.
+    Encodings like UTF16 or UTF32 work fine with PascalString CString GreedyString.
 
 String is a fixed-length construct that pads built string with null bytes, and strips those same null bytes when parsing. Strings can also be trimmed when building. If you supply a too long string, the construct will chop it off apart instead of raising a StringError.
 

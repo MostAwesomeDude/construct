@@ -195,59 +195,53 @@ class TestCore(unittest.TestCase):
         assert String(5, encoding=StringsAsBytes).sizeof() == 5
 
     def test_pascalstring(self):
-        setglobalstringencoding(StringsAsBytes)
-        common(PascalString(Byte), b"\x05hello", b"hello")
+        common(PascalString(Byte, encoding=StringsAsBytes), b"\x05hello", b"hello")
         common(PascalString(Byte, encoding="utf8"), b"\x05hello", u"hello")
-        common(PascalString(Int16ub), b"\x00\x05hello", b"hello")
-        common(PascalString(VarInt), b"\x05hello", b"hello")
-        common(PascalString(Byte), b"\x00", b"")
+        common(PascalString(Int16ub, encoding=StringsAsBytes), b"\x00\x05hello", b"hello")
+        common(PascalString(Int16ub, encoding="utf8"), b"\x00\x05hello", u"hello")
+        common(PascalString(VarInt, encoding=StringsAsBytes), b"\x05hello", b"hello")
+        common(PascalString(VarInt, encoding="utf8"), b"\x05hello", u"hello")
+        common(PascalString(Byte, encoding=StringsAsBytes), b"\x00", b"")
         common(PascalString(Byte, encoding="utf8"), b"\x00", u"")
-        setglobalstringencoding(None)
+
+        for e in [StringsAsBytes,"ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+            raises(PascalString(Byte, encoding=e).sizeof) == SizeofError
+            raises(PascalString(VarInt, encoding=e).sizeof) == SizeofError
 
     def test_cstring(self):
-        setglobalstringencoding(StringsAsBytes)
-        assert CString().parse(b"hello\x00") == b"hello"
-        assert CString().build(b"hello") == b"hello\x00"
-        assert CString(encoding="utf8").parse(b"hello\x00") == u"hello"
-        assert CString(encoding="utf8").build(u"hello") == b"hello\x00"
-        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloX") == u"hello"
-        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloY") == u"hello"
-        assert CString(terminators=b"XYZ", encoding="utf8").parse(b"helloZ") == u"hello"
-        assert CString(terminators=b"XYZ", encoding="utf8").build(u"hello") == b"helloX"
-        assert CString(encoding="utf16").build(u"hello") == b"\xff\xfeh\x00"
-        assert raises(CString(encoding="utf16").parse, b'\xff\xfeh\x00') == UnicodeDecodeError
-        assert raises(CString().sizeof) == SizeofError
-        setglobalstringencoding(None)
+        s = u"Афон"
+        for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
+            common(CString(encoding=e), s.encode(e)+b"\x00"*us, s)
+
+        common(CString(encoding=StringsAsBytes), b"aooh"+b"\x00", b"aooh")
+
+        CString(encoding="utf8").build(s) == b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'+b"\x00"
+        CString(encoding="utf16").build(s) == b'\xff\xfe\x10\x04D\x04>\x04=\x04'+b"\x00\x00"
+        CString(encoding="utf32").build(s) == b'\xff\xfe\x00\x00\x10\x04\x00\x00D\x04\x00\x00>\x04\x00\x00=\x04\x00\x00'+b"\x00\x00\x00\x00"
+
+        for e in [StringsAsBytes,"ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+            raises(CString(encoding=e).sizeof) == SizeofError
 
     def test_greedystring(self):
-        setglobalstringencoding(StringsAsBytes)
-        assert GreedyString().parse(b"hello\x00") == b"hello\x00"
-        assert GreedyString().build(b"hello\x00") == b"hello\x00"
-        assert GreedyString().parse(b"") == b""
-        assert GreedyString().build(b"") == b""
-        assert GreedyString(encoding="utf8").parse(b"hello\x00") == u"hello\x00"
-        assert GreedyString(encoding="utf8").parse(b"") == u""
-        assert GreedyString(encoding="utf8").build(u"hello\x00") == b"hello\x00"
-        assert GreedyString(encoding="utf8").build(u"") == b""
-        assert raises(GreedyString().sizeof) == SizeofError
-        setglobalstringencoding(None)
+        s = u"Афон"
+        for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
+            common(GreedyString(encoding=e), s.encode(e), s)
 
-    def test_globally_encoded_strings(self):
+        common(GreedyString(encoding=StringsAsBytes), b"hello", b"hello")
+        common(GreedyString(encoding="utf8"), b"hello", u"hello")
+        common(GreedyString(encoding=StringsAsBytes), b"", b"")
+        common(GreedyString(encoding="utf8"), b"", u"")
+
+        for e in [StringsAsBytes,"ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+            raises(GreedyString(encoding=e).sizeof) == SizeofError
+
+    def test_string_global_encoding(self):
         setglobalstringencoding("utf8")
         assert String(20).build(u"Афон") == String(20, encoding="utf8").build(u"Афон")
         assert PascalString(VarInt).build(u"Афон") == PascalString(VarInt, encoding="utf8").build(u"Афон")
         assert CString().build(u"Афон") == CString(encoding="utf8").build(u"Афон")
         assert GreedyString().build(u"Афон") == GreedyString(encoding="utf8").build(u"Афон")
         setglobalstringencoding(None)
-
-    @pytest.mark.xfail(raises=AssertionError, reason="CString cannot support UTF16/32")
-    def test_badly_encoded_strings_1(self):
-        assert CString(encoding="utf-16-le").build("abcd") == "abcd".encode("utf-16-le")
-
-    @pytest.mark.xfail(raises=UnicodeDecodeError, reason="CString cannot support UTF16/32")
-    def test_badly_encoded_strings_2(self):
-        s = "abcd".encode("utf-16-le") + b"\x00\x00"
-        CString(encoding="utf-16-le").parse(s)
 
     def test_flag(self):
         common(Flag, b"\x00", False, 1)
@@ -1117,7 +1111,6 @@ class TestCore(unittest.TestCase):
 
         self.test_hex()
         self.test_hexdump()
-        self.test_cstring()
 
     def test_exprsymmetricadapter(self):
         self.test_filter()

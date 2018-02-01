@@ -33,7 +33,10 @@ class TestCompile(unittest.TestCase):
             "string2" / String(10, encoding="utf8"),
             "pascalstring1" / PascalString(Byte, encoding=StringsAsBytes),
             "pascalstring2" / PascalString(Byte, encoding="utf8"),
-            # CString
+            "cstring1" / CString(encoding=StringsAsBytes),
+            "cstring2" / CString(encoding="utf8"),
+            "cstring3" / CString(encoding="utf16"),
+            "cstring4" / CString(encoding="utf32"),
             "greedystring1" / Prefixed(Byte, GreedyString(encoding=StringsAsBytes)),
             "greedystring2" / Prefixed(Byte, GreedyString(encoding="utf8")),
 
