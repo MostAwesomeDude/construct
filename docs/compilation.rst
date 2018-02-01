@@ -22,15 +22,11 @@ Restrictions
 
 .. warning:: These items are being implemented. Most items will be removed within next month.
 
-Compiled classes only parse faster, building is not yet implemented (defers to core classes)
+Compiled classes only parse faster, building and sizeof defers to core classes
 
 AssertionError and standard hierarchy exceptions can be raised (core classes are resticted to ConstructError and its derivatives)
 
-CString Switch Enum FlagsEnum StopIf Pointer Peek Select Optional Switch are not yet implemented
-
-RepeatUntil is not compilable
-
-Checksum Compressed are not compilable
+RepeatUntil Enum FlagsEnum StopIf Pointer Peek Select Optional Switch Checksum Compressed are not yet implemented
 
 .. warning:: These items are (probably) permanent, but feel free to request changes.
 
@@ -44,11 +40,11 @@ Some classes require fixed-sized subcons (otherwise raise NotImplementedError if
 
 Some classes require constant selectors like FocusedSeq Union (otherwise raise NotImplementedError if compiled)
 
-Adapters and validators, and mappings are in general not compilable
-
 Exceptions do not include `path` information
 
-Restreamed Rebuffered are not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
+Adapters and validators, and mappings are in general not compilable
+
+Restreamed Rebuffered are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
 
 Lazy* OnDemand are not compilable
 
@@ -207,7 +203,7 @@ Function calls that only defer to another function are only wasting CPU cycles. 
 
 Building two identical dictionaries is slower than building just one. Struct maintains two dictionaries (called obj and context) which differ only by _ key, but compiled Struct maintains only one dictionary and removes the _ key before returning it.
 
-This expressions (not lambdas) are usually expensive to compute but something like "this.field" in a compiled code is merely one object field lookup. Same applies to `len_ obj_ list_` expressions since they share the implementation with `this` class.
+This expressions (not lambdas) are usually expensive to compute but something like "this.field" in a compiled code is merely one object field lookup. Same applies to `len_ obj_ list_` expressions since they share the implementation with `this` expression.
 
 Container is an implementation of so called AttrDict. It captures access to its attributes (field in this.field) and treats it as dictionary key access (this.field becomes this["field"]). However, due to internal CPython drawbacks, capturing attribute access involves some red tape, unlike accessing keys, which is done directly. Therefore compiled Struct emits lines that assign to Container keys, not attributes (outdated example).
 
