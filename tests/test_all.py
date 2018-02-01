@@ -171,28 +171,17 @@ class TestCore(unittest.TestCase):
         assert raises(VarInt.build, -1) == IntegerError
 
     def test_string(self):
-        assert raises(lambda: String(5).parse(b"hello")) == StringError
-        assert raises(lambda: String(5).build(u"hello")) == StringError
-        assert raises(lambda: String(5).sizeof()) == None # StringEncoded does not affext sizeof
+        common(String(10, encoding=StringsAsBytes), b"hello\x00\x00\x00\x00\x00", b"hello", 10)
+        common(String(10, encoding="utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
 
-        assert String(5, encoding=StringsAsBytes).parse(b"hello") == b"hello"
-        assert String(5, encoding=StringsAsBytes).build(b"hello") == b"hello"
-        assert raises(String(5, encoding=StringsAsBytes).parse, b"") == StreamError
-        assert String(5, encoding=StringsAsBytes).build(b"") == b"\x00\x00\x00\x00\x00"
-        assert String(12, encoding="utf8").parse(b"hello joh\xd4\x83n") == u"hello joh\u0503n"
-        assert String(12, encoding="utf8").build(u"hello joh\u0503n") == b"hello joh\xd4\x83n"
-        assert String(12, encoding="utf8").sizeof() == 12
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="right").parse(b"helloXXXXX") == b"hello"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="left").parse(b"XXXXXhello") == b"hello"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="center").parse(b"XXhelloXXX") == b"hello"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="right").build(b"hello") == b"helloXXXXX"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="left").build(b"hello") == b"XXXXXhello"
-        assert String(10, encoding=StringsAsBytes, padchar=b"X", paddir="center").build(b"hello") == b"XXhelloXXX"
-        assert raises(String, 10, encoding="utf8", padchar=u"X") == StringError
-        assert String(5, encoding=StringsAsBytes, trimdir="right").build(b"1234567890") == b"12345"
-        assert String(5, encoding=StringsAsBytes, trimdir="left").build(b"1234567890") == b"67890"
-        assert String(5, encoding="utf8", padchar=b"X", paddir="left").sizeof() == 5
-        assert String(5, encoding=StringsAsBytes).sizeof() == 5
+        s = u"Афон"
+        for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
+            data = (s.encode(e)+b"\x00"*100)[:100]
+            common(String(100, encoding=e), data, s, 100)
+
+        for e in [StringsAsBytes,"ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+            String(10, encoding=e).sizeof() == 10
+            String(this.n, encoding=e).sizeof(n=10) == 10
 
     def test_pascalstring(self):
         common(PascalString(Byte, encoding=StringsAsBytes), b"\x05hello", b"hello")

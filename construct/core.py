@@ -1224,6 +1224,9 @@ globalstringencoding = None
 
 @singleton
 class StringsAsBytes:
+    """
+    Used for marking String* classes to not encode/decode bytes (allows using `str` on Python 2).
+    """
     pass
 
 
@@ -1285,55 +1288,80 @@ class StringEncoded(Adapter):
         raise StringError("String* classes require explicit encoding")
 
 
-class StringPaddedTrimmed(Adapter):
+class StringPaddedTrimmed(Construct):
     """Used internally."""
-    __slots__ = ["length", "padchar", "paddir", "trimdir"]
+    __slots__ = ["length", "encoding"]
 
-    def __init__(self, length, subcon, padchar=b"\x00", paddir="right", trimdir="right"):
-        if not isinstance(padchar, bytestringtype) or len(padchar) != 1:
-            raise StringError("padchar must be b-string character")
-        if paddir not in ["right","left","center"]:
-            raise StringError("paddir must be one of: right left center")
-        if trimdir not in ["right","left"]:
-            raise StringError("trimdir must be one of: right left")
-        super(StringPaddedTrimmed, self).__init__(subcon)
+    def __init__(self, length, encoding):
+        super(StringPaddedTrimmed, self).__init__()
         self.length = length
-        self.padchar = padchar
-        self.paddir = paddir
-        self.trimdir = trimdir
+        self.encoding = encoding
 
-    def _decode(self, obj, context):
-        if self.paddir == "right":
-            obj = obj.rstrip(self.padchar)
-        if self.paddir == "left":
-            obj = obj.lstrip(self.padchar)
-        if self.paddir == "center":
-            obj = obj.strip(self.padchar)
-        return obj
-
-    def _encode(self, obj, context):
+    def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
-        if self.paddir == "right":
-            obj = obj.ljust(length, self.padchar)
-        if self.paddir == "left":
-            obj = obj.rjust(length, self.padchar)
-        if self.paddir == "center":
-            obj = obj.center(length, self.padchar)
-        if len(obj) > length:
-            if self.trimdir == "right":
-                obj = obj[:length]
-            if self.trimdir == "left":
-                obj = obj[-length:]
+
+        encoding = self.encoding or globalstringencoding
+        if encoding is StringsAsBytes:
+            encoding = "StringsAsBytes"
+        if encoding not in possiblestringencodings:
+            raise StringError("encoding not implemented: %r" % (encoding,))
+        unitsize = possiblestringencodings[encoding]
+        finalunit = b"\x00" * unitsize
+
+        if length % unitsize:
+            raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
+        obj = _read_stream(stream, length)
+        if len(obj) % unitsize:
+            raise StringError("string length must be multiple of encoding-unit, %s" % (unitsize,))
+        while obj[-unitsize:] == finalunit:
+            obj = obj[:-unitsize]
         return obj
+
+    def _build(self, obj, stream, context, path):
+        length = self.length(context) if callable(self.length) else self.length
+
+        encoding = self.encoding or globalstringencoding
+        if encoding is StringsAsBytes:
+            encoding = "StringsAsBytes"
+        if encoding not in possiblestringencodings:
+            raise StringError("encoding not implemented: %r" % (encoding,))
+        unitsize = possiblestringencodings[encoding]
+        finalunit = b"\x00" * unitsize
+
+        if length % unitsize:
+            raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
+        if len(obj) % unitsize:
+            raise StringError("string length must be multiple of encoding-unit, %s" % (unitsize,))
+        if len(obj) > length-unitsize:
+            obj = obj[:length-unitsize]
+        obj = obj.ljust(length, b"\x00")
+        _write_stream(stream, len(obj), obj)
+
+    def _sizeof(self, context, path):
+        length = self.length(context) if callable(self.length) else self.length
+        return length
 
     def _emitparse(self, code):
-        if self.paddir == "right":
-            func = "rstrip"
-        if self.paddir == "left":
-            func = "lstrip"
-        if self.paddir == "center":
-            func = "strip"
-        return "(%s).%s(%r)" % (self.subcon._compileparse(code), func, self.padchar)
+        encoding = self.encoding or globalstringencoding
+        if encoding is StringsAsBytes:
+            encoding = "StringsAsBytes"
+        if encoding not in possiblestringencodings:
+            raise StringError("encoding not implemented: %r" % (encoding,))
+        unitsize = possiblestringencodings[encoding]
+        finalunit = b"\x00" * unitsize
+
+        code.append(r"""
+            def parse_paddedtrimmedstring(io, length, unitsize, finalunit):
+                if length % unitsize:
+                    raise StringError
+                obj = read_bytes(io, length)
+                if len(obj) % unitsize:
+                    raise StringError
+                while obj[-unitsize:] == finalunit:
+                    obj = obj[:-unitsize]
+                return obj
+        """)
+        return "parse_paddedtrimmedstring(io, %r, %r, %r)" % (self.length, unitsize, finalunit, )
 
 
 class StringNullTerminated(Construct):
@@ -1371,7 +1399,7 @@ class StringNullTerminated(Construct):
         finalunit = b"\x00" * unitsize
 
         if len(obj) % unitsize:
-            raise StringError("string must be made of units sized %s" % (unitsize,))
+            raise StringError("string length must be multiple of encoding-unit, %s" % (unitsize,))
         data = obj + finalunit
         _write_stream(stream, len(data), data)
 
@@ -1406,25 +1434,19 @@ class StringNullTerminated(Construct):
         return "parse_nullterminatedstring(io, %r, %r)" % (unitsize, finalunit, )
 
 
-def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="right"):
+def String(length, encoding=None):
     r"""
     Configurable, fixed-length or variable-length string field.
 
-    When parsing, the byte string is stripped of byte character (as specified) from the direction (as specified) then decoded (as specified). Length is an integer or context lambda.
-    When building, the string is encoded (as specified) then padded (as specified) from the direction (as specified) or trimmed (as specified).
-    Size is same as length parameter.
-
-    .. warning:: Do not use >1 byte encodings like UTF16 or UTF32 with String class. This a known bug that has something to do with the fact that library inherently works with bytes (not codepoints) and codepoint-to-byte conversions are too tricky.
+    When parsing, the byte string is stripped of null bytes (per encoding unit), then decoded. Length is an integer or context lambda. When building, the string is encoded, then trimmed to specified length minus encoding unit, then padded to specified length. Size is same as length parameter.
 
     :param length: integer or context lambda, length in bytes (not unicode characters)
-    :param encoding: string like "utf8", or StringsAsBytes, or None (use global override)
-    :param padchar: bytes character to pad out strings, by default b"\\x00"
-    :param paddir: string, direction to pad out strings (one of: right left both)
-    :param trimdir: string, direction to trim strings (one of: right left)
+    :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 
     :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
-    :raises StringError: padchar paddir trimdir are not valid
+    :raises StringError: specified length or object for building is not a multiple of unit
+    :raises StringError: selected encoding is not on supported list
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -1454,18 +1476,12 @@ def String(length, encoding=None, padchar=b"\x00", paddir="right", trimdir="righ
         >>> d.build(b"12345678901234567890")
         b'1234567890'
     """
-    return StringEncoded(
-        StringPaddedTrimmed(length, Bytes(length), padchar, paddir, trimdir),
-        encoding)
+    return StringEncoded(StringPaddedTrimmed(length, encoding), encoding)
 
 
 def PascalString(lengthfield, encoding=None):
     r"""
-    Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). VarInt is recommended when designing new protocols. Stored length is in bytes, not characters.
-
-    Size is not defined.
-
-    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString CString GreedyString.
+    Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). VarInt is recommended when designing new protocols. Stored length is in bytes, not characters. Size is not defined.
 
     :param lengthfield: Construct instance, field used to parse and build the length (like VarInt Int64ub)
     :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
@@ -1488,12 +1504,12 @@ def CString(encoding=None):
     r"""
     String ending in a terminating null byte (or null bytes in case of UTF16 UTF32).
 
-    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString CString GreedyString.
-
     :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 
     :raises StringError: String* classes require explicit encoding
     :raises StringError: building a unicode string but no encoding
+    :raises StringError: object for building is not a multiple of unit
+    :raises StringError: selected encoding is not on supported list
 
     Example::
 
@@ -1516,8 +1532,6 @@ def GreedyString(encoding=None):
     String that reads entire stream until EOF, and writes a given string as-is. If no encoding is specified, this is essentially GreedyBytes.
 
     Analog to :class:`~construct.core.GreedyBytes` , and identical when no enoding is used.
-
-    .. note:: Encodings like UTF16 or UTF32 work fine with PascalString CString GreedyString.
 
     :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 

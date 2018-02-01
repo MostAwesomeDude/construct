@@ -29,8 +29,10 @@ class TestCompile(unittest.TestCase):
             "float1" / Single,
             "float2" / Double,
 
-            "string1" / String(10, encoding=StringsAsBytes),
-            "string2" / String(10, encoding="utf8"),
+            "string1" / String(12, encoding=StringsAsBytes),
+            "string2" / String(12, encoding="utf8"),
+            "string3" / String(12, encoding="utf16"),
+            "string4" / String(12, encoding="utf32"),
             "pascalstring1" / PascalString(Byte, encoding=StringsAsBytes),
             "pascalstring2" / PascalString(Byte, encoding="utf8"),
             "cstring1" / CString(encoding=StringsAsBytes),
