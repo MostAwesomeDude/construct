@@ -392,6 +392,22 @@ class TestCore(unittest.TestCase):
         assert st.sizeof(a=0,inner=Container(b=0)) == 2
         assert st.sizeof(a=1,inner=Container(b=1)) == 6
 
+    @pytest.mark.xfail(raises=KeyError, reason="unknown problem, heisen-bug?")
+    def test_struct_issue_566(self):
+        inner = Struct(
+            Embedded(Struct(
+                "b" / Byte,
+            )),
+            "c" / If(this._.a > 0, Byte),
+        )
+        outer = Struct(
+            "a" / Byte,
+            "inner" / inner,
+        )
+        outer.parse(b'\x01\x02\x03') == Container(a=1)(inner=Container(b=2)(c=3))
+        outer.build(Container(a=1)(inner=Container(b=2)(c=3))) == b'\x01\x02\x80\x03\x04'
+
+
     def test_sequence(self):
         common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
         common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
