@@ -254,15 +254,34 @@ class TestCore(unittest.TestCase):
         common(Flag, b"\x01", True, 1)
 
     def test_enum(self):
-        # Pass default no longer tested
-        assert Enum(Byte, q=3,r=4,t=5).parse(b"\x04") == "r"
-        assert Enum(Byte, q=3,r=4,t=5).build("r") == b"\x04"
-        assert Enum(Byte, q=3,r=4,t=5).build(4) == b"\x04"
-        assert raises(Enum(Byte, q=3,r=4,t=5).parse, b"\xff") == MappingError
-        assert raises(Enum(Byte, q=3,r=4,t=5).build, "unknown") == MappingError
-        assert Enum(Byte, q=3,r=4,t=5, default=255).build("unknown") == b"\xff"
-        assert Enum(Byte, q=3,r=4,t=5).sizeof() == 1
+        common(Enum(Byte, a=1, b=2), b"\x01", "a", 1)
+        common(Enum(Byte, a=1, b=2), b"\x02", "b", 1)
+        assert raises(Enum(Byte, a=1, b=2).parse, b"\xff") == MappingError
+        assert raises(Enum(Byte, a=1, b=2).build, "unknown") == MappingError
+        Enum(Byte, a=1, b=2).build(1) == b"\x01"
+        assert raises(Enum(Byte, a=1, b=2).build, 255) == MappingError
 
+    @pytest.mark.xfail(PY < (3,4), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+    def test_enum_enum34(self):
+        import enum
+        class E(enum.IntEnum):
+            a = 1
+        class F(enum.IntEnum):
+            b = 2
+        common(Enum(Byte, E, F), b"\x01", "a", 1)
+        common(Enum(Byte, E, F), b"\x02", "b", 1)
+
+    @pytest.mark.xfail(PY < (3,6), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+    def test_enum_enum36(self):
+        import enum
+        class E(enum.IntEnum):
+            a = 1
+        class F(enum.IntFlag):
+            b = 2
+        common(Enum(Byte, E, F), b"\x01", "a", 1)
+        common(Enum(Byte, E, F), b"\x02", "b", 1)
+
+    @pytest.mark.xfail(reason="Enum no longer supports default")
     def test_enum_issue_298(self):
         # also tests Enum when default case value overlaps with another label's value
         st = Struct(
@@ -300,6 +319,28 @@ class TestCore(unittest.TestCase):
         assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True)) == b'\x04'
         assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict()) == b'\x00'
         assert raises(FlagsEnum(Byte, feature=4,output=2,input=1).build, dict(unknown=True)) == MappingError
+
+    @pytest.mark.xfail(PY < (3,4), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+    def test_flagsenum_enum34(self):
+        import enum
+        class E(enum.IntEnum):
+            a = 1
+        class F(enum.IntEnum):
+            b = 2
+        common(FlagsEnum(Byte, E, F), b"\x01", FlagsContainer(a=True,b=False), 1)
+        common(FlagsEnum(Byte, E, F), b"\x02", FlagsContainer(a=False,b=True), 1)
+        common(FlagsEnum(Byte, E, F), b"\x03", FlagsContainer(a=True,b=True), 1)
+
+    @pytest.mark.xfail(PY < (3,6), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+    def test_flagsenum_enum36(self):
+        import enum
+        class E(enum.IntEnum):
+            a = 1
+        class F(enum.IntFlag):
+            b = 2
+        common(FlagsEnum(Byte, E, F), b"\x01", FlagsContainer(a=True,b=False), 1)
+        common(FlagsEnum(Byte, E, F), b"\x02", FlagsContainer(a=False,b=True), 1)
+        common(FlagsEnum(Byte, E, F), b"\x03", FlagsContainer(a=True,b=True), 1)
 
     def test_struct(self):
         common(Struct("a"/Int16ul, "b"/Byte), b"\x01\x00\x02", Container(a=1,b=2), 3)

@@ -1493,7 +1493,7 @@ class Flag(Construct):
         return "(read_bytes(io, 1) != b'\\x00')"
 
 
-class Enum(Subconstruct):
+class Enum(Adapter):
     r"""
     Translates unicode label names to subcon values, and vice versa. 
 
@@ -1501,7 +1501,7 @@ class Enum(Subconstruct):
     Size is same as subcon, unless it raises SizeofError.
 
     :param subcon: Construct instance, subcon to map to/from
-    :param default: optional, keyword-only argument that specifies the default value to use when an unknown label gets build, can overlap with some existing label, if ``Pass`` then parsing returns "default" label and building skips stream
+    :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
     :param \*\*mapping: dict, mapping string names to values
 
     :raises MappingError: label (during building) or value (during parsing) cannot be translated, and no default was provided
@@ -1512,51 +1512,49 @@ class Enum(Subconstruct):
         >>> d.parse(b"\x01")
         'one'
         >>> d.parse(b"\xff")
-        construct.core.MappingError: no decoding mapping for 255
+        construct.core.MappingError: parsing failed, no decoding mapping for 255
         >>> d.build("one")
         b'\x01'
         >>> d.build(1)
         b'\x01'
-    """
-    __slots__ = ["default", "encmapping", "decmapping"]
+        >>> d.build(255)
+        construct.core.MappingError: building failed, no decoding mapping for 255
+        >>> d.build("missing")
+        construct.core.MappingError: building failed, no decoding mapping for "missing"
+        >>> d.sizeof()
+        1
 
-    def __init__(self, subcon, default=NotImplemented, **mapping):
+        import enum
+        class E(enum.IntEnum):
+            one = 1
+        class F(enum.IntFlag):
+            two = 2
+        Enum(Byte,      E, F) <--> Enum(Byte,      one=1, two=2)
+        FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
+    """
+    __slots__ = ["encmapping", "decmapping"]
+
+    def __init__(self, subcon, *merge, **mapping):
         super(Enum, self).__init__(subcon)
-        self.default = default
+        for enum in merge:
+            for enumentry in enum:
+                mapping[enumentry.name] = enumentry.value
         self.encmapping =      {k:v for k,v in mapping.items()}
         self.encmapping.update({v:v for k,v in mapping.items()})
         self.decmapping =      {v:k for k,v in mapping.items()}
         self.decmapping.update({k:k for k,v in mapping.items()})
-        if self.default is not NotImplemented and self.default is not Pass:
-            if True:
-                self.decmapping.update({"default":default})
-            if default not in self.decmapping:
-                self.decmapping.update({default:"default"})
 
-    def _parse(self, stream, context, path):
-        obj2 = self.subcon._parse(stream, context, path)
+    def _decode(self, obj, context):
         try:
-            obj = self.decmapping[obj2]
+            return self.decmapping[obj]
         except KeyError:
-            if self.default is NotImplemented:
-                raise MappingError("parsing failed, no mapping for %r, no default either" % (obj2,))
-            if self.default is Pass:
-                return "default"
-            return "default"
-        return obj
+            raise MappingError("parsing failed, no mapping for %r" % (obj,))
 
-    def _build(self, obj, stream, context, path):
+    def _encode(self, obj, context):
         try:
-            obj2 = self.encmapping[obj]
+            return self.encmapping[obj]
         except KeyError:
-            if self.default is NotImplemented:
-                raise MappingError("building failed, no mapping for %r, no default either" % (obj,))
-            if self.default is Pass:
-                return
-            obj = "default"
-            obj2 = self.default
-        self.subcon._build(obj2, stream, context, path)
-        return obj
+            raise MappingError("building failed, no mapping for %r" % (obj,))
 
 
 class FlagsEnum(Adapter):
@@ -1567,6 +1565,7 @@ class FlagsEnum(Adapter):
     Size is same as subcon, unless it raises SizeofError.
 
     :param subcon: Construct instance, must operate on integers
+    :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
     :param \*\*flags: dict, mapping string names to integer values
 
     Can raise arbitrary exceptions when computing | and & and value is non-integer.
@@ -1576,11 +1575,22 @@ class FlagsEnum(Adapter):
         >>> d = FlagsEnum(Byte, a=1, b=2, c=4, d=8)
         >>> d.parse(b"\x03")
         Container(c=False)(b=True)(a=True)(d=False)
+
+        import enum
+        class E(enum.IntEnum):
+            one = 1
+        class F(enum.IntFlag):
+            two = 2
+        Enum(Byte,      E, F) <--> Enum(Byte,      one=1, two=2)
+        FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
     """
     __slots__ = ["flags"]
 
-    def __init__(self, subcon, **flags):
+    def __init__(self, subcon, *merge, **flags):
         super(FlagsEnum, self).__init__(subcon)
+        for enum in merge:
+            for enumentry in enum:
+                flags[enumentry.name] = enumentry.value
         self.flags = flags
 
     def _decode(self, obj, context):

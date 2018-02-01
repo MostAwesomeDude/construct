@@ -66,6 +66,8 @@ Requirements
 --------------
 Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 3.7 pypy pypy3 implementation. Best would be 3.6 because it supports ordered keyword arguments. Second best would be 3.4 because it supports compilation feature.
 
+Enum34 is optional if you want Enum or EnumFlags to take labels from IntEnum or IntFlag (not needed on Python 3.4 and 3.6 respectively).
+
 Numpy is optional, if you want to serialize numpy arrays using Numpy protocol. Otherwise arrays can still be serialized using Array construct.
 
-Different Python versions support different compression modules (like gzip), if you want to use Compressed construct.
+Different Python versions support different compression modules (like gzip lzma), if you want to use Compressed construct.

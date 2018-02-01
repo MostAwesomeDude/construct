@@ -19,7 +19,7 @@ python:
 
 install:
     - pip install pytest pytest-benchmark
-    - pip install numpy
+    - pip install numpy enum34
 
 before_script:
     - "export PYTHONPATH=$PYTHONPATH:`pwd`"
