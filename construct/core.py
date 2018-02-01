@@ -4,6 +4,7 @@ import struct, io, binascii, collections, sys
 
 from construct.lib import *
 from construct.expr import *
+from construct.version import *
 
 
 #===============================================================================
@@ -320,7 +321,12 @@ class Construct(object):
             from construct.lib import *
             from io import BytesIO
             from struct import pack, unpack, calcsize
+            import sys
             import collections
+
+            assert sys.version_info[:2] >= (3,4)
+            assert version_string == %r
+
             def read_bytes(io, count):
                 assert count >= 0
                 data = io.read(count)
@@ -328,7 +334,7 @@ class Construct(object):
                 return data
             def restream(data, func):
                 return func(BytesIO(data))
-        """)
+        """ % (version_string, ))
         code.append("""
             def parseall(io, this):
                 return %s
