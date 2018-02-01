@@ -1,5 +1,6 @@
-import re
 from construct.lib.py3compat import *
+
+import re
 
 
 globalfullprinting = None
@@ -44,8 +45,6 @@ class Container(dict):
         >>> Container()
         # list of pairs, not recommended
         >>> Container([ ("name","anonymous"), ("age",21) ])
-        # list of dictionaries, not recommended
-        >>> Container(dict1, dict2, dict3)
         # This syntax requires Python 3.6
         >>> Container(name="anonymous", age=21)
         # This syntax is for internal use only
@@ -106,49 +105,11 @@ class Container(dict):
         for k,v in kw.items():
             self[k] = v
 
-    def __getstate__(self):
-        return self.__keys_order__
-
-    def __setstate__(self, state):
-        self.__keys_order__ = state
-
     def __call__(self, **kw):
         """Chains adding new entries to the same container. See ctor."""
         for k,v in kw.items():
             self[k] = v
         return self
-
-    def clear(self):
-        dict.clear(self)
-        self.__keys_order__ = []
-
-    def pop(self, key, *default):
-        """Removes and returns the value for a given key, raises KeyError if not found."""
-        val = dict.pop(self, key, *default)
-        self.__keys_order__.remove(key)
-        return val
-
-    def popitem(self):
-        """Removes and returns the last key and value from order."""
-        k = self.__keys_order__.pop()
-        v = dict.pop(self, k)
-        return k, v
-
-    def update(self, seqordict, **kw):
-        if isinstance(seqordict, dict):
-            seqordict = seqordict.items()
-        for k,v in seqordict:
-            self[k] = v
-        dict.update(self, kw)
-
-    def copy(self):
-        return Container(self.items())
-
-    __update__ = update
-    __copy__ = copy
-
-    def __len__(self):
-        return len(self.__keys_order__)
 
     def keys(self):
         return iter(self.__keys_order__)
@@ -160,6 +121,41 @@ class Container(dict):
         return ((k, self[k]) for k in self.__keys_order__)
 
     __iter__ = keys
+
+    def clear(self):
+        dict.clear(self)
+        self.__keys_order__ = []
+
+    def pop(self, key):
+        """Removes and returns the value for a given key, raises KeyError if not found."""
+        val = dict.pop(self, key)
+        self.__keys_order__.remove(key)
+        return val
+
+    def popitem(self):
+        """Removes and returns the last key and value from order."""
+        k = self.__keys_order__.pop()
+        v = dict.pop(self, k)
+        return k, v
+
+    def update(self, seqordict):
+        if isinstance(seqordict, dict):
+            seqordict = seqordict.items()
+        for k,v in seqordict:
+            self[k] = v
+
+    def __getstate__(self):
+        return self.__keys_order__
+
+    def __setstate__(self, state):
+        self.__keys_order__ = state
+
+    def copy(self):
+        return Container(self)
+
+    __update__ = update
+
+    __copy__ = copy
 
     def __dir__(self):
         """For auto completion of attributes based on container values."""
@@ -179,6 +175,32 @@ class Container(dict):
             if k not in other or not isequal(v, other[k]):
                 return False
         return True
+
+    @recursion_lock()
+    def __repr__(self):
+        parts = ["Container"]
+        for k,v in self.items():
+            if not isinstance(k,str) or not k.startswith("_"):
+                parts.extend(["(", str(k), "=", repr(v), ")"])
+        if len(parts) == 1:
+            parts.append("()")
+        return "".join(parts)
+
+    @recursion_lock()
+    def __str__(self, indentation="\n    "):
+        printingcap = 64
+        text = ["Container: "]
+        for k,v in self.items():
+            if not isinstance(k,str) or not k.startswith("_"):
+                text.extend([indentation, str(k), " = "])
+                if isinstance(v, stringtypes):
+                    if len(v) <= printingcap or globalfullprinting:
+                        text.append("%s (total %d)" % (reprbytes(v), len(v)))
+                    else:
+                        text.append("%s... (truncated, total %d)" % (reprbytes(v[:printingcap]), len(v)))
+                else:
+                    text.append(indentation.join(str(v).split("\n")))
+        return "".join(text)
 
     def _search(self, compiled_pattern, search_all):
         items = []
@@ -210,32 +232,6 @@ class Container(dict):
     def search_all(self, pattern):
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, True)
-
-    @recursion_lock()
-    def __repr__(self):
-        parts = ["Container"]
-        for k,v in self.items():
-            if not isinstance(k,str) or not k.startswith("_"):
-                parts.extend(["(", str(k), "=", repr(v), ")"])
-        if len(parts) == 1:
-            parts.append("()")
-        return "".join(parts)
-
-    @recursion_lock()
-    def __str__(self, indentation="\n    "):
-        printingcap = 64
-        text = ["Container: "]
-        for k,v in self.items():
-            if not isinstance(k,str) or not k.startswith("_"):
-                text.extend([indentation, str(k), " = "])
-                if isinstance(v, stringtypes):
-                    if len(v) <= printingcap or globalfullprinting:
-                        text.append("%s (total %d)" % (reprbytes(v), len(v)))
-                    else:
-                        text.append("%s... (truncated, total %d)" % (reprbytes(v[:printingcap]), len(v)))
-                else:
-                    text.append(indentation.join(str(v).split("\n")))
-        return "".join(text)
 
 
 class FlagsContainer(Container):
