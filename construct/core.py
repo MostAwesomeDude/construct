@@ -4247,6 +4247,9 @@ class Compressed(Tunnel):
                 return self.lib.compress(data, self.level)
         return self.lib.encode(data, self.encoding)
 
+    def _emitdecompiled(self, code):
+        return "Compressed(%s, %r, %r)" % (self.subcon._decompile(code), self.encoding, self.level, )
+
 
 #===============================================================================
 # lazy equivalents
