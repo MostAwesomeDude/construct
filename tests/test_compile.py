@@ -82,8 +82,8 @@ class TestCompile(unittest.TestCase):
             "union3" / Union(0, "char1"/Byte, "char2"/Byte, "char3"/Byte),
             "union4" / Union("char1", "char1"/Byte, "char2"/Byte, "char3"/Byte),
             "unionembedded" / Union(None, Embedded(Struct("char"/Byte))),
-            # Select
-            # Optional
+            "select" / Select(Byte, CString(StringsAsBytes)),
+            "optional" / Optional(Byte),
             "if1" / If(this.num == 0, Byte),
             "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
             # Switch

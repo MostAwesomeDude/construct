@@ -3082,6 +3082,9 @@ class Select(Construct):
                     return
         raise SelectError("no subconstruct matched: %s" % (obj,))
 
+    def _emitdecompiled(self, code):
+        return "Select(%s)" % (", ".join(sc._decompile(code) for sc in self.subcons), )
+
 
 def Optional(subcon):
     r"""
