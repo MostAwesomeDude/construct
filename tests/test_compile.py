@@ -87,7 +87,10 @@ class TestCompile(unittest.TestCase):
             "if1" / If(this.num == 0, Byte),
             "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
             # Switch
-            # StopIf
+            "stopif0" / StopIf(this.num == 255),
+            "stopif1" / Struct(StopIf(this._.num == 0), Error),
+            "stopif2" / Sequence(StopIf(this._.num == 0), Error),
+            "stopif3" / GreedyRange(StopIf(this.num == 0)),
 
             "padding" / Padding(2),
             "paddedbyte" / Padded(4, Byte),

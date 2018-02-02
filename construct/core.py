@@ -1918,12 +1918,15 @@ class Struct(Construct):
         block = """
             def %s(io, this):
                 this = Container(_ = this)
+                try:
         """ % (fname, )
         for sc in self.subcons:
             block += """
-                %s%s
+                    %s%s
             """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
         block += """
+                except StopIteration:
+                    pass
                 del this._
                 return this
         """
@@ -2010,16 +2013,19 @@ class Sequence(Construct):
             def %s(io, this):
                 result = ListContainer()
                 this = Container(_ = this)
+                try:
         """ % (fname,)
         for sc in self.subcons:
             block += """
-                result.append(%s)
+                    result.append(%s)
             """ % (sc._compileparse(code))
             if sc.name:
                 block += """
-                this[%r] = result[-1]
+                    this[%r] = result[-1]
                 """ % (sc.name, )
         block += """
+                except StopIteration:
+                    pass
                 return result
         """
         code.append(block)
@@ -3281,6 +3287,14 @@ class StopIf(Construct):
 
     def _sizeof(self, context, path):
         return SizeofError("StopIf cannot determine size because it depends on actual context which then depends on actual data and outer constructs")
+
+    def _emitparse(self, code):
+        code.append("""
+            def parse_stopif(condition):
+                if condition:
+                    raise StopIteration
+        """)
+        return "parse_stopif(%r)" % (self.condfunc,)
 
 
 #===============================================================================
