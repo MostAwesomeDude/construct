@@ -26,7 +26,7 @@ Compiled classes only parse faster, building and sizeof defers to core classes
 
 AssertionError and standard hierarchy exceptions can be raised (core classes are resticted to ConstructError and its derivatives)
 
-RepeatUntil Enum FlagsEnum StopIf Pointer Peek Select Optional Switch Checksum Compressed are not yet implemented
+RepeatUntil Switch Checksum are not yet implemented
 
 .. warning:: These items are (probably) permanent, but feel free to request changes.
 

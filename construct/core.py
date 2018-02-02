@@ -1274,6 +1274,7 @@ class StringsAsBytes:
     pass
 
 
+#:
 possiblestringencodings = dict(
     StringsAsBytes=1,
     ascii=1,
