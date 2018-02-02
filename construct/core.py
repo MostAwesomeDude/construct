@@ -421,22 +421,37 @@ class Construct(object):
         :returns: string containing runtimes and descriptions
         """
         from timeit import timeit
-        parsetime = timeit(lambda: self.parse(sampledata), number=1000)/1000
-        sampleobj = self.parse(sampledata)
-        buildtime = timeit(lambda: self.build(sampleobj), number=1000)/1000
 
         try:
+            parsetime = "failed"
+            buildtime = "failed"
             compiletime = "failed"
             parsetime2 = "failed"
             buildtime2 = "failed"
+
+            sampleobj = self.parse(sampledata)
+            parsetime = timeit(lambda: self.parse(sampledata), number=1000)/1000
+            self.build(sampleobj)
+            buildtime = timeit(lambda: self.build(sampleobj), number=1000)/1000
             compiled = self.compile()
             compiletime = timeit(lambda: self.compile(), number=100)/100
+            compiled.parse(sampledata)
             parsetime2 = timeit(lambda: compiled.parse(sampledata), number=1000)/1000
+            compiled.build(sampleobj)
             buildtime2 = timeit(lambda: compiled.build(sampleobj), number=1000)/1000
         except Exception:
             pass
 
-        return "Timeit measurements:\ncompiling:         {:.20f} sec/call\nparsing:           {:.20f} sec/call\nparsing compiled:  {:.20f} sec/call\nbuilding:          {:.20f} sec/call\nbuilding compiled: {:.20f} sec/call\n".format(compiletime, parsetime, parsetime2, buildtime, buildtime2)
+        lines = [
+            "Timeit measurements:",
+            "compiling:         {:.20f} sec/call",
+            "parsing:           {:.20f} sec/call",
+            "parsing compiled:  {:.20f} sec/call",
+            "building:          {:.20f} sec/call",
+            "building compiled: {:.20f} sec/call",
+            ""
+        ]
+        return "\n".join(lines).format(compiletime, parsetime, parsetime2, buildtime, buildtime2)
 
     def testcompiled(self, sampledata):
         """

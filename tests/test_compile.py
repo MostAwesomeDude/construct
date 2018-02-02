@@ -135,6 +135,13 @@ class TestCompile(unittest.TestCase):
         data = bytes(1000)
         d.testcompiled(data)
 
+    @pytest.mark.skip(reason="enable to run a benchmark with tox")
+    def test_benchmark(self):
+        d = self.example
+        data = bytes(1000)
+        print(d.benchmark(data))
+        assert False
+
     # def test_benchmark_compiling(benchmark):
     #     d = benchmark.example
     #     benchmark(d.compile)
