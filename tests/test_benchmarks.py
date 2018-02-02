@@ -29,8 +29,29 @@ def test_greedybytes_build(benchmark):
     d = GreedyBytes
     benchmark(d.build, bytes(100))
 
-# Bitwise
-# Bytewise
+def test_bitwise_parse(benchmark):
+    d = Bitwise(Bytes(800))
+    benchmark(d.parse, bytes(100))
+
+def test_bitwise_parse_compiled(benchmark):
+    d = Bitwise(Bytes(800)).compile()
+    benchmark(d.parse, bytes(100))
+
+def test_bitwise_build(benchmark):
+    d = Bitwise(Bytes(800))
+    benchmark(d.build, bytes(800))
+
+def test_bytewise_parse(benchmark):
+    d = Bitwise(Bytewise(Bytes(100)))
+    benchmark(d.parse, bytes(100))
+
+def test_bytewise_parse_compiled(benchmark):
+    d = Bitwise(Bytewise(Bytes(100))).compile()
+    benchmark(d.parse, bytes(100))
+
+def test_bytewise_build(benchmark):
+    d = Bitwise(Bytewise(Bytes(100)))
+    benchmark(d.build, bytes(100))
 
 def test_formatfield_parse(benchmark):
     d = FormatField(">", "L")
@@ -105,25 +126,46 @@ def test_sequence_build(benchmark):
     benchmark(d.build, [0]*5)
 
 def test_range_parse(benchmark):
-    d = Array(100, Byte)
+    d = Range(100, 100, Byte)
     benchmark(d.parse, bytes(100))
 
 def test_range_parse_compiled(benchmark):
-    d = Array(100, Byte).compile()
+    d = Range(100, 100, Byte).compile()
     benchmark(d.parse, bytes(100))
 
 def test_range_build(benchmark):
-    d = Array(100, Byte)
+    d = Range(100, 100, Byte)
     benchmark(d.build, [0]*100)
 
-# GreedyRange
+def test_greedyrange_parse(benchmark):
+    d = GreedyRange(Byte)
+    benchmark(d.parse, bytes(100))
 
-# Array
+def test_greedyrange_parse_compiled(benchmark):
+    d = GreedyRange(Byte).compile()
+    benchmark(d.parse, bytes(100))
+
+def test_greedyrange_build(benchmark):
+    d = GreedyRange(Byte)
+    benchmark(d.build, [0]*100)
+
+def test_array_parse(benchmark):
+    d = Array(100, Byte)
+    benchmark(d.parse, bytes(100))
+
+def test_array_parse_compiled(benchmark):
+    d = Array(100, Byte).compile()
+    benchmark(d.parse, bytes(100))
+
+def test_array_build(benchmark):
+    d = Array(100, Byte)
+    benchmark(d.build, [0]*100)
 
 def test_repeatuntil_parse(benchmark):
     d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte)
     benchmark(d.parse, bytes(20))
 
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_repeatuntil_parse_compiled(benchmark):
     d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte).compile()
     benchmark(d.parse, bytes(20))
@@ -194,10 +236,8 @@ def test_check_build(benchmark):
 
 # Error
 
-
-
-
-
+# -----------------------------------------------
+# above have parse-compiled version (3), below have not (2)
 
 def test_focusedseq_parse(benchmark):
     d = FocusedSeq("num", Const(bytes(2)), "num"/Byte, Terminated)
@@ -300,8 +340,29 @@ def test_rawcopy_build2(benchmark):
     d = RawCopy(Byte)
     benchmark(d.build, dict(value=0))
 
-# ByteSwapped
-# BitsSwapped
+def test_byteswapped_parse(benchmark):
+    d = ByteSwapped(Bytes(100))
+    benchmark(d.parse, bytes(100))
+
+def test_byteswapped_parse_compiled(benchmark):
+    d = ByteSwapped(Bytes(100)).compile()
+    benchmark(d.parse, bytes(100))
+
+def test_byteswapped_build(benchmark):
+    d = ByteSwapped(Bytes(100))
+    benchmark(d.build, bytes(100))
+
+def test_bitsswapped_parse(benchmark):
+    d = BitsSwapped(Bytes(100))
+    benchmark(d.parse, bytes(100))
+
+def test_bitsswapped_parse_compiled(benchmark):
+    d = BitsSwapped(Bytes(100)).compile()
+    benchmark(d.parse, bytes(100))
+
+def test_bitsswapped_build(benchmark):
+    d = BitsSwapped(Bytes(100))
+    benchmark(d.build, bytes(100))
 
 def test_prefixed_parse(benchmark):
     d = Prefixed(Byte, GreedyBytes)
