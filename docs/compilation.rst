@@ -209,7 +209,6 @@ Container is an implementation of so called AttrDict. It captures access to its 
 
 TBA: Decompiled instances.
 TBA: Caching emitted code.
-TBA: Union skips telling and seeking.
 
 Empirical evidence
 ---------------------

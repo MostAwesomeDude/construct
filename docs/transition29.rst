@@ -21,11 +21,13 @@ Compiled CompilableMacro Decompiled added (used internally)
 
 String* classes require explicit encoding (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
-String* classes (all of them) support UTF16 UTF32 encodings, but String dropped some parameters
+String* classes (all of them) support UTF16 UTF32 encodings, but String CString dropped some parameters
 
 Enum FlagsEnum can merge labels from IntEnum IntFlag (enum module), but dropped `default` parameter
 
 Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
+
+Struct Sequence Union FocusedSeq are supporting new embedding semantics (see `this page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
 
 Array reimplemented without Range, does not use stream.tell()
 
