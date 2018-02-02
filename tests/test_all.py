@@ -264,14 +264,11 @@ class TestCore(unittest.TestCase):
         common(Enum(Byte, E, F), b"\x01", "a", 1)
         common(Enum(Byte, E, F), b"\x02", "b", 1)
 
-    @pytest.mark.xfail(reason="Enum no longer supports default")
     def test_enum_issue_298(self):
-        # also tests Enum when default case value overlaps with another label's value
         st = Struct(
             "ctrl" / Enum(Byte,
                 NAK = 0x15,
                 STX = 0x02,
-                default = 0x02,
             ),
             "optional" / If(this.ctrl == "NAK", Byte),
         )
@@ -283,16 +280,14 @@ class TestCore(unittest.TestCase):
             "flags" / FlagsEnum(Byte, a=1),
             Check(lambda ctx: ctx.flags == FlagsContainer(a=1)),
         )
-        st.parse(b"\x01")
-        st.build(dict(flags=FlagsContainer(a=1)))
+        common(st, b"\x01", dict(flags=FlagsContainer(a=True)), 1)
 
         # Flag is not affected by same bug
         st = Struct(
             "flag" / Flag,
             Check(lambda ctx: ctx.flag == True),
         )
-        st.parse(b"\x01")
-        st.build(dict(flag=True))
+        common(st, b"\x01", dict(flag=True), 1)
 
     def test_flagsenum(self):
         assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
@@ -770,19 +765,15 @@ class TestCore(unittest.TestCase):
             "len" / Byte,
             EmbeddedBitStruct("data" / BitsInteger(8)),
         )
-        assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
-        assert d.build(dict(len=8,data=255)) == b"\x08\xff"
-        assert d.sizeof() == 2
+        common(d, b"\x08\xff", Container(len=8)(data=255), 2)
 
     @pytest.mark.xfail(reason="new embedding semantics, needs fixing")
-    def test_embeddedbitstruct2_issue_39(self):
+    def test_embeddedbitstruct2(self):
         d = Struct(
             "len" / Byte,
             EmbeddedBitStruct("data" / BitsInteger(this.len)),
         )
-        assert d.parse(b"\x08\xff") == Container(len=8)(data=255)
-        assert d.build(dict(len=8,data=255)) == b"\x08\xff"
-        assert raises(d.sizeof) == SizeofError
+        common(d, b"\x08\xff", Container(len=8)(data=255), SizeofError)
 
     def test_pointer(self):
         common(Pointer(2,             Byte), b"\x00\x00\x07", 7, SizeofError)
@@ -960,7 +951,7 @@ class TestCore(unittest.TestCase):
         assert len(d.build(zeros)) < 50
         assert raises(d.sizeof) == SizeofError
 
-    @pytest.mark.xfail(PY < (3,2), raises=AttributeError, reason="gzip was added in 3.2")
+    @pytest.mark.xfail(PY < (3,2), raises=AttributeError, reason="gzip module was added in 3.2")
     def test_compressed_gzip(self):
         zeros = bytes(10000)
         d = Compressed(GreedyBytes, "gzip")
@@ -1320,50 +1311,6 @@ class TestCore(unittest.TestCase):
         Outer.build(Container(payload=Container(data=payload), payload_len=payload_len, serial=12345, struct_type=9001))
         setglobalstringencoding(None)
 
-    # def test_from_issue_28(self):
-
-    #     def vstring(name, embed=True, optional=True):
-    #         lfield = "_%s_length" % name.lower()
-    #         s = Struct(
-    #             lfield / Byte,
-    #             name / Bytes(lambda ctx: getattr(ctx, lfield)))
-    #         if optional:
-    #             s = Optional(s)
-    #         if embed:
-    #             s = Embedded(s)
-    #         return s
-
-    #     def build_struct(embed_g=True, embed_h=True):
-    #         s = "mystruct" / Struct(
-    #             "a" / Int32ul,
-    #             "b" / Int8ul,
-    #             "c" / Int8ul,
-    #             "d" / BitStruct("dx" / Bit[8]),
-    #             "e" / BitStruct("ex" / Bit[8]),
-    #             "f" / Float32b,
-    #             vstring("g", embed=embed_g),
-    #             vstring("h", embed=embed_h),
-    #             "i" / BitStruct("ix" / Bit[8]),
-    #             "j" / Int8sb,
-    #             "k" / Int8sb,
-    #             "l" / Int8sb,
-    #             "m" / Float32l,
-    #             "n" / Float32l,
-    #             vstring("o"),
-    #             vstring("p"),
-    #             vstring("q"),
-    #             vstring("r"))
-    #         return s
-
-    #     data = b'\xc3\xc0{\x00\x01\x00\x00\x00HOqA\x12some silly text...\x00\x0e\x00\x00\x00q=jAq=zA\x02dB\x02%f\x02%f\x02%f'
-    #     print("\n\nNo embedding for neither g and h, i is a container --> OK")
-    #     print(build_struct(embed_g=False, embed_h=False).parse(data))
-    #     print("Embed both g and h, i is not a container --> FAIL")
-    #     print(build_struct(embed_g=True, embed_h=True).parse(data))
-    #     print("\n\nEmbed g but not h --> EXCEPTION")
-    #     print(build_struct(embed_g=True, embed_h=False).parse(data))
-    #     # When setting optional to False in vstring method, all three tests above work fine.
-
     def test_from_issue_231(self):
         u = Union(0, "raw"/Byte[8], "ints"/Int[2])
         s = Struct("u"/u, "d"/Byte[4])
@@ -1435,40 +1382,6 @@ class TestCore(unittest.TestCase):
         assert d.build(dict(vals=dict(value=dict(a=[0,1])))) == b"\x02\x00\x01\x01"
         assert d.build(dict(vals=dict(data=b"\x00\x01"))) == b"\x02\x00\x01\x01"
 
-    # def test_embeddedif_issue_296(self):
-    #     st = 'BuggedStruct' / Struct(
-    #         'ctrl' / Bytes(1),
-    #         Probe(),
-    #         Embedded(If(
-    #             this.ctrl == b'\x02',
-    #             Struct('etx' / Const(b'\x03')),
-    #         )),
-    #         Probe(),
-    #     )
-    #     p1 = st.parse(b'\x02\x03')
-    #     p3 = st.parse(b'\x06')
-
-    # def test_embeddedif_issue_312(self):
-    #     st = Struct(
-    #         'name'/CString(encoding="utf8"),
-    #         Embedded(If(len_(this.name) > 0,
-    #             Struct('index'/Byte),
-    #         )),
-    #     )
-    #     assert st.parse(b'bob\x00\x05') == Container(name='bob')(index=5)
-    #     assert st.parse(b'\x00') == Container(name='')
-
-    @pytest.mark.xfail(strict=True, reason="this cannot work, Struct checks flagembedded before building")
-    def test_embeddedswitch_issue_312_cannotwork(self):
-        st = Struct(
-            'name'/CString(encoding="utf8"),
-            If(len_(this.name) > 0,
-                Embedded(Struct('index'/Byte)),
-            ),
-        )
-        assert st.parse(b'bob\x00\x05') == Container(name='bob')(index=5)
-        assert st.parse(b'\x00') == Container(name='')
-
     def test_from_issue_357(self):
         inner = Struct(
             "computed" / Computed(4),
@@ -1502,6 +1415,14 @@ class TestCore(unittest.TestCase):
         for i in range(5):
             assert BIT_FORMAT.parse(b'\x00').my_tell == 0
 
-
     def test_compiler_recursion(self):
         raises(Construct().compile) == NotImplementedError
+
+    @pytest.mark.xfail(reason="unknown cause")
+    def test_this_expresion_compare_container(self):
+        # lambda is fine, but this equality with FlagsContainer fails
+        st = Struct(
+            "flags" / FlagsEnum(Byte, a=1),
+            Check(this.flags == FlagsContainer(a=1)),
+        )
+        common(st, b"\x01", dict(flags=FlagsContainer(a=True)), 1)
