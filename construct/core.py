@@ -355,7 +355,7 @@ class Construct(object):
                 return data
             def restream(data, func):
                 return func(BytesIO(data))
-            def reobject(obj, func):
+            def reuse(obj, func):
                 return func(obj)
         """ % (version_string, ))
         code.append("""
@@ -1746,7 +1746,7 @@ class FlagsEnum(Adapter):
             raise MappingError("building failed, unknown flag: %s" % (name,))
 
     def _emitparse(self, code):
-        return "reobject(%s, lambda x: FlagsContainer(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %r)" % (k,v) for k,v in self.flags.items()), )
+        return "reuse(%s, lambda x: FlagsContainer(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %r)" % (k,v) for k,v in self.flags.items()), )
 
 
 class Mapping(Adapter):
