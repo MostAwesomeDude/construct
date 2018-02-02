@@ -41,10 +41,9 @@ Construct
     <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.9</a> was released in January 2018. It adds compiler feature (for better performance!), and other major upgrades. Documentation was overhauled (see Core API pages!). See Transition page.<br/>
     <br/>
 
-    <font color="#0066ff"><strong>Any improvements to the compiler are welcomed!</strong></font><br/>
+    Please use <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches. Feel free to request any changes that would support your project. There is also a <a class="reference external" href="https://gitter.im/construct-construct/Lobby">Gitter chat</a> but using Issues is highly recommended.<br/>
     <br/>
 
-    Please use <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests, report issues and bugs, and to send in patches. Feel free to request any changes that would support your project. <br/>
     </div>
 
 
