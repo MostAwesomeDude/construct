@@ -1499,3 +1499,7 @@ class TestCore(unittest.TestCase):
             assert FORMAT.parse(b'\x00').my_tell == 0
         for i in range(5):
             assert BIT_FORMAT.parse(b'\x00').my_tell == 0
+
+
+    def test_compiler_recursion(self):
+        raises(Construct().compile) == NotImplementedError

@@ -352,7 +352,7 @@ class Construct(object):
         compiledschema.defersubcon = self
         return compiledschema
 
-    def _decompile(self, code):
+    def _decompile(self, code, recursive=False):
         """Used internally."""
         if id(self) in code.decompiledcache:
             return code.decompiledcache[id(self)]
@@ -365,14 +365,16 @@ class Construct(object):
             code.decompiledcache[id(self)] = cname
             return cname
         except NotImplementedError:
+            if recursive:
+                raise NotImplementedError
             cname = "decompiled_%s" % code.allocateId()
             code.append("""
                 %s = Decompiled(lambda io,this: %s)
-            """ % (cname, self._compileparse(code), ))
+            """ % (cname, self._compileparse(code, recursive=True), ))
             code.decompiledcache[id(self)] = cname
             return cname
 
-    def _compileparse(self, code):
+    def _compileparse(self, code, recursive=False):
         """Used internally."""
         if id(self) in code.parsercache:
             return code.parsercache[id(self)]
@@ -382,7 +384,9 @@ class Construct(object):
             code.parsercache[id(self)] = emitted
             return emitted
         except NotImplementedError:
-            emitted = "%s._parse(io, this, None)" % (self._decompile(code), )
+            if recursive:
+                raise NotImplementedError
+            emitted = "%s._parse(io, this, None)" % (self._decompile(code, recursive=True), )
             code.parsercache[id(self)] = emitted
             return emitted
 
