@@ -1072,13 +1072,13 @@ class TestCore(unittest.TestCase):
         assert LazyRange(1,9,Byte).parse(b"12345") == Range(1,9,Byte).parse(b"12345")
         assert LazyRange(1,9,Byte).build([1,2,3]) == Range(1,9,Byte).build([1,2,3])
 
-    def test_ondemand(self):
-        assert OnDemand(Byte).parse(b"\x01garbage")() == 1
-        assert OnDemand(Byte).build(1) == b"\x01"
-        assert OnDemand(Byte).sizeof() == 1
+    def test_lazyfield(self):
+        assert LazyField(Byte).parse(b"\x01garbage")() == 1
+        assert LazyField(Byte).build(1) == b"\x01"
+        assert LazyField(Byte).sizeof() == 1
 
-        parseret = OnDemand(Byte).parse(b"\x01garbage")
-        assert OnDemand(Byte).build(parseret) == b"\x01"
+        parseret = LazyField(Byte).parse(b"\x01garbage")
+        assert LazyField(Byte).build(parseret) == b"\x01"
 
     def test_lazybound(self):
         common(LazyBound(lambda ctx: Byte), b"\x01", 1, 1)

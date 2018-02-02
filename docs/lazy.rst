@@ -26,16 +26,16 @@ Essentially almost every code that uses the base classes also works on these but
     Equivalent to Range construct, but members are parsed on demand. Works only with fixed size subcon. Entire parse is essentially one seek.
 
 
-OnDemand
+LazyField
 --------
 
 There is a different approach to lazy parsing, where only one field is made lazy. Parsing returns a parameterless lambda that when called, returns the parsed data. Right now, each time the lambda is called the object is parsed again, so if the inner subcon is non-deterministic, each parsing may return a different object. Builds from a parsed object or a lambda.
 
->>> OnDemand(Byte).parse(b"\xff")
-<function OnDemand._parse.<locals>.<lambda> at 0x7fdc241cfc80>
+>>> LazyField(Byte).parse(b"\xff")
+<function LazyField._parse.<locals>.<lambda> at 0x7fdc241cfc80>
 >>> _()
 255
->>> OnDemand(Byte).build(16)
+>>> LazyField(Byte).build(16)
 b'\x10'
 
 
@@ -60,4 +60,3 @@ Container:
         next = Container: 
             value = 0
             next = None
-

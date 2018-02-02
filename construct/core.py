@@ -4467,7 +4467,7 @@ class LazyRange(Construct):
             raise SizeofError("cannot calculate size, key not found in context")
 
 
-class OnDemand(Subconstruct):
+class LazyField(Subconstruct):
     r"""
     Allows for lazy parsing of one field.
 
@@ -4481,9 +4481,9 @@ class OnDemand(Subconstruct):
 
     Example::
 
-        >>> d = OnDemand(Byte)
+        >>> d = LazyField(Byte)
         >>> d.parse(b"\xff")
-        <function OnDemand._parse.<locals>.<lambda> at 0x7fdc241cfc80>
+        <function LazyField._parse.<locals>.<lambda> at 0x7fdc241cfc80>
         >>> _()
         255
         >>> d.build(255)
@@ -4492,7 +4492,7 @@ class OnDemand(Subconstruct):
         Can also re-build from the lambda returned at parsing.
 
         >>> d.parse(b"\xff")
-        <function OnDemand._parse.<locals>.<lambda> at 0x7fcbd9855f28>
+        <function LazyField._parse.<locals>.<lambda> at 0x7fcbd9855f28>
         >>> d.build(_)
         b'\xff'
     """

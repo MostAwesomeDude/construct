@@ -51,7 +51,7 @@ Important notes
 * BitStructs are embeddable. The ``Embedded`` wrapper can be used for that purpose. There is also the ``EmbeddedBitStruct``.
 
 * Byte aligned - The total size of the elements of a BitStruct must be a multiple of 8 (due to alignment issues). RestreamedBytesIO will raise an error if the amount of bits and bytes does not align properly.
-* Pointers and OnDemand - Do not place Pointers or OnDemands inside bitwise because it uses an internal stream, so external stream offsets will turn out wrong, have side-effects or raise exceptions.
+* Pointers and Lazy* - Do not place Pointers and Lazy* instances inside bitwise because it uses an internal stream, so external stream offsets will turn out wrong, have side-effects or raise exceptions.
 * Advanced classes like tunneling may not work in bitwise context. Only basic fields like integers were throughly tested.
 
 
@@ -97,4 +97,3 @@ And here's a snippet of code that operates on bits. The only difference is BitSt
 b' '
 
 So unlike "classical Construct", there's no need for BytePadding and BitPadding. If Padding is enclosed by a BitStruct, it operates on bits, otherwise, it operates on bytes.
-

@@ -84,7 +84,7 @@ msdos_header = Struct(
     Padding(20),
     "coff_header_pointer" / Int32ul,
     "_assembly_start" / Tell,
-    "code" / OnDemand(Bytes(this.coff_header_pointer - this._assembly_start)),
+    "code" / Bytes(this.coff_header_pointer - this._assembly_start),
 )
 
 symbol_table = "symbol_table" / Struct(

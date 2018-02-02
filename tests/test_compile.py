@@ -121,7 +121,7 @@ class TestCompile(unittest.TestCase):
             # LazyStruct
             # LazySequence
             # LazyRange
-            # OnDemand
+            # LazyField
             # LazyBound
 
             # adapters and validators

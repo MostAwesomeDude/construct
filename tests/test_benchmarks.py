@@ -404,7 +404,7 @@ def test_lazyrange_parse(benchmark):
         x = d.parse(bytes(100))
         [x[i] for i in range(100)]
 
-# OnDemand
+# LazyField
 # LazyBound
 
 def test_flag_parse(benchmark):

@@ -46,7 +46,7 @@ Adapters and validators, and mappings are in general not compilable
 
 Restreamed Rebuffered are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
 
-Lazy* OnDemand are not compilable
+Lazy* classes are not compilable
 
 
 Compiling schemas
