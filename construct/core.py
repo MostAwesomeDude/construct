@@ -355,6 +355,8 @@ class Construct(object):
                 return data
             def restream(data, func):
                 return func(BytesIO(data))
+            def reobject(obj, func):
+                return func(obj)
         """ % (version_string, ))
         code.append("""
             def parseall(io, this):
@@ -1682,6 +1684,11 @@ class Enum(Adapter):
         except KeyError:
             raise MappingError("building failed, no mapping for %r" % (obj,))
 
+    def _emitparse(self, code):
+        fname = "factory_%s" % code.allocateId()
+        code.append("%s = dict(%r)" % (fname, list(self.decmapping.items()), ))
+        return "%s[%s]" % (fname, self.subcon._compileparse(code), )
+
 
 class FlagsEnum(Adapter):
     r"""
@@ -1736,6 +1743,9 @@ class FlagsEnum(Adapter):
             raise MappingError("building failed, object is not a dictionary: %r" % (obj,))
         except KeyError:
             raise MappingError("building failed, unknown flag: %s" % (name,))
+
+    def _emitparse(self, code):
+        return "reobject(%s, lambda x: FlagsContainer(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %r)" % (k,v) for k,v in self.flags.items()), )
 
 
 class Mapping(Adapter):

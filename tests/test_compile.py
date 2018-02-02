@@ -43,8 +43,8 @@ class TestCompile(unittest.TestCase):
             "greedystring2" / Prefixed(Byte, GreedyString(encoding="utf8")),
 
             "flag" / Flag,
-            # Enum
-            # FlagsEnum
+            "enum" / Enum(Byte, zero=0),
+            "flagsenum" / FlagsEnum(Byte, zero=0, one=1),
             # Mapping
             # SymmetricMapping
 
