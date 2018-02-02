@@ -393,7 +393,6 @@ class TestCore(unittest.TestCase):
         assert st.sizeof(a=0,inner=Container(b=0)) == 2
         assert st.sizeof(a=1,inner=Container(b=1)) == 6
 
-    @pytest.mark.xfail(raises=KeyError, reason="unknown problem, heisen-bug?")
     def test_struct_issue_566(self):
         inner = Struct(
             Embedded(Struct(
