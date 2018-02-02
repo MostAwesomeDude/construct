@@ -99,8 +99,8 @@ class TestCompile(unittest.TestCase):
             # BitStruct
             # EmbeddedBitStruct
 
-            # Pointer
-            # Peek
+            "pointer" / Pointer(0, Byte),
+            "peek" / Peek(Byte),
             "seek0" / Seek(0, 1),
             "tell" / Tell,
             "pass1" / Pass,

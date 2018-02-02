@@ -3596,6 +3596,17 @@ class Pointer(Subconstruct):
     def _sizeof(self, context, path):
         raise SizeofError
 
+    def _emitparse(self, code):
+        code.append("""
+            def parse_pointer(io, offset, func):
+                fallback = io.tell()
+                io.seek(offset, 2 if offset < 0 else 0)
+                obj = func()
+                io.seek(fallback)
+                return obj
+        """)
+        return "parse_pointer(io, %r, lambda: %s)" % (self.offset, self.subcon._compileparse(code),)
+
 
 class Peek(Subconstruct):
     r"""
@@ -3639,6 +3650,21 @@ class Peek(Subconstruct):
 
     def _sizeof(self, context, path):
         return 0
+
+    def _emitparse(self, code):
+        code.append("""
+            def parse_peek(io, func):
+                fallback = io.tell()
+                try:
+                    return func()
+                except ExplicitError:
+                    raise
+                except ConstructError:
+                    pass
+                finally:
+                    io.seek(fallback)
+        """)
+        return "parse_peek(io, lambda: %s)" % (self.subcon._compileparse(code),)
 
 
 class Seek(Construct):
