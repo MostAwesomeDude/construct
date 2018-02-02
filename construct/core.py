@@ -764,6 +764,8 @@ def Bitwise(subcon):
     """
     macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
     def _emitparse(self, code):
+        if subcon.sizeof() % 8:
+            raise ConstructError("Bitwise cannot compile with subcon size not a multiple of 8")
         return "restream(bytes2bits(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof()//8, subcon._compileparse(code), )
     return CompilableMacro(macro, _emitparse)
 
