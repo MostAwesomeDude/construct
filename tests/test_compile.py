@@ -10,6 +10,9 @@ class TestCompile(unittest.TestCase):
         self.example = Struct(
             "num" / Byte,
 
+            # "items" / Computed([1,2,3]),
+            # "len_" / Computed(len_(this.items)),
+
             "bytes1" / Bytes(4),
             "bytes2" / Bytes(this.num),
             "greedybytes" / Prefixed(Byte, GreedyBytes),

@@ -344,6 +344,7 @@ class Construct(object):
             from struct import pack, unpack, calcsize
             import sys
             import collections
+            import builtins
 
             assert sys.version_info[:2] >= (3,4)
             assert version_string == %r
@@ -357,6 +358,12 @@ class Construct(object):
                 return func(BytesIO(data))
             def reuse(obj, func):
                 return func(obj)
+
+            len_ = builtins.len
+            sum_ = builtins.sum
+            min_ = builtins.min
+            max_ = builtins.max
+            abs_ = builtins.abs
         """ % (version_string, ))
         code.append("""
             def parseall(io, this):
