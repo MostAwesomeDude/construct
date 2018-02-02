@@ -1,7 +1,7 @@
 import operator
-
 if not hasattr(operator, "div"):
     operator.div = operator.truediv
+
 
 opnames = {
     operator.add : "+",
@@ -28,8 +28,10 @@ opnames = {
     operator.ne : "!=",
 }
 
+
 class ExprMixin(object):
-    __slots__ = ()
+    __slots__ = []
+
     def __add__(self, other):
         return BinExpr(operator.add, self, other)
     def __sub__(self, other):
@@ -105,87 +107,116 @@ class ExprMixin(object):
     def __ne__(self, other):
         return BinExpr(operator.ne, self, other)
 
+
 class UniExpr(ExprMixin):
     __slots__ = ["op", "operand"]
+
     def __init__(self, op, operand):
         self.op = op
         self.operand = operand
+
     def __repr__(self):
         return "%s %r" % (opnames[self.op], self.operand)
-    def __call__(self, objorcontext, *args):
-        operand = self.operand(objorcontext) if callable(self.operand) else self.operand
+
+    def __call__(self, obj, *args):
+        operand = self.operand(obj) if callable(self.operand) else self.operand
         return self.op(operand)
+
 
 class BinExpr(ExprMixin):
     __slots__ = ["op", "lhs", "rhs"]
+
     def __init__(self, op, lhs, rhs):
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
+
     def __repr__(self):
         return "(%r %s %r)" % (self.lhs, opnames[self.op], self.rhs)
-    def __call__(self, objorcontext, *args):
-        lhs = self.lhs(objorcontext) if callable(self.lhs) else self.lhs
-        rhs = self.rhs(objorcontext) if callable(self.rhs) else self.rhs
+
+    def __call__(self, obj, *args):
+        lhs = self.lhs(obj) if callable(self.lhs) else self.lhs
+        rhs = self.rhs(obj) if callable(self.rhs) else self.rhs
         return self.op(lhs, rhs)
 
+
 class Path(ExprMixin):
-    __slots__ = ["__name", "__parent"]
-    def __init__(self, name, parent=None):
+    __slots__ = ["__name", "__field", "__parent"]
+
+    def __init__(self, name, field=None, parent=None):
         self.__name = name
+        self.__field = field
         self.__parent = parent
+
     def __repr__(self):
         if self.__parent is None:
             return self.__name
-        return "%r.%s" % (self.__parent, self.__name)
-    def __call__(self, context, *args):
-        if self.__parent is None:
-            return context
-        context2 = self.__parent(context)
-        return context2[self.__name]
-    def __getattr__(self, name):
-        return Path(name, self)
-    def __getitem__(self, name):
-    	return Path(name, self)
+        else:
+            return "%r.%s" % (self.__parent, self.__field)
 
-this = Path("this")
-
-class FuncExpr(ExprMixin):
-    def __init__(self, func, operand):
-        self.func = func
-        self.operand = operand
-    def __repr__(self):
-        return "%s_(%r)" % (self.func.__name__, self.operand)
-    def __call__(self, context, *args):
-        operand = self.operand(context) if callable(self.operand) else self.operand
-        return self.func(operand)
-
-class PathFunc(ExprMixin):
-    def __init__(self, func):
-        self.func = func
-    def __repr__(self):
-        return "%s_" % (self.func.__name__)
-    def __call__(self, operand, *args):
-        return FuncExpr(self.func, operand) if callable(operand) else operand
-
-len_ = PathFunc(len)
-sum_ = PathFunc(sum)
-min_ = PathFunc(min)
-max_ = PathFunc(max)
-abs_ = PathFunc(abs)
-
-class Path2(ExprMixin):
-    def __init__(self, name=None, parent=None):
-        self.__name = name
-        self.__parent = parent
-    def __repr__(self):
-        return "obj_"
     def __call__(self, obj, *args):
         if self.__parent is None:
             return obj
-        obj2 = self.__parent(obj)
-        return obj2[self.__name]
-    def __getattr__(self, name):
-        return Path2(name, self)
+        else:
+            return self.__parent(obj)[self.__field]
 
-obj_ = Path2()
+    def __getattr__(self, name):
+        return Path(self.__name, name, self)
+
+    def __getitem__(self, name):
+        return Path(self.__name, name, self)
+
+
+class Path2(ExprMixin):
+    __slots__ = ["__name", "__index", "__parent"]
+
+    def __init__(self, name, index=None, parent=None):
+        self.__name = name
+        self.__index = index
+        self.__parent = parent
+
+    def __repr__(self):
+        if self.__parent is None:
+            return self.__name
+        else:
+            return "%r[%r]" % (self.__parent, self.__index)
+
+    def __call__(self, *args):
+        if self.__parent is None:
+            return args[1]
+        else:
+            return self.__parent(*args)[self.__index]
+
+    def __getitem__(self, index):
+        return Path2(self.__name, index, self)
+
+
+class FuncPath(ExprMixin):
+    __slots__ = ["__func", "__operand"]
+
+    def __init__(self, func, operand=None):
+        self.__func = func
+        self.__operand = operand
+
+    def __repr__(self):
+        if self.__operand is None:
+            return "%s_" % (self.__func.__name__)
+        else:
+            return "%s_(%r)" % (self.__func.__name__, self.__operand)
+
+    def __call__(self, operand, *args):
+        if self.__operand is None:
+            return FuncPath(self.__func, operand) if callable(operand) else operand
+        else:
+            return self.__func(self.__operand(operand) if callable(self.__operand) else self.__operand)
+
+
+this = Path("this")
+obj_ = Path("obj_")
+list_ = Path2("list_")
+
+len_ = FuncPath(len)
+sum_ = FuncPath(sum)
+min_ = FuncPath(min)
+max_ = FuncPath(max)
+abs_ = FuncPath(abs)

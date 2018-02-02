@@ -1280,7 +1280,7 @@ class TestCore(unittest.TestCase):
             Container(attrCode=512)(attrValue=1), ])
 
     def test_from_issue_175(self):
-        @PathFunc
+        @FuncPath
         def comp_(num_array):
             return sum(x << ((len(num_array)-1-i)*8) for i,x in enumerate(num_array))
 

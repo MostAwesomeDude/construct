@@ -20,7 +20,7 @@ Hands-on example:
 """
 
 from construct.core import *
-from construct.expr import this, Path, Path2, PathFunc, len_, sum_, min_, max_, abs_, obj_
+from construct.expr import *
 from construct.debug import Probe, ProbeInto, Debugger
 from construct.version import version, version_string, release_date
 from construct import lib
@@ -86,6 +86,7 @@ __all__ = [
     'FocusedSeq',
     'FormatField',
     'FormatFieldError',
+    'FuncPath',
     'globalfullprinting',
     'globalstringencoding',
     'GreedyBytes',
@@ -108,6 +109,7 @@ __all__ = [
     'LazyStruct',
     'len_',
     'lib',
+    'list_',
     'ListContainer',
     'Long',
     'Mapping',
@@ -129,7 +131,6 @@ __all__ = [
     'Pass',
     'Path',
     'Path2',
-    'PathFunc',
     'Peek',
     'Pointer',
     'possiblestringencodings',

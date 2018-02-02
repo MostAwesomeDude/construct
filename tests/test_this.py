@@ -68,13 +68,38 @@ class TestThis(unittest.TestCase):
     def test_obj(self):
         assert repr(obj_) == "obj_"
         assert repr(obj_ + 1 == 12) == "((obj_ + 1) == 12)"
+
         assert (obj_)(1,{}) == 1
         assert (obj_ + 10)(1,{}) == 11
         assert (obj_ == 12)(12,{})
         assert (obj_ != 12)(13,{})
 
+        assert (obj_)(1,[],{}) == 1
+        assert (obj_ + 10)(1,[],{}) == 11
+        assert (obj_ == 12)(12,[],{})
+        assert (obj_ != 12)(13,[],{})
+
         example = Struct(
             "items" / RepeatUntil(obj_ == 255, Byte),
+        )
+        assert example.parse(b"\x03\x07\xff") == dict(items=[3,7,255])
+        assert example.build(dict(items=[3,7,255])) == b"\x03\x07\xff"
+
+    @pytest.mark.xfail(reason="faulty implementation, needs fixing")
+    def test_list(self):
+        assert repr(list_) == "list_"
+        assert repr(list_ == [0, 1, 2]) == "(list_ == [0, 1, 2])"
+        assert repr(list_[-1]) == "list_[-1]"
+        assert repr(list_[-1] == 0) == "(list_[-1] == 0)"
+
+        assert (list_)(1,[],{}) == []
+        assert (list_[-1])(1,[2,3,4],{}) == 4
+        assert (list_[-1] + 1)(1,[2,3,4],{}) == 5
+        assert (list_[-1] == 4)(1,[2,3,4],{}) == True
+        assert (len_(list_[-1]))(1,[2,3,4],{}) == 3
+
+        example = Struct(
+            "items" / RepeatUntil(list_[-1] == 255, Byte),
         )
         assert example.parse(b"\x03\x07\xff") == dict(items=[3,7,255])
         assert example.build(dict(items=[3,7,255])) == b"\x03\x07\xff"
