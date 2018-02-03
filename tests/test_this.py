@@ -91,12 +91,15 @@ class TestThis(unittest.TestCase):
         assert repr(list_ == [0, 1, 2]) == "(list_ == [0, 1, 2])"
         assert repr(list_[-1]) == "list_[-1]"
         assert repr(list_[-1] == 0) == "(list_[-1] == 0)"
+        assert repr(list_[-1] + 1) == "(list_[-1] + 1)"
 
         assert (list_)(1,[],{}) == []
         assert (list_[-1])(1,[2,3,4],{}) == 4
+        # below fail
         assert (list_[-1] + 1)(1,[2,3,4],{}) == 5
         assert (list_[-1] == 4)(1,[2,3,4],{}) == True
-        assert (len_(list_[-1]))(1,[2,3,4],{}) == 3
+        assert (len_(list_))(1,[2,3,4],{}) == 3
+        assert (len_(list_[-1:]))(1,[2,3,4],{}) == 1
 
         example = Struct(
             "items" / RepeatUntil(list_[-1] == 255, Byte),
