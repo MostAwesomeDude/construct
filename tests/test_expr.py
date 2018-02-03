@@ -3,7 +3,7 @@ from construct import *
 from construct.lib import *
 
 
-class TestThis(unittest.TestCase):
+class TestExpr(unittest.TestCase):
 
     def test_path(self):
         path = Path("path")

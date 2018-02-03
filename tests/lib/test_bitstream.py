@@ -54,4 +54,3 @@ class TestBitstream(unittest.TestCase):
             assert bstream.read(50) == data[at:at+50]
             jumpback = random.randrange(1, 19)
             assert bstream.seek(-jumpback, 1)
-

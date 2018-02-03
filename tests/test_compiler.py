@@ -3,7 +3,7 @@ from construct import *
 from construct.lib import *
 
 @pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.6")
-class TestCompile(unittest.TestCase):
+class TestCompiler(unittest.TestCase):
 
     def setUp(self):
         self.example = Struct(
