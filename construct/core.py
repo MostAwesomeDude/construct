@@ -2266,7 +2266,6 @@ class RepeatUntil(Subconstruct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises RepeatError: consumed all elements in the stream but neither passed the predicate
-    :raises NotImplementedError: compiled
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -2306,6 +2305,20 @@ class RepeatUntil(Subconstruct):
 
     def _sizeof(self, context, path):
         raise SizeofError("cannot calculate size, amount depends on actual data")
+
+    def _emitparse(self, code):
+        fname = "parse_repeatuntil_%s" % code.allocateId()
+        block = """
+            def %s(io, this):
+                list_ = ListContainer()
+                while True:
+                    obj_ = %s
+                    list_.append(obj_)
+                    if %r:
+                        return list_
+        """ % (fname, self.subcon._compileparse(code), self.predicate, )
+        code.append(block)
+        return "%s(io, this)" % (fname,)
 
 
 #===============================================================================

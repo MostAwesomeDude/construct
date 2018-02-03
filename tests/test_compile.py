@@ -62,7 +62,10 @@ class TestCompile(unittest.TestCase):
             "array2" / Array(this.num, Byte),
             "range1" / Range(0, 5, Byte),
             "greedyrange0" / Prefixed(Byte, GreedyRange(Byte)),
-            # RepeatUntil
+            "repeatuntil1" / RepeatUntil(obj_ == 0, Byte),
+            # faulty list_ implementation, compiles into correct code
+            # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
+            # "repeatuntil3" / RepeatUntil(list_[-1] == 0, Byte),
 
             "const1" / Const(bytes(4)),
             "const2" / Const(0, Int32ub),
