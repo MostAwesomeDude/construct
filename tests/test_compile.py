@@ -134,6 +134,10 @@ class TestCompile(unittest.TestCase):
             # LazyBound
 
             # adapters and validators
+
+            Probe(),
+            ProbeInto(this.num),
+            # Debugger
         )
 
     def test_compiles(self):

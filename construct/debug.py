@@ -7,10 +7,8 @@ class Probe(Construct):
     r"""
     A probe: dumps the context, stack frames, and stream content (peek) to the screen to aid the debugging process.
 
-    :param name: optional, string, display name
     :param show_stream: optional, bool, whether or not to show stream contents (peek), default is True
     :param show_context: optional, bool, whether or not to show the context, default is True
-    :param show_stack: optional, bool, whether or not to show the upper stack frames, default is True
     :param stream_lookahead: optional, integer, number of bytes to dump when show_stack is set, default is 128
     
     Example::
@@ -43,35 +41,35 @@ class Probe(Construct):
         ================================================================================
         [63, None]
     """
-    __slots__ = ["printname", "show_stream", "show_context", "show_stack", "stream_lookahead", "func"]
-    counter = 0
+    __slots__ = ["show_stream", "show_context", "stream_lookahead", "func"]
     
-    def __init__(self, name=None, show_stream=True, show_context=True, show_stack=True, stream_lookahead=128, func=None):
+    def __init__(self, show_stream=True, show_context=True, stream_lookahead=128, func=None):
         super(Probe, self).__init__()
-        if name is None:
-            Probe.counter += 1
-            name = "<unnamed %d>" % Probe.counter
-        self.printname = name
+        self.flagbuildnone = True
         self.show_stream = show_stream
         self.show_context = show_context
-        self.show_stack = show_stack
         self.stream_lookahead = stream_lookahead
         self.func = func
-        self.flagbuildnone = True
+
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, self.printname)
+        return "<%s>" % (self.__class__.__name__, )
+
     def _parse(self, stream, context, path):
         self.printout(stream, context, path)
+
     def _build(self, obj, stream, context, path):
         self.printout(stream, context, path)
+
     def _sizeof(self, context, path):
         self.printout(None, context, path)
         return 0
-    
+
+    def _emitparse(self, code):
+        return "print(%r)" % (self.func,) if self.func else "print(this)"
+
     def printout(self, stream, context, path):
         print("================================================================================")
-        print("Probe %s" % self.printname)
-        print("path is %s, func is %s" % (path, self.func))
+        print("Probe, path is %s, func is %s" % (path, self.func))
 
         if self.show_stream and stream is not None:
             fallback = stream.tell()
@@ -82,27 +80,15 @@ class Probe(Construct):
             else:
                 print(hexdump(datafollows, 32))
         
-        if self.show_context:
+        if self.show_context and context is not None:
             if self.func:
                 try:
                     context = self.func(context)
                     print(context)
-                except Exception as e:
+                except Exception:
                     print("Failed to compute `%r` on the context" % self.func)
             else:
                 print(context)
-        
-        # if self.show_stack:
-        #     stack = ListContainer()
-        #     print("Stack: ")
-        #     frames = [s[0] for s in inspect.stack()][1:-1]
-        #     for f in reversed(frames):
-        #         a = Container()
-        #         a.__update__(f.f_locals)
-        #         stack.append(a)
-        #         # print(f.f_locals)
-        #     print(stack)
-        
         print("================================================================================")
 
 
