@@ -3255,6 +3255,11 @@ class Switch(Construct):
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
 
+    def _emitparse(self, code):
+        fname = "factory_%s" % code.allocateId()
+        code.append("%s = {%s}" % (fname, ", ".join("%r : lambda io,this: %s" % (key, sc._compileparse(code)) for key,sc in self.cases.items()), ))
+        return "%s[%r](io, this)" % (fname, self.keyfunc, )
+
 
 class StopIf(Construct):
     r"""

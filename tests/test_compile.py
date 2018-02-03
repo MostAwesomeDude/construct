@@ -89,7 +89,7 @@ class TestCompile(unittest.TestCase):
             "optional" / Optional(Byte),
             "if1" / If(this.num == 0, Byte),
             "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
-            # Switch
+            "switch" / Switch(this.num, {0 : Byte, 255 : Error}),
             "stopif0" / StopIf(this.num == 255),
             "stopif1" / Struct(StopIf(this._.num == 0), Error),
             "stopif2" / Sequence(StopIf(this._.num == 0), Error),
