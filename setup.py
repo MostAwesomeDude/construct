@@ -25,7 +25,7 @@ setup(
         'construct.examples.protocols', 
     ],
     license = "MIT",
-    description = "A powerful declarative parser/builder for binary data",
+    description = "A powerful declarative symmetric parser/builder for binary data",
     long_description = open(os.path.join(HERE, "README.rst")).read(),
     platforms = ["POSIX", "Windows"],
     url = "http://construct.readthedocs.org",
