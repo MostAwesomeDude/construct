@@ -1927,6 +1927,7 @@ class Struct(Construct):
                     %s%s
             """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
         block += """
+                    pass
                 except StopIteration:
                     pass
                 del this._
@@ -2026,6 +2027,7 @@ class Sequence(Construct):
                     this[%r] = result[-1]
                 """ % (sc.name, )
         block += """
+                    pass
                 except StopIteration:
                     pass
                 return result

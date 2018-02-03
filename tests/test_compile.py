@@ -2,8 +2,7 @@ from declarativeunittest import *
 from construct import *
 from construct.lib import *
 
-
-@pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.4")
+@pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.6")
 class TestCompile(unittest.TestCase):
 
     def setUp(self):

@@ -1423,3 +1423,8 @@ class TestCore(unittest.TestCase):
             Check(this.flags == FlagsContainer(a=1)),
         )
         common(st, b"\x01", dict(flags=FlagsContainer(a=True)), 1)
+
+    @pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.6")
+    def test_empty_struct_compiled(self):
+        Struct().compile()
+        Sequence().compile()
