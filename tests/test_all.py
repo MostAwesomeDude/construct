@@ -1428,3 +1428,8 @@ class TestCore(unittest.TestCase):
     def test_empty_struct_compiled(self):
         Struct().compile()
         Sequence().compile()
+
+    @pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.6")
+    def test_compiled_benchmark_testcompiled(self):
+        Struct().compile().benchmark(b"")
+        Struct().compile().testcompiled(b"")

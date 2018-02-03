@@ -660,6 +660,12 @@ class Compiled(Construct):
     def compile(self):
         return self
 
+    def benchmark(self, sampledata):
+        return self.defersubcon.benchmark(sampledata)
+
+    def testcompiled(self, sampledata):
+        return self.defersubcon.testcompiled(sampledata)
+
     def tofile(self, filename):
         """
         Saves the ``source`` field into a text file (preferably with .py extension).
