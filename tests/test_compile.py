@@ -10,6 +10,7 @@ class TestCompile(unittest.TestCase):
         self.example = Struct(
             "num" / Byte,
 
+            # faulty list_ implementation, compiles into correct code?
             # "items" / Computed([1,2,3]),
             # "len_" / Computed(len_(this.items)),
 
@@ -101,8 +102,8 @@ class TestCompile(unittest.TestCase):
             "padding" / Padding(2),
             "paddedbyte" / Padded(4, Byte),
             "alignedbyte" / Aligned(4, Byte),
-            # AlignedStruct
-            # BitStruct
+            "alignedstruct" / AlignedStruct(4, "a"/Byte, "b"/Short),
+            "bitstruct" / BitStruct("a"/Octet),
             # EmbeddedBitStruct
 
             "pointer" / Pointer(0, Byte),
@@ -120,7 +121,8 @@ class TestCompile(unittest.TestCase):
             "bitsswapped" / BitsSwapped(BytesInteger(8)),
             "prefixed" / Prefixed(Byte, GreedyBytes),
             "prefixedarray" / PrefixedArray(Byte, Byte),
-            # RestreamData
+            "restreamdata" / RestreamData(b"\xff", Byte),
+            "restreamdata_verify" / Check(this.restreamdata == 255),
             # Checksum
             "compressed_bzip2_data" / Computed(b'BZh91AY&SYSc\x11\x99\x00\x00\x00A\x00@\x00@\x00 \x00!\x00\x82\x83\x17rE8P\x90Sc\x11\x99'),
             "compressed_bzip2" / RestreamData(this.compressed_bzip2_data, Compressed(GreedyBytes, "bzip2", level=9)),

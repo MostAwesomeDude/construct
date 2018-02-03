@@ -26,8 +26,6 @@ Compiled classes only parse faster, building and sizeof defers to core classes
 
 AssertionError and standard hierarchy exceptions can be raised (core classes are resticted to ConstructError and its derivatives)
 
-RepeatUntil Switch Checksum are not yet implemented
-
 .. warning:: These items are (probably) permanent, but feel free to request changes.
 
 Lambdas (unlike `this` expressions) are not compilable
@@ -45,6 +43,8 @@ Exceptions do not include `path` information
 Adapters and validators, and mappings are in general not compilable
 
 Restreamed Rebuffered are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
+
+Checksum is not compilable, because it uses lambdas (not `this` expressions)
 
 Lazy* classes are not compilable
 

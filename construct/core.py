@@ -660,12 +660,6 @@ class Compiled(Construct):
     def compile(self):
         return self
 
-    def _compileparse(self, code):
-        raise ConstructError("Compiled instance can compile() into self but cannot _compileparse() or _compilebuild()")
-
-    def _compilebuild(self, code):
-        raise ConstructError("Compiled instance can compile() into self but cannot _compileparse() or _compilebuild()")
-
     def tofile(self, filename):
         """
         Saves the ``source`` field into a text file (preferably with .py extension).
@@ -684,9 +678,6 @@ class CompilableMacro(Subconstruct):
 
     def _emitparse(self, code):
         return self.compileparsefunc(self, code)
-
-    def _emitbuild(self, code):
-        raise NotImplementedError
 
 
 class Decompiled(Construct):
@@ -832,8 +823,6 @@ def Bytewise(subcon):
     .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
 
     :param subcon: Construct instance, any field that works with bytes or is bit-byte agnostic
-
-    :raises NotImplementedError: compiled
 
     See :class:`~construct.core.Restreamed` for raisable exceptions.
 
@@ -2147,7 +2136,6 @@ class Range(Subconstruct):
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
     :raises RangeError: consumed or produced too little or too many elements, or specified min and max are not valid
-    :raises NotImplementedError: compiled (unless its Array)
 
     Can propagate any exception from the lambdas, possibly non-ConstructError.
 
@@ -2932,6 +2920,7 @@ class Union(Construct):
     :raises UnionError: selector does not match any subcon, or dict given to build does not contain any keys matching any subcon
     :raises IndexError: selector does not match any subcon
     :raises KeyError: selector does not match any subcon
+    :raises NotImplementedError: compiled with non-constant selector
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
