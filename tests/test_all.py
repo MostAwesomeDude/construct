@@ -670,13 +670,10 @@ class TestCore(unittest.TestCase):
     def test_switch(self):
         assert Switch(5, {1:Byte, 5:Int16ub}).parse(b"\x00\x02") == 2
         assert Switch(6, {1:Byte, 5:Int16ub}, default=Byte).parse(b"\x00\x02") == 0
-        assert Switch(5, {1:Byte, 5:Int16ub}, includekey=True).parse(b"\x00\x02") == (5,2)
         assert Switch(5, {1:Byte, 5:Int16ub}).build(2) == b"\x00\x02"
         assert Switch(6, {1:Byte, 5:Int16ub}, default=Byte).build(9) == b"\x09"
-        assert Switch(5, {1:Byte, 5:Int16ub}, includekey=True).build((5,2)) == b"\x00\x02"
         assert raises(Switch(6, {1:Byte, 5:Int16ub}).parse, b"\x00\x02") == SwitchError
         assert raises(Switch(6, {1:Byte, 5:Int16ub}).build, 9) == SwitchError
-        assert raises(Switch(5, {1:Byte, 5:Int16ub}, includekey=True).build, (89,2)) == SwitchError
         assert Switch(5, {1:Byte, 5:Int16ub}).sizeof() == 2
         assert raises(Switch(5, {}).sizeof) == SwitchError
 

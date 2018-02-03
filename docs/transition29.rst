@@ -33,6 +33,8 @@ Array reimplemented without Range, does not use stream.tell()
 
 If IfThenElse renamed `predicate` parameter to `condfunc`
 
+Switch dropped `includekey` parameter, and cannot be embedded
+
 RestreamData added
 
 ExprAdapter Restreamed Mapping* classes changed parameters order (decoders before endcoders)

@@ -3197,14 +3197,11 @@ class Switch(Construct):
     r"""
     A conditional branch.
 
-    Parsing and building evaluate keyfunc and select a subcon based on the value and dictionary entries. Dictionary (cases) maps values into subcons. If no case matches and no default field is given, SwitchError is raised. Note that default is a Construct instance, not a dictionary key. Size is evaluated in same way as parsing and building.
-
-    .. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Same applies to If and IfThenElse macros.
+    Parsing and building evaluate keyfunc and select a subcon based on the value and dictionary entries. Dictionary (cases) maps values into subcons. If no case matches then either uses a default field, or SwitchError is raised. Note that default is a Construct instance, not a dictionary key. Size is evaluated in same way as parsing and building, by evaluating keyfunc and selecting a field accordingly.
 
     :param keyfunc: context lambda or constant, that matches some key in cases
     :param cases: dict mapping keys to Construct instances
     :param default: optional, Construct instance, used when keyfunc is not found in cases, Pass is a possible value for this parameter, default is a class that raises SwitchError
-    :param includekey: optional, bool, whether to include the key in return value when parsing, default is False
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises SwitchError: keyfunc value is not in the dict and no default was given
@@ -3229,38 +3226,32 @@ class Switch(Construct):
         def _sizeof(self, context, path):
             raise SwitchError("no default case defined, sizeof failed")
 
-    __slots__ = ["subcons", "keyfunc", "cases", "default", "includekey"]
+    __slots__ = ["keyfunc", "cases", "default"]
 
-    def __init__(self, keyfunc, cases, default=NoDefault, includekey=False):
+    def __init__(self, keyfunc, cases, default=NoDefault):
         super(Switch, self).__init__()
         self.keyfunc = keyfunc
         self.cases = cases
         self.default = default
-        self.includekey = includekey
         allcases = list(cases.values())
         if default is not self.NoDefault:
             allcases.append(default)
         self.flagbuildnone = all(sc.flagbuildnone for sc in allcases)
-        self.flagembedded = all(sc.flagembedded for sc in allcases)
 
     def _parse(self, stream, context, path):
         key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
-        obj = self.cases.get(key, self.default)._parse(stream, context, path)
-        return (key,obj) if self.includekey else obj
+        return self.cases.get(key, self.default)._parse(stream, context, path)
 
     def _build(self, obj, stream, context, path):
-        if self.includekey:
-            key,obj = obj
-        else:
-            key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
+        key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
         case = self.cases.get(key, self.default)
         return case._build(obj, stream, context, path)
 
     def _sizeof(self, context, path):
         try:
             key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
-            sc = self.cases.get(key, self.default)
-            return sc._sizeof(context, path)
+            case = self.cases.get(key, self.default)
+            return case._sizeof(context, path)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
 

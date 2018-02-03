@@ -250,8 +250,6 @@ Switch
 
 Branches the construction based on a return value from a function. This is a more general implementation then IfThenElse.
 
-.. warning:: You can use Embedded(Switch(...)) but not Switch(Embedded(...)). Sames applies to If and IfThenElse macros.
-
 >>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, n=1)
 b'\x05'
 >>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, n=2)
