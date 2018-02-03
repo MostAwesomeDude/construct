@@ -1557,11 +1557,6 @@ def CString(encoding=None):
         u'Афон'
     """
     return StringEncoded(StringNullTerminated(encoding), encoding)
-        # ExprAdapter(
-        #     RepeatUntil(lambda obj,lst,ctx: int2byte(obj) in terminators, Byte),
-        #     decoder = lambda obj,ctx: b''.join(int2byte(c) for c in obj[:-1]),
-        #     encoder = lambda obj,ctx: iterateints(obj+terminators), ),
-        # encoding)
 
 
 def GreedyString(encoding=None):
