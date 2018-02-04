@@ -684,20 +684,16 @@ class TestCore(unittest.TestCase):
         )
         assert st1.parse(b"") == st2.parse(b"")
 
-    @pytest.mark.xfail(reason="unknown cause")
     def test_stopif(self):
-        d = Struct("x"/Byte, StopIf(this.x == 0), Error)
+        d = Struct("x"/Byte, StopIf(this.x == 0), "y"/Byte)
         common(d, b"\x00", Container(x=0))
         common(d, b"\x01\x02", Container(x=1,y=2))
 
-        d = Sequence(Byte, StopIf(this.x == 0), Error)
+        d = Sequence("x"/Byte, StopIf(this.x == 0), "y"/Byte)
         common(d, b"\x00", [0])
         common(d, b"\x01\x02", [1,None,2])
 
-        d = FocusedSeq(0, Byte, StopIf(this.x == 0), Error)
-        common(d, b"\x00", 0)
-
-        d = GreedyRange(FocusedSeq(0, 'x'/Byte, StopIf(this.x == 0)))
+        d = GreedyRange(FocusedSeq(0, "x"/Byte, StopIf(this.x == 0)))
         assert d.parse(b"\x01\x00?????") == [1]
         assert d.build([]) == b""
         assert d.build([0]) == b"\x00"

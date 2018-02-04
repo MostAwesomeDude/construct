@@ -2652,6 +2652,9 @@ class Error(Construct):
     def _build(self, obj, stream, context, path):
         raise ExplicitError("Error field was activated during building")
 
+    def _sizeof(self, context, path):
+        raise SizeofError("Error does not have size, because it interrupts parsing and building")
+
     def _emitdecompiled(self, code):
         return "Error"
 
@@ -3291,7 +3294,7 @@ class StopIf(Construct):
             raise StopIteration
 
     def _sizeof(self, context, path):
-        return SizeofError("StopIf cannot determine size because it depends on actual context which then depends on actual data and outer constructs")
+        raise SizeofError("StopIf cannot determine size because it depends on actual context which then depends on actual data and outer constructs")
 
     def _emitparse(self, code):
         code.append("""
