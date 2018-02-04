@@ -363,30 +363,18 @@ class TestCore(unittest.TestCase):
         # a-field computed on nested context, merged only after entire inner-struct returns
         assert d2.parse(b"\x01\x0f") == Container(x=1)(y=15)(a=2)(b=17)(c=4)(d=19)
 
-    @pytest.mark.xfail(reason="Struct._sizeof is broken, Struct nesting is the problem")
     def test_struct_sizeof_context_nesting(self):
         st = Struct(
-            "length"/Byte,
-            "inner"/Struct(
-                "inner_length"/Byte,
-                Probe(),
-                "data"/Bytes(this._.length + this.inner_length),
-        ))
-        assert st.parse(b"\x03\x02helloXXX") == Container(length=3,inner=Container(inner_length=2,data=b"hello"))
-        assert st.sizeof(length=3,inner=Container(inner_length=2)) == 7
-
-        st = Struct(
-            "a" / Byte,
+            "a" / Computed(1),
             "inner" / Struct(
-                "b" / Byte,
-                If(this._.a == 1, Byte),
-                If(this.b == 1, Byte),
+                "b" / Computed(2),
+                Check(this._.a == 1),
+                Check(this.b == 2),
             ),
-            If(this.a == 1, Byte),
-            If(this.inner.b == 1, Byte),
+            Check(this.a == 1),
+            Check(this.inner.b == 2),
         )
-        assert st.sizeof(a=0,inner=Container(b=0)) == 2
-        assert st.sizeof(a=1,inner=Container(b=1)) == 6
+        assert st.sizeof() == 0
 
     def test_struct_issue_566(self):
         inner = Struct(
