@@ -321,6 +321,7 @@ class TestCore(unittest.TestCase):
         common(FlagsEnum(Byte, E, F), b"\x03", FlagsContainer(a=True,b=True), 1)
 
     def test_struct(self):
+        common(Struct(), b"", Container(), 0)
         common(Struct("a"/Int16ul, "b"/Byte), b"\x01\x00\x02", Container(a=1,b=2), 3)
         common(Struct("a"/Struct("b"/Byte)), b"\x01", Container(a=Container(b=1)), 1)
         assert raises(Struct("missingkey"/Byte).build, dict()) == KeyError
@@ -391,6 +392,7 @@ class TestCore(unittest.TestCase):
         outer.build(Container(a=1)(inner=Container(b=2)(c=3))) == b'\x01\x02\x80\x03\x04'
 
     def test_sequence(self):
+        common(Sequence(), b"", [], 0)
         common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
         common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
 
@@ -399,6 +401,8 @@ class TestCore(unittest.TestCase):
         common(Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))), b"\x01\x00\x02\x03\x04", [1,2,3,4], 5)
 
     def test_array(self):
+        common(Byte[0], b"", [], 0)
+
         assert Byte[4].parse(b"1234") == [49,50,51,52]
         assert Byte[4].build([49,50,51,52]) == b"1234"
 
