@@ -25,7 +25,6 @@ class TestFormats(unittest.TestCase):
     def test_gif(self):
         commondump(gif_file, "sample.gif")
 
-    @pytest.mark.xfail(reason="Enum no longer supports default")
     def test_mbr(self):
         commondump(mbr_format, "mbr1")
 
