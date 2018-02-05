@@ -1525,6 +1525,8 @@ def PascalString(lengthfield, encoding=None):
     r"""
     Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). VarInt is recommended when designing new protocols. Stored length is in bytes, not characters. Size is not defined.
 
+    :class:`~construct.core.VarInt` is recommended for new protocols, as it is more compact and never overflows.
+
     :param lengthfield: Construct instance, field used to parse and build the length (like VarInt Int64ub)
     :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 
@@ -4037,7 +4039,7 @@ class Prefixed(Subconstruct):
 
     Analog to :class:`~construct.core.PrefixedArray` which prefixes with an element count, instead of byte count. Semantics is similar but implementation is different.
 
-    .. seealso:: :class:`~construct.core.VarInt` is recommended for new protocols, as its more compact and never overflows.
+    :class:`~construct.core.VarInt` is recommended for new protocols, as it is more compact and never overflows.
 
     :param lengthfield: Construct instance, field used for storing the length
     :param subcon: Construct instance, subcon used for storing the value
@@ -4089,6 +4091,8 @@ class Prefixed(Subconstruct):
 def PrefixedArray(lengthfield, subcon):
     r"""
     Prefixes an array with item count (as opposed to prefixed by byte count, see :class:`~construct.core.Prefixed`).
+
+    :class:`~construct.core.VarInt` is recommended for new protocols, as it is more compact and never overflows.
 
     :param lengthfield: Construct instance, field used for storing the element count
     :param subcon: Construct instance, subcon used for storing each element
