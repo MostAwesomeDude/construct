@@ -58,7 +58,15 @@ class Container(dict):
     def __getattr__(self, name):
         try:
             if name in self.__slots__:
-                return object.__getattribute__(self, name)
+                try:
+                    return object.__getattribute__(self, name)
+                except AttributeError as e:
+                    if name == "__keys_order__":
+                        r = []
+                        object.__setattr__(self, "__keys_order__", r)
+                        return r
+                    else:
+                        raise e
             else:
                 return self[name]
         except KeyError:
