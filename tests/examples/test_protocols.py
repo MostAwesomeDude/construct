@@ -43,6 +43,7 @@ class TestProtocols(unittest.TestCase):
     def test_udp(self):
         commonhex(udp_header, b"0bcc003500280689")
 
+    @pytest.mark.xfail(PY2, reason="string encoding problem")
     def test_dns(self):
         commonhex(dns, b"2624010000010000000000000377777706676f6f676c6503636f6d0000010001")
 

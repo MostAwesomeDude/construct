@@ -42,4 +42,5 @@ __all__ = [
     'swapbytes',
     'unhexlify',
     'unicode2str',
+    'unicodestringtype',
 ]

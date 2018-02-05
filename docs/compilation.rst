@@ -27,8 +27,6 @@ AssertionError and standard hierarchy exceptions can be raised (core classes are
 
 Lambdas (unlike `this` expressions) are not compilable
 
-Global string encoding is applied during compilation (not during parsing and building)
-
 Sizeof is applied during compilation (not during parsing and building)
 
 Some classes require fixed-sized subcons (otherwise raise NotImplementedError if compiled)

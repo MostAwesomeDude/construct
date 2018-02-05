@@ -1303,35 +1303,34 @@ class StringEncoded(Adapter):
 
     def __init__(self, subcon, encoding):
         super(StringEncoded, self).__init__(subcon)
-        self.encoding = encoding
+        self.encoding = encoding or globalstringencoding
+        if not self.encoding:
+            raise StringError("String* classes require explicit encoding")
 
     def _decode(self, obj, context):
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if isinstance(encoding, str):
             return obj.decode(encoding)
         if isinstance(encoding, StringsAsBytes.__class__):
-            if not isinstance(obj, bytestringtype):
-                raise StringError("decoding must result in bytes type")
             return obj
-        raise StringError("String* classes require explicit encoding")
 
     def _encode(self, obj, context):
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if isinstance(encoding, str):
+            if not isinstance(obj, unicodestringtype):
+                raise StringError("string encoding failed, expected unicode string")
             return obj.encode(encoding)
         if isinstance(encoding, StringsAsBytes.__class__):
             if not isinstance(obj, bytestringtype):
-                raise StringError("encoding must result in bytes type")
+                raise StringError("string encoding failed, expected byte string")
             return obj
-        raise StringError("String* classes require explicit encoding")
 
     def _emitparse(self, code):
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if isinstance(encoding, str):
             return "(%s).decode(%r)" % (self.subcon._compileparse(code), encoding, )
         if isinstance(encoding, StringsAsBytes.__class__):
             return "(%s)" % (self.subcon._compileparse(code), )
-        raise StringError("String* classes require explicit encoding")
 
 
 class StringPaddedTrimmed(Construct):

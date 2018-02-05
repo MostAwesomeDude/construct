@@ -21,6 +21,8 @@ Compiled CompilableMacro Decompiled added (used internally)
 
 String* classes require explicit encoding (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
+String* classes apply global encoding during ctor (not during parsing and building)
+
 String* classes (all of them) support UTF16 UTF32 encodings, but String CString dropped some parameters
 
 Enum FlagsEnum can merge labels from IntEnum IntFlag (enum module), but dropped `default` parameter
