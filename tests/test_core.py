@@ -504,6 +504,21 @@ class TestCore(unittest.TestCase):
         assert Struct(c=Computed(255)).parse(b"") == dict(c=255)
         assert Struct(c=Computed(255)).build({}) == b""
 
+    def test_index(self):
+        d = Array(3, Bytes(this._index+1))
+        common(d, b"abbccc", [b"a", b"bb", b"ccc"])
+        d = GreedyRange(Bytes(this._index+1))
+        common(d, b"abbccc", [b"a", b"bb", b"ccc"])
+        d = RepeatUntil(lambda o,l,ctx: ctx._index == 2, Bytes(this._index+1))
+        common(d, b"abbccc", [b"a", b"bb", b"ccc"])
+
+        d = Array(3, Struct("i" / Index))
+        common(d, b"", [Container(i=0),Container(i=1),Container(i=2)], 0)
+        d = GreedyRange(Struct("i" / Index, "d" / Bytes(this.i+1)))
+        common(d, b"abbccc", [Container(i=0,d=b"a"),Container(i=1,d=b"bb"),Container(i=2,d=b"ccc")])
+        d = RepeatUntil(lambda o,l,ctx: ctx._index == 2, Index)
+        common(d, b"", [0,1,2])
+
     def test_rebuild(self):
         d = Struct("count"/Rebuild(Byte, len_(this.items)), "items"/Byte[this.count])
         assert d.parse(b"\x02ab") == Container(count=2)(items=[97,98])

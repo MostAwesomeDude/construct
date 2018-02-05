@@ -4,6 +4,7 @@ Core API: Miscellaneous
 
 .. autofunction:: construct.Const
 .. autofunction:: construct.Computed
+.. autofunction:: construct.Index
 .. autofunction:: construct.Rebuild
 .. autofunction:: construct.Default
 .. autofunction:: construct.Check

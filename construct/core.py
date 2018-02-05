@@ -34,6 +34,8 @@ class RepeatError(ConstructError):
     pass
 class ConstError(ConstructError):
     pass
+class IndexFieldError(ConstructError):
+    pass
 class ExplicitError(ConstructError):
     pass
 class UnionError(ConstructError):
@@ -2076,6 +2078,7 @@ class Array(Subconstruct):
         obj = ListContainer()
         try:
             for i in range(count):
+                context._index = i
                 obj.append(self.subcon._parse(stream, context, path))
         except StopIteration:
             pass
@@ -2090,8 +2093,9 @@ class Array(Subconstruct):
         if not len(obj) == count:
             raise RangeError("expected %d elements, found %d" % (count, len(obj)))
         try:
-            for subobj in obj:
-                self.subcon._build(subobj, stream, context, path)
+            for i in range(count):
+                context._index = i
+                self.subcon._build(obj[i], stream, context, path)
         except StopIteration:
             pass
 
@@ -2159,9 +2163,11 @@ class Range(Subconstruct):
             raise RangeError("invalid min %s and max %s" % (min, max))
         obj = ListContainer()
         try:
+            context._index = 0
             while len(obj) < max:
                 fallback = _tell_stream(stream)
                 obj.append(self.subcon._parse(stream, context, path))
+                context._index += 1
         except StopIteration:
             pass
         except ExplicitError:
@@ -2180,8 +2186,10 @@ class Range(Subconstruct):
         if not min <= len(obj) <= max:
             raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
         try:
+            context._index = 0
             for subobj in obj:
                 self.subcon._build(subobj, stream, context, path)
+                context._index += 1
         except StopIteration:
             pass
         except ExplicitError:
@@ -2266,17 +2274,21 @@ class RepeatUntil(Subconstruct):
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
+        context._index = 0
         while True:
             subobj = self.subcon._parse(stream, context, path)
             obj.append(subobj)
             if self.predicate(subobj, obj, context):
                 return obj
+            context._index += 1
 
     def _build(self, obj, stream, context, path):
+        context._index = 0
         for i,subobj in enumerate(obj):
             self.subcon._build(subobj, stream, context, path)
             if self.predicate(subobj, obj[:i+1], context):
                 break
+            context._index += 1
         else:
             raise RepeatError("expected any item to match predicate, when building")
 
@@ -2501,6 +2513,56 @@ class Computed(Construct):
 
     def _emitparse(self, code):
         return "%r" % (self.func,)
+
+
+@singleton
+class Index(Construct):
+    r"""
+    Indexes a field inside outer :class:`~construct.core.Array` :class:`~construct.core.Range` :class:`~construct.core.RepeatUntil` context.
+
+    Note that you can use this class, or use `this._index` or `this._._index` expression instead, depending on how its used. See the examples.
+
+    Parsing and building pulls _index or _._index key from context, in that order. Size is 0 because stream is unaffected.
+
+    :raises IndexFieldError: did not find either key in context
+
+    Example::
+
+        >>> d = Array(3, Index)
+        >>> d.parse(b"")
+        [0, 1, 2]
+        >>> d = Array(3, Struct("i" / Index))
+        >>> d.parse(b"")
+        [Container(i=0), Container(i=1), Container(i=2)]
+
+        >>> d = Array(3, Computed(this._index+1))
+        >>> d.parse(b"")
+        [1, 2, 3]
+        >>> d = Array(3, Struct("i" / Computed(this._._index+1)))
+        >>> d.parse(b"")
+        [Container(i=1), Container(i=2), Container(i=3)]
+    """
+
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.flagbuildnone = True
+
+    def _parse(self, stream, context, path):
+        if "_index" in context:
+            return context._index
+        if "_" in context and "_index" in context._:
+            return context._._index
+        raise IndexFieldError("did not find either key in context")
+
+    def _build(self, obj, stream, context, path):
+        if "_index" in context:
+            return context._index
+        if "_" in context and "_index" in context._:
+            return context._._index
+        raise IndexFieldError("did not find either key in context")
+
+    def _sizeof(self, context, path):
+        return 0
 
 
 class Rebuild(Subconstruct):

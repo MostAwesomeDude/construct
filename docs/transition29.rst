@@ -33,11 +33,13 @@ Struct Sequence Union FocusedSeq are supporting new embedding semantics (see `th
 
 Array reimplemented without Range, does not use stream.tell()
 
-If IfThenElse renamed `predicate` parameter to `condfunc`
+Index added, in Miscellaneous
+
+If IfThenElse parameter renamed `predicate` to `condfunc`
 
 Switch dropped `includekey` parameter, and cannot be embedded
 
-RestreamData added
+RestreamData added, in Tunneling
 
 ExprAdapter Restreamed Mapping* classes changed parameters order (decoders before endcoders)
 
@@ -62,5 +64,7 @@ BitIntegerError was replaced with IntegerError
 Struct Sequence can raise IndexError and KeyError when dictionaries are missing entries
 
 RepeatError added
+
+IndexFieldError added
 
 RawCopyError added

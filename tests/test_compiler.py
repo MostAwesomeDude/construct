@@ -60,8 +60,8 @@ class TestCompiler(unittest.TestCase):
 
             "array1" / Array(5, Byte),
             "array2" / Array(this.num, Byte),
-            "range1" / Range(0, 5, Byte),
-            "greedyrange0" / Prefixed(Byte, GreedyRange(Byte)),
+            # "range1" / Range(0, 5, Byte),
+            # "greedyrange0" / Prefixed(Byte, GreedyRange(Byte)),
             "repeatuntil1" / RepeatUntil(obj_ == 0, Byte),
             # faulty list_ implementation, compiles into correct code
             # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
@@ -70,6 +70,7 @@ class TestCompiler(unittest.TestCase):
             "const1" / Const(bytes(4)),
             "const2" / Const(0, Int32ub),
             "computed" / Computed(this.num),
+            # Index
             "rebuild" / Rebuild(Byte, len_(this.array1)),
             "default" / Default(Byte, 0),
             Check(this.num == 0),
@@ -79,7 +80,7 @@ class TestCompiler(unittest.TestCase):
             "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
             "numpy1" / RestreamData(this.numpy_data, Numpy),
             "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
-            "namedtuple2" / NamedTuple("coord", "x y z", Range(3, 3, Byte)),
+            # "namedtuple2" / NamedTuple("coord", "x y z", Range(3, 3, Byte)),
             "namedtuple3" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
             "namedtuple4" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
 
@@ -96,7 +97,7 @@ class TestCompiler(unittest.TestCase):
             "stopif0" / StopIf(this.num == 255),
             "stopif1" / Struct(StopIf(this._.num == 0), Error),
             "stopif2" / Sequence(StopIf(this._.num == 0), Error),
-            "stopif3" / GreedyRange(StopIf(this.num == 0)),
+            # "stopif3" / GreedyRange(StopIf(this.num == 0)),
 
             "padding" / Padding(2),
             "paddedbyte" / Padded(4, Byte),
@@ -135,8 +136,8 @@ class TestCompiler(unittest.TestCase):
 
             # adapters and validators
 
-            Probe(),
-            ProbeInto(this.num),
+            # Probe(),
+            # ProbeInto(this.num),
             # Debugger
         )
 

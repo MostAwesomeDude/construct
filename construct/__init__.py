@@ -96,6 +96,8 @@ __all__ = [
     'HexDump',
     'If',
     'IfThenElse',
+    'Index',
+    'IndexFieldError',
     'Indexing',
     'Int',
     'IntegerError',

@@ -20,6 +20,7 @@ Core API: Exception types
 .. autofunction:: construct.RepeatError
 
 .. autofunction:: construct.ConstError
+.. autofunction:: construct.IndexFieldError
 .. autofunction:: construct.ExplicitError
 
 .. autofunction:: construct.UnionError
