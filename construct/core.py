@@ -4044,7 +4044,6 @@ class Prefixed(Subconstruct):
     :param includelength: optional, bool, whether length field should include its own size, default is False
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises NotImplementedError: compiled with includelength on
 
     Example::
 
@@ -4083,9 +4082,8 @@ class Prefixed(Subconstruct):
         return self.lengthfield._sizeof(context, path) + self.subcon._sizeof(context, path)
 
     def _emitparse(self, code):
-        if self.includelength:
-            raise NotImplementedError("Prefixed does not compile with includelength")
-        return "restream(read_bytes(io, %s), lambda io: %s)" % (self.lengthfield._compileparse(code), self.subcon._compileparse(code), )
+        sub = self.lengthfield.sizeof() if self.includelength else 0
+        return "restream(read_bytes(io, %s - %s), lambda io: %s)" % (self.lengthfield._compileparse(code), sub, self.subcon._compileparse(code), )
 
 
 def PrefixedArray(lengthfield, subcon):
