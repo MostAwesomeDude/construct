@@ -70,11 +70,11 @@ Performance boost can be easily measured:
 
 >>> print(st.benchmark(sampledata))
 Timeit measurements:
-compiling:         0.00452083740001398872 sec/call
-parsing:           0.00062362513400148595 sec/call
-parsing compiled:  0.00030551492700033121 sec/call
-building:          0.00068562510999981897 sec/call
-building compiled: 0.00068885248700098598 sec/call
+compiling:         0.00048725021999416638 sec/call
+parsing:           0.00002787889000046562 sec/call
+parsing compiled:  0.00001943664999998873 sec/call
+building:          0.00003316365799946653 sec/call
+building compiled: 0.00003364123299979837 sec/call
 
 Correctness can be automatically tested. The method checks that the provided (original) construct and its equivalent compiled version, both parse and build into equal data and objects. Object used for testing building is obtained by parsing the sample data.
 
@@ -103,8 +103,6 @@ Compiled parsing code:
         data = io.read(count)
         assert len(data) == count
         return data
-    def restream(data, func):
-        return func(BytesIO(data))
     def parse_struct_1(io, this):
         this = Container(_ = this)
         try:

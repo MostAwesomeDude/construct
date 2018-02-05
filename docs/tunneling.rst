@@ -36,7 +36,7 @@ b'\x00\x00\x00\x00\x00\x00\x00\x01'
 b'\x01\x00\x00\x00\x00\x00\x00\x00'
 
 
-Working with bytes subsets (or substreams)
+Working with bytes subsets
 --------------------------------------------
 
 Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending an element count (see PrefixedArray) or by prepending a byte count (see Prefixed):
@@ -50,7 +50,7 @@ Greedy* constructs consume as much data as possible. This is convenient when bui
 VarInt encoding is recommended because it is both compact and never overflows. Also and optionally, the length field can include its own size. If so, length field must be of fixed size.
 
 
-Working with different bytes (outside of stream)
+Working with different bytes
 --------------------------------------------------
 
 RestreamData allows you to insert a field that parses some data that came either from some other field, from the context (like Bytes) or some literal hardcoded value in your code. Comes handy when for example, you are testing a large struct by parsing null bytes, but some field is unable to parse null bytes (like Numpy). It substitutes the stream with another data for the purposes of parsing a particular field in a Struct (or Sequence for that matter).

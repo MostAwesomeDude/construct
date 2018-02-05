@@ -99,7 +99,7 @@ class TestExpr(unittest.TestCase):
         assert (list_[-1] + 1)(1,[2,3,4],{}) == 5
         assert (list_[-1] == 4)(1,[2,3,4],{}) == True
         assert (len_(list_))(1,[2,3,4],{}) == 3
-        assert (len_(list_[-1:]))(1,[2,3,4],{}) == 1
+        assert (len_(list_[:]))(1,[2,3,4],{}) == 3
 
         example = Struct(
             "items" / RepeatUntil(list_[-1] == 255, Byte),

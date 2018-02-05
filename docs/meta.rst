@@ -165,8 +165,10 @@ These can be used in at least one construct:
 
 
 
-Using `list_` expression (not yet implemented)
+Using `list_` expression
 ============================
+
+.. warning:: The `list_` expression is implemented but buggy, using it is not recommended at present time.
 
 There is also a third expression that takes (obj, list, context) and computes on the second parameter (the list). In constructs that use lambdas with all 3 parameters, those constructs usually process lists of elements and the 2nd parameter is a list of elements processed so far.
 
