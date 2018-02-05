@@ -1,9 +1,9 @@
 from construct.lib.py3compat import *
-
 import re
 
 
 globalfullprinting = None
+
 
 def setglobalfullprinting(enabled):
     r"""
@@ -297,120 +297,3 @@ class ListContainer(list):
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, True)
 
-
-class LazyContainer(object):
-    r"""
-    Lazy equivalent to Container. Each key is either associated with how to parse each value (before first access) or a cached value.
-    """
-    __slots__ = ["keysbackend", "offsetmap", "cached", "stream", "addoffset", "context"]
-
-    def __init__(self, keysbackend, offsetmap, cached, stream, addoffset, context):
-        self.keysbackend = keysbackend
-        self.offsetmap = offsetmap
-        self.cached = cached
-        self.stream = stream
-        self.addoffset = addoffset
-        self.context = context
-
-    def __getitem__(self, key):
-        if key not in self.cached:
-            at, sc = self.offsetmap[key]
-            self.stream.seek(self.addoffset + at)
-            self.cached[key] = sc._parse(self.stream, self.context, "lazy container")
-        return self.cached[key]
-
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    def __len__(self):
-        return len(self.keysbackend)
-
-    def keys(self):
-        return iter(self.keysbackend)
-
-    def values(self):
-        return (self[name] for name in self.keysbackend)
-
-    def items(self):
-        return ((name,self[name]) for name in self.keysbackend)
-
-    __iter__ = keys
-
-    def __eq__(self, other):
-        if not isinstance(other, dict):
-            return False
-        if len(self) != len(other):
-            return False
-        for k,v in self.items():
-            if k not in other or v != other[k]:
-                return False
-        return True
-
-    def __str__(self):
-        return "<LazyContainer: %d possible items, %d cached>" % (len(self),len(self.cached))
-
-
-class LazyRangeContainer(ListContainer):
-    r"""
-    Lazy equivalent to ListContainer. Each key is either associated with how to parse a value (before first access) or a cached value.
-    """
-    __slots__ = ["subcon", "subsize", "count", "stream", "addoffset", "context", "cached", "offsetmap"]
-
-    def __init__(self, subcon, subsize, count, stream, addoffset, context):
-        self.subcon = subcon
-        self.subsize = subsize
-        self.count = count
-        self.stream = stream
-        self.addoffset = addoffset
-        self.context = context
-        self.cached = {}
-
-    def __getitem__(self, index):
-        if not 0 <= index < len(self):
-            raise ValueError("index %d out of range 0-%d" % (index,len(self)-1))
-        if index not in self.cached:
-            self.stream.seek(self.addoffset + index * self.subsize)
-            self.cached[index] = self.subcon._parse(self.stream, self.context, "lazy range container")
-        return self.cached[index]
-
-    def __len__(self):
-        return self.count
-
-    def __iter__(self):
-        return (self[i] for i in range(len(self)))
-
-    def __eq__(self, other):
-        return len(self)==len(other) and all(a==b for a,b in zip(self,other))
-
-    def __str__(self):
-        return "<%s: %d possible items, %d cached>" % (self.__class__.__name__, len(self), len(self.cached))
-
-
-class LazySequenceContainer(LazyRangeContainer):
-    r"""
-    Lazy equivalent to ListContainer. Each key is either associated with how to parse a value (before first access) or a cached value.
-    """
-    __slots__ = ["count", "offsetmap", "cached", "stream", "addoffset", "context"]
-
-    def __init__(self, count, offsetmap, cached, stream, addoffset, context):
-        self.count = count
-        self.offsetmap = offsetmap
-        self.cached = cached
-        self.stream = stream
-        self.addoffset = addoffset
-        self.context = context
-
-    def __getitem__(self, index):
-        if not 0 <= index < len(self):
-            raise ValueError("index %d out of range 0-%d" % (index,len(self)-1))
-        if index not in self.cached:
-            at,sc = self.offsetmap[index]
-            self.stream.seek(self.addoffset + at)
-            self.cached[index] = sc._parse(self.stream, self.context, "lazy sequence container")
-        return self.cached[index]
-
-    def __len__(self):
-        return self.count

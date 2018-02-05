@@ -41,6 +41,8 @@ ExprAdapter Restreamed Mapping* classes changed parameters order (decoders befor
 
 OnDemand was renamed to LazyField
 
+LazyStruct LazySequence LazyRange removed
+
 HexString removed
 
 
