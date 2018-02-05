@@ -1,16 +1,45 @@
-from construct.lib.container import Container, FlagsContainer, ListContainer, setglobalfullprinting, globalfullprinting
-from construct.lib.binary import integer2bits, integer2bytes, onebit2integer, bits2integer, bytes2integer, bytes2bits, bits2bytes, swapbytes, swapbits
-from construct.lib.bitstream import RestreamedBytesIO, RebufferedBytesIO
-from construct.lib.hex import hexdump, hexundump, hexlify, unhexlify
-from construct.lib.py3compat import PY, PY2, PY3, PYPY, supportskwordered, supportscompiler, stringtypes, integertypes, bytestringtype, int2byte, byte2int, str2bytes, bytes2str, str2unicode, unicode2str, iteratebytes, iterateints
+from construct.lib.container import *
+from construct.lib.binary import *
+from construct.lib.bitstream import *
+from construct.lib.hex import *
+from construct.lib.py3compat import *
 
 __all__ = [
-
-    'Container', 'FlagsContainer', 'ListContainer', 
-    'integer2bits', 'integer2bytes', 'onebit2integer', 'bits2integer', 'bytes2integer', 'bytes2bits', 'bits2bytes', 'swapbytes', 'swapbits',
-    'RestreamedBytesIO', 'RebufferedBytesIO',
-    'hexdump', 'hexundump', 'hexlify', 'unhexlify',
-    'PY','PY2', 'PY3', 'PYPY', 'supportskwordered', 'supportscompiler', 'stringtypes', 'integertypes', 'bytestringtype', 'int2byte', 'byte2int', 'str2bytes', 'bytes2str', 'str2unicode', 'unicode2str', 'iteratebytes', 'iterateints',
-    'setglobalfullprinting','globalfullprinting',
-
+    'bits2bytes',
+    'bits2integer',
+    'byte2int',
+    'bytes2bits',
+    'bytes2integer',
+    'bytes2str',
+    'bytestringtype',
+    'Container',
+    'FlagsContainer',
+    'globalfullprinting',
+    'hexdump',
+    'hexlify',
+    'hexundump',
+    'int2byte',
+    'integer2bits',
+    'integer2bytes',
+    'integertypes',
+    'iteratebytes',
+    'iterateints',
+    'ListContainer',
+    'onebit2integer',
+    'PY',
+    'PY2',
+    'PY3',
+    'PYPY',
+    'RebufferedBytesIO',
+    'RestreamedBytesIO',
+    'setglobalfullprinting',
+    'str2bytes',
+    'str2unicode',
+    'stringtypes',
+    'supportscompiler',
+    'supportskwordered',
+    'swapbits',
+    'swapbytes',
+    'unhexlify',
+    'unicode2str',
 ]

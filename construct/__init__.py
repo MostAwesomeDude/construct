@@ -21,8 +21,8 @@ Hands-on example:
 
 from construct.core import *
 from construct.expr import *
-from construct.debug import Probe, ProbeInto, Debugger
-from construct.version import version, version_string, release_date
+from construct.debug import *
+from construct.version import *
 from construct import lib
 
 
