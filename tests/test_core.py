@@ -870,8 +870,8 @@ class TestCore(unittest.TestCase):
     def test_restreamdata(self):
         assert RestreamData(b"\xff", Byte).parse(b"") == 255
         assert RestreamData(b"\xff", Byte).parse(b"\x00") == 255
-        assert RestreamData(b"\xff", Byte).build(0) == b"\x00"
-        assert RestreamData(b"\xff", Byte).sizeof() == 1
+        assert RestreamData(b"\xff", Byte).build(0) == b""
+        assert RestreamData(b"\xff", Byte).sizeof() == 0
 
     def test_checksum(self):
         d = Struct(

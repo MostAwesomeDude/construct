@@ -4088,10 +4088,10 @@ class RestreamData(Subconstruct):
     """
     Parses a field on external data.
 
-    Parsing defers to subcon, but provides it a separate stream based on bytes data provided by datafunc (a bytes literal or context lambda). Building and sizeof are deferred to subcon.
+    Parsing defers to subcon, but provides it a separate stream based on bytes data provided by datafunc (a bytes literal or context lambda). Building is no-op. Size is 0.
 
     :param datafunc: bytes or context lambda, provides data for subcon to parse
-    :param subcon: Construct instance, subcon used for storing the value
+    :param subcon: Construct instance, subcon used for parsing the value
 
     Can propagate any exception from the lambdas, possibly non-ConstructError.
 
@@ -4111,6 +4111,12 @@ class RestreamData(Subconstruct):
             data = data(context)
         stream2 = io.BytesIO(data)
         return self.subcon._parse(stream2, context, path)
+
+    def _build(self, obj, stream, context, path):
+        pass
+
+    def _sizeof(self, context, path):
+        return 0
 
     def _emitparse(self, code):
         return "restream(%r, lambda io: %s)" % (self.datafunc, self.subcon._compileparse(code), )
