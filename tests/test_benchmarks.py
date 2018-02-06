@@ -383,27 +383,6 @@ def test_prefixedarray_build(benchmark):
 # Checksum
 # Compressed
 
-def test_lazystruct_parse(benchmark):
-    d = LazyStruct("a"/Byte, "b"/Byte, "c"/Byte, "d"/Byte, "e"/Byte)
-    @benchmark
-    def thecode():
-        x = d.parse(bytes(5))
-        [x.a, x.b, x.c, x.d, x.e]
-
-def test_lazysequence_parse(benchmark):
-    d = LazySequence(Byte, Byte, Byte, Byte, Byte)
-    @benchmark
-    def thecode():
-        x = d.parse(bytes(5))
-        [x[i] for i in range(5)]
-
-def test_lazyrange_parse(benchmark):
-    d = LazyRange(100, 100, Byte)
-    @benchmark
-    def thecode():
-        x = d.parse(bytes(100))
-        [x[i] for i in range(100)]
-
 # LazyField
 # LazyBound
 

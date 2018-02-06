@@ -2,29 +2,6 @@
 Lazy parsing
 ============
 
-.. warning::
-
-    Struct members that depend on earlier context entries (meta-constructs) do not work properly, because since Struct is lazy, there is no guarantee that previous members were parsed and put into context dictionary.
-
-Structs Sequences and Ranges
-----------------------------
-
-Lazy* constructs allow lazy deconstruction, meaning each member gets parsed only when resulting Container gets accessed (LazyStruct parsing only prepares a Container, it does not parse the members). Each member can be parsed only once, then it gets cached.
-
-Essentially almost every code that uses the base classes also works on these but there are few things that one has to be aware of when using lazy equivalents.
-
-`LazyStruct` works like Struct but parses into a LazyContainer.
-
-    Equivalent to Struct construct, however fixed size members are parsed on demand, others are parsed immediately. If entire struct is fixed size then entire parse is essentially one seek.
-
-`LazySequence` works like Sequence but parses into a LazySequenceContainer.
-
-    Equivalent to Sequence construct, however fixed size members are parsed on demand, others are parsed immediately. If entire sequence is fixed size then entire parse is essentially one seek.
-
-`LazyRange` works like Range but parses into a LazyRangeContainer.
-
-    Equivalent to Range construct, but members are parsed on demand. Works only with fixed size subcon. Entire parse is essentially one seek.
-
 
 LazyField
 --------

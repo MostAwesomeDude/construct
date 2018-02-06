@@ -3598,22 +3598,6 @@ def BitStruct(*subcons, **kw):
 EmbeddedBitStruct = NotImplementedError
 
 
-# def EmbeddedBitStruct(*subcons, **kw):
-#     r"""
-#     Makes an embedded BitStruct.
-
-#     See :class:`~construct.core.Bitwise` and :class:`~construct.core.Embedded` and :class:`~construct.core.Struct` for semantics and raisable exceptions.
-
-#     :param \*subcons: Construct instances, list of members, some can be anonymous
-#     :param \*\*kw: Construct instances, list of members (requires Python 3.6)
-
-#     Example::
-
-#         EmbeddedBitStruct  <-->  Embedded(Bitwise(Struct(...)))
-#     """
-#     return Embedded(Bitwise(Struct(*subcons, **kw)))
-
-
 #===============================================================================
 # stream manipulation
 #===============================================================================
