@@ -34,7 +34,7 @@ setup(
     install_requires = [],
     requires = [],
     provides = ["construct"],
-    keywords = "construct, declarative, data structure, binary, parser, builder, pack, unpack",
+    keywords = "construct, kaitai, declarative, data structure, binary, symmetric, parser, builder, pack, unpack, packer, unpacker",
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
