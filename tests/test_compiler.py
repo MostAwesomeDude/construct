@@ -9,10 +9,6 @@ class TestCompiler(unittest.TestCase):
         self.example = Struct(
             "num" / Byte,
 
-            # faulty list_ implementation, compiles into correct code?
-            # "items" / Computed([1,2,3]),
-            # "len_" / Computed(len_(this.items)),
-
             "bytes1" / Bytes(4),
             "bytes2" / Bytes(this.num),
             "greedybytes" / Prefixed(Byte, GreedyBytes),
@@ -62,9 +58,6 @@ class TestCompiler(unittest.TestCase):
             "array2" / Array(this.num, Byte),
             # "greedyrange0" / Prefixed(Byte, GreedyRange(Byte)),
             "repeatuntil1" / RepeatUntil(obj_ == 0, Byte),
-            # faulty list_ implementation, compiles into correct code
-            # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
-            # "repeatuntil3" / RepeatUntil(list_[-1] == 0, Byte),
 
             "const1" / Const(bytes(4)),
             "const2" / Const(0, Int32ub),
@@ -134,6 +127,14 @@ class TestCompiler(unittest.TestCase):
             # Probe(),
             # ProbeInto(this.num),
             # Debugger
+
+            # faulty list_ implementation, compiles into correct code?
+            # "items" / Computed([1,2,3]),
+            # "len_" / Computed(len_(this.items)),
+
+            # faulty list_ implementation, compiles into correct code
+            # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
+            # "repeatuntil3" / RepeatUntil(list_[-1] == 0, Byte),
         )
 
     def test_compiles(self):

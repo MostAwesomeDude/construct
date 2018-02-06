@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct, io, binascii, collections, sys, itertools
+import struct, io, binascii, itertools, collections, sys
 
 from construct.lib import *
 from construct.expr import *
@@ -136,7 +136,7 @@ def mergefields(*subcons):
         if isinstance(sc, (Renamed, Embedded)):
             return select(sc.subcon)
         if isinstance(sc, (Struct, Sequence, FocusedSeq, Union)):
-            return list(sc.subcons)
+            return sc.subcons
         raise ConstructError("Embedding only works with: Struct, Sequence, FocusedSeq, Union")
 
     result = []
