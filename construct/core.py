@@ -2847,19 +2847,17 @@ class NamedTuple(Adapter):
         self.factory = collections.namedtuple(tuplename, tuplefields)
 
     def _decode(self, obj, context):
-        # Note: Sequence happens to be also a Struct, thus ordering
-        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
-            return self.factory(*obj)
         if isinstance(self.subcon, Struct):
             return self.factory(**obj)
+        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
+            return self.factory(*obj)
         raise AdaptationError("subcon is neither Struct Sequence Array GreedyRangeGreedyRange")
 
     def _encode(self, obj, context):
-        # Note: Sequence happens to be also a Struct, thus ordering
-        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
-            return list(obj)
         if isinstance(self.subcon, Struct):
             return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name}
+        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
+            return list(obj)
         raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
 
     def _emitparse(self, code):
@@ -2867,11 +2865,10 @@ class NamedTuple(Adapter):
         code.append("""
             %s = collections.namedtuple(%r, %r)
         """ % (fname, self.tuplename, self.tuplefields, ))
-        # Note: Sequence happens to be also a Struct, thus ordering
-        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
-            return "%s(*(%s))" % (fname, self.subcon._compileparse(code), )
         if isinstance(self.subcon, Struct):
             return "%s(**(%s))" % (fname, self.subcon._compileparse(code), )
+        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
+            return "%s(*(%s))" % (fname, self.subcon._compileparse(code), )
         raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
 
 
