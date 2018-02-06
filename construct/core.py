@@ -1833,6 +1833,8 @@ class Struct(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members). EmbeddedBitStruct is not currently supported (yet to be resolved).
 
+    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
+
     :param \*subcons: Construct instances, list of members, some can be anonymous
     :param \*\*kw: Construct instances, list of members (requires Python 3.6)
 
@@ -1943,6 +1945,8 @@ class Sequence(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members). EmbeddedBitStruct is not currently supported (yet to be resolved).
 
+    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
+
     :param \*subcons: Construct instances, list of members, some can be named
     :param \*\*kw: Construct instances, list of members (requires Python 3.6)
 
@@ -2037,7 +2041,7 @@ class Array(Subconstruct):
     r"""
     Homogenous array of elements, similar to C# generic T[].
 
-    Parses into a ListContainer (a list). Parsing and building stops when either count items were procssed or StopIteration was raised. Builds from a list. If given list has more or less than count elements, raises RangeError. Size is defined as count multiplied by subcon size, but only if subcon is fixed size.
+    Parses into a ListContainer (a list). Parsing and building processes an exact amount of elements. If given list has more or less than count elements, raises RangeError. Size is defined as count multiplied by subcon size, but only if subcon is fixed size.
 
     Operator [] can be used to make Array and Range instances (recommended).
 
@@ -2076,12 +2080,9 @@ class Array(Subconstruct):
         if not 0 <= count:
             raise RangeError("invalid count %s" % (count,))
         obj = ListContainer()
-        try:
-            for i in range(count):
-                context._index = i
-                obj.append(self.subcon._parse(stream, context, path))
-        except StopIteration:
-            pass
+        for i in range(count):
+            context._index = i
+            obj.append(self.subcon._parse(stream, context, path))
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -2092,12 +2093,9 @@ class Array(Subconstruct):
             raise RangeError("invalid count %s" % (count,))
         if not len(obj) == count:
             raise RangeError("expected %d elements, found %d" % (count, len(obj)))
-        try:
-            for i in range(count):
-                context._index = i
-                self.subcon._build(obj[i], stream, context, path)
-        except StopIteration:
-            pass
+        for i in range(count):
+            context._index = i
+            self.subcon._build(obj[i], stream, context, path)
 
     def _sizeof(self, context, path):
         try:
@@ -2117,6 +2115,8 @@ class Range(Subconstruct):
     Homogenous array of elements, similar to C# generic T[], but works with unknown count of elements using following rules.
 
     Parses into a ListContainer (a list). Parsing stops when either max count was reached or an exception occured inside subcon. If count is less than min, raises RangeError. Builds from a list. If given list has more than max elements, raises RangeError. Size is defined as min (max) multiplied by subcon size, but only if min==max and subcon is fixed size.
+
+    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
 
     Operator [] can be used to make Array and Range instances (recommended).
 
@@ -3319,7 +3319,7 @@ class Switch(Construct):
 
 class StopIf(Construct):
     r"""
-    Checks for a condition, and stops certain classes (Struct Sequence Range FocusedSeq) from parsing or building further.
+    Checks for a condition, and stops certain classes (:class:`~construct.core.Struct` :class:`~construct.core.Sequence` :class:`~construct.core.Range`) from parsing or building further.
 
     Parsing and building check the condition, and raise StopIteration if indicated. Size is not defined.
 
