@@ -104,7 +104,6 @@ class TestCompiler(unittest.TestCase):
             "alignedbyte" / Aligned(4, Byte),
             "alignedstruct" / AlignedStruct(4, "a"/Byte, "b"/Short),
             "bitstruct" / BitStruct("a"/Octet),
-            # EmbeddedBitStruct
 
             "pointer" / Pointer(0, Byte),
             "peek" / Peek(Byte),

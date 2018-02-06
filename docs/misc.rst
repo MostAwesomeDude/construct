@@ -15,8 +15,6 @@ Embeds a struct into the enclosing struct, merging fields. Can also embed sequen
 
     Can only be used between Struct Sequence FocusedSeq Union, although they can be used interchangably, for example Struct can embed fields from a Sequence. 
 
-    EmbeddedBitStruct and Lazy* are not currently supported (yet to be resolved).
-
 >>> outer = Struct(
 ...     Embedded(Struct(
 ...         "data" / Bytes(4),

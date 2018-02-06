@@ -273,7 +273,6 @@ def test_aligned_build(benchmark):
 
 # AlignedStruct
 # BitStruct
-# EmbeddedBitStruct
 
 def test_union_parse(benchmark):
     d = Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8])

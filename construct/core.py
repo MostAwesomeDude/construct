@@ -135,9 +135,6 @@ def mergefields(*subcons):
     def select(sc):
         if isinstance(sc, (Renamed, Embedded)):
             return select(sc.subcon)
-        # experimental support for EmbeddedBitStruct
-        # if isinstance(sc, (Restreamed, CompilableMacro)):
-        #     return select(sc.subcon)
         if isinstance(sc, (Struct, Sequence, FocusedSeq, Union)):
             return list(sc.subcons)
         raise ConstructError("Embedding only works with: Struct, Sequence, FocusedSeq, Union")
@@ -1831,7 +1828,7 @@ class Struct(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members). EmbeddedBitStruct is not currently supported (yet to be resolved).
+    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
 
@@ -1943,7 +1940,7 @@ class Sequence(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members). EmbeddedBitStruct is not currently supported (yet to be resolved).
+    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
 
@@ -2320,8 +2317,6 @@ class Embedded(Subconstruct):
     .. warning:: 
 
         Can only be used between Struct Sequence FocusedSeq Union, although they can be used interchangably, for example Struct can embed fields from a Sequence. 
-
-        EmbeddedBitStruct and Lazy* are not currently supported (yet to be resolved).
 
     Parsing building and size are deferred to subcon.
 
@@ -2736,7 +2731,7 @@ class FocusedSeq(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members). EmbeddedBitStruct is not currently supported (yet to be resolved).
+    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class is used internally to implement :class:`~construct.core.PrefixedArray`.
 
@@ -2961,7 +2956,7 @@ class Union(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members). EmbeddedBitStruct is not currently supported (yet to be resolved).
+    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     .. warning:: If you skip `parsefrom` parameter then stream will be left back at starting offset, not seeked to any common denominator.
 
@@ -3593,9 +3588,6 @@ def BitStruct(*subcons, **kw):
         2
     """
     return Bitwise(Struct(*subcons, **kw))
-
-
-EmbeddedBitStruct = NotImplementedError
 
 
 #===============================================================================

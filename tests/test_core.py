@@ -759,22 +759,6 @@ class TestCore(unittest.TestCase):
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof() == 2
         assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build(Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))) == b"\xe1\x1f"
 
-    @pytest.mark.xfail(reason="new embedding semantics, needs fixing")
-    def test_embeddedbitstruct1(self):
-        d = Struct(
-            "len" / Byte,
-            EmbeddedBitStruct("data" / BitsInteger(8)),
-        )
-        common(d, b"\x08\xff", Container(len=8)(data=255), 2)
-
-    @pytest.mark.xfail(reason="new embedding semantics, needs fixing")
-    def test_embeddedbitstruct2(self):
-        d = Struct(
-            "len" / Byte,
-            EmbeddedBitStruct("data" / BitsInteger(this.len)),
-        )
-        common(d, b"\x08\xff", Container(len=8)(data=255), SizeofError)
-
     def test_pointer(self):
         common(Pointer(2,             Byte), b"\x00\x00\x07", 7, SizeofError)
         common(Pointer(lambda ctx: 2, Byte), b"\x00\x00\x07", 7, SizeofError)

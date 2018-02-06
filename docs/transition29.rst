@@ -31,6 +31,8 @@ Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
 
 Struct Sequence Union FocusedSeq are supporting new embedding semantics (see `this page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
 
+EmbeddedBitStruct removed
+
 Array reimplemented without Range, does not use stream.tell()
 
 Index added, in Miscellaneous

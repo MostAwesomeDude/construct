@@ -72,7 +72,6 @@ __all__ = [
     'Default',
     'Double',
     'Embedded',
-    'EmbeddedBitStruct',
     'Enum',
     'Error',
     'ExplicitError',
