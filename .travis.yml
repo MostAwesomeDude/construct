@@ -30,5 +30,5 @@ script: py.test --benchmark-skip --verbose
 
 notifications:
     email:
-        receipients:
+        recipients:
             - arek.bulski@gmail.com
