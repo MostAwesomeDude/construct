@@ -35,6 +35,8 @@ EmbeddedBitStruct removed
 
 Array reimplemented without Range, does not use stream.tell()
 
+Range removed, GreedyRange remains
+
 Index added, in Miscellaneous
 
 If IfThenElse parameter renamed `predicate` to `condfunc`

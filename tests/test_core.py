@@ -427,35 +427,6 @@ class TestCore(unittest.TestCase):
     def test_array_nontellable(self):
         assert Array(5, Byte).parse_stream(devzero) == [0,0,0,0,0]
 
-    def test_range(self):
-        assert Byte[2:4].parse(b"1234567890") == [49,50,51,52]
-        assert Byte[2:4].build([49,50,51,52]) == b"1234"
-        assert Byte[:4].parse(b"1234567890") == [49,50,51,52]
-        assert Byte[:4].build([49,50,51,52]) == b"1234"
-        assert raises(Byte[2:].parse, b"") == RangeError
-        assert raises(Byte[2:].build, []) == RangeError
-
-        assert Range(3, 5, Byte).parse(b"\x01\x02\x03") == [1,2,3]
-        assert Range(3, 5, Byte).parse(b"\x01\x02\x03\x04") == [1,2,3,4]
-        assert Range(3, 5, Byte).parse(b"\x01\x02\x03\x04\x05") == [1,2,3,4,5]
-        assert Range(3, 5, Byte).parse(b"\x01\x02\x03\x04\x05\x06") == [1,2,3,4,5]
-        assert raises(Range(3, 5, Byte).parse, b"") == RangeError
-        assert Range(3, 5, Byte).build([1,2,3]) == b"\x01\x02\x03"
-        assert Range(3, 5, Byte).build([1,2,3,4]) == b"\x01\x02\x03\x04"
-        assert Range(3, 5, Byte).build([1,2,3,4,5]) == b"\x01\x02\x03\x04\x05"
-        assert raises(Range(3, 5, Byte).build, [1,2]) == RangeError
-        assert raises(Range(3, 5, Byte).build, [1,2,3,4,5,6]) == RangeError
-        assert raises(Range(3, 5, Byte).sizeof) == SizeofError
-        assert Range(0, 100, Struct("id"/Byte)).parse(b'\x01\x02') == [Container(id=1),Container(id=2)]
-        assert Range(0, 100, Struct("id"/Byte)).build([dict(id=i) for i in range(5)]) == b'\x00\x01\x02\x03\x04'
-        assert Range(1, 1, Byte).sizeof() == 1
-        assert raises(Range(1, 1, VarInt).sizeof) == SizeofError
-        assert raises(Range(1, 9, Byte).sizeof) == SizeofError
-
-    @pytest.mark.xfail(PY2, reason="for unknown reason, fails only on PY2")
-    def test_range_nontellable(self):
-        assert Range(5, 5, Byte).parse_stream(devzero) == [0,0,0,0,0]
-
     def test_greedyrange(self):
         common(GreedyRange(Byte), b"", [], SizeofError)
         common(GreedyRange(Byte), b"\x01\x02", [1,2], SizeofError)
@@ -578,10 +549,10 @@ class TestCore(unittest.TestCase):
         assert Coord.build(coord(49,50,51)) == b"123"
         assert Coord.sizeof() == 3
 
-        Coord = NamedTuple("coord", "x y z", Range(3, 3, Byte))
+        Coord = NamedTuple("coord", "x y z", GreedyRange(Byte))
         assert Coord.parse(b"123") == coord(49,50,51)
         assert Coord.build(coord(49,50,51)) == b"123"
-        assert Coord.sizeof() == 3
+        assert raises(Coord.sizeof) == SizeofError
 
         Coord = NamedTuple("coord", "x y z", Byte >> Byte >> Byte)
         assert Coord.parse(b"123") == coord(49,50,51)
@@ -1109,18 +1080,15 @@ class TestCore(unittest.TestCase):
     def test_operators(self):
         common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)
         common(Struct("new" / ("old" / Byte)), b"\x01", Container(new=1), 1)
+
         common(Array(4, Byte), b"\x01\x02\x03\x04", [1,2,3,4], 4)
         common(Byte[4], b"\x01\x02\x03\x04", [1,2,3,4], 4)
-        assert raises(Byte[2:3].parse, b"\x01") == RangeError
-        assert Byte[2:3].parse(b"\x01\x02") == [1,2]
-        assert Byte[2:3].parse(b"\x01\x02\x03") == [1,2,3]
-        assert Byte[2:3].parse(b"\x01\x02\x03") == [1,2,3]
-        assert Byte[2:3].parse(b"\x01\x02\x03\x04") == [1,2,3]
-        assert raises(lambda: Byte[2:3:1]) == ValueError
         common(Struct("nums" / Byte[4]), b"\x01\x02\x03\x04", Container(nums=[1,2,3,4]), 4)
+
         common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
         common(Int8ub >> Int16ub >> Int32ub, b"\x01\x00\x02\x00\x00\x00\x03", [1,2,3], 7)
         common(Int8ub[2] >> Int16ub[2], b"\x01\x02\x00\x03\x00\x04", [[1,2],[3,4]], 6)
+
         common(Sequence(Embedded(Sequence(Int8ub)), Embedded(Sequence(Int16ub)) ), b"\x01\x00\x02", [1,2], 3)
         common(Sequence(Int8ub) >> Sequence(Int16ub), b"\x01\x00\x02", [1,2], 3)
         common(Struct("count"/Byte, "items"/Byte[this.count], Pass, Terminated), b"\x03\x01\x02\x03", Container(count=3)(items=[1,2,3]), SizeofError)

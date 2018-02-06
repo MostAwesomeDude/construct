@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct, io, binascii, collections, sys
+import struct, io, binascii, collections, sys, itertools
 
 from construct.lib import *
 from construct.expr import *
@@ -497,9 +497,6 @@ class Construct(object):
         """
         Used for renaming subcons, usually part of a Struct, like Struct("index" / Byte).
         """
-        if name is not None:
-            if not isinstance(name, stringtypes):
-                raise TypeError("name must be b-string or u-string or None", name)
         return Renamed(name, self)
 
     __rdiv__ = __rtruediv__
@@ -522,18 +519,15 @@ class Construct(object):
 
     def __getitem__(self, count):
         """
-        Used for making Arrays and Ranges like Byte[5] or Byte[:].
+        Used for making Arrays and GreedyRanges like Byte[5] and Byte[:].
         """
         if isinstance(count, slice):
-            if count.step is not None:
-                raise ValueError("slice must not contain a step: %r" % count)
-            min = 0 if count.start is None else count.start
-            max = 2**64 if count.stop is None else count.stop
-            return Range(min, max, self)
-        elif isinstance(count, int) or callable(count):
+            if any(x is not None for x in [count.start, count.stop, count.step]):
+                raise ValueError("slice can only be like X[:]")
+            return GreedyRange(self)
+        if isinstance(count, int) or callable(count):
             return Array(count, self)
-        else:
-            raise TypeError("expected an int, a context lambda, or a slice thereof, but found %r" % count)
+        raise TypeError("expected an int, a context lambda, or a slice thereof, but found %r" % count)
 
 
 class Subconstruct(Construct):
@@ -2040,7 +2034,7 @@ class Array(Subconstruct):
 
     Parses into a ListContainer (a list). Parsing and building processes an exact amount of elements. If given list has more or less than count elements, raises RangeError. Size is defined as count multiplied by subcon size, but only if subcon is fixed size.
 
-    Operator [] can be used to make Array and Range instances (recommended).
+    Operator [] can be used to make Array and GreedyRange instances (recommended).
 
     :param count: integer or context lambda, strict amount of elements
     :param subcon: Construct instance, subcon to process individual elements
@@ -2061,7 +2055,7 @@ class Array(Subconstruct):
 
         Alternative syntax (recommended):
         >>> Bytes[5] creates Array
-        >>> Byte[3:5], Byte[3:], Byte[:5] creates Range
+        >>> Byte[3:5], Byte[3:], Byte[:5] are invalid
         >>> Byte[:] creates GreedyRange
     """
     __slots__ = ["count"]
@@ -2107,119 +2101,22 @@ class Array(Subconstruct):
         return "ListContainer((%s) for i in range(%s))" % (self.subcon._compileparse(code), self.count)
 
 
-class Range(Subconstruct):
+class GreedyRange(Subconstruct):
     r"""
-    Homogenous array of elements, similar to C# generic T[], but works with unknown count of elements using following rules.
+    Homogenous array of elements, similar to C# generic IEnumerable<T>, but works with unknown count of elements by parsing until end of stream.
 
-    Parses into a ListContainer (a list). Parsing stops when either max count was reached or an exception occured inside subcon. If count is less than min, raises RangeError. Builds from a list. If given list has more than max elements, raises RangeError. Size is defined as min (max) multiplied by subcon size, but only if min==max and subcon is fixed size.
+    Parses into a ListContainer (a list). Parsing stops when an exception occured inside subcon, possibly due to EOF. Builds from enumerable. Size is undefined.
 
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
 
-    Operator [] can be used to make Array and Range instances (recommended).
+    Operator [] can be used to make Array and GreedyRange instances (recommended).
 
-    This class is used internally to implement :class:`~construct.core.GreedyRange`.
-
-    :param min: integer or context lambda, the minimal count
-    :param max: integer or context lambda, the maximal count
     :param subcon: Construct instance, subcon to process individual elements
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
-    :raises RangeError: consumed or produced too little or too many elements, or specified min and max are not valid
 
     Can propagate any exception from the lambdas, possibly non-ConstructError.
-
-    Example::
-
-        >>> d = Range(3,5,Byte) or Byte[3:5]
-        >>> d.parse(b'\x01\x02\x03\x04')
-        [1,2,3,4]
-        >>> d.build([1,2,3,4])
-        b'\x01\x02\x03\x04'
-        >>> d.build([1,2])
-        construct.core.RangeError: expected from 3 to 5 elements, found 2
-        >>> d.build([1,2,3,4,5,6])
-        construct.core.RangeError: expected from 3 to 5 elements, found 6
-
-        Alternative syntax (recommended):
-        >>> Bytes[5] creates Array
-        >>> Byte[3:5], Byte[3:], Byte[:5] creates Range
-        >>> Byte[:] creates GreedyRange
-    """
-    __slots__ = ["min", "max"]
-
-    def __init__(self, min, max, subcon):
-        super(Range, self).__init__(subcon)
-        self.min = min
-        self.max = max
-
-    def _parse(self, stream, context, path):
-        min = self.min(context) if callable(self.min) else self.min
-        max = self.max(context) if callable(self.max) else self.max
-        if not 0 <= min <= max:
-            raise RangeError("invalid min %s and max %s" % (min, max))
-        obj = ListContainer()
-        try:
-            context._index = 0
-            while len(obj) < max:
-                fallback = _tell_stream(stream)
-                obj.append(self.subcon._parse(stream, context, path))
-                context._index += 1
-        except StopIteration:
-            pass
-        except ExplicitError:
-            raise
-        except Exception:
-            if len(obj) < min:
-                raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
-            _seek_stream(stream, fallback)
-        return obj
-
-    def _build(self, obj, stream, context, path):
-        min = self.min(context) if callable(self.min) else self.min
-        max = self.max(context) if callable(self.max) else self.max
-        if not 0 <= min <= max:
-            raise RangeError("invalid min %s and max %s" % (min, max))
-        if not min <= len(obj) <= max:
-            raise RangeError("expected %d to %d elements, found %d" % (min, max, len(obj)))
-        try:
-            context._index = 0
-            for subobj in obj:
-                self.subcon._build(subobj, stream, context, path)
-                context._index += 1
-        except StopIteration:
-            pass
-        except ExplicitError:
-            raise
-        except Exception:
-            if len(obj) < min:
-                raise RangeError("expected %d to %d, found %d" % (min, max, len(obj)))
-            else:
-                raise
-
-    def _sizeof(self, context, path):
-        try:
-            min = self.min(context) if callable(self.min) else self.min
-            max = self.max(context) if callable(self.max) else self.max
-        except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
-        if min == max:
-            return min * self.subcon._sizeof(context, path)
-        raise SizeofError("cannot calculate size, unless element count and size is fixed")
-
-    def _emitdecompiled(self, code):
-        return "Range(%s, %s, %s)" % (self.min, self.max, self.subcon._decompile(code), )
-
-
-def GreedyRange(subcon):
-    r"""
-    Homogenous array of elements, similar to C# generic T[], but works with unknown count of elements by parsing until end of stream.
-
-    Semantics are like for Range(0, 2**64, subcon).
-
-    :param subcon: Construct instance, subcon to process individual elements
-
-    See :class:`~construct.core.Range` for raisable exceptions.
 
     Example::
 
@@ -2231,10 +2128,43 @@ def GreedyRange(subcon):
 
         Alternative syntax (recommended):
         >>> Bytes[5] creates Array
-        >>> Byte[3:5], Byte[3:], Byte[:5] creates Range
+        >>> Byte[3:5], Byte[3:], Byte[:5] are invalid
         >>> Byte[:] creates GreedyRange
     """
-    return Range(0, 2**64, subcon)
+
+    def __init__(self, subcon):
+        super(GreedyRange, self).__init__(subcon)
+
+    def _parse(self, stream, context, path):
+        obj = ListContainer()
+        try:
+            for i in itertools.count():
+                context._index = i
+                fallback = _tell_stream(stream)
+                obj.append(self.subcon._parse(stream, context, path))
+        except StopIteration:
+            pass
+        except ExplicitError:
+            raise
+        except Exception:
+            _seek_stream(stream, fallback)
+        return obj
+
+    def _build(self, obj, stream, context, path):
+        try:
+            for i,e in enumerate(obj):
+                context._index = i
+                self.subcon._build(e, stream, context, path)
+        except StopIteration:
+            pass
+        except ExplicitError:
+            raise
+
+    def _sizeof(self, context, path):
+        raise SizeofError
+
+    def _emitdecompiled(self, code):
+        return "GreedyRange(%s)" % (self.subcon._decompile(code), )
 
 
 class RepeatUntil(Subconstruct):
@@ -2513,7 +2443,7 @@ class Computed(Construct):
 @singleton
 class Index(Construct):
     r"""
-    Indexes a field inside outer :class:`~construct.core.Array` :class:`~construct.core.Range` :class:`~construct.core.RepeatUntil` context.
+    Indexes a field inside outer :class:`~construct.core.Array` :class:`~construct.core.GreedyRange` :class:`~construct.core.RepeatUntil` context.
 
     Note that you can use this class, or use `this._index` or `this._._index` expression instead, depending on how its used. See the examples.
 
@@ -2890,10 +2820,10 @@ class NamedTuple(Adapter):
 
     :param tuplename: string
     :param tuplefields: string or list of strings
-    :param subcon: Construct instance, either Struct Sequence Array Range
+    :param subcon: Construct instance, either Struct Sequence Array GreedyRange
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises AdaptationError: subcon is neither Struct Sequence Array Range
+    :raises AdaptationError: subcon is neither Struct Sequence Array GreedyRange
 
     Can propagate collections exceptions.
 
@@ -2908,8 +2838,8 @@ class NamedTuple(Adapter):
     __slots__ = ["tuplename", "tuplefields"]
 
     def __init__(self, tuplename, tuplefields, subcon):
-        if not isinstance(subcon, (Struct,Sequence,Array,Range)):
-            raise AdaptationError("subcon is neither Struct Sequence Array Range")
+        if not isinstance(subcon, (Struct,Sequence,Array,GreedyRange)):
+            raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
         super(NamedTuple, self).__init__(subcon)
         self.tuplename = tuplename
         self.tuplefields = tuplefields
@@ -2918,19 +2848,19 @@ class NamedTuple(Adapter):
 
     def _decode(self, obj, context):
         # Note: Sequence happens to be also a Struct, thus ordering
-        if isinstance(self.subcon, (Sequence,Array,Range)):
+        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return self.factory(*obj)
         if isinstance(self.subcon, Struct):
             return self.factory(**obj)
-        raise AdaptationError("subcon is neither Struct Sequence Array Range")
+        raise AdaptationError("subcon is neither Struct Sequence Array GreedyRangeGreedyRange")
 
     def _encode(self, obj, context):
         # Note: Sequence happens to be also a Struct, thus ordering
-        if isinstance(self.subcon, (Sequence,Array,Range)):
+        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return list(obj)
         if isinstance(self.subcon, Struct):
             return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name}
-        raise AdaptationError("subcon is neither Struct Sequence Array Range")
+        raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
 
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
@@ -2938,11 +2868,11 @@ class NamedTuple(Adapter):
             %s = collections.namedtuple(%r, %r)
         """ % (fname, self.tuplename, self.tuplefields, ))
         # Note: Sequence happens to be also a Struct, thus ordering
-        if isinstance(self.subcon, (Sequence,Array,Range)):
+        if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return "%s(*(%s))" % (fname, self.subcon._compileparse(code), )
         if isinstance(self.subcon, Struct):
             return "%s(**(%s))" % (fname, self.subcon._compileparse(code), )
-        raise AdaptationError("subcon is neither Struct Sequence Array Range")
+        raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
 
 
 #===============================================================================
@@ -3314,7 +3244,7 @@ class Switch(Construct):
 
 class StopIf(Construct):
     r"""
-    Checks for a condition, and stops certain classes (:class:`~construct.core.Struct` :class:`~construct.core.Sequence` :class:`~construct.core.Range`) from parsing or building further.
+    Checks for a condition, and stops certain classes (:class:`~construct.core.Struct` :class:`~construct.core.Sequence` :class:`~construct.core.GreedyRange`) from parsing or building further.
 
     Parsing and building check the condition, and raise StopIteration if indicated. Size is not defined.
 
@@ -4498,7 +4428,7 @@ def Filter(predicate, subcon):
     r"""
     Filters a list leaving only the elements that passed through the predicate.
 
-    :param subcon: Construct instance, usually a Range Array Sequence
+    :param subcon: Construct instance, usually Array GreedyRange Sequence
     :param predicate: lambda that takes (obj, context) and returns a bool
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
@@ -4516,7 +4446,7 @@ def Filter(predicate, subcon):
 
 class Slicing(Adapter):
     r"""
-    Adapter for slicing a list. Works with Range and Sequence and their lazy equivalents.
+    Adapter for slicing a list. Works with GreedyRange and Sequence.
 
     :param subcon: Construct instance, subcon to slice
     :param count: integer, expected number of elements, needed during building

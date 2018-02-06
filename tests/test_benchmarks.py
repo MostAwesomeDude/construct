@@ -125,16 +125,16 @@ def test_sequence_build(benchmark):
     d = Sequence(Byte, Byte, Byte, Byte, Byte)
     benchmark(d.build, [0]*5)
 
-def test_range_parse(benchmark):
-    d = Range(100, 100, Byte)
+def test_array_parse(benchmark):
+    d = Array(100, Byte)
     benchmark(d.parse, bytes(100))
 
-def test_range_parse_compiled(benchmark):
-    d = Range(100, 100, Byte).compile()
+def test_array_parse_compiled(benchmark):
+    d = Array(100, Byte).compile()
     benchmark(d.parse, bytes(100))
 
-def test_range_build(benchmark):
-    d = Range(100, 100, Byte)
+def test_array_build(benchmark):
+    d = Array(100, Byte)
     benchmark(d.build, [0]*100)
 
 def test_greedyrange_parse(benchmark):
@@ -147,18 +147,6 @@ def test_greedyrange_parse_compiled(benchmark):
 
 def test_greedyrange_build(benchmark):
     d = GreedyRange(Byte)
-    benchmark(d.build, [0]*100)
-
-def test_array_parse(benchmark):
-    d = Array(100, Byte)
-    benchmark(d.parse, bytes(100))
-
-def test_array_parse_compiled(benchmark):
-    d = Array(100, Byte).compile()
-    benchmark(d.parse, bytes(100))
-
-def test_array_build(benchmark):
-    d = Array(100, Byte)
     benchmark(d.build, [0]*100)
 
 def test_repeatuntil_parse(benchmark):

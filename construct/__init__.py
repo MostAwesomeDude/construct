@@ -133,7 +133,6 @@ __all__ = [
     'PrefixedArray',
     'Probe',
     'ProbeInto',
-    'Range',
     'RangeError',
     'RawCopy',
     'Rebuffered',

@@ -36,7 +36,7 @@ A ``Struct`` is a collection of ordered, named fields::
     >>> format.parse(b'BMP\x03\x02\x07\x08\t\x0b\x0c\r')
     Container(signature=b'BMP')(width=3)(height=2)(pixels=[7, 8, 9, 11, 12, 13])
 
-A ``Sequence`` is a collection of ordered fields, and differs from ``Array`` and ``Range`` in that those two are homogenous::
+A ``Sequence`` is a collection of ordered fields, and differs from ``Array`` and ``GreedyRange`` in that those two are homogenous::
 
     >>> format = Sequence(PascalString(Byte, encoding="utf8"), GreedyRange(Byte))
     >>> format.build([u"lalaland", [255,1,2]])

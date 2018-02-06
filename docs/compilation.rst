@@ -205,7 +205,7 @@ Second example, discussing decompiled instances:
         "field2" / If(this.field1 == 0, Int8ub),
         "field3" / If(this.field1 == 0, RawCopy(Int8ub)),
         "field4" / RawCopy(Int8ub),
-        "field5" / RawCopy(Range(0, 10, Int8ub)),
+        "field5" / RawCopy(GreedyRange(Int8ub)),
     )
 
 ::
@@ -213,7 +213,7 @@ Second example, discussing decompiled instances:
     decompiled_4 = Decompiled(lambda io,this: unpack('>B', read_bytes(io, 1))[0])
     decompiled_2 = RawCopy(decompiled_4)
     decompiled_5 = RawCopy(decompiled_4)
-    decompiled_7 = Range(0, 10, decompiled_4)
+    decompiled_7 = GreedyRange(decompiled_4)
     decompiled_6 = RawCopy(decompiled_7)
     def parse_struct_1(io, this):
         this = Container(_ = this)
@@ -223,6 +223,7 @@ Second example, discussing decompiled instances:
             this['field3'] = (decompiled_2._parse(io, this, None)) if ((this.field1 == 0)) else (None)
             this['field4'] = decompiled_5._parse(io, this, None)
             this['field5'] = decompiled_6._parse(io, this, None)
+            pass
         except StopIteration:
             pass
         del this._
@@ -233,11 +234,11 @@ Second example, discussing decompiled instances:
 
 Regular constructs use a different model than generated code. In regular code, every subcon is an instance of Construct class, so to sub-parse, outer construct calls subcon._parse(), that is a method on another instance. In genereted code, subcon parser is a Python expression (one-liner), that gets embedded in outer construct's parser, which usually is also a Python expression. This eliminates an overhead of a function call. For example, IfThenElse and FormatField both compile into expressions, one embedded into the other.
 
-Not all constructs have compilable parsers. Those instances that can be represented by a Python expression are called "compilable", like FormatField and Bytes. Those that can be represented by a re-created core class are called "decompilable", like Range and RawCopy. Almost all classes are either of the two. Few classes are neither, like Compressed and Restreamed, and therefore cannot exist in compiled code. The reason for those "decompilable" classes is that they either have too much code or do too heavy work, to justify writing compiled parsers for them.
+Not all constructs have compilable parsers. Those instances that can be represented by a Python expression are called "compilable", like FormatField and Bytes. Those that can be represented by a re-created core class are called "decompilable", like GreedyRange and RawCopy. Almost all classes are either of the two. Few classes are neither, like Compressed and Restreamed, and therefore cannot exist in compiled code. The reason for those "decompilable" classes is that they either have too much code or do too heavy work, to justify writing compiled parsers for them.
 
 If a compilable instance gets compiled (eg. FormatField inside IfThenElse) it tries to obtain a Python expression of its subcon and embeds one expression inside another, and if that fails (eg. RawCopy inside IfThenElse), it tries to obtain a decompiled version, and embeds its _parse method inside outer expression.
 
-If a decompilable instance gets compiled (eg. Range inside RawCopy) it tries to obtain a decompiled version of subcon, and embeds one ctor inside another, and if that fails (eg. FormatField inside Range), it tries to obtain a compiled parser (an expression) and builds a Decompiled instance that is a lightweight wrapper, and embeds that instance inside a ctor.
+If a decompilable instance gets compiled (eg. GreedyRange inside RawCopy) it tries to obtain a decompiled version of subcon, and embeds one ctor inside another, and if that fails (eg. FormatField inside GreedyRange), it tries to obtain a compiled parser (an expression) and builds a Decompiled instance that is a lightweight wrapper, and embeds that instance inside a ctor.
 
 In summary, compilable instances prefer compilable subcons, and decompilable instances prefer decompilable subcons. Bridging is possible both ways, but involves some wrappers. Even tho the wrappers are lightweight, compiler attemps to maximize efficiency. This also solves the mystery of last line creating a Compiled instance. Module must expose a Construct instance, not an expression or a function.
 
@@ -246,7 +247,7 @@ Third example, discussing compiler using a cache:
 ::
 
     inner = Struct(
-        "innerfield1" / Byte,
+        "innerfield1" / Int8ub,
     )
     Struct(
         "field1" / inner,
@@ -300,10 +301,3 @@ parsing:           0.00002787889000046562 sec/call
 parsing compiled:  0.00001943664999998873 sec/call
 building:          0.00003316365799946653 sec/call
 building compiled: 0.00003364123299979837 sec/call
-
-
-Comparison with Kaitai Struct
----------------------
-
-TBA: Example and bechmarks.
-TBA: Tutorials.
