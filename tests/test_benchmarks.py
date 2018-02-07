@@ -150,17 +150,16 @@ def test_greedyrange_build(benchmark):
     benchmark(d.build, [0]*100)
 
 def test_repeatuntil_parse(benchmark):
-    d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte)
-    benchmark(d.parse, bytes(20))
+    d = RepeatUntil(obj_ > 0, Byte)
+    benchmark(d.parse, bytes(i<10 for i in range(10)))
 
-@pytest.mark.xfail(raises=NotImplementedError)
 def test_repeatuntil_parse_compiled(benchmark):
-    d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte).compile()
-    benchmark(d.parse, bytes(20))
+    d = RepeatUntil(obj_ > 0, Byte).compile()
+    benchmark(d.parse, bytes(i<10 for i in range(10)))
 
 def test_repeatuntil_build(benchmark):
-    d = RepeatUntil(lambda x,lst,ctx: len(lst)==20, Byte)
-    benchmark(d.build, [0]*20)
+    d = RepeatUntil(obj_ > 0, Byte)
+    benchmark(d.build, [int(i<9) for i in range(10)])
 
 def test_const_parse(benchmark):
     d = Const(bytes(4))
