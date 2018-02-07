@@ -1619,6 +1619,8 @@ class Enum(Adapter):
     semantics???
     Size is same as subcon, unless it raises SizeofError.
 
+    This class supports exposing member labels as attributes. See example.
+
     :param subcon: Construct instance, subcon to map to/from
     :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
     :param \*\*mapping: dict, mapping string names to values
@@ -1632,6 +1634,8 @@ class Enum(Adapter):
         'one'
         >>> d.parse(b"\xff")
         construct.core.MappingError: parsing failed, no decoding mapping for 255
+        >>> d.build(d.one)
+        b'\x01'
         >>> d.build("one")
         b'\x01'
         >>> d.build(1)
@@ -1642,6 +1646,8 @@ class Enum(Adapter):
         construct.core.MappingError: building failed, no decoding mapping for "missing"
         >>> d.sizeof()
         1
+        >>> d.zero
+        'zero'
 
         import enum
         class E(enum.IntEnum):
@@ -1693,6 +1699,8 @@ class FlagsEnum(Adapter):
     semantics???
     Size is same as subcon, unless it raises SizeofError.
 
+    This class supports exposing member labels as attributes. See example.
+
     :param subcon: Construct instance, must operate on integers
     :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
     :param \*\*flags: dict, mapping string names to integer values
@@ -1701,9 +1709,11 @@ class FlagsEnum(Adapter):
 
     Example::
 
-        >>> d = FlagsEnum(Byte, a=1, b=2, c=4, d=8)
+        >>> d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
         >>> d.parse(b"\x03")
-        Container(c=False)(b=True)(a=True)(d=False)
+        Container(one=True)(two=True)(four=False)(eight=False)
+        >>> d.one
+        'one'
 
         import enum
         class E(enum.IntEnum):
@@ -1721,6 +1731,11 @@ class FlagsEnum(Adapter):
             for enumentry in enum:
                 flags[enumentry.name] = enumentry.value
         self.flags = flags
+
+    def __getattr__(self, name):
+        if name in self.flags:
+            return name
+        return super(FlagsEnum, self).__getattr__(name)
 
     def _decode(self, obj, context):
         obj2 = FlagsContainer()
@@ -1749,6 +1764,8 @@ class Mapping(Adapter):
     Adapter that maps objects to other objects. Translates objects before parsing and before building.
 
     .. note:: It used to be used internally by Flag IfThenElse etc but became deprecated.
+
+    This class supports exposing member labels as attributes. See example.
 
     :param subcon: Construct instance, subcon to map to/from
     :param decoding: dict, for decoding (parsing) mapping

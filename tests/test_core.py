@@ -289,6 +289,11 @@ class TestCore(unittest.TestCase):
         )
         common(st, b"\x01", dict(flag=True), 1)
 
+    def test_enum_attrmembers(self):
+        d = Enum(Byte, one=1, two=2)
+        assert d.one == "one"
+        assert raises(lambda: d.missing)
+
     def test_flagsenum(self):
         assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
         assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).build(FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)) == b'\x81'
@@ -319,6 +324,11 @@ class TestCore(unittest.TestCase):
         common(FlagsEnum(Byte, E, F), b"\x01", FlagsContainer(a=True,b=False), 1)
         common(FlagsEnum(Byte, E, F), b"\x02", FlagsContainer(a=False,b=True), 1)
         common(FlagsEnum(Byte, E, F), b"\x03", FlagsContainer(a=True,b=True), 1)
+
+    def test_flagsenum_attrmembers(self):
+        d = FlagsEnum(Byte, one=1, two=2)
+        assert d.one == "one"
+        assert raises(lambda: d.missing)
 
     def test_struct(self):
         common(Struct(), b"", Container(), 0)
