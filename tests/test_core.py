@@ -244,7 +244,7 @@ class TestCore(unittest.TestCase):
         Enum(Byte, a=1, b=2).build(1) == b"\x01"
         assert raises(Enum(Byte, a=1, b=2).build, 255) == MappingError
 
-    @pytest.mark.xfail(PY < (3,4), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+    @pytest.mark.xfail(not PY>=(3,4) and not PY==(2,7), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
     def test_enum_enum34(self):
         import enum
         class E(enum.IntEnum):
@@ -254,7 +254,7 @@ class TestCore(unittest.TestCase):
         common(Enum(Byte, E, F), b"\x01", "a", 1)
         common(Enum(Byte, E, F), b"\x02", "b", 1)
 
-    @pytest.mark.xfail(PY < (3,6), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+    @pytest.mark.xfail(not PY>=(3,6), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
     def test_enum_enum36(self):
         import enum
         class E(enum.IntEnum):
@@ -303,7 +303,7 @@ class TestCore(unittest.TestCase):
         assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict()) == b'\x00'
         assert raises(FlagsEnum(Byte, feature=4,output=2,input=1).build, dict(unknown=True)) == MappingError
 
-    @pytest.mark.xfail(PY < (3,4), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+    @pytest.mark.xfail(not PY>=(3,4) and not PY==(2,7), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
     def test_flagsenum_enum34(self):
         import enum
         class E(enum.IntEnum):
@@ -314,7 +314,7 @@ class TestCore(unittest.TestCase):
         common(FlagsEnum(Byte, E, F), b"\x02", FlagsContainer(a=False,b=True), 1)
         common(FlagsEnum(Byte, E, F), b"\x03", FlagsContainer(a=True,b=True), 1)
 
-    @pytest.mark.xfail(PY < (3,6), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+    @pytest.mark.xfail(not PY>=(3,6), raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
     def test_flagsenum_enum36(self):
         import enum
         class E(enum.IntEnum):
