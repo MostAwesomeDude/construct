@@ -916,7 +916,7 @@ class TestCore(unittest.TestCase):
         assert len(d.build(zeros)) < 50
         assert raises(d.sizeof) == SizeofError
 
-    @pytest.mark.xfail(PY < (3,2), raises=AttributeError, reason="gzip module was added in 3.2")
+    @pytest.mark.xfail(not PY>=(3,2), raises=AttributeError, reason="gzip module was added in 3.2")
     def test_compressed_gzip(self):
         zeros = bytes(10000)
         d = Compressed(GreedyBytes, "gzip")
@@ -939,7 +939,7 @@ class TestCore(unittest.TestCase):
         assert len(d.build(zeros)) < 50
         assert raises(d.sizeof) == SizeofError
 
-    @pytest.mark.xfail(PY < (3,3), raises=ImportError, reason="lzma module was added in 3.3")
+    @pytest.mark.xfail(not PY>=(3,3), raises=ImportError, reason="lzma module was added in 3.3")
     def test_compressed_lzma(self):
         zeros = bytes(10000)
         d = Compressed(GreedyBytes, "lzma")
