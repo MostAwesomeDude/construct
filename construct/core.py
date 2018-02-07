@@ -3956,7 +3956,7 @@ class RawCopy(Subconstruct):
             offset1 = _tell_stream(stream)
             _write_stream(stream, len(data), data)
             offset2 = _tell_stream(stream)
-            return Container(obj, data=data, offset1=offset1, offset2=offset2, length=len(data))
+            return Container(obj, data=data, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         if 'value' in obj:
             value = obj['value']
             offset1 = _tell_stream(stream)
