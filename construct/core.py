@@ -1663,6 +1663,11 @@ class Enum(Adapter):
         self.decmapping =      {v:k for k,v in mapping.items()}
         self.decmapping.update({k:k for k,v in mapping.items()})
 
+    def __getattr__(self, name):
+        if name in self.encmapping:
+            return name
+        return super(Enum, self).__getattr__(name)
+
     def _decode(self, obj, context):
         try:
             return self.decmapping[obj]
@@ -1763,6 +1768,11 @@ class Mapping(Adapter):
         self.encoding = encoding
         self.decdefault = decdefault
         self.encdefault = encdefault
+
+    def __getattr__(self, name):
+        if name in self.encoding:
+            return name
+        return super(Mapping, self).__getattr__(name)
 
     def _decode(self, obj, context):
         try:
