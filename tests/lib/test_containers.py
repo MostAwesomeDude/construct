@@ -167,8 +167,10 @@ class TestContainer(unittest.TestCase):
         assert c == c
         assert c == d
 
+    @pytest.mark.xfail(not supportsnumpy, reason="numpy is not installed?")
     def test_eq_numpy(self):
         import numpy
+
         c = Container(arr=numpy.zeros(10, dtype=numpy.uint8))
         assert c == c
 

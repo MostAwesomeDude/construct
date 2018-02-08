@@ -4,8 +4,16 @@ PY = sys.version_info[:2]
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PYPY = '__pypy__' in sys.builtin_module_names
+
 supportskwordered = PY >= (3,6) or PYPY
 supportscompiler = PY >= (3,6)
+supportsintenum = PY >= (3,4)
+supportsintflag = PY >= (3,6)
+try:
+    import numpy
+    supportsnumpy = True
+except ImportError:
+    supportsnumpy = False
 
 
 if PY3:
