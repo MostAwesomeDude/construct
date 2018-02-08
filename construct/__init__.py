@@ -80,7 +80,6 @@ __all__ = [
     'ExprValidator',
     'Filter',
     'Flag',
-    'FlagsContainer',
     'FlagsEnum',
     'FocusedSeq',
     'FormatField',

@@ -1662,7 +1662,7 @@ class FlagsEnum(Adapter):
     r"""
     Translates unicode label names to subcon integer (sub)values, and vice versa.
 
-    Parses integer subcon, then creates a FlagsContainer, where flags define each key. Builds from a container by bitwise-oring of each flag if it matches a set key. Can also build from an integer flag or string flag directly (see examples). Size is same as subcon, unless it raises SizeofError.
+    Parses integer subcon, then creates a Container, where flags define each key. Builds from a container by bitwise-oring of each flag if it matches a set key. Can also build from an integer flag or string flag directly (see examples). Size is same as subcon, unless it raises SizeofError.
 
     This class supports exposing member labels as attributes. See example.
 
@@ -1709,7 +1709,7 @@ class FlagsEnum(Adapter):
         return super(FlagsEnum, self).__getattr__(name)
 
     def _decode(self, obj, context):
-        obj2 = FlagsContainer()
+        obj2 = Container()
         for name,value in self.flags.items():
             obj2[name] = bool(obj & value)
         return obj2
@@ -1729,7 +1729,7 @@ class FlagsEnum(Adapter):
             raise MappingError("building failed, unknown object: %r" % (obj,))
 
     def _emitparse(self, code):
-        return "reuse(%s, lambda x: FlagsContainer(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %r)" % (k,v) for k,v in self.flags.items()), )
+        return "reuse(%s, lambda x: Container(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %r)" % (k,v) for k,v in self.flags.items()), )
 
 
 class Mapping(Adapter):

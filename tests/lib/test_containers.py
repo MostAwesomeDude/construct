@@ -234,30 +234,6 @@ class TestContainer(unittest.TestCase):
         assert not c
 
 
-class TestFlagsContainer(unittest.TestCase):
-
-    def test_str(self):
-        c = FlagsContainer(a=True, b=False, c=True, d=False)
-        assert str(c)
-        assert repr(c)
-
-    def test_eq(self):
-        c = FlagsContainer(a=True, b=False, c=True, d=False)
-        d = FlagsContainer(a=True, b=False, c=True, d=False)
-        assert c == d
-
-    def test_attraccess(self):
-        c = FlagsContainer(a=True, b=False)
-        assert c.a
-        assert not c.b
-
-    def test_contains(self):
-        c = FlagsContainer(a=True, b=False)
-        # in operator checks if key exists, not if value is True
-        assert "a" in c
-        assert "b" in c
-
-
 class TestListContainer(unittest.TestCase):
 
     def test_str(self):

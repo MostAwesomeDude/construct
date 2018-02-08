@@ -287,9 +287,9 @@ class TestCore(unittest.TestCase):
         # FlagsEnum is not affected by same bug
         st = Struct(
             "flags" / FlagsEnum(Byte, a=1),
-            Check(lambda ctx: ctx.flags == FlagsContainer(a=1)),
+            Check(lambda ctx: ctx.flags == Container(a=1)),
         )
-        common(st, b"\x01", dict(flags=FlagsContainer(a=True)), 1)
+        common(st, b"\x01", dict(flags=Container(a=True)), 1)
 
         # Flag is not affected by same bug
         st = Struct(
@@ -317,9 +317,9 @@ class TestCore(unittest.TestCase):
             a = 1
         class F(enum.IntEnum):
             b = 2
-        common(FlagsEnum(Byte, E, F), b"\x01", FlagsContainer(a=True,b=False), 1)
-        common(FlagsEnum(Byte, E, F), b"\x02", FlagsContainer(a=False,b=True), 1)
-        common(FlagsEnum(Byte, E, F), b"\x03", FlagsContainer(a=True,b=True), 1)
+        common(FlagsEnum(Byte, E, F), b"\x01", Container(a=True,b=False), 1)
+        common(FlagsEnum(Byte, E, F), b"\x02", Container(a=False,b=True), 1)
+        common(FlagsEnum(Byte, E, F), b"\x03", Container(a=True,b=True), 1)
 
     @pytest.mark.xfail(not supportsintflag, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
     def test_flagsenum_enum36(self):
@@ -328,9 +328,9 @@ class TestCore(unittest.TestCase):
             a = 1
         class F(enum.IntFlag):
             b = 2
-        common(FlagsEnum(Byte, E, F), b"\x01", FlagsContainer(a=True,b=False), 1)
-        common(FlagsEnum(Byte, E, F), b"\x02", FlagsContainer(a=False,b=True), 1)
-        common(FlagsEnum(Byte, E, F), b"\x03", FlagsContainer(a=True,b=True), 1)
+        common(FlagsEnum(Byte, E, F), b"\x01", Container(a=True,b=False), 1)
+        common(FlagsEnum(Byte, E, F), b"\x02", Container(a=False,b=True), 1)
+        common(FlagsEnum(Byte, E, F), b"\x03", Container(a=True,b=True), 1)
 
     def test_struct(self):
         common(Struct(), b"", Container(), 0)
@@ -1306,12 +1306,12 @@ class TestCore(unittest.TestCase):
 
     @pytest.mark.xfail(reason="unknown cause")
     def test_this_expresion_compare_container(self):
-        # lambda is fine, but this equality with FlagsContainer fails
+        # lambda is fine, but this equality with Container fails
         st = Struct(
             "flags" / FlagsEnum(Byte, a=1),
-            Check(this.flags == FlagsContainer(a=1)),
+            Check(this.flags == Container(a=1)),
         )
-        common(st, b"\x01", dict(flags=FlagsContainer(a=True)), 1)
+        common(st, b"\x01", dict(flags=Container(a=True)), 1)
 
     @pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.6")
     def test_empty_struct_compiled(self):

@@ -414,7 +414,7 @@ def test_flagsenum_parse(benchmark):
 
 def test_flagsenum_build(benchmark):
     d = FlagsEnum(Byte, a=1, b=2, c=4, d=8)
-    benchmark(d.build, FlagsContainer(a=False, b=False, c=False, d=False))
+    benchmark(d.build, Container(a=False, b=False, c=False, d=False))
 
 # Mapping
 # SymmetricMapping

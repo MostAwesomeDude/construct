@@ -13,7 +13,6 @@ __all__ = [
     'bytes2str',
     'bytestringtype',
     'Container',
-    'FlagsContainer',
     'globalfullprinting',
     'hexdump',
     'hexlify',

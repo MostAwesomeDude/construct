@@ -242,22 +242,6 @@ class Container(dict):
         return self._search(compiled_pattern, True)
 
 
-class FlagsContainer(Container):
-    r"""
-    Container class derivative, extended for representing FlagsEnum. Equality does NOT check item order. Provides pretty-printing for flags, showing only values set to True. Also provides regex searching.
-    """
-
-    @recursion_lock()
-    def __str__(self, indentation="\n    "):
-        text = ["FlagsContainer: "]
-        for k,v in self.items():
-            if not k.startswith("_") and v:
-                text.extend([indentation, k, " = "])
-                lines = str(v).split("\n")
-                text.append(indentation.join(lines))
-        return "".join(text)
-
-
 class ListContainer(list):
     r"""
     Generic container like list. Provides pretty-printing. Also provides regex searching.

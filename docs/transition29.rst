@@ -55,6 +55,8 @@ OnDemand was renamed to LazyField
 
 LazyStruct LazySequence LazyRange removed
 
+FlagsContainer removed
+
 HexString removed
 
 
