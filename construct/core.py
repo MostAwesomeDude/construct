@@ -526,7 +526,7 @@ class Construct(object):
             return GreedyRange(self)
         if isinstance(count, int) or callable(count):
             return Array(count, self)
-        raise TypeError("expected an int, a context lambda, or a slice thereof, but found %r" % count)
+        raise TypeError("expected integer, context lambda, or full-slice")
 
 
 class Subconstruct(Construct):
