@@ -3236,7 +3236,11 @@ class Switch(Construct):
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
         code.append("%s = {%s}" % (fname, ", ".join("%r : lambda io,this: %s" % (key, sc._compileparse(code)) for key,sc in self.cases.items()), ))
-        return "%s[%r](io, this)" % (fname, self.keyfunc, )
+        if self.default is self.NoDefault:
+            return "%s[%r](io, this)" % (fname, self.keyfunc, )
+        else:
+            return "%s.get(%r, lambda io,this: %s)(io, this)" % (fname, self.keyfunc, self.default._emitparse(code))
+
 
 
 class StopIf(Construct):

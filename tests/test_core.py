@@ -659,14 +659,16 @@ class TestCore(unittest.TestCase):
         common(IfThenElse(False, Int8ub, Int16ub), b"\x00\x01", 1, 2)
 
     def test_switch(self):
-        assert Switch(5, {1:Byte, 5:Int16ub}).parse(b"\x00\x02") == 2
-        assert Switch(6, {1:Byte, 5:Int16ub}, default=Byte).parse(b"\x00\x02") == 0
-        assert Switch(5, {1:Byte, 5:Int16ub}).build(2) == b"\x00\x02"
-        assert Switch(6, {1:Byte, 5:Int16ub}, default=Byte).build(9) == b"\x09"
-        assert raises(Switch(6, {1:Byte, 5:Int16ub}).parse, b"\x00\x02") == SwitchError
-        assert raises(Switch(6, {1:Byte, 5:Int16ub}).build, 9) == SwitchError
-        assert Switch(5, {1:Byte, 5:Int16ub}).sizeof() == 2
-        assert raises(Switch(5, {}).sizeof) == SwitchError
+        d = Switch(this.x, {1:Int8ub, 2:Int16ub, 4:Int32ub})
+        common(d, b"\x01", 0x01, 1, x=1)
+        common(d, b"\x01\x02", 0x0102, 2, x=2)
+        assert raises(d.sizeof) == SizeofError
+        assert raises(d.parse, b"", x=255) == SwitchError
+        assert raises(d.build, 0, x=255) == SwitchError
+
+        d = Switch(this.x, {1:Int8ub, 2:Int16ub, 4:Int32ub}, default=Pass)
+        common(d, b"", None, 0, x=255)
+        common(d, b"", None, 0, x="unknown")
 
     def test_switch_issue_357(self):
         inner = Struct(
