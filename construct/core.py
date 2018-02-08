@@ -874,9 +874,9 @@ class FormatField(Construct):
 
     def __init__(self, endianity, format):
         if endianity not in list("=<>"):
-            raise ValueError("endianity must be like: = < >", endianity)
+            raise FormatFieldError("endianity must be like: = < >", endianity)
         if format not in list("fdBHLQbhlq"):
-            raise ValueError("format must be like: f d B H L Q b h l q", format)
+            raise FormatFieldError("format must be like: f d B H L Q b h l q", format)
         super(FormatField, self).__init__()
         self.fmtstr = endianity+format
         self.length = struct.calcsize(endianity+format)
