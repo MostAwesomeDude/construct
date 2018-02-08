@@ -341,11 +341,10 @@ class Construct(object):
             from construct.lib import *
             from io import BytesIO
             from struct import pack, unpack, calcsize
-            import sys
             import collections
             import builtins
 
-            assert sys.version_info[:2] >= (3,4)
+            assert PY >= (3,4)
             assert version_string == %r
 
             def read_bytes(io, count):
