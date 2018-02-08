@@ -1,4 +1,4 @@
-from construct.lib.container import *
+from construct.lib.containers import *
 from construct.lib.binary import *
 from construct.lib.bitstream import *
 from construct.lib.hex import *
