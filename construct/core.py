@@ -1333,12 +1333,14 @@ class StringPaddedTrimmed(Construct):
     def __init__(self, length, encoding):
         super(StringPaddedTrimmed, self).__init__()
         self.length = length
-        self.encoding = encoding
+        self.encoding = encoding or globalstringencoding
+        if not self.encoding:
+            raise StringError("String* classes require explicit encoding")
 
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
 
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if encoding is StringsAsBytes:
             encoding = "StringsAsBytes"
         if encoding not in possiblestringencodings:
@@ -1356,7 +1358,7 @@ class StringPaddedTrimmed(Construct):
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
 
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if encoding is StringsAsBytes:
             encoding = "StringsAsBytes"
         if encoding not in possiblestringencodings:
@@ -1378,7 +1380,7 @@ class StringPaddedTrimmed(Construct):
         return length
 
     def _emitparse(self, code):
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if encoding is StringsAsBytes:
             encoding = "StringsAsBytes"
         if encoding not in possiblestringencodings:
@@ -1404,10 +1406,12 @@ class StringNullTerminated(Construct):
 
     def __init__(self, encoding=None):
         super(StringNullTerminated, self).__init__()
-        self.encoding = encoding
+        self.encoding = encoding or globalstringencoding
+        if not self.encoding:
+            raise StringError("String* classes require explicit encoding")
 
     def _parse(self, stream, context, path):
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if encoding is StringsAsBytes:
             encoding = "StringsAsBytes"
         if encoding not in possiblestringencodings:
@@ -1424,7 +1428,7 @@ class StringNullTerminated(Construct):
         return b"".join(result)
 
     def _build(self, obj, stream, context, path):
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if encoding is StringsAsBytes:
             encoding = "StringsAsBytes"
         if encoding not in possiblestringencodings:
@@ -1438,7 +1442,7 @@ class StringNullTerminated(Construct):
         _write_stream(stream, len(data), data)
 
     def _emitdecompiled(self, code):
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if encoding is StringsAsBytes:
             encoding = "StringsAsBytes"
         if encoding not in possiblestringencodings:
@@ -1447,7 +1451,7 @@ class StringNullTerminated(Construct):
         return "StringNullTerminated(encoding=%r)" % (encoding,)
 
     def _emitparse(self, code):
-        encoding = self.encoding or globalstringencoding
+        encoding = self.encoding
         if encoding is StringsAsBytes:
             encoding = "StringsAsBytes"
         if encoding not in possiblestringencodings:
