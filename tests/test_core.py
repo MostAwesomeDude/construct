@@ -1324,3 +1324,10 @@ class TestCore(unittest.TestCase):
     def test_compiled_benchmark_testcompiled(self):
         Struct().compile().benchmark(b"")
         Struct().compile().testcompiled(b"")
+
+    @pytest.mark.xfail(reason="unknown cause")
+    def test_pickling_constructs(self):
+        import pickle
+
+        d = Struct("count"/Byte, "items"/Byte[this.count])
+        assert pickle.loads(pickle.dumps(d)) == d

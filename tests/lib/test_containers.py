@@ -2,9 +2,6 @@ from declarativeunittest import *
 from construct import *
 from construct.lib import *
 
-from copy import copy, deepcopy
-import pickle
-
 
 class TestContainer(unittest.TestCase):
 
@@ -137,12 +134,16 @@ class TestContainer(unittest.TestCase):
         assert c is not d
 
     def test_copy(self):
+        from copy import copy, deepcopy
+
         c = Container(a=1)
         d = copy(c)
         assert c == d
         assert c is not d
 
     def test_deepcopy(self):
+        from copy import copy, deepcopy
+
         c = Container(a=1)
         d = deepcopy(c)
         d.a = 2
@@ -150,6 +151,8 @@ class TestContainer(unittest.TestCase):
         assert c is not d
 
     def test_pickling(self):
+        import pickle
+
         empty = Container()
         empty_unpickled = pickle.loads(pickle.dumps(empty))
         assert empty_unpickled == empty
