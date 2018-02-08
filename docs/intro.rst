@@ -57,9 +57,9 @@ See more examples of `file formats <https://github.com/construct/construct/tree/
 
 Development and support
 -------------------------
-Please use `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests, report issues and bugs, and to send in patches. Feel free to request any changes that would support your project. There is also a `Gitter chat <https://gitter.im/construct-construct/Lobby>`_ but using Issues is highly recommended.
+Please use `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests (and vote for them), report issues and bugs, and to submit PRs. Feel free to request any changes that would support your project. There is also a `Gitter chat <https://gitter.im/construct-construct/Lobby>`_ but using Issues is highly recommended.
 
-Main documentation is at `readthedocs <http://construct.readthedocs.org>`_, which is substantial, in both tutorials and API library reference, where you can find all kinds of examples. Source is on `github <https://github.com/construct/construct>`_. Releases are available on `pypi <https://pypi.org/project/construct/>`_.
+Main documentation is at `readthedocs <http://construct.readthedocs.org>`_, which is substantial. Source is at `github <https://github.com/construct/construct>`_. Releases are available at `pypi <https://pypi.org/project/construct/>`_.
 
 
 Requirements
@@ -68,6 +68,6 @@ Construct should run on any Python 2.7 3.3 3.4 3.5 3.6 3.7 pypy pypy3 implementa
 
 Enum34 is optional if you want Enum or EnumFlags to take labels from IntEnum or IntFlag (not needed on Python 3.4 and 3.6 respectively).
 
-Numpy is optional, if you want to serialize numpy arrays using Numpy protocol. Otherwise arrays can still be serialized using PrefixedArray construct.
+Numpy is optional, if you want to serialize numpy arrays using Numpy protocol. Otherwise arrays can still be serialized using PrefixedArray.
 
-Different Python versions support different compression modules (like gzip lzma), if you want to use Compressed construct.
+Different Python versions support different compression modules (like gzip lzma), if you want to use Compressed.
