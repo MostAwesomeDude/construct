@@ -1351,9 +1351,10 @@ class StringPaddedTrimmed(Construct):
         if length % unitsize:
             raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
         obj = _read_stream(stream, length)
-        while obj[-unitsize:] == finalunit:
-            obj = obj[:-unitsize]
-        return obj
+        endsat = len(obj)
+        while endsat-unitsize >= 0 and obj[endsat-unitsize:endsat] == finalunit:
+            endsat -= unitsize
+        return obj[:endsat]
 
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
@@ -1373,7 +1374,7 @@ class StringPaddedTrimmed(Construct):
         if len(obj) > length-unitsize:
             obj = obj[:length-unitsize]
         obj = obj.ljust(length, b"\x00")
-        _write_stream(stream, len(obj), obj)
+        _write_stream(stream, length, obj)
 
     def _sizeof(self, context, path):
         length = self.length(context) if callable(self.length) else self.length
@@ -1393,9 +1394,10 @@ class StringPaddedTrimmed(Construct):
                 if length % unitsize:
                     raise StringError
                 obj = read_bytes(io, length)
-                while obj[-unitsize:] == finalunit:
-                    obj = obj[:-unitsize]
-                return obj
+                endsat = len(obj)
+                while endsat-unitsize >= 0 and obj[endsat-unitsize:endsat] == finalunit:
+                    endsat -= unitsize
+                return obj[:endsat]
         """)
         return "parse_paddedtrimmedstring(io, %r, %r, %r)" % (self.length, unitsize, finalunit, )
 

@@ -174,8 +174,11 @@ class TestCore(unittest.TestCase):
         common(String(10, encoding=StringsAsBytes), b"hello\x00\x00\x00\x00\x00", b"hello", 10)
         common(String(10, encoding="utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
 
-        s = u"Афон"
         for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
+            s = u"Афон"
+            data = (s.encode(e)+b"\x00"*100)[:100]
+            common(String(100, encoding=e), data, s, 100)
+            s = u""
             data = (s.encode(e)+b"\x00"*100)[:100]
             common(String(100, encoding=e), data, s, 100)
 
@@ -198,8 +201,10 @@ class TestCore(unittest.TestCase):
             raises(PascalString(VarInt, encoding=e).sizeof) == SizeofError
 
     def test_cstring(self):
-        s = u"Афон"
         for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
+            s = u"Афон"
+            common(CString(encoding=e), s.encode(e)+b"\x00"*us, s)
+            s = u""
             common(CString(encoding=e), s.encode(e)+b"\x00"*us, s)
 
         common(CString(encoding=StringsAsBytes), b"aooh"+b"\x00", b"aooh")
