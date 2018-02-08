@@ -1278,6 +1278,25 @@ possiblestringencodings = dict(
 )
 
 
+def selectencoding(localencoding):
+    """Used internally."""
+    encoding = localencoding or globalstringencoding
+    if not encoding:
+        raise StringError("String* classes require explicit encoding")
+    return encoding
+
+
+def calculateunits(encoding):
+    """Used internally."""
+    if encoding is StringsAsBytes:
+        encoding = "StringsAsBytes"
+    if encoding not in possiblestringencodings:
+        raise StringError("encoding not implemented: %r" % (encoding,))
+    unitsize = possiblestringencodings[encoding]
+    finalunit = b"\x00" * unitsize
+    return unitsize, finalunit
+
+
 def setglobalstringencoding(encoding):
     r"""
     Sets the encoding globally for all String PascalString CString GreedyString instances. Note that encoding specified expiciltly in a particular construct supersedes it. Note also that global encoding is applied during parsing and building (not class instantiation).
@@ -1296,9 +1315,7 @@ class StringEncoded(Adapter):
 
     def __init__(self, subcon, encoding):
         super(StringEncoded, self).__init__(subcon)
-        self.encoding = encoding or globalstringencoding
-        if not self.encoding:
-            raise StringError("String* classes require explicit encoding")
+        self.encoding = selectencoding(encoding)
 
     def _decode(self, obj, context):
         encoding = self.encoding
@@ -1333,20 +1350,11 @@ class StringPaddedTrimmed(Construct):
     def __init__(self, length, encoding):
         super(StringPaddedTrimmed, self).__init__()
         self.length = length
-        self.encoding = encoding or globalstringencoding
-        if not self.encoding:
-            raise StringError("String* classes require explicit encoding")
+        self.encoding = selectencoding(encoding)
 
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
-
-        encoding = self.encoding
-        if encoding is StringsAsBytes:
-            encoding = "StringsAsBytes"
-        if encoding not in possiblestringencodings:
-            raise StringError("encoding not implemented: %r" % (encoding,))
-        unitsize = possiblestringencodings[encoding]
-        finalunit = b"\x00" * unitsize
+        unitsize, finalunit = calculateunits(self.encoding)
 
         if length % unitsize:
             raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
@@ -1358,14 +1366,7 @@ class StringPaddedTrimmed(Construct):
 
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
-
-        encoding = self.encoding
-        if encoding is StringsAsBytes:
-            encoding = "StringsAsBytes"
-        if encoding not in possiblestringencodings:
-            raise StringError("encoding not implemented: %r" % (encoding,))
-        unitsize = possiblestringencodings[encoding]
-        finalunit = b"\x00" * unitsize
+        unitsize, finalunit = calculateunits(self.encoding)
 
         if length % unitsize:
             raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
@@ -1381,14 +1382,7 @@ class StringPaddedTrimmed(Construct):
         return length
 
     def _emitparse(self, code):
-        encoding = self.encoding
-        if encoding is StringsAsBytes:
-            encoding = "StringsAsBytes"
-        if encoding not in possiblestringencodings:
-            raise StringError("encoding not implemented: %r" % (encoding,))
-        unitsize = possiblestringencodings[encoding]
-        finalunit = b"\x00" * unitsize
-
+        unitsize, finalunit = calculateunits(self.encoding)
         code.append(r"""
             def parse_paddedtrimmedstring(io, length, unitsize, finalunit):
                 if length % unitsize:
@@ -1408,19 +1402,10 @@ class StringNullTerminated(Construct):
 
     def __init__(self, encoding=None):
         super(StringNullTerminated, self).__init__()
-        self.encoding = encoding or globalstringencoding
-        if not self.encoding:
-            raise StringError("String* classes require explicit encoding")
+        self.encoding = selectencoding(encoding)
 
     def _parse(self, stream, context, path):
-        encoding = self.encoding
-        if encoding is StringsAsBytes:
-            encoding = "StringsAsBytes"
-        if encoding not in possiblestringencodings:
-            raise StringError("encoding not implemented: %r" % (encoding,))
-        unitsize = possiblestringencodings[encoding]
-        finalunit = b"\x00" * unitsize
-
+        unitsize, finalunit = calculateunits(self.encoding)
         result = []
         while True:
             unit = _read_stream(stream, unitsize)
@@ -1430,28 +1415,14 @@ class StringNullTerminated(Construct):
         return b"".join(result)
 
     def _build(self, obj, stream, context, path):
-        encoding = self.encoding
-        if encoding is StringsAsBytes:
-            encoding = "StringsAsBytes"
-        if encoding not in possiblestringencodings:
-            raise StringError("encoding not implemented: %r" % (encoding,))
-        unitsize = possiblestringencodings[encoding]
-        finalunit = b"\x00" * unitsize
-
+        unitsize, finalunit = calculateunits(self.encoding)
         if len(obj) % unitsize:
             raise StringError("string length must be multiple of encoding-unit, %s" % (unitsize,))
         data = obj + finalunit
         _write_stream(stream, len(data), data)
 
     def _emitparse(self, code):
-        encoding = self.encoding
-        if encoding is StringsAsBytes:
-            encoding = "StringsAsBytes"
-        if encoding not in possiblestringencodings:
-            raise StringError("encoding not implemented: %r" % (encoding,))
-        unitsize = possiblestringencodings[encoding]
-        finalunit = b"\x00" * unitsize
-
+        unitsize, finalunit = calculateunits(self.encoding)
         code.append("""
             def parse_nullterminatedstring(io, unitsize, finalunit):
                 result = []
