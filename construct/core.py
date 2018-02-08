@@ -1598,25 +1598,17 @@ class Enum(Adapter):
 
     Example::
 
-        >>> d = Enum(Byte, zero=0, one=1)
+        >>> d = Enum(Byte, one=1, two=2, four=4, eight=8)
         >>> d.parse(b"\x01")
         'one'
-        >>> d.parse(b"\xff")
-        construct.core.MappingError: parsing failed, no decoding mapping for 255
+        >>> d.build(1)
+        b'\x01'
         >>> d.build(d.one)
         b'\x01'
         >>> d.build("one")
         b'\x01'
-        >>> d.build(1)
-        b'\x01'
-        >>> d.build(255)
-        construct.core.MappingError: building failed, no decoding mapping for 255
-        >>> d.build("missing")
-        construct.core.MappingError: building failed, no decoding mapping for "missing"
-        >>> d.sizeof()
-        1
-        >>> d.zero
-        'zero'
+        >>> d.one
+        'one'
 
         import enum
         class E(enum.IntEnum):
@@ -1651,6 +1643,10 @@ class Enum(Adapter):
 
     def _encode(self, obj, context):
         try:
+            if isinstance(obj, int):
+                return obj
+            if isinstance(obj, str):
+                return self.encmapping[obj]
             return self.encmapping[obj]
         except KeyError:
             raise MappingError("building failed, no mapping for %r" % (obj,))
@@ -1665,8 +1661,7 @@ class FlagsEnum(Adapter):
     r"""
     Translates unicode label names to subcon integer (sub)values, and vice versa.
 
-    semantics???
-    Size is same as subcon, unless it raises SizeofError.
+    Parses integer subcon, then creates a FlagsContainer, where flags define each key. Builds from a container by bitwise-oring of each flag if it matches a set key. Can also build from an integer flag or string flag directly (see examples). Size is same as subcon, unless it raises SizeofError.
 
     This class supports exposing member labels as attributes. See example.
 
@@ -1681,8 +1676,14 @@ class FlagsEnum(Adapter):
         >>> d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
         >>> d.parse(b"\x03")
         Container(one=True)(two=True)(four=False)(eight=False)
-        >>> d.one
-        'one'
+        >>> d.build(8)
+        b'\x08'
+        >>> d.build(d.eight)
+        b'\x08'
+        >>> d.build("eight")
+        b'\x08'
+        >>> d.eight
+        'eight'
 
         import enum
         class E(enum.IntEnum):
@@ -1714,15 +1715,17 @@ class FlagsEnum(Adapter):
 
     def _encode(self, obj, context):
         try:
+            if isinstance(obj, int):
+                return obj
+            if isinstance(obj, str):
+                return self.flags[obj]
             flags = 0
             for name,value in obj.items():
                 if value:
                     flags |= self.flags[name]
             return flags
-        except AttributeError:
-            raise MappingError("building failed, object is not a dictionary: %r" % (obj,))
         except KeyError:
-            raise MappingError("building failed, unknown flag: %s" % (name,))
+            raise MappingError("building failed, unknown object: %r" % (obj,))
 
     def _emitparse(self, code):
         return "reuse(%s, lambda x: FlagsContainer(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %r)" % (k,v) for k,v in self.flags.items()), )

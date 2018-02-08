@@ -242,12 +242,16 @@ class TestCore(unittest.TestCase):
         common(Flag, b"\x01", True, 1)
 
     def test_enum(self):
-        common(Enum(Byte, a=1, b=2), b"\x01", "a", 1)
-        common(Enum(Byte, a=1, b=2), b"\x02", "b", 1)
-        assert raises(Enum(Byte, a=1, b=2).parse, b"\xff") == MappingError
-        assert raises(Enum(Byte, a=1, b=2).build, "unknown") == MappingError
-        Enum(Byte, a=1, b=2).build(1) == b"\x01"
-        assert raises(Enum(Byte, a=1, b=2).build, 255) == MappingError
+        d = Enum(Byte, one=1, two=2, four=4, eight=8)
+        common(d, b"\x01", "one", 1)
+        common(d, b"\x02", "two", 1)
+        assert d.build(8) == b'\x08'
+        assert d.build(255) == b"\xff"
+        assert d.build(d.eight) == b'\x08'
+        assert raises(d.parse, b"\xff") == MappingError
+        assert raises(d.build, "unknown") == MappingError
+        assert d.one == "one"
+        assert raises(lambda: d.missing) == AttributeError
 
     @pytest.mark.xfail(not supportsintenum, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
     def test_enum_enum34(self):
@@ -294,19 +298,17 @@ class TestCore(unittest.TestCase):
         )
         common(st, b"\x01", dict(flag=True), 1)
 
-    def test_enum_attrmembers(self):
-        d = Enum(Byte, one=1, two=2)
-        assert d.one == "one"
-        assert raises(lambda: d.missing)
-
     def test_flagsenum(self):
-        assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).parse(b'\x81') == FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)
-        assert FlagsEnum(Byte, a=1,b=2,c=4,d=8,e=16,f=32,g=64,h=128).build(FlagsContainer(a=True,b=False,c=False,d=False,e=False,f=False,g=False,h=True)) == b'\x81'
-        assert FlagsEnum(Byte, feature=4,output=2,input=1).parse(b'\x04') == FlagsContainer(output=False,feature=True,input=False)
-        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True, output=True, input=False)) == b'\x06'
-        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict(feature=True)) == b'\x04'
-        assert FlagsEnum(Byte, feature=4,output=2,input=1).build(dict()) == b'\x00'
-        assert raises(FlagsEnum(Byte, feature=4,output=2,input=1).build, dict(unknown=True)) == MappingError
+        d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
+        common(d, b"\x03", Container(one=True)(two=True)(four=False)(eight=False), 1)
+        assert d.build({}) == b'\x00'
+        assert d.build(8) == b'\x08'
+        assert d.build(255) == b"\xff"
+        assert d.build(d.eight) == b'\x08'
+        assert raises(d.build, dict(unknown=True)) == MappingError
+        assert raises(d.build, "unknown") == MappingError
+        assert d.one == "one"
+        assert raises(lambda: d.missing) == AttributeError
 
     @pytest.mark.xfail(not supportsintenum, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
     def test_flagsenum_enum34(self):
@@ -329,11 +331,6 @@ class TestCore(unittest.TestCase):
         common(FlagsEnum(Byte, E, F), b"\x01", FlagsContainer(a=True,b=False), 1)
         common(FlagsEnum(Byte, E, F), b"\x02", FlagsContainer(a=False,b=True), 1)
         common(FlagsEnum(Byte, E, F), b"\x03", FlagsContainer(a=True,b=True), 1)
-
-    def test_flagsenum_attrmembers(self):
-        d = FlagsEnum(Byte, one=1, two=2)
-        assert d.one == "one"
-        assert raises(lambda: d.missing)
 
     def test_struct(self):
         common(Struct(), b"", Container(), 0)

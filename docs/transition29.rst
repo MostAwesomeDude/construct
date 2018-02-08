@@ -27,7 +27,9 @@ String* classes (all of them) support UTF16 UTF32 encodings, but String CString 
 
 Enum FlagsEnum can merge labels from IntEnum IntFlag (enum module), but dropped `default` parameter
 
-Enum FlagsEnum expose member labels as attributes (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+Enum FlagsEnum can build from integers and labels (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+
+Enum FlagsEnum expose labels as attributes (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
 Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
 
