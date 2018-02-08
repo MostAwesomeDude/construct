@@ -80,7 +80,9 @@ def _read_stream_entire(stream):
         raise StreamError("stream.read() failed when reading entire stream until EOF")
 
 
-def _write_stream(stream, length, data):
+def _write_stream(stream, data, length=None):
+    if length is None:
+        length = len(data)
     if length < 0:
         raise StreamError("length must be non-negative, found %s" % length)
     if len(data) != length:
@@ -611,7 +613,7 @@ class Tunnel(Subconstruct):
     def _build(self, obj, stream, context, path):
         data = self.subcon.build(obj, **context)
         data = self._encode(data, context)
-        _write_stream(stream, len(data), data)
+        _write_stream(stream, data)
     def _sizeof(self, context, path):
         raise SizeofError
     def _decode(self, data, context):
@@ -734,7 +736,7 @@ class Bytes(Construct):
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bytes(obj, length) if isinstance(obj, int) else obj
-        _write_stream(stream, length, data)
+        _write_stream(stream, data, length)
         return data
 
     def _sizeof(self, context, path):
@@ -890,7 +892,7 @@ class FormatField(Construct):
             data = struct.pack(self.fmtstr, obj)
         except Exception:
             raise FormatFieldError("struct %r error during building, given value %r" % (self.fmtstr, obj))
-        _write_stream(stream, self.length, data)
+        _write_stream(stream, data, self.length)
 
     def _sizeof(self, context, path):
         return self.length
@@ -950,7 +952,7 @@ class BytesInteger(Construct):
         data = integer2bytes(obj, length)
         if self.swapped:
             data = data[::-1]
-        _write_stream(stream, len(data), data)
+        _write_stream(stream, data, length)
 
     def _sizeof(self, context, path):
         try:
@@ -1019,7 +1021,7 @@ class BitsInteger(Construct):
             if length & 7:
                 raise IntegerError("little-endianness is only defined for multiples of 8 bits")
             data = swapbytes(data)
-        _write_stream(stream, len(data), data)
+        _write_stream(stream, data, length)
 
     def _sizeof(self, context, path):
         try:
@@ -1246,9 +1248,9 @@ class VarInt(Construct):
         if obj < 0:
             raise IntegerError("varint cannot build from negative number: %r" % (obj,))
         while obj > 0b01111111:
-            _write_stream(stream, 1, int2byte(0b10000000 | (obj & 0b01111111)))
+            _write_stream(stream, int2byte(0b10000000 | (obj & 0b01111111)), 1)
             obj >>= 7
-        _write_stream(stream, 1, int2byte(obj))
+        _write_stream(stream, int2byte(obj), 1)
 
     def _emitdecompiled(self, code):
         return "VarInt"
@@ -1374,7 +1376,7 @@ class StringPaddedTrimmed(Construct):
         if len(obj) > length-unitsize:
             obj = obj[:length-unitsize]
         obj = obj.ljust(length, b"\x00")
-        _write_stream(stream, length, obj)
+        _write_stream(stream, obj, length)
 
     def _sizeof(self, context, path):
         length = self.length(context) if callable(self.length) else self.length
@@ -1418,7 +1420,7 @@ class StringNullTerminated(Construct):
         if len(obj) % unitsize:
             raise StringError("string length must be multiple of encoding-unit, %s" % (unitsize,))
         data = obj + finalunit
-        _write_stream(stream, len(data), data)
+        _write_stream(stream, data)
 
     def _emitparse(self, code):
         unitsize, finalunit = calculateunits(self.encoding)
@@ -1570,7 +1572,7 @@ class Flag(Construct):
         return _read_stream(stream, 1) != b"\x00"
 
     def _build(self, obj, stream, context, path):
-        _write_stream(stream, 1, b"\x01" if obj else b"\x00")
+        _write_stream(stream, b"\x01" if obj else b"\x00", 1)
 
     def _sizeof(self, context, path):
         return 1
@@ -3074,7 +3076,7 @@ class Select(Construct):
                 except Exception:
                     pass
                 else:
-                    _write_stream(stream, len(data), data)
+                    _write_stream(stream, data)
                     return
         raise SelectError("no subconstruct matched: %s" % (obj,))
 
@@ -3362,10 +3364,10 @@ class Padded(Subconstruct):
         position1 = _tell_stream(stream)
         obj = self.subcon._parse(stream, context, path)
         position2 = _tell_stream(stream)
-        padlen = length - (position2 - position1)
-        if padlen < 0:
+        pad = length - (position2 - position1)
+        if pad < 0:
             raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length))
-        _read_stream(stream, padlen)
+        _read_stream(stream, pad)
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -3373,10 +3375,10 @@ class Padded(Subconstruct):
         position1 = _tell_stream(stream)
         subobj = self.subcon._build(obj, stream, context, path)
         position2 = _tell_stream(stream)
-        padlen = length - (position2 - position1)
-        if padlen < 0:
+        pad = length - (position2 - position1)
+        if pad < 0:
             raise PaddingError("subcon build %d bytes but was allowed only %d" % (position2-position1, length))
-        _write_stream(stream, padlen, self.pattern * padlen)
+        _write_stream(stream, self.pattern * pad, pad)
         return subobj
 
     def _sizeof(self, context, path):
@@ -3443,7 +3445,7 @@ class Aligned(Subconstruct):
         subobj = self.subcon._build(obj, stream, context, path)
         position2 = _tell_stream(stream)
         pad = -(position2 - position1) % modulus
-        _write_stream(stream, pad, self.pattern * pad)
+        _write_stream(stream, self.pattern * pad, pad)
         return subobj
 
     def _sizeof(self, context, path):
@@ -3921,7 +3923,7 @@ class RawCopy(Subconstruct):
         if 'data' in obj:
             data = obj['data']
             offset1 = _tell_stream(stream)
-            _write_stream(stream, len(data), data)
+            _write_stream(stream, data)
             offset2 = _tell_stream(stream)
             return Container(obj, data=data, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         if 'value' in obj:
@@ -4035,7 +4037,7 @@ class Prefixed(Subconstruct):
         if self.includelength:
             length += self.lengthfield._sizeof(context, path)
         self.lengthfield._build(length, stream, context, path)
-        _write_stream(stream, len(data), data)
+        _write_stream(stream, data)
         return obj
 
     def _sizeof(self, context, path):
