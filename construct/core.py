@@ -698,7 +698,7 @@ class Decompiled(Construct):
 #===============================================================================
 class Bytes(Construct):
     r"""
-    Field consisting of a specified number of bytes. 
+    Field consisting of a specified number of bytes.
 
     Parses into a bytes (of given length). Builds into the stream directly (but checks that given object matches specified length). Can also build from an integer for convenience (although BytesInteger should be used instead). Size is the specified length.
 
@@ -753,7 +753,7 @@ class Bytes(Construct):
 @singleton
 class GreedyBytes(Construct):
     r"""
-    Field consisting of unknown number of bytes. 
+    Field consisting of unknown number of bytes.
 
     Parses the stream to the end. Builds into the stream directly (without checks). Size is undefined.
 
@@ -1584,7 +1584,7 @@ class Flag(Construct):
 
 class Enum(Adapter):
     r"""
-    Translates unicode label names to subcon values, and vice versa. 
+    Translates unicode label names to subcon values, and vice versa.
 
     semantics???
     Size is same as subcon, unless it raises SizeofError.
@@ -2244,9 +2244,9 @@ class Embedded(Subconstruct):
     r"""
     Special wrapper that allows outer many-subcons construct to merge fields from another many-subcons construct. Embedded does not change a field, only wraps it like a candy with a flag.
 
-    .. warning:: 
+    .. warning::
 
-        Can only be used between Struct Sequence FocusedSeq Union, although they can be used interchangably, for example Struct can embed fields from a Sequence. 
+        Can only be used between Struct Sequence FocusedSeq Union, although they can be used interchangably, for example Struct can embed fields from a Sequence.
 
     Parsing building and size are deferred to subcon.
 
@@ -3586,7 +3586,7 @@ class Peek(Subconstruct):
     Peeks at the stream.
 
     Parsing sub-parses (and returns None if failed), then reverts stream to original position. Building does nothing (its NOT deferred). Size is defined as 0 because there is no building.
-    
+
     This class is used in :class:`~construct.core.Union` class to parse each member.
 
     :param subcon: Construct instance
