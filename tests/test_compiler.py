@@ -62,7 +62,11 @@ class TestCompiler(unittest.TestCase):
             "const1" / Const(bytes(4)),
             "const2" / Const(0, Int32ub),
             "computed" / Computed(this.num),
-            # Index
+
+            # "index1" / Array(3, Index),
+            # "index2" / RestreamData(b"\x00", GreedyRange(Byte >> Index)),
+            # "index3" / RestreamData(b"\x00", RepeatUntil(False, Byte >> Index)),
+
             "rebuild" / Rebuild(Byte, len_(this.array1)),
             "default" / Default(Byte, 0),
             Check(this.num == 0),

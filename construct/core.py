@@ -2450,6 +2450,7 @@ class Index(Construct):
     Parsing and building pulls _index or _._index key from context, in that order. Size is 0 because stream is unaffected.
 
     :raises IndexFieldError: did not find either key in context
+    :raises NotImplementedError: compiled
 
     Example::
 
@@ -2488,6 +2489,10 @@ class Index(Construct):
 
     def _sizeof(self, context, path):
         return 0
+
+    def _emitdecompiled(self, code):
+        raise NotImplementedError("Array and RepeatUntil need to support it")
+        return "Index"
 
 
 class Rebuild(Subconstruct):
