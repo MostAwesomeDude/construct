@@ -1,18 +1,10 @@
 #!/usr/bin/env python
-
-import os
-
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
-
-HERE = os.path.dirname(__file__)
-exec(open(os.path.join(HERE, "construct", "version.py")).read())
+from setuptools import setup
+from construct.version import version_string
 
 setup(
     name = "construct",
-    version = version_string, #@UndefinedVariable
+    version = version_string,
     packages = [
         'construct',
         'construct.lib', 
@@ -26,7 +18,7 @@ setup(
     ],
     license = "MIT",
     description = "A powerful declarative symmetric parser/builder for binary data",
-    long_description = open(os.path.join(HERE, "README.rst")).read(),
+    long_description = open("README.rst").read(),
     platforms = ["POSIX", "Windows"],
     url = "http://construct.readthedocs.org",
     author = "Arkadiusz Bulski, Tomer Filiba, Corbin Simpson",
@@ -34,7 +26,7 @@ setup(
     install_requires = [],
     requires = [],
     provides = ["construct"],
-    keywords = "construct, kaitai, declarative, data structure, binary, symmetric, parser, builder, pack, unpack, packer, unpacker",
+    keywords = "construct, kaitai, declarative, data structure, struct, binary, symmetric, parser, builder, pack, unpack, packer, unpacker",
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
