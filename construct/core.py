@@ -627,6 +627,7 @@ class Compiled(Construct):
     __slots__ = ["source", "defersubcon", "parsefunc", "buildfunc", "sizefunc"]
 
     def __init__(self, source, defersubcon, parsefunc=None, buildfunc=None, sizefunc=None):
+        super(Compiled, self).__init__()
         self.source = source
         self.defersubcon = defersubcon
         self.parsefunc = parsefunc
