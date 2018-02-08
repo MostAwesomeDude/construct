@@ -1441,15 +1441,6 @@ class StringNullTerminated(Construct):
         data = obj + finalunit
         _write_stream(stream, len(data), data)
 
-    def _emitdecompiled(self, code):
-        encoding = self.encoding
-        if encoding is StringsAsBytes:
-            encoding = "StringsAsBytes"
-        if encoding not in possiblestringencodings:
-            raise StringError("encoding not implemented: %r" % (encoding,))
-
-        return "StringNullTerminated(encoding=%r)" % (encoding,)
-
     def _emitparse(self, code):
         encoding = self.encoding
         if encoding is StringsAsBytes:
