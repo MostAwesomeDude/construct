@@ -3244,7 +3244,7 @@ class Switch(Construct):
         if self.default is self.NoDefault:
             return "%s[%r](io, this)" % (fname, self.keyfunc, )
         else:
-            return "%s.get(%r, lambda io,this: %s)(io, this)" % (fname, self.keyfunc, self.default._emitparse(code))
+            return "%s.get(%r, lambda io,this: %s)(io, this)" % (fname, self.keyfunc, self.default._compileparse(code))
 
 
 
