@@ -1329,7 +1329,13 @@ class TestCore(unittest.TestCase):
 
     @pytest.mark.xfail(reason="unknown cause")
     def test_pickling_constructs(self):
+        # it seems there are at least 2 problems:
+        # - this expressions not pickle?
+        # - Construct getstate/setstate is broken?
+
         import pickle
 
-        d = Struct("count"/Byte, "items"/Byte[this.count])
-        assert pickle.loads(pickle.dumps(d)) == d
+        d = Struct("count"/Byte, "items"/Byte[this.count], "text"/CString("utf8"))
+        du = pickle.loads(pickle.dumps(d))
+        assert d.parse(bytes(100)) == du.parse(bytes(100))
+        assert du == d

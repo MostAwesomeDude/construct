@@ -196,7 +196,6 @@ class Construct(object):
         return "<%s: %s%s%s>" % (self.__class__.__name__, self.name, " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "")
 
     def __getstate__(self):
-        """Obtain a dictionary representing this construct's state."""
         attrs = {}
         if hasattr(self, "__dict__"):
             attrs.update(self.__dict__)
@@ -212,12 +211,10 @@ class Construct(object):
         return attrs
 
     def __setstate__(self, attrs):
-        """Set this construct's state to a given state."""
         for name, value in attrs.items():
             setattr(self, name, value)
 
     def __copy__(self):
-        """Returns a copy of this construct."""
         self2 = object.__new__(self.__class__)
         self2.__setstate__(self, self.__getstate__())
         return self2
