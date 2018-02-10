@@ -344,6 +344,7 @@ class Construct(object):
             from io import BytesIO
             from struct import pack, unpack, calcsize
             import collections
+            import itertools
             import builtins
 
             assert PY >= (3,4)
@@ -1918,6 +1919,7 @@ class Struct(Construct):
                 except StopIteration:
                     pass
                 del this._
+                del this._index
                 return this
         """
         code.append(block)
@@ -2098,7 +2100,25 @@ class Array(Subconstruct):
         return count * self.subcon._sizeof(context, path)
 
     def _emitparse(self, code):
-        return "ListContainer((%s) for i in range(%s))" % (self.subcon._compileparse(code), self.count)
+        fname = "parse_array_%s" % code.allocateId()
+        block = """
+            def %s(io, this):
+                count = %r
+                """ % (fname, self.count, )
+        if not isinstance(self.count, int) or not self.count >= 0:
+            block += """
+                if not 0 <= count:
+                    raise RangeError
+                """
+        block += """
+                obj = ListContainer()
+                for i in range(count):
+                    this._index = i
+                    obj.append(%s)
+                return obj
+                """ % (self.subcon._compileparse(code), )
+        code.append(block)
+        return "%s(io, this)" % (fname,)
 
 
 class GreedyRange(Subconstruct):
@@ -2201,21 +2221,19 @@ class RepeatUntil(Subconstruct):
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
-        context._index = 0
-        while True:
+        for i in itertools.count():
+            context._index = i
             subobj = self.subcon._parse(stream, context, path)
             obj.append(subobj)
             if self.predicate(subobj, obj, context):
                 return obj
-            context._index += 1
 
     def _build(self, obj, stream, context, path):
-        context._index = 0
         for i,subobj in enumerate(obj):
+            context._index = i
             self.subcon._build(subobj, stream, context, path)
             if self.predicate(subobj, obj[:i+1], context):
                 break
-            context._index += 1
         else:
             raise RepeatError("expected any item to match predicate, when building")
 
@@ -2227,7 +2245,8 @@ class RepeatUntil(Subconstruct):
         block = """
             def %s(io, this):
                 list_ = ListContainer()
-                while True:
+                for i in itertools.count():
+                    this._index = i
                     obj_ = %s
                     list_.append(obj_)
                     if %r:
@@ -2450,7 +2469,6 @@ class Index(Construct):
     Parsing and building pulls _index or _._index key from context, in that order. Size is 0 because stream is unaffected.
 
     :raises IndexFieldError: did not find either key in context
-    :raises NotImplementedError: compiled
 
     Example::
 
@@ -2491,7 +2509,6 @@ class Index(Construct):
         return 0
 
     def _emitdecompiled(self, code):
-        raise NotImplementedError("Array and RepeatUntil need to support it")
         return "Index"
 
 
@@ -3017,6 +3034,7 @@ class Union(Construct):
             """
         block += """
                 del this._
+                del this._index
                 return this
         """
         code.append(block)

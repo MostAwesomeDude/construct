@@ -99,7 +99,7 @@ class Container(dict):
         """Removes an item from the Container in linear time O(n)."""
         if key in self:
             self.__keys_order__.remove(key)
-        dict.__delitem__(self, key)
+            dict.__delitem__(self, key)
 
     def __init__(self, *args, **kw):
         self.__keys_order__ = []
