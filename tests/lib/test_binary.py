@@ -29,8 +29,6 @@ class TestBinary(unittest.TestCase):
     def test_bits2integer(self):
         assert bits2integer(b"\x01\x00\x00\x01\x01") == 19
         assert bits2integer(b"\x01\x00\x00\x01\x01", True) == -13
-        assert bits2integer(b"10011") == 19
-        assert bits2integer(b"10011", True) == -13
 
     def test_cross_integers(self):
         for i in [-300,-255,-100,-1,0,1,100,255,300]:

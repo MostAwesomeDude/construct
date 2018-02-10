@@ -24,7 +24,6 @@ __all__ = [
     'iteratebytes',
     'iterateints',
     'ListContainer',
-    'onebit2integer',
     'PY',
     'PY2',
     'PY3',
