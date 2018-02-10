@@ -2267,9 +2267,6 @@ class Embedded(Subconstruct):
         super(Embedded, self).__init__(subcon)
         self.flagembedded = True
 
-    def _emitparse(self, code):
-        return self.subcon._compileparse(code)
-
 
 class Renamed(Subconstruct):
     r"""
@@ -2318,6 +2315,9 @@ class Renamed(Subconstruct):
             if "\n" in str(e):
                 raise
             raise e.__class__("%s\n    %s" % (e, path))
+
+    def _emitdecompiled(self, code):
+        return self.subcon._decompile(code)
 
     def _emitparse(self, code):
         return self.subcon._compileparse(code)
