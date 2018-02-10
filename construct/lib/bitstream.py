@@ -43,6 +43,9 @@ class RestreamedBytesIO(object):
         if len(self.wbuffer):
             raise ValueError("closing stream but %d unwritten bytes remain, %d is encoded unit" % (len(self.wbuffer), self.encoderunit))
 
+    def seek(self, at, whence=0):
+        raise IOError
+
     def seekable(self):
         return False
 
