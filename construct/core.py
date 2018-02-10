@@ -2220,19 +2220,25 @@ class RepeatUntil(Subconstruct):
         self.predicate = predicate
 
     def _parse(self, stream, context, path):
+        predicate = self.predicate
+        if not callable(predicate):
+            predicate = lambda _1,_2,_3: predicate
         obj = ListContainer()
         for i in itertools.count():
             context._index = i
             subobj = self.subcon._parse(stream, context, path)
             obj.append(subobj)
-            if self.predicate(subobj, obj, context):
+            if predicate(subobj, obj, context):
                 return obj
 
     def _build(self, obj, stream, context, path):
+        predicate = self.predicate
+        if not callable(predicate):
+            predicate = lambda _1,_2,_3: predicate
         for i,subobj in enumerate(obj):
             context._index = i
             self.subcon._build(subobj, stream, context, path)
-            if self.predicate(subobj, obj[:i+1], context):
+            if predicate(subobj, obj[:i+1], context):
                 break
         else:
             raise RepeatError("expected any item to match predicate, when building")

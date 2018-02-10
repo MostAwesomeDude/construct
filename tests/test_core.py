@@ -453,6 +453,8 @@ class TestCore(unittest.TestCase):
         assert raises(RepeatUntil(obj_ == 9, Byte).sizeof) == SizeofError
         assert RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).parse(b"\x01\x00\x00\xff") == [1,0,0]
         assert RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).build([1,0,0,4]) == b"\x01\x00\x00"
+        assert RepeatUntil(True, Byte).parse(b"\x00") == [0]
+        assert RepeatUntil(True, Byte).build([0]) == b"\x00"
 
     def test_renamed(self):
         common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)

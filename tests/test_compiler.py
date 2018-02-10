@@ -61,7 +61,7 @@ example = Struct(
 
     "index1" / Array(3, Index),
     "index2" / RestreamData(b"\x00", GreedyRange(Byte >> Index)),
-    # "index3" / RestreamData(b"\x00", RepeatUntil(False, Byte >> Index)),
+    "index3" / RestreamData(b"\x00", RepeatUntil(True, Byte >> Index)),
 
     "rebuild" / Rebuild(Byte, len_(this.array1)),
     "default" / Default(Byte, 0),
