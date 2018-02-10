@@ -1,10 +1,10 @@
-from construct.lib.py3compat import byte2int, int2byte, bytes2str, iteratebytes, iterateints
+from construct.lib.py3compat import *
 from binascii import hexlify, unhexlify
 
 
 # Map an integer in the inclusive range 0-255 to its string byte representation
-_printable = [bytes2str(int2byte(i)) if 32 <= i < 128 else '.' for i in range(256)]
-_hexprint = [format(i, '02X') for i in range(256)]
+PRINTABLE = [bytes2str(int2byte(i)) if 32 <= i < 128 else '.' for i in range(256)]
+HEXPRINT = [format(i, '02X') for i in range(256)]
 
 
 def hexdump(data, linesize):
@@ -23,16 +23,16 @@ def hexdump(data, linesize):
     (newlines dont render corretly in documentation page)
     """
     if len(data) < 16**4:
-        fmt = "%%04X   %%-%ds   %%s" % (3 * linesize - 1,)
+        fmt = "%%04X   %%-%ds   %%s" % (3*linesize-1,)
     elif len(data) < 16**8:
-        fmt = "%%08X   %%-%ds   %%s" % (3 * linesize - 1,)
+        fmt = "%%08X   %%-%ds   %%s" % (3*linesize-1,)
     else:
         raise ValueError("hexdump cannot process more than 16**8 or 4294967296 bytes")
     prettylines = []
     for i in range(0, len(data), linesize):
         line = data[i:i+linesize]
-        hextext = " ".join(_hexprint[b] for b in iterateints(line))
-        rawtext = "".join(_printable[b] for b in iterateints(line))
+        hextext = " ".join(HEXPRINT[b] for b in iterateints(line))
+        rawtext = "".join(PRINTABLE[b] for b in iterateints(line))
         prettylines.append(fmt % (i, str(hextext), str(rawtext)))
     prettylines.append("")
     return "\n".join(prettylines)
