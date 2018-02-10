@@ -12,3 +12,5 @@ Core API: Miscellaneous
 .. autofunction:: construct.FocusedSeq
 .. autofunction:: construct.Numpy
 .. autofunction:: construct.NamedTuple
+.. autofunction:: construct.Hex
+.. autofunction:: construct.HexDump

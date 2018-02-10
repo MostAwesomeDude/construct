@@ -999,11 +999,8 @@ class TestCore(unittest.TestCase):
         assert Ident.build(1) == b"\x02"
         assert Ident.sizeof() == 1
 
-        self.test_hex()
-        self.test_hexdump()
-
     def test_exprsymmetricadapter(self):
-        self.test_filter()
+        pass
 
     def test_exprvalidator(self):
         One = ExprValidator(Byte, lambda obj,ctx: obj in [1,3,5])
@@ -1012,9 +1009,6 @@ class TestCore(unittest.TestCase):
         assert One.build(5) == b"\x05"
         assert raises(One.build, 255) == ValidationError
         assert One.sizeof() == 1
-
-        self.test_oneof()
-        self.test_noneof()
 
     def test_ipaddress_adapter_issue_95(self):
         class IpAddressAdapter(Adapter):
@@ -1061,23 +1055,55 @@ class TestCore(unittest.TestCase):
         assert Indexing(Array(4,Byte), 4, 2, empty=0).sizeof() == 4
 
     def test_hex(self):
-        assert Hex(GreedyBytes).parse(b"abcd") == b"61626364"
-        assert Hex(GreedyBytes).build(b"61626364") == b"abcd"
-        assert Hex(GreedyBytes).parse(b"") == b""
-        assert Hex(GreedyBytes).build(b"") == b""
+        d = Hex(Int32ub)
+        common(d, b"\x00\x00\x01\x02", 0x0102, 4)
+        obj = d.parse(b"\x00\x00\x01\x02")
+        assert str(obj) == "0x00000102"
+        assert str(obj) == "0x00000102"
 
-    def test_hex_regression_188(self):
+        d = Hex(GreedyBytes)
+        common(d, b"\x00\x00\x01\x02", b"\x00\x00\x01\x02")
+        common(d, b"", b"")
+        obj = d.parse(b"\x00\x00\x01\x02")
+        assert str(obj) == "unhexlify('00000102')"
+        assert str(obj) == "unhexlify('00000102')"
+
+        d = Hex(RawCopy(Int32ub))
+        common(d, b"\x00\x00\x01\x02", dict(data=b"\x00\x00\x01\x02", value=0x0102, offset1=0, offset2=4, length=4), 4)
+        obj = d.parse(b"\x00\x00\x01\x02")
+        assert str(obj) == "unhexlify('00000102')"
+        assert str(obj) == "unhexlify('00000102')"
+
+    def test_hexdump(self):
+        d = HexDump(GreedyBytes)
+        common(d, b"abcdef", b"abcdef")
+        common(d, b"", b"")
+        obj = d.parse(b"\x00\x00\x01\x02")
+        repr = \
+'''hexundump("""
+0000   00 00 01 02                                       ....
+""")
+'''
+        pass
+        assert str(obj) == repr
+        assert str(obj) == repr
+
+        d = HexDump(RawCopy(Int32ub))
+        common(d, b"\x00\x00\x01\x02", dict(data=b"\x00\x00\x01\x02", value=0x0102, offset1=0, offset2=4, length=4), 4)
+        obj = d.parse(b"\x00\x00\x01\x02")
+        repr = \
+'''hexundump("""
+0000   00 00 01 02                                       ....
+""")
+'''
+        assert str(obj) == repr
+        assert str(obj) == repr
+
+    def test_regression_188(self):
+        # Hex HexDump were not inheriting subcon flags
         d = Struct(Hex(Const(b"MZ")))
         assert d.parse(b"MZ") == Container()
         assert d.build(dict()) == b"MZ"
-
-    def test_hexdump(self):
-        assert HexDump(GreedyBytes).parse(b'abcdef') == '0000   61 62 63 64 65 66                                 abcdef\n'
-        assert HexDump(GreedyBytes).build('0000   61 62 63 64 65 66                                 abcdef\n') == b'abcdef'
-        assert HexDump(GreedyBytes).parse(b"") == ""
-        assert HexDump(GreedyBytes).build("") == b""
-
-    def test_hexdump_regression_188(self):
         d = Struct(HexDump(Const(b"MZ")))
         assert d.parse(b"MZ") == Container()
         assert d.build(dict()) == b"MZ"

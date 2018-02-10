@@ -43,6 +43,8 @@ Range removed, GreedyRange remains
 
 Index added, in Miscellaneous
 
+Hex HexDump reimplemented (see `this page <https://construct.readthedocs.io/en/latest/misc.html#hex-and-hexdump>`_)
+
 If IfThenElse parameter renamed `predicate` to `condfunc`
 
 Switch dropped `includekey` parameter, and cannot be embedded

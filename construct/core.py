@@ -2897,6 +2897,90 @@ class NamedTuple(Adapter):
         raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
 
 
+class Hex(Adapter):
+    r"""
+    Adapter for displaying hexadecimal/hexlified representation of integers/bytes/RawCopy dictionaries.
+
+    Parsing results in int-alike bytes-alike or dict-alike object, whose only difference from original is pretty-printing. Building and sizeof defer to subcon.
+
+    Example::
+
+        >>> d = Hex(Int32ub)
+        >>> obj = d.parse(b"\x00\x00\x01\x02")
+        >>> print(obj)
+        0x00000102
+
+        >>> d = Hex(GreedyBytes)
+        >>> obj = d.parse(b"\x00\x00\x01\x02")
+        >>> print(obj)
+        unhexlify('00000102')
+
+        >>> d = Hex(RawCopy(Int32ub))
+        >>> obj = d.parse(b"\x00\x00\x01\x02")
+        >>> print(obj)
+        unhexlify('00000102')
+    """
+    def _decode(self, obj, context):
+        if isinstance(obj, integertypes):
+            obj = HexDisplayedInteger(obj)
+            # TODO: fix path???
+            obj.fmtstr = "0%sX" % (2 * self.subcon._sizeof(context, ""))
+            return obj
+        if isinstance(obj, bytestringtype):
+            return HexDisplayedBytes(obj)
+        if isinstance(obj, dict):
+            return HexDisplayedDict(obj)
+        return obj
+
+    def _encode(self, obj, context):
+        return obj
+
+    def _emitdecompiled(self, code):
+        return self.subcon._decompile(code)
+
+    def _emitparse(self, code):
+        return self.subcon._compileparse(code)
+
+
+class HexDump(Adapter):
+    r"""
+    Adapter for displaying hexlified representation of bytes/RawCopy dictionaries.
+
+    Parsing results in bytes-alike or dict-alike object, whose only difference from original is pretty-printing. Building and sizeof defer to subcon.
+
+    Example::
+
+        >>> d = HexDump(GreedyBytes)
+        >>> obj = d.parse(b"\x00\x00\x01\x02")
+        >>> print(obj)
+        hexundump('''
+        0000   00 00 01 02                                       ....
+        ''')
+
+        >>> d = HexDump(RawCopy(Int32ub))
+        >>> obj = d.parse(b"\x00\x00\x01\x02")
+        >>> print(obj)
+        hexundump('''
+        0000   00 00 01 02                                       ....
+        ''')
+    """
+    def _decode(self, obj, context):
+        if isinstance(obj, bytestringtype):
+            return HexDumpDisplayedBytes(obj)
+        if isinstance(obj, dict):
+            return HexDumpDisplayedDict(obj)
+        return obj
+
+    def _encode(self, obj, context):
+        return obj
+
+    def _emitdecompiled(self, code):
+        return self.subcon._decompile(code)
+
+    def _emitparse(self, code):
+        return self.subcon._compileparse(code)
+
+
 #===============================================================================
 # conditional
 #===============================================================================
@@ -4539,42 +4623,6 @@ class Indexing(Adapter):
         output = [self.empty] * self.count
         output[self.index] = obj
         return output
-
-
-def Hex(subcon):
-    r"""
-    Adapter for (un)hexlifying bytes.
-
-    Example::
-
-        >>> d = Hex(GreedyBytes)
-        >>> d.parse(b"abcd")
-        b'61626364'
-        >>> d.build("01020304")
-        b'\x01\x02\x03\x04'
-    """
-    return ExprAdapter(subcon,
-        decoder = lambda obj,ctx: None if obj is None else binascii.hexlify(obj),
-        encoder = lambda obj,ctx: None if subcon.flagbuildnone else binascii.unhexlify(obj),
-    )
-
-
-def HexDump(subcon, linesize=16):
-    r"""
-    Adapter for (un)hexdumping bytes. A hex-dump is a string with X bytes per newline, each line shows both offset, ascii representation, and hexadecimal representation.
-
-    :param linesize: optional, integer, default is 16 bytes per line
-
-    Example::
-
-        >>> d = HexDump(Bytes(10))
-        >>> d.parse(b"12345abc;/")
-        '0000   31 32 33 34 35 61 62 63 3b 2f                     12345abc;/       \n'
-    """
-    return ExprAdapter(subcon,
-        decoder = lambda obj,ctx: None if obj is None else hexdump(obj, linesize=linesize),
-        encoder = lambda obj,ctx: None if subcon.flagbuildnone else hexundump(obj, linesize=linesize),
-    )
 
 
 #===============================================================================

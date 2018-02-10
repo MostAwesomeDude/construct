@@ -101,14 +101,6 @@ The two most common cases already exist as builtins.
 .. autoclass:: construct.Indexing
 
 
-Presenting data in different representation
---------------------------------------------
-
-.. autoclass:: construct.Hex
-
-.. autoclass:: construct.HexDump
-
-
 Using expressions instead of classes
 ------------------------------------
 

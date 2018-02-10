@@ -57,6 +57,7 @@ if PY3:
         return s
 
     def reprbytes(b):
+        """Trims b- u- prefix and both apostrophies."""
         if isinstance(b, bytes):
             return repr(b)[2:-1]
         if isinstance(b, str):
@@ -65,7 +66,7 @@ if PY3:
 
 else:
     stringtypes = (str, unicode, )
-    integertypes = (int, long, )
+    integertypes = (long, int, )
     unicodestringtype = unicode
     bytestringtype = str
 
@@ -102,6 +103,7 @@ else:
         return (ord(c) for c in s)
 
     def reprbytes(b):
+        """Trims b- u- prefix and both apostrophies."""
         if isinstance(b, str):
             return repr(b)[1:-1]
         if isinstance(b, unicode):

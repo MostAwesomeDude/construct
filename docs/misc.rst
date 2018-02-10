@@ -188,6 +188,42 @@ coord(x=49, y=50, z=51)
 coord(x=49, y=50, z=51)
 
 
+Hex and HexDump
+------------------
+
+Integers and bytes can be displayed in hex form, for convenience. Note that parsing still results in int-alike and bytes-alike objects, the hex form appears only when pretty-printing.
+
+>>> d = Hex(Int32ub)
+>>> obj = d.parse(b"\x00\x00\x01\x02")
+>>> print(obj)
+0x00000102
+
+>>> d = Hex(GreedyBytes)
+>>> obj = d.parse(b"\x00\x00\x01\x02")
+>>> print(obj)
+unhexlify('00000102')
+
+>>> d = Hex(RawCopy(Int32ub))
+>>> obj = d.parse(b"\x00\x00\x01\x02")
+>>> print(obj)
+unhexlify('00000102')
+
+Another variant is hexdumping, which shows both ascii representaion, hexadecimal representation, and offsets. Functionality is identical.
+
+>>> d = HexDump(GreedyBytes)
+>>> obj = d.parse(b"\x00\x00\x01\x02")
+>>> print(obj)
+hexundump('''
+0000   00 00 01 02                                       ....
+''')
+
+>>> d = HexDump(RawCopy(Int32ub))
+>>> obj = d.parse(b"\x00\x00\x01\x02")
+>>> print(obj)
+hexundump('''
+0000   00 00 01 02                                       ....
+''')
+
 
 Conditional
 ===========

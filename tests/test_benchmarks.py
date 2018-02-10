@@ -243,6 +243,22 @@ def test_numpy_parse(benchmark):
 
 # NamedTuple
 
+def test_hex_parse(benchmark):
+    d = Hex(GreedyBytes)
+    benchmark(d.parse, bytes(100))
+
+def test_hex_build(benchmark):
+    d = Hex(GreedyBytes)
+    benchmark(d.build, bytes(100))
+
+def test_hexdump_parse(benchmark):
+    d = HexDump(GreedyBytes)
+    benchmark(d.parse, bytes(100))
+
+def test_hexdump_build(benchmark):
+    d = HexDump(GreedyBytes)
+    benchmark(d.build, bytes(100))
+
 # Padding
 
 def test_padded_parse(benchmark):
@@ -410,22 +426,6 @@ def test_flagsenum_build(benchmark):
 # Filter
 # Slicing
 # Indexing
-
-def test_hex_parse(benchmark):
-    d = Hex(GreedyBytes)
-    benchmark(d.parse, bytes(100))
-
-def test_hex_build(benchmark):
-    d = Hex(GreedyBytes)
-    benchmark(d.build, hexlify(bytes(100)))
-
-def test_hexdump_parse(benchmark):
-    d = HexDump(GreedyBytes)
-    benchmark(d.parse, bytes(100))
-
-def test_hexdump_build(benchmark):
-    d = HexDump(GreedyBytes)
-    benchmark(d.build, hexdump(bytes(100), 16))
 
 def test_string_parse(benchmark):
     d = String(10, encoding="utf8")

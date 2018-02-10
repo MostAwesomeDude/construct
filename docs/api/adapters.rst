@@ -10,5 +10,3 @@ Core API: Adapters and Validators
 .. autofunction:: construct.Filter
 .. autofunction:: construct.Slicing
 .. autofunction:: construct.Indexing
-.. autofunction:: construct.Hex
-.. autofunction:: construct.HexDump
