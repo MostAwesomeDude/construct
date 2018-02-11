@@ -1752,19 +1752,15 @@ class Mapping(Adapter):
     r"""
     Adapter that maps objects to other objects. Translates objects before parsing and before building.
 
-    .. note:: It used to be used internally by Flag IfThenElse etc but became deprecated.
+    .. note:: Deprecated.
 
-    This class supports exposing member labels as attributes. See example.
+    This class supports exposing member labels as attributes, like Enum FlagsEnum.
 
     :param subcon: Construct instance, subcon to map to/from
     :param decoding: dict, for decoding (parsing) mapping
     :param encoding: dict, for encoding (building) mapping
     :param decdefault: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
     :param encdefault: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
-
-    Example::
-
-        ???
     """
     __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
 
@@ -1803,17 +1799,13 @@ class Mapping(Adapter):
 
 def SymmetricMapping(subcon, mapping, default=NotImplemented):
     r"""
-    Defines a symmetric mapping, same mapping is used on parsing and building.
-
     This is just a macro around :class:`~construct.core.Mapping`.
+
+    .. note:: Deprecated.
 
     :param subcon: Construct instance, subcon to map to/from
     :param mapping: dict, for decoding (parsing) mapping
     :param default: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
-
-    Example::
-
-        ???
     """
     return Mapping(subcon,
         decoding = dict((v,k) for k,v in mapping.items()),
