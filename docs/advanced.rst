@@ -116,17 +116,17 @@ b'\x01'
 
 Enums translate between string names and (usually) integer values:
 
->>> d = Enum(Byte, zero=0, one=1)
+>>> d = Enum(Byte, one=1, two=2, four=4, eight=8)
 >>> d.parse(b"\x01")
 'one'
->>> d.build(1)
-b'\x01'
 >>> d.build(d.one)
 b'\x01'
 >>> d.build("one")
 b'\x01'
->>> d.zero
-'zero'
+>>> d.build(1)
+b'\x01'
+>>> d.one
+'one'
 
 FlagsEnum decomposes an integer value into a set of string labels:
 

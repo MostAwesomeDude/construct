@@ -1584,8 +1584,7 @@ class Enum(Adapter):
     r"""
     Translates unicode label names to subcon values, and vice versa.
 
-    semantics???
-    Size is same as subcon, unless it raises SizeofError.
+    Parses integer subcon, then uses that value to lookup mapping dictionary. Building is a reversed process. Can build from an integer flag or string label directly (see examples). Size is same as subcon, unless it raises SizeofError.
 
     This class supports exposing member labels as attributes. See example.
 
@@ -1600,11 +1599,11 @@ class Enum(Adapter):
         >>> d = Enum(Byte, one=1, two=2, four=4, eight=8)
         >>> d.parse(b"\x01")
         'one'
-        >>> d.build(1)
-        b'\x01'
         >>> d.build(d.one)
         b'\x01'
         >>> d.build("one")
+        b'\x01'
+        >>> d.build(1)
         b'\x01'
         >>> d.one
         'one'
