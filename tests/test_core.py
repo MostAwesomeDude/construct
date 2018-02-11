@@ -251,7 +251,7 @@ def test_enum():
     assert d.one == "one"
     assert raises(lambda: d.missing) == AttributeError
 
-@pytest.mark.xfail(not supportsintenum, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+@xfail(not supportsintenum, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
 def test_enum_enum34():
     import enum
     class E(enum.IntEnum):
@@ -261,7 +261,7 @@ def test_enum_enum34():
     common(Enum(Byte, E, F), b"\x01", "a", 1)
     common(Enum(Byte, E, F), b"\x02", "b", 1)
 
-@pytest.mark.xfail(not supportsintflag, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+@xfail(not supportsintflag, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
 def test_enum_enum36():
     import enum
     class E(enum.IntEnum):
@@ -312,7 +312,7 @@ def test_flagsenum():
     assert d.one|d.two == "one|two"
     assert raises(lambda: d.missing) == AttributeError
 
-@pytest.mark.xfail(not supportsintenum, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+@xfail(not supportsintenum, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
 def test_flagsenum_enum34():
     import enum
     class E(enum.IntEnum):
@@ -323,7 +323,7 @@ def test_flagsenum_enum34():
     common(FlagsEnum(Byte, E, F), b"\x02", Container(a=False,b=True), 1)
     common(FlagsEnum(Byte, E, F), b"\x03", Container(a=True,b=True), 1)
 
-@pytest.mark.xfail(not supportsintflag, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
+@xfail(not supportsintflag, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
 def test_flagsenum_enum36():
     import enum
     class E(enum.IntEnum):
@@ -348,7 +348,7 @@ def test_struct_nested_embedded():
     common(Struct("a"/Byte, "b"/Int16ub, "inner"/Struct("c"/Byte, "d"/Byte)), b"\x01\x00\x02\x03\x04", Container(a=1,b=2,inner=Container(c=3,d=4)), 5)
     common(Struct("a"/Byte, "b"/Int16ub, Embedded("inner"/Struct("c"/Byte, "d"/Byte))), b"\x01\x00\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 5)
 
-@pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
+@xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_struct_kwctor():
     common(Struct(a=Byte, b=Byte, c=Byte, d=Byte), b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 4)
 
@@ -552,7 +552,7 @@ def test_focusedseq():
     assert raises(FocusedSeq(this.missing, Pass).build, {}) == KeyError
     # assert raises(FocusedSeq(this.missing, Pass).sizeof) == SizeofError
 
-@pytest.mark.xfail(not supportsnumpy, reason="numpy is not installed?")
+@xfail(not supportsnumpy, reason="numpy is not installed?")
 def test_numpy():
     import numpy
     obj = numpy.array([1,2,3], dtype=numpy.int64)
@@ -670,7 +670,7 @@ def test_union_embedded():
     assert d.build(dict(c=0x01)) == b"\x01"
     assert raises(d.build, dict()) == UnionError
 
-@pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
+@xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_union_kwctor():
     st = Union(None, a=Int8ub, b=Int16ub, c=Int32ub)
     assert st.parse(b"\x01\x02\x03\x04") == Container(a=0x01,b=0x0102,c=0x01020304)
@@ -695,7 +695,7 @@ def test_select():
     assert raises(Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).build, (("d", 7))) == SelectError
     assert raises(Select(Byte).sizeof) == SizeofError
 
-@pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
+@xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_select_kwctor():
     st = Select(a=Int8ub, b=Int16ub, c=Int32ub)
     assert st.parse(b"\x01\x02\x03\x04") == 0x01
@@ -979,7 +979,7 @@ def test_compressed_zlib():
     assert len(d.build(zeros)) < 50
     assert raises(d.sizeof) == SizeofError
 
-@pytest.mark.xfail(not PY>=(3,2), raises=AttributeError, reason="gzip module was added in 3.2")
+@xfail(not PY>=(3,2), raises=AttributeError, reason="gzip module was added in 3.2")
 def test_compressed_gzip():
     zeros = bytes(10000)
     d = Compressed(GreedyBytes, "gzip")
@@ -1002,7 +1002,7 @@ def test_compressed_bzip2():
     assert len(d.build(zeros)) < 50
     assert raises(d.sizeof) == SizeofError
 
-@pytest.mark.xfail(not PY>=(3,3), raises=ImportError, reason="lzma module was added in 3.3")
+@xfail(not PY>=(3,3), raises=ImportError, reason="lzma module was added in 3.3")
 def test_compressed_lzma():
     zeros = bytes(10000)
     d = Compressed(GreedyBytes, "lzma")
@@ -1336,7 +1336,7 @@ def test_from_issue_362():
 def test_compiler_recursion():
     raises(Construct().compile) == NotImplementedError
 
-@pytest.mark.xfail(reason="unknown cause")
+@xfail(reason="unknown cause")
 def test_this_expresion_compare_container():
     # lambda is fine, but this equality with Container fails
     st = Struct(
@@ -1345,17 +1345,17 @@ def test_this_expresion_compare_container():
     )
     common(st, b"\x01", dict(flags=Container(a=True)), 1)
 
-@pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.6")
+@xfail(not supportscompiler, reason="compiler requires Python 3.6")
 def test_empty_struct_compiled():
     Struct().compile()
     Sequence().compile()
 
-@pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.6")
+@xfail(not supportscompiler, reason="compiler requires Python 3.6")
 def test_compiled_benchmark_testcompiled():
     Struct().compile().benchmark(b"")
     Struct().compile().testcompiled(b"")
 
-@pytest.mark.xfail(reason="unknown cause")
+@xfail(reason="unknown cause")
 def test_pickling_constructs():
     # it seems there are at least 2 problems:
     # - this expressions not pickle?

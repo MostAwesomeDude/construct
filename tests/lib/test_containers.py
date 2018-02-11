@@ -56,7 +56,7 @@ def test_ctor_seqoftuples():
     assert len(c) == 4
     assert list(c.items()) == [('a',1),('b',2),('c',3),('d',4)]
 
-@pytest.mark.xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
+@xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_ctor_orderedkw():
     c = Container(a=1, b=2, c=3, d=4)
     d = Container(a=1)(b=2)(c=3)(d=4)
@@ -165,7 +165,7 @@ def test_eq():
     assert c == c
     assert c == d
 
-@pytest.mark.xfail(not supportsnumpy, reason="numpy is not installed?")
+@xfail(not supportsnumpy, reason="numpy is not installed?")
 def test_eq_numpy():
     import numpy
 

@@ -83,7 +83,7 @@ def test_obj():
     assert example.parse(b"\x03\x07\xff") == dict(items=[3,7,255])
     assert example.build(dict(items=[3,7,255])) == b"\x03\x07\xff"
 
-@pytest.mark.xfail(reason="faulty implementation, needs fixing")
+@xfail(reason="faulty implementation, needs fixing")
 def test_list():
     assert repr(list_) == "list_"
     assert repr(list_ == [0, 1, 2]) == "(list_ == [0, 1, 2])"
@@ -105,7 +105,7 @@ def test_list():
     assert example.parse(b"\x03\x07\xff") == dict(items=[3,7,255])
     assert example.build(dict(items=[3,7,255])) == b"\x03\x07\xff"
 
-@pytest.mark.xfail(reason="this expression does not support in operator")
+@xfail(reason="this expression does not support in operator")
 def test_this_in_operator():
     st = Struct(
         "if"  / If(this.data     in [1,2,3], Const(b"4")),

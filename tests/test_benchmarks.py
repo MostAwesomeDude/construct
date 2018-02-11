@@ -4,8 +4,8 @@ from declarativeunittest import *
 from construct import *
 from construct.lib import *
 
-pytest.mark.skipif(not PY3, reason="uses bytes()")
-pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+skipif(not PY3, reason="uses bytes()")
+skipif(not supportscompiler, reason="compiler requires Python 3.6")
 
 
 def test_class_bytes_parse(benchmark):

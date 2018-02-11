@@ -9,7 +9,7 @@ class TestFormats(unittest.TestCase):
     def test_png(self):
         commondump(png_file, "sample.png")
 
-    @pytest.mark.xfail(reason="Enum no longer supports default")
+    @xfail(reason="Enum no longer supports default")
     def test_emf(self):
         commondump(emf_file, "emf1.emf")
 
@@ -39,6 +39,6 @@ class TestFormats(unittest.TestCase):
         commondump(pe32_file, "NOTEPAD.EXE")
         commondump(pe32_file, "sqlite3.dll")
 
-    @pytest.mark.xfail(reason="Enum no longer supports default")
+    @xfail(reason="Enum no longer supports default")
     def test_elf32(self):
         commondump(elf32_file, "ctypes.so")

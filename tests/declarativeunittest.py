@@ -1,5 +1,8 @@
+import pytest
+xfail = pytest.mark.xfail
+skip = pytest.mark.skip
+skipif = pytest.mark.skipif
 
-import unittest, pytest
 import os, math, random, collections, itertools, io, hashlib, binascii
 
 from construct import *
