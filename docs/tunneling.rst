@@ -23,7 +23,7 @@ When little endianness is needed, either use fields like ``Int*l`` or swap bytes
 
 ::
 
-    Int24ul <--> ByteSwapped(Int24ub) <--> BytesInteger(3, swapped=True)
+    Int24ul <--> ByteSwapped(Int24ub) <--> BytesInteger(3, swapped=True) <--> ByteSwapped(BytesInteger(3))
 
 >>> Int24ul.build(0x010203)
 b'\x03\x02\x01'

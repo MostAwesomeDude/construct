@@ -4089,7 +4089,7 @@ def ByteSwapped(subcon):
 
     Example::
 
-        Int24ul <--> ByteSwapped(Int24ub) <--> BytesInteger(3, swapped=True)
+        Int24ul <--> ByteSwapped(Int24ub) <--> BytesInteger(3, swapped=True) <--> ByteSwapped(BytesInteger(3))
     """
     macro = Restreamed(subcon,
         lambda s: s[::-1], subcon.sizeof(),
