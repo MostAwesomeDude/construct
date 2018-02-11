@@ -133,14 +133,18 @@ FlagsEnum decomposes an integer value into a set of string labels:
 >>> d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
 >>> d.parse(b"\x03")
 Container(one=True)(two=True)(four=False)(eight=False)
->>> d.build(8)
-b'\x08'
->>> d.build(d.eight)
-b'\x08'
->>> d.build("eight")
-b'\x08'
+>>> d.build(dict(one=True,two=True))
+b'\x03'
+>>> d.build(d.one|d.two)
+b'\x03'
+>>> d.build("one|two")
+b'\x03'
+>>> d.build(1|2)
+b'\x03'
 >>> d.eight
 'eight'
+>>> d.one|d.two
+'one|two'
 
 Both Enum and FlagsEnum support merging labels from IntEnum and IntFlag (enum module):
 

@@ -302,12 +302,16 @@ class TestCore(unittest.TestCase):
         d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
         common(d, b"\x03", Container(one=True)(two=True)(four=False)(eight=False), 1)
         assert d.build({}) == b'\x00'
+        assert d.build(dict(one=True,two=True)) == b'\x03'
         assert d.build(8) == b'\x08'
+        assert d.build(1|2) == b'\x03'
         assert d.build(255) == b"\xff"
         assert d.build(d.eight) == b'\x08'
+        assert d.build(d.one|d.two) == b'\x03'
         assert raises(d.build, dict(unknown=True)) == MappingError
         assert raises(d.build, "unknown") == MappingError
         assert d.one == "one"
+        assert d.one|d.two == "one|two"
         assert raises(lambda: d.missing) == AttributeError
 
     @pytest.mark.xfail(not supportsintenum, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")

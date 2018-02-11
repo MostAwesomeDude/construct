@@ -48,6 +48,7 @@ __all__ = [
     'BitsInteger',
     'BitsSwapped',
     'BitStruct',
+    'BitwisableString',
     'Bitwise',
     'Byte',
     'Bytes',

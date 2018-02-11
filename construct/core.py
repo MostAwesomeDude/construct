@@ -1656,17 +1656,25 @@ class Enum(Adapter):
         return "%s[%s]" % (fname, self.subcon._compileparse(code), )
 
 
+class BitwisableString(str):
+    """Used internally."""
+    def __or__(self, other):
+        return BitwisableString("{}|{}".format(self, other))
+
+
 class FlagsEnum(Adapter):
     r"""
     Translates unicode label names to subcon integer (sub)values, and vice versa.
 
-    Parses integer subcon, then creates a Container, where flags define each key. Builds from a container by bitwise-oring of each flag if it matches a set key. Can also build from an integer flag or string flag directly (see examples). Size is same as subcon, unless it raises SizeofError.
+    Parses integer subcon, then creates a Container, where flags define each key. Builds from a container by bitwise-oring of each flag if it matches a set key. Can build from an integer flag or string label directly, as well as | concatenations thereof (see examples). Size is same as subcon, unless it raises SizeofError.
 
     This class supports exposing member labels as attributes. See example.
 
     :param subcon: Construct instance, must operate on integers
     :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
     :param \*\*flags: dict, mapping string names to integer values
+
+    :raises MappingError: building from object not like: integer string dict
 
     Can raise arbitrary exceptions when computing | and & and value is non-integer.
 
@@ -1675,14 +1683,18 @@ class FlagsEnum(Adapter):
         >>> d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
         >>> d.parse(b"\x03")
         Container(one=True)(two=True)(four=False)(eight=False)
-        >>> d.build(8)
-        b'\x08'
-        >>> d.build(d.eight)
-        b'\x08'
-        >>> d.build("eight")
-        b'\x08'
+        >>> d.build(dict(one=True,two=True))
+        b'\x03'
+        >>> d.build(d.one|d.two)
+        b'\x03'
+        >>> d.build("one|two")
+        b'\x03'
+        >>> d.build(1|2)
+        b'\x03'
         >>> d.eight
         'eight'
+        >>> d.one|d.two
+        'one|two'
 
         import enum
         class E(enum.IntEnum):
@@ -1703,26 +1715,33 @@ class FlagsEnum(Adapter):
 
     def __getattr__(self, name):
         if name in self.flags:
-            return name
+            return BitwisableString(name)
         return super(FlagsEnum, self).__getattr__(name)
 
     def _decode(self, obj, context):
         obj2 = Container()
         for name,value in self.flags.items():
-            obj2[name] = bool(obj & value)
+            obj2[BitwisableString(name)] = bool(obj & value)
         return obj2
 
     def _encode(self, obj, context):
         try:
-            if isinstance(obj, int):
+            if isinstance(obj, integertypes):
                 return obj
-            if isinstance(obj, str):
-                return self.flags[obj]
-            flags = 0
-            for name,value in obj.items():
-                if value:
-                    flags |= self.flags[name]
-            return flags
+            if isinstance(obj, stringtypes):
+                flags = 0
+                for name in obj.split("|"):
+                    name = name.strip()
+                    if name:
+                        flags |= self.flags[name]
+                return flags
+            if isinstance(obj, dict):
+                flags = 0
+                for name,value in obj.items():
+                    if value:
+                        flags |= self.flags[name]
+                return flags
+            raise MappingError("building failed, unknown object: %r" % (obj,))
         except KeyError:
             raise MappingError("building failed, unknown object: %r" % (obj,))
 

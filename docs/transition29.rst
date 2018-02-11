@@ -31,6 +31,8 @@ Enum FlagsEnum can build from integers and labels (see `this page <https://const
 
 Enum FlagsEnum expose labels as attributes (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
+Enum FlagsEnum attributes are bitwisable strings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+
 Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
 
 Struct Sequence Union FocusedSeq are supporting new embedding semantics (see `this page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
