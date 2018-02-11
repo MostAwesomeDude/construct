@@ -4,8 +4,8 @@ from declarativeunittest import *
 from construct import *
 from construct.lib import *
 
-skipif(not PY3, reason="uses bytes()")
-skipif(not supportscompiler, reason="compiler requires Python 3.6")
+pytestmark = skipif(not supportscompiler, reason="compiler and bytes() require 3.6")
+
 
 
 example = Struct(
@@ -151,39 +151,32 @@ example = Struct(
 data = bytes(1000)
 
 
-@skipif(not supportscompiler, reason="compiler requires Python 3.6")
 def test_compiles():
     dc = example.compile()
     if not ontravis:
         dc.tofile("tests/compiled.py")
 
-@skipif(not supportscompiler, reason="compiler requires Python 3.6")
 def test_parsesbuilds():
     d = example
     d.testcompiled(data)
 
-@skipif(not supportscompiler, reason="compiler requires Python 3.6")
 def test_overall_compiling(benchmark):
     d = example
     benchmark(d.compile)
 
-@skipif(not supportscompiler, reason="compiler requires Python 3.6")
 def test_overall_parse(benchmark):
     d = example
     benchmark(d.parse, data)
 
-@skipif(not supportscompiler, reason="compiler requires Python 3.6")
 def test_overall_parse_compiled(benchmark):
     dc = example.compile()
     benchmark(dc.parse, data)
 
-@skipif(not supportscompiler, reason="compiler requires Python 3.6")
 def test_overall_build(benchmark):
     d = example
     obj = d.parse(data)
     benchmark(d.build, obj)
 
-@skipif(not supportscompiler, reason="compiler requires Python 3.6")
 def test_overall_build_compiled(benchmark):
     dc = example.compile()
     obj = dc.parse(data)

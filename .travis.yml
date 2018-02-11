@@ -26,4 +26,4 @@ before_script:
     - "uname -a"
     - "cd tests"
 
-script: py.test --benchmark-skip --showlocals --verbose
+script: py.test --benchmark-disable --showlocals --verbose
