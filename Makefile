@@ -12,10 +12,10 @@ cover:
 	python3.6 -m pytest --benchmark-disable --cov {envsitepackagesdir}/construct --cov-report html --cov-report term --verbose
 
 bench:
-	python3.6 -m pytest --benchmark-enable --benchmark-columns=min,max,mean,stddev,median,rounds --benchmark-sort=name --benchmark-compare
+	python3.6 -m pytest --benchmark-enable --benchmark-columns=min,stddev --benchmark-sort=name --benchmark-compare
 
 benchsave:
-	python3.6 -m pytest --benchmark-enable --benchmark-columns=min,max,mean,stddev,median,rounds --benchmark-sort=name --benchmark-autosave
+	python3.6 -m pytest --benchmark-enable --benchmark-columns=min,stddev --benchmark-sort=name --benchmark-autosave
 
 installdeps:
 	python3.6 -m pip install pytest pytest-benchmark pytest-cov enum34 numpy --upgrade
