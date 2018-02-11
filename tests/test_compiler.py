@@ -1,6 +1,12 @@
+# -*- coding: utf-8 -*-
+
 from declarativeunittest import *
 from construct import *
 from construct.lib import *
+
+pytest.mark.skipif(not PY3, reason="uses bytes()")
+pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+
 
 example = Struct(
     "num" / Byte,
@@ -140,36 +146,40 @@ example = Struct(
 data = bytes(1000)
 
 
-@pytest.mark.xfail(not supportscompiler, reason="compiler requires Python 3.6")
-class TestCompiler(unittest.TestCase):
+@pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+def test_compiles():
+    dc = example.compile()
+    if not ontravis:
+        dc.tofile("tests/compiled.py")
 
-    def test_compiles(self):
-        dc = example.compile()
-        if not ontravis:
-            dc.tofile("tests/compiled.py")
+@pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+def test_parsesbuilds():
+    d = example
+    d.testcompiled(data)
 
-    def test_parsesbuilds(self):
-        d = example
-        d.testcompiled(data)
+@pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+def test_overall_compiling(benchmark):
+    d = example
+    benchmark(d.compile)
 
-    # def test_benchmark_compiling(benchmark):
-    #     d = example
-    #     benchmark(d.compile)
+@pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+def test_overall_parse(benchmark):
+    d = example
+    benchmark(d.parse, data)
 
-    # def test_benchmark_parse(benchmark):
-    #     d = example
-    #     benchmark(d.parse, data)
+@pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+def test_overall_parse_compiled(benchmark):
+    dc = example.compile()
+    benchmark(dc.parse, data)
 
-    # def test_benchmark_parse_compiled(benchmark):
-    #     dc = example.compile()
-    #     benchmark(dc.parse, data)
+@pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+def test_overall_build(benchmark):
+    d = example
+    obj = d.parse(data)
+    benchmark(d.build, obj)
 
-    # def test_benchmark_build(benchmark):
-    #     d = example
-    #     obj = d.parse(data)
-    #     benchmark(d.build, obj)
-
-    # def test_benchmark_build_compiled(benchmark):
-    #     dc = example.compile()
-    #     obj = dc.parse(data)
-    #     benchmark(dc.build, obj)
+@pytest.mark.skipif(not supportscompiler, reason="compiler requires Python 3.6")
+def test_overall_build_compiled(benchmark):
+    dc = example.compile()
+    obj = dc.parse(data)
+    benchmark(dc.build, obj)
