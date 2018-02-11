@@ -581,6 +581,60 @@ def test_namedtuple():
     assert Coord.build(coord(49,50,51)) == b"123"
     assert Coord.sizeof() == 3
 
+def test_hex():
+    d = Hex(Int32ub)
+    common(d, b"\x00\x00\x01\x02", 0x0102, 4)
+    obj = d.parse(b"\x00\x00\x01\x02")
+    assert str(obj) == "0x00000102"
+    assert str(obj) == "0x00000102"
+
+    d = Hex(GreedyBytes)
+    common(d, b"\x00\x00\x01\x02", b"\x00\x00\x01\x02")
+    common(d, b"", b"")
+    obj = d.parse(b"\x00\x00\x01\x02")
+    assert str(obj) == "unhexlify('00000102')"
+    assert str(obj) == "unhexlify('00000102')"
+
+    d = Hex(RawCopy(Int32ub))
+    common(d, b"\x00\x00\x01\x02", dict(data=b"\x00\x00\x01\x02", value=0x0102, offset1=0, offset2=4, length=4), 4)
+    obj = d.parse(b"\x00\x00\x01\x02")
+    assert str(obj) == "unhexlify('00000102')"
+    assert str(obj) == "unhexlify('00000102')"
+
+def test_hexdump():
+    d = HexDump(GreedyBytes)
+    common(d, b"abcdef", b"abcdef")
+    common(d, b"", b"")
+    obj = d.parse(b"\x00\x00\x01\x02")
+    repr = \
+'''hexundump("""
+0000   00 00 01 02                                       ....
+""")
+'''
+    pass
+    assert str(obj) == repr
+    assert str(obj) == repr
+
+    d = HexDump(RawCopy(Int32ub))
+    common(d, b"\x00\x00\x01\x02", dict(data=b"\x00\x00\x01\x02", value=0x0102, offset1=0, offset2=4, length=4), 4)
+    obj = d.parse(b"\x00\x00\x01\x02")
+    repr = \
+'''hexundump("""
+0000   00 00 01 02                                       ....
+""")
+'''
+    assert str(obj) == repr
+    assert str(obj) == repr
+
+def test_regression_188():
+    # Hex HexDump were not inheriting subcon flags
+    d = Struct(Hex(Const(b"MZ")))
+    assert d.parse(b"MZ") == Container()
+    assert d.build(dict()) == b"MZ"
+    d = Struct(HexDump(Const(b"MZ")))
+    assert d.parse(b"MZ") == Container()
+    assert d.build(dict()) == b"MZ"
+
 def test_union():
     assert Union(None, "a"/Bytes(2), "b"/Int16ub).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
     assert raises(Union(123, Pass).parse, b"") == KeyError
@@ -1055,60 +1109,6 @@ def test_indexing():
     assert Indexing(Array(4,Byte), 4, 2, empty=0).parse(b"\x01\x02\x03\x04") == 3
     assert Indexing(Array(4,Byte), 4, 2, empty=0).build(3) == b"\x00\x00\x03\x00"
     assert Indexing(Array(4,Byte), 4, 2, empty=0).sizeof() == 4
-
-def test_hex():
-    d = Hex(Int32ub)
-    common(d, b"\x00\x00\x01\x02", 0x0102, 4)
-    obj = d.parse(b"\x00\x00\x01\x02")
-    assert str(obj) == "0x00000102"
-    assert str(obj) == "0x00000102"
-
-    d = Hex(GreedyBytes)
-    common(d, b"\x00\x00\x01\x02", b"\x00\x00\x01\x02")
-    common(d, b"", b"")
-    obj = d.parse(b"\x00\x00\x01\x02")
-    assert str(obj) == "unhexlify('00000102')"
-    assert str(obj) == "unhexlify('00000102')"
-
-    d = Hex(RawCopy(Int32ub))
-    common(d, b"\x00\x00\x01\x02", dict(data=b"\x00\x00\x01\x02", value=0x0102, offset1=0, offset2=4, length=4), 4)
-    obj = d.parse(b"\x00\x00\x01\x02")
-    assert str(obj) == "unhexlify('00000102')"
-    assert str(obj) == "unhexlify('00000102')"
-
-def test_hexdump():
-    d = HexDump(GreedyBytes)
-    common(d, b"abcdef", b"abcdef")
-    common(d, b"", b"")
-    obj = d.parse(b"\x00\x00\x01\x02")
-    repr = \
-'''hexundump("""
-0000   00 00 01 02                                       ....
-""")
-'''
-    pass
-    assert str(obj) == repr
-    assert str(obj) == repr
-
-    d = HexDump(RawCopy(Int32ub))
-    common(d, b"\x00\x00\x01\x02", dict(data=b"\x00\x00\x01\x02", value=0x0102, offset1=0, offset2=4, length=4), 4)
-    obj = d.parse(b"\x00\x00\x01\x02")
-    repr = \
-'''hexundump("""
-0000   00 00 01 02                                       ....
-""")
-'''
-    assert str(obj) == repr
-    assert str(obj) == repr
-
-def test_regression_188():
-    # Hex HexDump were not inheriting subcon flags
-    d = Struct(Hex(Const(b"MZ")))
-    assert d.parse(b"MZ") == Container()
-    assert d.build(dict()) == b"MZ"
-    d = Struct(HexDump(Const(b"MZ")))
-    assert d.parse(b"MZ") == Container()
-    assert d.build(dict()) == b"MZ"
 
 def test_probe():
     Probe().parse(b"")

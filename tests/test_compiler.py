@@ -81,6 +81,11 @@ example = Struct(
     "namedtuple2" / RestreamData(b"\x00\x00\x00", NamedTuple("coord", "x y z", GreedyRange(Byte))),
     "namedtuple3" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
     "namedtuple4" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
+    "hex1" / Hex(Byte),
+    "hex2" / Hex(Bytes(1)),
+    "hex3" / Hex(RawCopy(Byte)),
+    "hexdump1" / HexDump(Bytes(1)),
+    "hexdump2" / HexDump(RawCopy(Byte)),
 
     "union1" / Union(None, "char"/Byte, "short"/Short, "int"/Int),
     "union2" / Union(1, "char"/Byte, "short"/Short, "int"/Int),

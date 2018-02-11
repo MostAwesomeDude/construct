@@ -241,6 +241,11 @@ def test_class_numpy_parse(benchmark):
     d = Numpy
     benchmark(d.parse, b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00")
 
+def test_class_numpy_build(benchmark):
+    d = Numpy
+    obj = d.parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00")
+    benchmark(d.build, obj)
+
 # NamedTuple
 
 def test_class_hex_parse(benchmark):
