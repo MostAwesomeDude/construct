@@ -2888,9 +2888,6 @@ class Numpy(Construct):
         array([1, 2, 3])
     """
 
-    def __init__(self):
-        super(self.__class__, self).__init__()
-
     def _parse(self, stream, context, path):
         import numpy
         return numpy.load(stream)
@@ -2934,7 +2931,6 @@ class NamedTuple(Adapter):
         super(NamedTuple, self).__init__(subcon)
         self.tuplename = tuplename
         self.tuplefields = tuplefields
-        import collections
         self.factory = collections.namedtuple(tuplename, tuplefields)
 
     def _decode(self, obj, context):

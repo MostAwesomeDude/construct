@@ -180,7 +180,7 @@ b'\x80\x03]q\x00(K\x01G@\x02ffffff}q\x01e.'
 Numpy
 ----------
 
-Numpy arrays can be preserved and retrived along with their dtype, shape and items. Otherwise, if dtype is known, you could use PrefixedArray, and if shape is known too, you could use Array. However this class is more convenient.
+Numpy arrays can be preserved and retrived along with their element type (dtype), dimensions (shape) and items. This is effectuated using the Numpy binary protocol, so parsing blobs produced by this class with other langagues (or other frameworks than Numpy for that matter) is not possible. Otherwise you could use PrefixedArray but this class is more convenient.
 
 >>> import numpy
 >>> Numpy.build(numpy.asarray([1,2,3]))
