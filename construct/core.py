@@ -348,7 +348,7 @@ class Construct(object):
             import itertools
             import builtins
 
-            assert PY >= (3,4)
+            assert supportscompiler
             assert version_string == %r
 
             def read_bytes(io, count):
