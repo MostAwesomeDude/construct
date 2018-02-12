@@ -165,8 +165,20 @@ When a sequence has some fields that could be ommited like Const Padding Termina
 b'MZ\xff'
 
 
+Pickled
+----------
+
+For convenience, arbitrary Python objects can be preserved using the famous pickle protocol. Almost any type can be pickled, but you have to understand that pickle uses its own (homebrew) protocol that is not a standard outside Python. Therefore, you can forget about parsing the binary blobs using other languages. There are also some minor considerations, like pickle protocol requiring Python 3.0 version or so. Its useful, but it automates things beyond your understanding.
+
+>>> x = [1, 2.3, {}]
+>>> Pickled.build(x)
+b'\x80\x03]q\x00(K\x01G@\x02ffffff}q\x01e.'
+>>> Pickled.parse(_)
+[1, 2.3, {}]
+
+
 Numpy
------
+----------
 
 Numpy arrays can be preserved and retrived along with their dtype, shape and items. Otherwise, if dtype is known, you could use PrefixedArray, and if shape is known too, you could use Array. However this class is more convenient.
 

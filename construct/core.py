@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct, io, binascii, itertools, collections, sys
+import struct, io, binascii, itertools, collections, sys, pickle
 
 from construct.lib import *
 from construct.expr import *
@@ -2834,6 +2834,36 @@ class FocusedSeq(Construct):
         """ % (index, )
         code.append(block)
         return "%s(io, this)" % (fname,)
+
+
+@singleton
+class Pickled(Construct):
+    r"""
+    Preserves arbitrary Python objects.
+
+    Parses using `pickle.load() <https://docs.python.org/3/library/pickle.html#pickle.load>`_ and builds using `pickle.dump() <https://docs.python.org/3/library/pickle.html#pickle.dump>`_ functions, using default Pickle binary protocol. Size is undefined.
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+
+    Can propagate pickle.load() and pickle.dump() exceptions.
+
+    Example::
+
+        >>> x = [1, 2.3, {}]
+        >>> Pickled.build(x)
+        b'\x80\x03]q\x00(K\x01G@\x02ffffff}q\x01e.'
+        >>> Pickled.parse(_)
+        [1, 2.3, {}]
+    """
+
+    def _parse(self, stream, context, path):
+        return pickle.load(stream)
+
+    def _build(self, obj, stream, context, path):
+        pickle.dump(obj, stream)
+
+    def _emitdecompiled(self, code):
+        return "Pickled"
 
 
 @singleton

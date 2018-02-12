@@ -78,6 +78,8 @@ example = Struct(
     "error0" / If(False, Error),
     "focusedseq1" / FocusedSeq(1, Const(bytes(4)), Byte),
     "focusedseq2" / FocusedSeq("num", Const(bytes(4)), "num"/Byte),
+    "pickled_data" / Computed(b'\x80\x03]q\x00()K\x01G@\x02ffffff}q\x01]q\x02C\x01\x00q\x03X\x00\x00\x00\x00q\x04e.'),
+    "pickled" / RestreamData(this.pickled_data, Pickled),
     "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
     "numpy1" / RestreamData(this.numpy_data, Numpy),
     "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),

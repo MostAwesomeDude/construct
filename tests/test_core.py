@@ -554,6 +554,12 @@ def test_focusedseq():
     assert raises(FocusedSeq(this.missing, Pass).build, {}) == KeyError
     # assert raises(FocusedSeq(this.missing, Pass).sizeof) == SizeofError
 
+def test_pickled():
+    import pickle
+    obj = [(), 1, 2.3, {}, [], bytes(1), ""]
+    data = pickle.dumps(obj)
+    common(Pickled, data, obj)
+
 @xfail(not supportsnumpy, reason="numpy is not installed?")
 def test_numpy():
     import numpy

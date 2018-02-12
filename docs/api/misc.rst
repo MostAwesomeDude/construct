@@ -10,6 +10,7 @@ Core API: Miscellaneous
 .. autofunction:: construct.Check
 .. autofunction:: construct.Error
 .. autofunction:: construct.FocusedSeq
+.. autofunction:: construct.Pickled
 .. autofunction:: construct.Numpy
 .. autofunction:: construct.NamedTuple
 .. autofunction:: construct.Hex
