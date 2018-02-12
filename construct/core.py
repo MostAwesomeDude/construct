@@ -3329,8 +3329,7 @@ def IfThenElse(condfunc, thensubcon, elsesubcon):
     r"""
     If-then-else conditional construct, similar to ternary operator.
 
-    Parsing and building evaluates condition, and defers to either subcon depending on the value.
-    Size is computed the same way.
+    Parsing and building evaluates condition, and defers to either subcon depending on the value. Size is computed the same way.
 
     :param condfunc: bool or context lambda (or a truthy value)
     :param thensubcon: Construct instance, used if condition indicates True
