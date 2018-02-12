@@ -76,11 +76,9 @@ example = Struct(
     "const1" / Const(bytes(4)),
     "const2" / Const(0, Int32ub),
     "computed" / Computed(this.num),
-
     "index1" / Array(3, Index),
     "index2" / RestreamData(b"\x00", GreedyRange(Byte >> Index)),
     "index3" / RestreamData(b"\x00", RepeatUntil(True, Byte >> Index)),
-
     "rebuild" / Rebuild(Byte, len_(this.array1)),
     "default" / Default(Byte, 0),
     Check(this.num == 0),
@@ -156,9 +154,8 @@ example = Struct(
     # ProbeInto(this.num),
     # Debugger
 
-    # faulty list_ implementation, compiles into correct code?
-    # "items" / Computed([1,2,3]),
-    # "len_" / Computed(len_(this.items)),
+    "items1" / Computed([1,2,3]),
+    "len_" / Computed(len_(this.items1)),
 
     # faulty list_ implementation, compiles into correct code
     # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
