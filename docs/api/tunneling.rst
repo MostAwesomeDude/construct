@@ -8,5 +8,6 @@ Core API: Tunneling
 .. autofunction:: construct.Prefixed
 .. autofunction:: construct.PrefixedArray
 .. autofunction:: construct.RestreamData
+.. autofunction:: construct.TransformData
 .. autofunction:: construct.Checksum
 .. autofunction:: construct.Compressed

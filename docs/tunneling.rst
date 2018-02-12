@@ -57,6 +57,14 @@ RestreamData allows you to insert a field that parses some data that came either
 
 ::
 
+    >>> d = RestreamData(b"\xff", Byte)
+    >>> d.parse(b"")
+    255
+    >>> d.build(0)
+    b''
+
+::
+
     d = Struct(
         ...,
         "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
@@ -64,6 +72,24 @@ RestreamData allows you to insert a field that parses some data that came either
         ...,
     )
     d.parse(bytes(1000))
+
+
+TransformData allows you to process data before it gets into subcon (and after data left it) using simple bytes-to-bytes transformations. In fact, all core classes (like Bitwise) that use Restreamed also use TransformData. The only difference is that TransformData prefetches all bytes and transforms them in advance, but Restreamed fetches a unit at a time (few bytes usually). For example:
+
+::
+
+    >>> d = TransformData(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
+    >>> d.parse(b"\x00\x00")
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+::
+
+    # Bitwise implementation
+    try:
+        size = subcon.sizeof()
+        macro = TransformData(subcon, bytes2bits, size//8, bits2bytes, size//8)
+    except SizeofError:
+        macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
 
 
 Compression and checksuming

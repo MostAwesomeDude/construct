@@ -43,10 +43,13 @@ def test_bits2bytes():
     assert raises(bits2bytes, b"\x00") == ValueError
     assert raises(bits2bytes, b"\x00\x00\x00\x00\x00\x00\x00") == ValueError
 
-def test_swapbytes():
-    assert swapbytes(b"0000000011111111") == b"1111111100000000"
-    assert swapbytes(b"") == b""
-    assert raises(swapbytes, b"1") == ValueError
+def test_swapbytesinbits():
+    assert swapbytes(b"abcd") == b"dcba"
 
-def test_swapbits():
-    assert swapbits(b'\xf0') == b'\x0f'
+def test_swapbytesinbits():
+    assert swapbytesinbits(b"0000000011111111") == b"1111111100000000"
+    assert swapbytesinbits(b"") == b""
+    assert raises(swapbytesinbits, b"1") == ValueError
+
+def test_swapbitsinbytes():
+    assert swapbitsinbytes(b'\xf0') == b'\x0f'

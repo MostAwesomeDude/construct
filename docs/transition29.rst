@@ -59,6 +59,8 @@ Switch dropped `includekey` parameter, and cannot be embedded
 
 RestreamData added, in Tunneling
 
+TransformData added, in Tunneling
+
 ExprAdapter Restreamed Mapping* classes changed parameters order (decoders before encoders)
 
 OnDemand was renamed to LazyField

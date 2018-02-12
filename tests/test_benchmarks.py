@@ -392,6 +392,8 @@ def test_class_prefixedarray_build(benchmark):
     d = PrefixedArray(Byte, Byte)
     benchmark(d.build, [0]*8)
 
+# RestreamData
+# TransformData
 # Checksum
 # Compressed
 

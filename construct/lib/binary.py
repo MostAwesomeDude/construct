@@ -117,11 +117,23 @@ def bits2bytes(data):
 
 def swapbytes(data):
     r"""
-    Performs an endianness swap on a bit-string bytes. Its length must be multiple of 8.
+    Performs an endianness swap on byte-string.
 
     Example:
 
-        >>> swapbytes(b'0000000011111111')
+        >>> swapbytes(b'abcd')
+        b'dcba'
+    """
+    return data[::-1]
+
+
+def swapbytesinbits(data):
+    r"""
+    Performs an byte-swap within a bit-string. Its length must be multiple of 8.
+
+    Example:
+
+        >>> swapbytesinbits(b'0000000011111111')
         b'1111111100000000'
     """
     if len(data) & 7:
@@ -129,14 +141,14 @@ def swapbytes(data):
     return b"".join(data[i:i+8] for i in reversed(range(0,len(data),8)))
 
 
-SWAPBITS_CACHE = {i:bits2bytes(bytes2bits(int2byte(i))[::-1]) for i in range(256)}
-def swapbits(data):
+SWAPBITSINBYTES_CACHE = {i:bits2bytes(bytes2bits(int2byte(i))[::-1]) for i in range(256)}
+def swapbitsinbytes(data):
     r"""
-    Performs a bit-reversal on bytes.
+    Performs a bit-reversal within a bytes-string.
 
     Example:
 
         >>> swapbits(b'\xf0')
         b'\x0f'
     """
-    return b"".join(SWAPBITS_CACHE[b] for b in iterateints(data))
+    return b"".join(SWAPBITSINBYTES_CACHE[b] for b in iterateints(data))

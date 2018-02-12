@@ -178,6 +178,7 @@ __all__ = [
     'Terminated',
     'TerminatedError',
     'this',
+    'TransformData',
     'Tunnel',
     'Union',
     'UnionError',

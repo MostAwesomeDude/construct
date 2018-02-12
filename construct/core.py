@@ -818,7 +818,13 @@ def Bitwise(subcon):
         >>> d.sizeof()
         1
     """
-    macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
+
+    try:
+        size = subcon.sizeof()
+        macro = TransformData(subcon, bytes2bits, size//8, bits2bytes, size//8)
+    except SizeofError:
+        macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
+
     def _emitparse(self, code):
         if subcon.sizeof() % 8:
             raise ConstructError("Bitwise cannot compile with subcon size not a multiple of 8")
@@ -852,7 +858,13 @@ def Bytewise(subcon):
         >>> d.sizeof()
         1
     """
-    macro = Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n*8)
+
+    try:
+        size = subcon.sizeof()
+        macro = TransformData(subcon, bits2bytes, size*8, bytes2bits, size*8)
+    except SizeofError:
+        macro = Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n*8)
+
     def _emitparse(self, code):
         return "restream(bits2bytes(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof()*8, subcon._compileparse(code), )
     return CompilableMacro(macro, _emitparse)
@@ -4193,10 +4205,10 @@ def ByteSwapped(subcon):
 
         Int24ul <--> ByteSwapped(Int24ub) <--> BytesInteger(3, swapped=True) <--> ByteSwapped(BytesInteger(3))
     """
-    macro = Restreamed(subcon,
-        lambda s: s[::-1], subcon.sizeof(),
-        lambda s: s[::-1], subcon.sizeof(),
-        lambda n: n)
+
+    size = subcon.sizeof()
+    macro = TransformData(subcon, swapbytes, size, swapbytes, size)
+
     def _emitparse(self, code):
         return "restream(read_bytes(io, %s)[::-1], lambda io: %s)" % (subcon.sizeof(), subcon._compileparse(code), )
     return CompilableMacro(macro, _emitparse)
@@ -4220,12 +4232,15 @@ def BitsSwapped(subcon):
         >>>> BitsSwapped(d).parse(b"\x01")
         '\x01\x00\x00\x00\x00\x00\x00\x00'
     """
-    macro = Restreamed(subcon,
-        lambda s: swapbits(s), 1,
-        lambda s: swapbits(s), 1,
-        lambda n: n)
+
+    try:
+        size = subcon.sizeof()
+        macro = TransformData(subcon, swapbitsinbytes, size, swapbitsinbytes, size)
+    except SizeofError:
+        macro = Restreamed(subcon, swapbitsinbytes, 1, swapbitsinbytes, 1, lambda n: n)
+
     def _emitparse(self, code):
-        return "restream(swapbits(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof(), subcon._compileparse(code), )
+        return "restream(swapbitsinbytes(read_bytes(io, %s)), lambda io: %s)" % (subcon.sizeof(), subcon._compileparse(code), )
     return CompilableMacro(macro, _emitparse)
 
 
@@ -4316,8 +4331,8 @@ def PrefixedArray(lengthfield, subcon):
 
 
 class RestreamData(Subconstruct):
-    """
-    Parses a field on external data.
+    r"""
+    Parses a field on external data (but does not build).
 
     Parsing defers to subcon, but provides it a separate stream based on bytes data provided by datafunc (a bytes literal or context lambda). Building is no-op. Size is 0.
 
@@ -4328,10 +4343,14 @@ class RestreamData(Subconstruct):
 
     Example::
 
-        >>> RestreamData(b"\xff", Byte).parse(b"")
+        >>> d = RestreamData(b"\xff", Byte)
+        >>> d.parse(b"")
         255
+        >>> d.build(0)
+        b''
     """
     __slots__ = ["datafunc"]
+
     def __init__(self, datafunc, subcon):
         super(RestreamData, self).__init__(subcon)
         self.datafunc = datafunc
@@ -4351,6 +4370,59 @@ class RestreamData(Subconstruct):
 
     def _emitparse(self, code):
         return "restream(%r, lambda io: %s)" % (self.datafunc, self.subcon._compileparse(code), )
+
+
+class TransformData(Subconstruct):
+    r"""
+    Parses a field on transfored data (or transforms data after building).
+
+    Parsing reads a specified amount, processes data using a bytes-to-bytes decoding function, then parses subcon using those data. Building does build subcon into separate bytes, then processes using encoding encoding, then writes those data into main stream. Size is reported as `encodeamount`.
+
+    :param subcon: Construct instance
+    :param decodefunc: bytes-to-bytes function, applied before parsing subcon
+    :param decodeamount: integer, amount of bytes to read
+    :param encodefunc: bytes-to-bytes function, applied after building subcon
+    :param encodeamount: integer, amount of bytes to write
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises StreamError: subcon parsed less than `decodeamount` bytes
+    :raises StreamError: subcon build (and encoder transformed) more or less than `encodeamount` bytes
+
+    Can propagate any exception from the lambdas, possibly non-ConstructError.
+
+    Example::
+
+        >>> d = TransformData(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
+        >>> d.parse(b"\x00\x00")
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    """
+    __slots__ = ["decodefunc", "decodeamount", "encodefunc", "encodeamount"]
+
+    def __init__(self, subcon, decodefunc, decodeamount, encodefunc, encodeamount):
+        super(TransformData, self).__init__(subcon)
+        self.decodefunc = decodefunc
+        self.decodeamount = decodeamount
+        self.encodefunc = encodefunc
+        self.encodeamount = encodeamount
+
+    def _parse(self, stream, context, path):
+        data = self.decodefunc(_read_stream(stream, self.decodeamount))
+        stream2 = io.BytesIO(data)
+        ret = self.subcon._parse(stream2, context, path)
+        if stream2.read(1):
+            raise StreamError("decoding transformation did not consume all bytes")
+        return ret
+
+    def _build(self, obj, stream, context, path):
+        stream2 = io.BytesIO()
+        self.subcon._build(obj, stream2, context, path)
+        data = self.encodefunc(stream2.getvalue())
+        if len(data) != self.encodeamount:
+            raise StreamError("encoding transformation produced wrong amount of bytes")
+        _write_stream(stream, data)
+
+    def _sizeof(self, context, path):
+        return self.encodeamount
 
 
 class Checksum(Construct):
