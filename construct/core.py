@@ -671,14 +671,14 @@ class Compiled(Construct):
 
 class CompilableMacro(Subconstruct):
     """Used internally."""
-    __slots__ = ["compileparsefunc"]
+    __slots__ = ["emitparsefunc"]
 
-    def __init__(self, subcon, compileparsefunc):
+    def __init__(self, subcon, emitparsefunc):
         super(CompilableMacro, self).__init__(subcon)
-        self.compileparsefunc = compileparsefunc
+        self.emitparsefunc = emitparsefunc
 
     def _emitparse(self, code):
-        return self.compileparsefunc(self, code)
+        return self.emitparsefunc(self, code)
 
 
 class Decompiled(Construct):
