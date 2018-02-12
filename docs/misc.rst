@@ -312,6 +312,7 @@ b'\xff\x01'
 >>> IfThenElse(this.x > 0, VarInt, Byte).build(255, x=0)
 b'\xff'
 
+
 Switch
 ------
 
@@ -321,6 +322,38 @@ Branches the construction based on a return value from a function. This is a mor
 b'\x05'
 >>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, n=2)
 b'\x00\x00\x00\x05'
+
+
+EmbeddedSwitch
+----------------
+
+Switch is not embeddable, but this macro can be used to generate something that would be considered equivalent classes to an embedded Switch. Explanation is non-trivial and avilable on API page, but here is an example:
+
+.. warning:: Created construct is parse-only, it fails during building.
+
+::
+
+    d = EmbeddedSwitch(
+        this.peek.type,
+        Struct("type" / Byte),
+        {
+            0: Struct("name" / PascalString(Byte, "utf8")),
+            1: Struct("value" / Byte),
+        }
+    )
+
+    # generates essentially following
+    d = FocusedSeq("switch",
+        "peek" / Peek(Struct("type" / Byte)),
+        "switch" / Switch(this.peek.type, {
+            0: Struct("type" / Byte, "name" / PascalString(Byte, "utf8")),
+            1: Struct("type" / Byte, "value" / Byte),
+        }),
+    )
+
+    # both parse like following
+    assert d.parse(b"\x00\x00") == Container(type=0, name="")
+    assert d.parse(b"\x01\x00") == Container(type=1, value=0)
 
 
 StopIf

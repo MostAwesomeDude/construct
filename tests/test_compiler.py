@@ -8,6 +8,15 @@ pytestmark = skipif(not supportscompiler, reason="compiler and bytes() require 3
 
 
 
+embeddedswitch1 = EmbeddedSwitch(
+    this.peek.type,
+    Struct("type" / Byte),
+    {
+        0: Struct("name" / PascalString(Byte, "utf8")),
+        1: Struct("value" / Byte),
+    }
+)
+
 example = Struct(
     "num" / Byte,
 
@@ -103,6 +112,7 @@ example = Struct(
     "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
     "switch1" / Switch(this.num, {0 : Byte, 255 : Error}),
     "switch2" / Switch(this.num, {}, default=Byte),
+    # "embeddedswitch1" / embeddedswitch1,
     "stopif0" / StopIf(this.num == 255),
     "stopif1" / Struct(StopIf(this._.num == 0), Error),
     "stopif2" / Sequence(StopIf(this._.num == 0), Error),

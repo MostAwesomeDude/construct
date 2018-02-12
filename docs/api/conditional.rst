@@ -8,4 +8,5 @@ Core API: Conditional
 .. autofunction:: construct.If
 .. autofunction:: construct.IfThenElse
 .. autofunction:: construct.Switch
+.. autofunction:: construct.EmbeddedSwitch
 .. autofunction:: construct.StopIf

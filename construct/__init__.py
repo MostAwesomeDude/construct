@@ -74,6 +74,7 @@ __all__ = [
     'Default',
     'Double',
     'Embedded',
+    'EmbeddedSwitch',
     'Enum',
     'Error',
     'ExplicitError',

@@ -2317,7 +2317,7 @@ class Embedded(Subconstruct):
 
     .. warning::
 
-        Can only be used between Struct Sequence FocusedSeq Union, although they can be used interchangably, for example Struct can embed fields from a Sequence.
+        Can only be used between Struct Sequence FocusedSeq Union, although they can be used interchangably, for example Struct can embed fields from a Sequence. There is also :func:`~construct.core.EmbeddedSwitch` macro.
 
     Parsing building and size are deferred to subcon.
 
@@ -3426,6 +3426,51 @@ class Switch(Construct):
         else:
             return "%s.get(%r, lambda io,this: %s)(io, this)" % (fname, self.keyfunc, self.default._compileparse(code))
 
+
+def EmbeddedSwitch(selector, merged, mapping):
+    r"""
+    Macro that simulates embedding Switch, which under new embedding semantics is not possible. This macro does NOT produce a Switch, nor does allow Switch to be embeddable per-se. It generates classes that behave the same way as you would expect, only that.
+
+    .. warning:: Created construct is parse-only, it fails during building.
+
+    Both `merged` and all values in `mapping` must be Struct instances. Macro re-creates each struct by merging fields from both `merged` and respective instance, and creates a FocusedSeq that first parses Peek(merged) to obtain the selecting field, then parses a Switch over new re-created structs.
+
+    Selector field must reference "peek" before the field, see example.
+
+    :param selector: this expression, that references one of `merged` fields
+    :param merged: Struct instance
+    :param mapping: dict with values being Struct instances
+
+    Example::
+
+        d = EmbeddedSwitch(
+            this.peek.type,
+            Struct("type" / Byte),
+            {
+                0: Struct("name" / PascalString(Byte, "utf8")),
+                1: Struct("value" / Byte),
+            }
+        )
+
+        # generates essentially following
+        d = FocusedSeq("switch",
+            "peek" / Peek(Struct("type" / Byte)),
+            "switch" / Switch(this.peek.type, {
+                0: Struct("type" / Byte, "name" / PascalString(Byte, "utf8")),
+                1: Struct("type" / Byte, "value" / Byte),
+            }),
+        )
+
+        # both parse like following
+        assert d.parse(b"\x00\x00") == Container(type=0, name="")
+        assert d.parse(b"\x01\x00") == Container(type=1, value=0)
+    """
+
+    mapping2 = {key:Struct(*(list(merged.subcons) + list(sc.subcons))) for key,sc in mapping.items()}
+    return FocusedSeq("switch",
+        "peek" / Peek(merged),
+        "switch" / Switch(selector, mapping2),
+    )
 
 
 class StopIf(Construct):
