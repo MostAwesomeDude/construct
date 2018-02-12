@@ -581,6 +581,8 @@ def test_namedtuple():
     assert Coord.build(coord(49,50,51)) == b"123"
     assert Coord.sizeof() == 3
 
+    assert raises(lambda: NamedTuple("coord", "x y z", BitStruct("x"/Byte, "y"/Byte, "z"/Byte))) == NamedTupleError
+
 def test_hex():
     d = Hex(Int32ub)
     common(d, b"\x00\x00\x01\x02", 0x0102, 4)

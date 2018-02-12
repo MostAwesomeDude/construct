@@ -112,6 +112,7 @@ __all__ = [
     'max_',
     'min_',
     'NamedTuple',
+    'NamedTupleError',
     'Nibble',
     'NoneOf',
     'Numpy',

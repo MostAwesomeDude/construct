@@ -38,6 +38,8 @@ class IndexFieldError(ConstructError):
     pass
 class ExplicitError(ConstructError):
     pass
+class NamedTupleError(ConstructError):
+    pass
 class UnionError(ConstructError):
     pass
 class SelectError(ConstructError):
@@ -2858,7 +2860,7 @@ class NamedTuple(Adapter):
     :param subcon: Construct instance, either Struct Sequence Array GreedyRange
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises AdaptationError: subcon is neither Struct Sequence Array GreedyRange
+    :raises NamedTupleError: subcon is neither Struct Sequence Array GreedyRange
 
     Can propagate collections exceptions.
 
@@ -2874,7 +2876,7 @@ class NamedTuple(Adapter):
 
     def __init__(self, tuplename, tuplefields, subcon):
         if not isinstance(subcon, (Struct,Sequence,Array,GreedyRange)):
-            raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
+            raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRange")
         super(NamedTuple, self).__init__(subcon)
         self.tuplename = tuplename
         self.tuplefields = tuplefields
@@ -2886,14 +2888,14 @@ class NamedTuple(Adapter):
             return self.factory(**obj)
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return self.factory(*obj)
-        raise AdaptationError("subcon is neither Struct Sequence Array GreedyRangeGreedyRange")
+        raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRangeGreedyRange")
 
     def _encode(self, obj, context):
         if isinstance(self.subcon, Struct):
             return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name}
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return list(obj)
-        raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
+        raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRange")
 
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
@@ -2904,7 +2906,7 @@ class NamedTuple(Adapter):
             return "%s(**(%s))" % (fname, self.subcon._compileparse(code), )
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return "%s(*(%s))" % (fname, self.subcon._compileparse(code), )
-        raise AdaptationError("subcon is neither Struct Sequence Array GreedyRange")
+        raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRange")
 
 
 class Hex(Adapter):
