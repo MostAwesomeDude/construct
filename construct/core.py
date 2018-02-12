@@ -350,9 +350,9 @@ class Construct(object):
             assert version_string == %r
 
             def read_bytes(io, count):
-                assert count >= 0
+                if not count >= 0: raise StreamError
                 data = io.read(count)
-                assert len(data) == count
+                if not len(data) == count: raise StreamError
                 return data
             def restream(data, func):
                 return func(BytesIO(data))
@@ -2437,7 +2437,7 @@ class Const(Subconstruct):
     def _emitparse(self, code):
         code.append("""
             def parse_const(value, expected):
-                assert value == expected
+                if not value == expected: raise ConstError
                 return value
         """)
         return "parse_const(%s, %r)" % (self.subcon._compileparse(code), self.value,)
@@ -2667,7 +2667,7 @@ class Check(Construct):
     def _emitparse(self, code):
         code.append("""
             def parse_check(condition):
-                assert condition
+                if not condition: raise ValidationError
         """)
         return "parse_check(%r)" % (self.func,)
 
@@ -2707,7 +2707,7 @@ class Error(Construct):
     def _emitparse(self, code):
         code.append("""
             def parse_error():
-                assert False
+                raise ExplicitError
         """)
         return "parse_error()"
 
