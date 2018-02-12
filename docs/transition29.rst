@@ -81,6 +81,8 @@ RepeatError added
 
 IndexFieldError added
 
+CheckError added
+
 NamedTupleError added
 
 RawCopyError added

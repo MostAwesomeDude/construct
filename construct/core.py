@@ -36,6 +36,8 @@ class ConstError(ConstructError):
     pass
 class IndexFieldError(ConstructError):
     pass
+class CheckError(ConstructError):
+    pass
 class ExplicitError(ConstructError):
     pass
 class NamedTupleError(ConstructError):
@@ -2630,13 +2632,13 @@ class Default(Subconstruct):
 
 class Check(Construct):
     r"""
-    Checks for a condition, and raises ValidationError if the check fails.
+    Checks for a condition, and raises CheckError if the check fails.
 
     Parsing and building return nothing (but check the condition). Size is defined as 0. Stream is not affected by either operation.
 
     :param func: bool or context lambda, that gets run on parsing and building
 
-    :raises ValidationError: lambda returned false
+    :raises CheckError: lambda returned false
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -2654,12 +2656,12 @@ class Check(Construct):
     def _parse(self, stream, context, path):
         passed = self.func(context) if callable(self.func) else self.func
         if not passed:
-            raise ValidationError("check failed during parsing")
+            raise CheckError("check failed during parsing")
 
     def _build(self, obj, stream, context, path):
         passed = self.func(context) if callable(self.func) else self.func
         if not passed:
-            raise ValidationError("check failed during building")
+            raise CheckError("check failed during building")
 
     def _sizeof(self, context, path):
         return 0
@@ -2667,7 +2669,7 @@ class Check(Construct):
     def _emitparse(self, code):
         code.append("""
             def parse_check(condition):
-                if not condition: raise ValidationError
+                if not condition: raise CheckError
         """)
         return "parse_check(%r)" % (self.func,)
 

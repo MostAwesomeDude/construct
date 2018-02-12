@@ -56,6 +56,7 @@ __all__ = [
     'ByteSwapped',
     'Bytewise',
     'Check',
+    'CheckError',
     'Checksum',
     'ChecksumError',
     'CompilableMacro',

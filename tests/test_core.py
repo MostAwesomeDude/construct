@@ -522,9 +522,9 @@ def test_check():
     common(Check(True), b"", None, 0)
     common(Check(this.x == 255), b"", None, 0, x=255)
     common(Check(len_(this.a) == 3), b"", None, 0, a=[1,2,3])
-    assert raises(Check(False).parse, b"") == ValidationError
-    assert raises(Check(this.x == 255).parse, b"", x=0) == ValidationError
-    assert raises(Check(len_(this.a) == 3).parse, b"", a=[]) == ValidationError
+    assert raises(Check(False).parse, b"") == CheckError
+    assert raises(Check(this.x == 255).parse, b"", x=0) == CheckError
+    assert raises(Check(len_(this.a) == 3).parse, b"", a=[]) == CheckError
 
 def test_error():
     assert raises(Error.parse, b"") == ExplicitError
