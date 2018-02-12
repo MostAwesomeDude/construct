@@ -460,9 +460,6 @@ def test_repeatuntil():
     assert RepeatUntil(True, Byte).parse(b"\x00") == [0]
     assert RepeatUntil(True, Byte).build([0]) == b"\x00"
 
-def test_renamed():
-    common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)
-
 def test_const():
     common(Const(b"MZ"), b"MZ", b"MZ", 2)
     common(Const(b"****", Bytes(4)), b"****", b"****", 4)
@@ -1133,8 +1130,8 @@ def test_probeinto():
     Struct(ProbeInto(this.inner)).build({})
 
 def test_operators():
-    common(Struct(Renamed("new", Renamed("old", Byte))), b"\x01", Container(new=1), 1)
     common(Struct("new" / ("old" / Byte)), b"\x01", Container(new=1), 1)
+    common(Struct(Renamed(Renamed(Byte, newname="old"), newname="new")), b"\x01", Container(new=1), 1)
 
     common(Array(4, Byte), b"\x01\x02\x03\x04", [1,2,3,4], 4)
     common(Byte[4], b"\x01\x02\x03\x04", [1,2,3,4], 4)
@@ -1150,6 +1147,18 @@ def test_operators():
     common("count"/Byte + "items"/Byte[this.count] + Pass + Terminated, b"\x03\x01\x02\x03", Container(count=3)(items=[1,2,3]), SizeofError)
     common(Struct(Embedded(Struct(a=Byte)), Embedded(Struct(b=Byte)) ), b"\x01\x02", Container(a=1)(b=2), 2)
     common(Struct(a=Byte) + Struct(b=Byte), b"\x01\x02", Container(a=1)(b=2), 2)
+
+    d = Byte * "description"
+    assert d.docs == "description"
+    d = "description" * Byte
+    assert d.docs == "description"
+    """
+    description
+    """ * \
+    Byte
+    assert d.docs == "description"
+    d = Renamed(Renamed(Byte, newdocs="old"), newdocs="new")
+    assert d.docs == "new"
 
 def test_operators_issue_87():
     assert ("string_name" / Byte).parse(b"\x01") == 1

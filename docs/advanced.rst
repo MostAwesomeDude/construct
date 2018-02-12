@@ -176,3 +176,17 @@ Constructs can parse both in-memory data (bytes) and binary files:
 
 >>> with open('/dev/zero', 'rb') as f:
 ...     d.parse_stream(f)
+
+
+Documenting fields
+========================
+
+::
+
+    """
+    Full docstring with autor, email, links to RFC-alike pages.
+    """ * \
+    Struct(
+        "title" / CString("utf8"),
+        Padding(2) * "reserved, see 8.1",
+    )

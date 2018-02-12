@@ -189,10 +189,11 @@ class Construct(object):
 
     All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can be a string, or None by default. A single underscore "_" is a reserved name, used as up-level in nested containers. The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced. The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are often inherited from inner subconstructs but that depends on each class.
     """
-    __slots__ = ["name", "flagbuildnone", "flagembedded"]
+    __slots__ = ["name", "docs", "flagbuildnone", "flagembedded"]
 
     def __init__(self):
         self.name = None
+        self.docs = ""
         self.flagbuildnone = False
         self.flagembedded = False
 
@@ -500,9 +501,21 @@ class Construct(object):
         """
         Used for renaming subcons, usually part of a Struct, like Struct("index" / Byte).
         """
-        return Renamed(name, self)
+        return Renamed(self, newname=name)
 
     __rdiv__ = __rtruediv__
+
+    def __mul__(self, docs):
+        """
+        Used for adding docs (docstrings) to subcons, like "field" / Byte * "see chapter 13".
+        """
+        return Renamed(self, newdocs=docs)
+
+    def __rmul__(self, docs):
+        """
+        Used for adding docs (docstrings) to subcons, like "field" / Byte * "see chapter 13".
+        """
+        return Renamed(self, newdocs=docs)
 
     def __add__(self, other):
         """
@@ -2343,9 +2356,10 @@ class Renamed(Subconstruct):
         <Renamed: number>
     """
 
-    def __init__(self, newname, subcon):
+    def __init__(self, subcon, newname=None, newdocs=None):
         super(Renamed, self).__init__(subcon)
-        self.name = newname
+        self.name = newname if newname else subcon.name
+        self.docs = newdocs if newdocs else subcon.docs
 
     def _parse(self, stream, context, path):
         try:

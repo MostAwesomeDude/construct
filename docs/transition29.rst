@@ -17,6 +17,8 @@ All constructs: `parse build sizeof` methods take context entries ONLY as keywor
 
 All constructs: `compile benchmark testcompiled` methods were added (see `this chapter <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
 
+All constructs: operator * can be used for docstrings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
+
 Compiled CompilableMacro Decompiled added (used internally)
 
 String* classes require explicit encoding (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
