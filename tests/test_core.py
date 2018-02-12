@@ -1088,9 +1088,9 @@ def test_exprvalidator():
 
 def test_ipaddress_adapter_issue_95():
     class IpAddressAdapter(Adapter):
-        def _encode(self, obj, context):
+        def _encode(self, obj, context, path):
             return list(map(int, obj.split(".")))
-        def _decode(self, obj, context):
+        def _decode(self, obj, context, path):
             return "{0}.{1}.{2}.{3}".format(*obj)
     IpAddress = IpAddressAdapter(Byte[4])
 
@@ -1299,7 +1299,7 @@ def test_from_issue_244():
     class AddIndexes(Adapter):
         def __init__(self, subcon):
             super(AddIndexes, self).__init__(subcon)
-        def _decode(self, obj, context):
+        def _decode(self, obj, context, path):
             for i,con in enumerate(obj):
                 con.index = i
             return obj

@@ -63,6 +63,8 @@ TransformData added, in Tunneling
 
 ExprAdapter Restreamed Mapping* classes changed parameters order (decoders before encoders)
 
+Adapter-related classes changed parameters, added `path` to _encode _decode _validate
+
 OnDemand was renamed to LazyField
 
 LazyStruct LazySequence LazyRange removed

@@ -611,15 +611,15 @@ udp_header = Struct(
 #===============================================================================
 
 class DnsStringAdapter(Adapter):
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         return ".".join(obj[:-1])
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         return obj.split(".") + [""]
 
 class DnsNamesAdapter(Adapter):
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         return [x.label if x.islabel else x.pointer & 0x3fff for x in obj]
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         return [dict(ispointer=1,pointer=x|0xc000) if isinstance(x,int) else dict(islabel=1,label=x) for x in obj]
 
 dns_record_class = Enum(Int16ub,

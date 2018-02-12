@@ -14,9 +14,9 @@ import time
 
 
 class UTCTimeStampAdapter(Adapter):
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         return time.ctime(obj)
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         return int(time.mktime(time.strptime(obj)))
 
 UTCTimeStamp = UTCTimeStampAdapter(Int32ul)
@@ -37,7 +37,7 @@ class NamedSequence(Adapter):
         self.mapping = mapping
         self.rev_mapping = dict((v, k) for k, v in mapping.items())
 
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         obj2 = [None] * len(obj)
         for name, value in obj.items():
             if name in self.rev_mapping:
@@ -52,7 +52,7 @@ class NamedSequence(Adapter):
             obj2[index] = value
         return obj2
 
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         obj2 = Container()
         for i, item in enumerate(obj):
             if i in self.mapping:

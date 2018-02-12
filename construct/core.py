@@ -578,12 +578,12 @@ class Adapter(Subconstruct):
     :param subcon: Construct instance
     """
     def _parse(self, stream, context, path):
-        return self._decode(self.subcon._parse(stream, context, path), context)
+        return self._decode(self.subcon._parse(stream, context, path), context, path)
     def _build(self, obj, stream, context, path):
-        return self.subcon._build(self._encode(obj, context), stream, context, path)
-    def _decode(self, obj, context):
+        return self.subcon._build(self._encode(obj, context, path), stream, context, path)
+    def _decode(self, obj, context, path):
         raise NotImplementedError
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         raise NotImplementedError
 
 
@@ -595,8 +595,8 @@ class SymmetricAdapter(Adapter):
 
     :param subcon: Construct instance
     """
-    def _encode(self, obj, context):
-        return self._decode(obj, context)
+    def _encode(self, obj, context, path):
+        return self._decode(obj, context, path)
 
 
 class Validator(SymmetricAdapter):
@@ -607,11 +607,11 @@ class Validator(SymmetricAdapter):
 
     :param subcon: Construct instance
     """
-    def _decode(self, obj, context):
-        if not self._validate(obj, context):
+    def _decode(self, obj, context, path):
+        if not self._validate(obj, context, path):
             raise ValidationError("object failed validation: %s" % (obj,))
         return obj
-    def _validate(self, obj, context):
+    def _validate(self, obj, context, path):
         raise NotImplementedError
 
 
@@ -1368,14 +1368,14 @@ class StringEncoded(Adapter):
         super(StringEncoded, self).__init__(subcon)
         self.encoding = selectencoding(encoding)
 
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         encoding = self.encoding
         if isinstance(encoding, str):
             return obj.decode(encoding)
         if isinstance(encoding, StringsAsBytes.__class__):
             return obj
 
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         encoding = self.encoding
         if isinstance(encoding, str):
             if not isinstance(obj, unicodestringtype):
@@ -1684,13 +1684,13 @@ class Enum(Adapter):
             return name
         return super(Enum, self).__getattr__(name)
 
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         try:
             return self.decmapping[obj]
         except KeyError:
             raise MappingError("parsing failed, no mapping for %r" % (obj,))
 
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         try:
             if isinstance(obj, int):
                 return obj
@@ -1768,13 +1768,13 @@ class FlagsEnum(Adapter):
             return BitwisableString(name)
         return super(FlagsEnum, self).__getattr__(name)
 
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         obj2 = Container()
         for name,value in self.flags.items():
             obj2[BitwisableString(name)] = bool(obj & value)
         return obj2
 
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         try:
             if isinstance(obj, integertypes):
                 return obj
@@ -1827,7 +1827,7 @@ class Mapping(Adapter):
             return name
         return super(Mapping, self).__getattr__(name)
 
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         try:
             return self.decoding[obj]
         except (KeyError, TypeError):
@@ -1837,7 +1837,7 @@ class Mapping(Adapter):
                 return obj
             return self.decdefault
 
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         try:
             return self.encoding[obj]
         except (KeyError, TypeError):
@@ -2959,14 +2959,14 @@ class NamedTuple(Adapter):
         self.tuplefields = tuplefields
         self.factory = collections.namedtuple(tuplename, tuplefields)
 
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         if isinstance(self.subcon, Struct):
             return self.factory(**obj)
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return self.factory(*obj)
         raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRangeGreedyRange")
 
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         if isinstance(self.subcon, Struct):
             return {sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name}
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
@@ -3008,11 +3008,10 @@ class Hex(Adapter):
         >>> print(obj)
         unhexlify('00000102')
     """
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         if isinstance(obj, integertypes):
             obj = HexDisplayedInteger(obj)
-            # TODO: fix path???
-            obj.fmtstr = "0%sX" % (2 * self.subcon._sizeof(context, ""))
+            obj.fmtstr = "0%sX" % (2 * self.subcon._sizeof(context, path))
             return obj
         if isinstance(obj, bytestringtype):
             return HexDisplayedBytes(obj)
@@ -3020,7 +3019,7 @@ class Hex(Adapter):
             return HexDisplayedDict(obj)
         return obj
 
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         return obj
 
     def _emitdecompiled(self, code):
@@ -3052,14 +3051,14 @@ class HexDump(Adapter):
         0000   00 00 01 02                                       ....
         ''')
     """
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         if isinstance(obj, bytestringtype):
             return HexDumpDisplayedBytes(obj)
         if isinstance(obj, dict):
             return HexDumpDisplayedDict(obj)
         return obj
 
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         return obj
 
     def _emitdecompiled(self, code):
@@ -4653,9 +4652,8 @@ class ExprAdapter(Adapter):
     __slots__ = ["_decode","_encode"]
     def __init__(self, subcon, decoder, encoder):
         super(ExprAdapter, self).__init__(subcon)
-        ident = lambda obj,ctx: obj
-        self._decode = decoder if callable(decoder) else ident
-        self._encode = encoder if callable(encoder) else ident
+        self._decode = lambda obj,ctx,path: decoder(obj,ctx)
+        self._encode = lambda obj,ctx,path: encoder(obj,ctx)
 
 
 class ExprSymmetricAdapter(ExprAdapter):
@@ -4674,9 +4672,8 @@ class ExprSymmetricAdapter(ExprAdapter):
     """
     def __init__(self, subcon, encoder):
         super(ExprAdapter, self).__init__(subcon)
-        ident = lambda obj,ctx: obj
-        self._decode = encoder if callable(encoder) else ident
-        self._encode = encoder if callable(encoder) else ident
+        self._decode = lambda obj,ctx,path: encoder(obj,ctx)
+        self._encode = lambda obj,ctx,path: encoder(obj,ctx)
 
 
 class ExprValidator(Validator):
@@ -4693,7 +4690,7 @@ class ExprValidator(Validator):
     """
     def __init__(self, subcon, validator):
         super(ExprValidator, self).__init__(subcon)
-        self._validate = validator
+        self._validate = lambda obj,ctx,path: validator(obj,ctx)
 
 
 def OneOf(subcon, valids):
@@ -4776,9 +4773,9 @@ class Slicing(Adapter):
         self.stop = stop
         self.step = step
         self.empty = empty
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         return obj[self.start:self.stop:self.step]
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         if self.start is None:
             return obj
         elif self.stop is None:
@@ -4809,9 +4806,9 @@ class Indexing(Adapter):
         self.count = count
         self.index = index
         self.empty = empty
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         return obj[self.index]
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         output = [self.empty] * self.count
         output[self.index] = obj
         return output
