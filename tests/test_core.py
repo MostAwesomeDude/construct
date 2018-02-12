@@ -147,6 +147,7 @@ def test_bytesinteger():
     common(BytesInteger(4, signed=True), b"\xff\xff\xff\xff", -1, 4)
     assert raises(BytesInteger(this.missing).sizeof) == SizeofError
     assert raises(BytesInteger(4, signed=False).build, -1) == IntegerError
+    common(BytesInteger(0), b"", 0, 0)
 
 def test_bitsinteger():
     assert BitsInteger(8).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == 255
@@ -156,6 +157,7 @@ def test_bitsinteger():
     assert BitsInteger(8, signed=True).build(-1) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
     assert raises(BitsInteger(this.missing).sizeof) == SizeofError
     assert raises(BitsInteger(8, signed=False).build, -1) == IntegerError
+    common(BitsInteger(0), b"", 0, 0)
 
 def test_varint():
     common(VarInt, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10", 2**123, SizeofError)

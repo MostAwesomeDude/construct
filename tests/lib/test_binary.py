@@ -3,25 +3,23 @@ from construct.lib.binary import *
 
 
 def test_integer2bits():
+    assert integer2bits(0, 0) == b""
     assert integer2bits(19, 5) == b"\x01\x00\x00\x01\x01"
     assert integer2bits(19, 8) == b'\x00\x00\x00\x01\x00\x00\x01\x01'
     assert integer2bits(19, 3) == b'\x00\x01\x01'
     assert integer2bits(-13, 5) == b"\x01\x00\x00\x01\x01"
     assert integer2bits(-13, 8) == b"\x01\x01\x01\x01\x00\x00\x01\x01"
-    assert raises(integer2bits, 19, 0) == ValueError
     assert raises(integer2bits, 19, -1) == ValueError
-    assert raises(integer2bits, -19, 0) == ValueError
     assert raises(integer2bits, -19, -1) == ValueError
 
 def test_integer2bytes():
+    assert integer2bytes(0, 0) == b""
     assert integer2bytes(0, 4) == b"\x00\x00\x00\x00"
     assert integer2bytes(1, 4) == b"\x00\x00\x00\x01"
     assert integer2bytes(255, 4) == b"\x00\x00\x00\xff"
     assert integer2bytes(-1, 4) == b"\xff\xff\xff\xff"
     assert integer2bytes(-255, 4) == b"\xff\xff\xff\x01"
-    assert raises(integer2bytes, 19, 0) == ValueError
     assert raises(integer2bytes, 19, -1) == ValueError
-    assert raises(integer2bytes, -19, 0) == ValueError
     assert raises(integer2bytes, -19, -1) == ValueError
 
 def test_bits2integer():

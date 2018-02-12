@@ -10,8 +10,8 @@ def integer2bits(number, width):
         >>> integer2bits(19, 8)
         b'\x00\x00\x00\x01\x00\x00\x01\x01'
     """
-    if width < 1:
-        raise ValueError("width must be positive")
+    if width < 0:
+        raise ValueError("width must be non-negative")
     number = int(number)
     if number < 0:
         number += 1 << width
@@ -33,8 +33,8 @@ def integer2bytes(number, width):
         >>> integer2bytes(19,4)
         '\x00\x00\x00\x13'
     """
-    if width < 1:
-        raise ValueError("width must be positive")
+    if width < 0:
+        raise ValueError("width must be non-negative")
     number = int(number)
     if number < 0:
         number += 1 << (width * 8)

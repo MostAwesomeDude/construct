@@ -915,7 +915,7 @@ class BytesInteger(Construct):
     :param swapped: bool, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: given a negative value when field is not signed, or not an integer
+    :raises IntegerError: lenght is negative, given a negative value when field is not signed, or not an integer
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -938,7 +938,11 @@ class BytesInteger(Construct):
         self.swapped = swapped
 
     def _parse(self, stream, context, path):
-        length = self.length(context) if callable(self.length) else self.length
+        length = self.length
+        if callable(length):
+            length = length(context)
+        if length < 0:
+            raise IntegerError("length must be non-negative")
         data = _read_stream(stream, length)
         if self.swapped:
             data = data[::-1]
@@ -949,7 +953,11 @@ class BytesInteger(Construct):
             raise IntegerError("value is not an integer")
         if obj < 0 and not self.signed:
             raise IntegerError("value is negative, but field is not signed", obj)
-        length = self.length(context) if callable(self.length) else self.length
+        length = self.length
+        if callable(length):
+            length = length(context)
+        if length < 0:
+            raise IntegerError("length must be non-negative")
         data = integer2bytes(obj, length)
         if self.swapped:
             data = data[::-1]
@@ -957,7 +965,10 @@ class BytesInteger(Construct):
 
     def _sizeof(self, context, path):
         try:
-            return self.length(context) if callable(self.length) else self.length
+            length = self.length
+            if callable(length):
+                length = length(context)
+            return length
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
 
@@ -980,7 +991,7 @@ class BitsInteger(Construct):
     :param swapped: bool, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: given a negative value when field is not signed, or not an integer
+    :raises IntegerError: lenght is negative, given a negative value when field is not signed, or not an integer
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -1003,7 +1014,11 @@ class BitsInteger(Construct):
         self.swapped = swapped
 
     def _parse(self, stream, context, path):
-        length = self.length(context) if callable(self.length) else self.length
+        length = self.length
+        if callable(length):
+            length = length(context)
+        if length < 0:
+            raise IntegerError("length must be non-negative")
         data = _read_stream(stream, length)
         if self.swapped:
             if length & 7:
@@ -1016,7 +1031,11 @@ class BitsInteger(Construct):
             raise IntegerError("value is not an integer")
         if obj < 0 and not self.signed:
             raise IntegerError("value is negative, but field is not signed", obj)
-        length = self.length(context) if callable(self.length) else self.length
+        length = self.length
+        if callable(length):
+            length = length(context)
+        if length < 0:
+            raise IntegerError("length must be non-negative")
         data = integer2bits(obj, length)
         if self.swapped:
             if length & 7:
@@ -1026,7 +1045,10 @@ class BitsInteger(Construct):
 
     def _sizeof(self, context, path):
         try:
-            return self.length(context) if callable(self.length) else self.length
+            length = self.length
+            if callable(length):
+                length = length(context)
+            return length
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
 
