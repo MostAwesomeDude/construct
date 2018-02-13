@@ -47,6 +47,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
+        "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Software Development :: Build Tools",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
