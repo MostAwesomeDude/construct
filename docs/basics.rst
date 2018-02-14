@@ -151,7 +151,7 @@ Container(data=b'1234')
 
 As you can see, Containers provide human-readable representations of the data, which is very important for large data structures.
 
-.. seealso:: The :func:`~construct.core.Embedded` macro.
+.. note:: Embedded structs should not be named, see :class:`~construct.core.Embedded` .
 
 
 Sequences

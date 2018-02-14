@@ -2,6 +2,8 @@
 Compilation feature
 ======================
 
+.. warning:: This feature is mostly implemented but still lacking Cython, which would make it a lot faster. Consider this a work in progress.
+
 Overall
 =========
 
@@ -23,7 +25,7 @@ Restrictions
 
 Compiled classes only parse faster, building and sizeof defers to core classes
 
-AssertionError and standard hierarchy exceptions can be raised (core classes are resticted to ConstructError and its derivatives)
+AssertionError and standard hierarchy exceptions can be raised (core classes are resticted to ConstructError-derivatives)
 
 Lambdas (unlike `this` expressions) are not compilable
 
@@ -39,7 +41,7 @@ Adapters and validators, and mappings are in general not compilable
 
 Restreamed Rebuffered are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
 
-Checksum is not compilable, because it uses lambdas (not `this` expressions)
+TransformData Checksum are not compilable, because they use lambdas (not `this` expressions)
 
 Lazy* classes are not compilable
 

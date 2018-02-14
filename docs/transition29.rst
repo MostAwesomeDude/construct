@@ -2,6 +2,8 @@
 Transition to 2.9
 =================
 
+.. warning:: Construct is undergoing heavy changes at the moment, expect unstable API for about a month.
+
 Overall
 =======
 
@@ -31,15 +33,11 @@ Enum FlagsEnum can merge labels from IntEnum IntFlag (enum module), but dropped 
 
 Enum FlagsEnum can build from integers and labels (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
-Enum FlagsEnum expose labels as attributes (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
-
-Enum FlagsEnum attributes are bitwisable strings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+Enum FlagsEnum expose labels as attributes, as bitwisable strings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
 Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
 
 Struct Sequence Union FocusedSeq are supporting new embedding semantics (see `this page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
-
-EmbeddedSwitch added, in Conditional
 
 EmbeddedBitStruct removed
 
@@ -53,21 +51,23 @@ Pickled added, in Miscellaneous
 
 Hex HexDump reimplemented (see `this page <https://construct.readthedocs.io/en/latest/misc.html#hex-and-hexdump>`_)
 
-If IfThenElse parameter renamed `predicate` to `condfunc`
+If IfThenElse parameter renamed `predicate` to `condfunc`, and cannot be embedded
 
 Switch dropped `includekey` parameter, and cannot be embedded
+
+EmbeddedSwitch added, in Conditional
 
 RestreamData added, in Tunneling
 
 TransformData added, in Tunneling
 
-ExprAdapter Restreamed Mapping* classes changed parameters order (decoders before encoders)
+ExprAdapter Mapping Restreamed changed parameters order (decoders before encoders)
 
-Adapter-related classes changed parameters, added `path` to _encode _decode _validate
-
-OnDemand was renamed to LazyField
+Adapter-related classes changed parameters, added `path` to `_encode _decode _validate`
 
 LazyStruct LazySequence LazyRange removed
+
+OnDemand was renamed to LazyField
 
 FlagsContainer removed
 
@@ -85,7 +85,7 @@ StringError can be raised by most classes, when expected bytes but given unicode
 
 BitIntegerError was replaced with IntegerError
 
-Struct Sequence can raise IndexError and KeyError when dictionaries are missing entries
+Struct Sequence can raise IndexError KeyError when dictionaries are missing entries
 
 RepeatError added
 

@@ -160,7 +160,7 @@ Both Enum and FlagsEnum support merging labels from IntEnum and IntFlag (enum mo
     FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
 
 
-Processing files (or data)
+Processing files
 ===========================
 
 .. warning::
@@ -180,6 +180,8 @@ Constructs can parse both in-memory data (bytes) and binary files:
 
 Documenting fields
 ========================
+
+Top-most structures should have elaborate descriptions, documenting who made them and from what specifications. Individual fields can also have docstrings, but field names should be descriptive, not the docstrings.
 
 ::
 
