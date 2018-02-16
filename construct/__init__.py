@@ -169,7 +169,6 @@ __all__ = [
     'Switch',
     'SwitchError',
     'SymmetricAdapter',
-    'SymmetricMapping',
     'Tell',
     'Terminated',
     'TerminatedError',

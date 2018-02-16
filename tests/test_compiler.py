@@ -58,8 +58,7 @@ example = Struct(
     "flag" / Flag,
     "enum" / Enum(Byte, zero=0),
     "flagsenum" / FlagsEnum(Byte, zero=0, one=1),
-    # Mapping
-    # SymmetricMapping
+    "mapping" / Mapping(Byte, {"zero":0}),
 
     "struct" / Struct("field" / Byte),
     "embeddedstruct" / Embedded(Struct("embeddedfield1" / Byte)),

@@ -316,6 +316,10 @@ def test_flagsenum_enum36():
     common(FlagsEnum(Byte, E, F), b"\x02", Container(a=False,b=True), 1)
     common(FlagsEnum(Byte, E, F), b"\x03", Container(a=True,b=True), 1)
 
+def test_mapping():
+    d = Mapping(Byte, {"zero":0})
+    common(d, b"\x00", "zero", 1)
+
 def test_struct():
     common(Struct(), b"", Container(), 0)
     common(Struct("a"/Int16ul, "b"/Byte), b"\x01\x00\x02", Container(a=1,b=2), 3)

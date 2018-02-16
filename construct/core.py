@@ -1765,69 +1765,40 @@ class FlagsEnum(Adapter):
 
 class Mapping(Adapter):
     r"""
-    Adapter that maps objects to other objects. Translates objects before parsing and before building.
+    Adapter that maps objects to other objects. Translates objects after parsing parsing and before building. Can for example, be used to translate between enum34 objects and strings, but Enum class supports enum34 already and is recommended.
 
-    .. note:: Deprecated.
+    :param subcon: Construct instance
+    :param mapping: dict, for encoding (building) mapping
 
-    This class supports exposing member labels as attributes, like Enum FlagsEnum.
+    Example::
 
-    :param subcon: Construct instance, subcon to map to/from
-    :param decoding: dict, for decoding (parsing) mapping
-    :param encoding: dict, for encoding (building) mapping
-    :param decdefault: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
-    :param encdefault: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
+        >>> d = Mapping(Byte, {"zero":0})
+        >>> d.parse(b"\x00")
+        'zero'
     """
-    __slots__ = ["encoding", "decoding", "encdefault", "decdefault"]
+    __slots__ = ["decmapping", "encmapping"]
 
-    def __init__(self, subcon, decoding, encoding, decdefault=NotImplemented, encdefault=NotImplemented):
+    def __init__(self, subcon, mapping):
         super(Mapping, self).__init__(subcon)
-        self.decoding = decoding
-        self.encoding = encoding
-        self.decdefault = decdefault
-        self.encdefault = encdefault
-
-    def __getattr__(self, name):
-        if name in self.encoding:
-            return name
-        return super(Mapping, self).__getattr__(name)
+        self.decmapping = dict((v,k) for k,v in mapping.items())
+        self.encmapping = mapping
 
     def _decode(self, obj, context, path):
         try:
-            return self.decoding[obj]
+            return self.decmapping[obj]
         except (KeyError, TypeError):
-            if self.decdefault is NotImplemented:
-                raise MappingError("parsing failed, no decoding mapping for %r" % (obj,))
-            if self.decdefault is Pass:
-                return obj
-            return self.decdefault
+            raise MappingError("parsing failed, no decoding mapping for %r" % (obj,))
 
     def _encode(self, obj, context, path):
         try:
-            return self.encoding[obj]
+            return self.encmapping[obj]
         except (KeyError, TypeError):
-            if self.encdefault is NotImplemented:
-                raise MappingError("building failed, no encoding mapping for %r" % (obj,))
-            if self.encdefault is Pass:
-                return obj
-            return self.encdefault
+            raise MappingError("building failed, no encoding mapping for %r" % (obj,))
 
-
-def SymmetricMapping(subcon, mapping, default=NotImplemented):
-    r"""
-    This is just a macro around :class:`~construct.core.Mapping`.
-
-    .. note:: Deprecated.
-
-    :param subcon: Construct instance, subcon to map to/from
-    :param mapping: dict, for decoding (parsing) mapping
-    :param default: object, default return value when object is not found in the mapping, if no object is given then exception is raised, if ``Pass`` is used, the unmapped object is passed as-is
-    """
-    return Mapping(subcon,
-        decoding = dict((v,k) for k,v in mapping.items()),
-        encoding = mapping,
-        decdefault = default,
-        encdefault = default,
-    )
+    def _emitparse(self, code):
+        fname = "factory_%s" % code.allocateId()
+        code.append("%s = dict(%r)" % (fname, list(self.decmapping.items()), ))
+        return "%s[%s]" % (fname, self.subcon._compileparse(code), )
 
 
 #===============================================================================

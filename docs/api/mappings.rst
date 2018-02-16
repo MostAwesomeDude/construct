@@ -6,4 +6,3 @@ Core API: Mappings
 .. autofunction:: construct.Enum
 .. autofunction:: construct.FlagsEnum
 .. autofunction:: construct.Mapping
-.. autofunction:: construct.SymmetricMapping
