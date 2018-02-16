@@ -65,9 +65,9 @@ ExprAdapter Mapping Restreamed changed parameters order (decoders before encoder
 
 Adapter-related classes changed parameters, added `path` to `_encode _decode _validate`
 
-LazyStruct LazySequence LazyRange removed
+LazyStruct LazySequence LazyRange LazyField(OnDemand) removed
 
-OnDemand was renamed to LazyField
+LazyBound remains
 
 FlagsContainer removed
 

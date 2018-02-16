@@ -1028,14 +1028,6 @@ def test_rebuffered():
     assert raises(Rebuffered(Byte).sizeof) == None
     assert raises(Rebuffered(VarInt).sizeof) == SizeofError
 
-def test_lazyfield():
-    assert LazyField(Byte).parse(b"\x01garbage")() == 1
-    assert LazyField(Byte).build(1) == b"\x01"
-    assert LazyField(Byte).sizeof() == 1
-
-    parseret = LazyField(Byte).parse(b"\x01garbage")
-    assert LazyField(Byte).build(parseret) == b"\x01"
-
 def test_lazybound():
     common(LazyBound(lambda ctx: Byte), b"\x01", 1, 1)
 

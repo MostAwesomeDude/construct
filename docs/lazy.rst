@@ -2,18 +2,7 @@
 Lazy parsing
 ============
 
-
-LazyField
---------
-
-There is a different approach to lazy parsing, where only one field is made lazy. Parsing returns a parameterless lambda that when called, returns the parsed data. Right now, each time the lambda is called the object is parsed again, so if the inner subcon is non-deterministic, each parsing may return a different object. Builds from a parsed object or a lambda.
-
->>> LazyField(Byte).parse(b"\xff")
-<function LazyField._parse.<locals>.<lambda> at 0x7fdc241cfc80>
->>> _()
-255
->>> LazyField(Byte).build(16)
-b'\x10'
+.. note:: There is incoming effort to add truly lazy parsing (like Struct). Stay tuned. Feature request at `Issue #549 <https://github.com/construct/construct/issues/549>`_ .
 
 
 LazyBound

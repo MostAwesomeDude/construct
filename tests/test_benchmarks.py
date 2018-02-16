@@ -543,7 +543,6 @@ def test_class_prefixedarray_build(benchmark):
 # Checksum
 # Compressed
 
-# LazyField
 # LazyBound
 
 # ExprAdapter

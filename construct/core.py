@@ -4525,55 +4525,6 @@ class Rebuffered(Subconstruct):
 #===============================================================================
 # lazy equivalents
 #===============================================================================
-class LazyField(Subconstruct):
-    r"""
-    Allows for lazy parsing of one field.
-
-    Parsing returns a parameterless lambda that when called, parses subcon at then-current stream offset and returns parsed value. Object is cached after first parsing, so non-deterministic subcons will be affected. Builds from both the parameterless lambda and subcon acceptable value. Size is same as subcon, unless it raises SizeofError.
-
-    .. note:: Works only with fixed size subcon.
-
-    :param subcon: Construct instance, must be fixed size
-
-    :raises StreamError: stream is not seekable and tellable
-
-    Example::
-
-        >>> d = LazyField(Byte)
-        >>> d.parse(b"\xff")
-        <function LazyField._parse.<locals>.<lambda> at 0x7fdc241cfc80>
-        >>> _()
-        255
-        >>> d.build(255)
-        b'\xff'
-
-        Can also re-build from the lambda returned at parsing.
-
-        >>> d.parse(b"\xff")
-        <function LazyField._parse.<locals>.<lambda> at 0x7fcbd9855f28>
-        >>> d.build(_)
-        b'\xff'
-    """
-
-    def _parse(self, stream, context, path):
-        offset = _tell_stream(stream)
-        _seek_stream(stream, self.subcon._sizeof(context, path), 1)
-        cache = {}
-        def effectuate():
-            if not cache:
-                fallback = _tell_stream(stream)
-                _seek_stream(stream, offset)
-                obj = self.subcon._parse(stream, context, path)
-                _seek_stream(stream, fallback)
-                cache["value"] = obj
-            return cache["value"]
-        return effectuate
-
-    def _build(self, obj, stream, context, path):
-        obj = obj() if callable(obj) else obj
-        return self.subcon._build(obj, stream, context, path)
-
-
 class LazyBound(Construct):
     r"""
     Lazy-bound construct that binds to the construct only at runtime. Useful for recursive data structures (like linked-lists or trees), where a construct needs to refer to itself (while it does not exist yet).

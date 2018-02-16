@@ -102,7 +102,6 @@ __all__ = [
     'Int',
     'IntegerError',
     'LazyBound',
-    'LazyField',
     'len_',
     'lib',
     'list_',
