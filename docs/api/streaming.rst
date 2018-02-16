@@ -8,5 +8,3 @@ Core API: Streaming
 .. autofunction:: construct.Tell
 .. autofunction:: construct.Pass
 .. autofunction:: construct.Terminated
-.. autofunction:: construct.Restreamed
-.. autofunction:: construct.Rebuffered

@@ -471,7 +471,6 @@ def test_class_peek_build(benchmark):
 # Tell
 # Pass
 # Terminated
-# Restreamed
 # Rebuffered
 
 def test_class_rawcopy_parse(benchmark):
@@ -540,6 +539,7 @@ def test_class_prefixedarray_build(benchmark):
 
 # RestreamData
 # TransformData
+# Restreamed
 # Checksum
 # Compressed
 

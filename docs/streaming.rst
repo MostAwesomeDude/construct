@@ -34,11 +34,7 @@ Tell checks the current stream position and returns it, also putting it into the
 
 .. autofunction:: construct.core.Terminated
 
-
 Stream wrappers
 ===================
 
 .. autoclass:: construct.core.Restreamed
-
-.. autoclass:: construct.core.Rebuffered
-

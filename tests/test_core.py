@@ -855,27 +855,6 @@ def test_terminated():
     assert raises(Struct("end"/Terminated).parse, b"x") == TerminatedError
     assert raises(BitStruct("end"/Terminated).parse, b"x") == TerminatedError
 
-def test_restreamed():
-    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
-    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
-    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).sizeof() == 2
-    assert raises(Restreamed(VarInt, ident, 1, ident, 1, ident).sizeof) == SizeofError
-    assert Restreamed(Bytes(2), lambda b: b*2, 1, None, None, None).parse(b"a") == b"aa"
-    assert Restreamed(Bytes(1), None, None, lambda b: b*2, 1, None).build(b"a") == b"aa"
-    assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
-
-def test_restreamed_partial_read():
-    d = Restreamed(Bytes(255), ident, 1, ident, 1, ident)
-    assert raises(d.parse, b"") == StreamError
-
-def test_rebuffered():
-    data = b"0" * 1000
-    assert Rebuffered(Array(1000,Byte)).parse_stream(io.BytesIO(data)) == [48]*1000
-    assert Rebuffered(Array(1000,Byte), tailcutoff=50).parse_stream(io.BytesIO(data)) == [48]*1000
-    assert Rebuffered(Byte).sizeof() == 1
-    assert raises(Rebuffered(Byte).sizeof) == None
-    assert raises(Rebuffered(VarInt).sizeof) == SizeofError
-
 def test_rawcopy():
     assert RawCopy(Byte).parse(b"\xff") == dict(data=b"\xff", value=255, offset1=0, offset2=1, length=1)
     assert RawCopy(Byte).build(dict(data=b"\xff")) == b"\xff"
@@ -953,6 +932,19 @@ def test_transformdata():
     d = TransformData(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
     common(d, b"\x00"*2, b"\x00"*16, 2)
 
+def test_restreamed():
+    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
+    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
+    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).sizeof() == 2
+    assert raises(Restreamed(VarInt, ident, 1, ident, 1, ident).sizeof) == SizeofError
+    assert Restreamed(Bytes(2), lambda b: b*2, 1, None, None, None).parse(b"a") == b"aa"
+    assert Restreamed(Bytes(1), None, None, lambda b: b*2, 1, None).build(b"a") == b"aa"
+    assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
+
+def test_restreamed_partial_read():
+    d = Restreamed(Bytes(255), ident, 1, ident, 1, ident)
+    assert raises(d.parse, b"") == StreamError
+
 def test_checksum():
     d = Struct(
         "fields" / RawCopy(Struct(
@@ -1027,6 +1019,14 @@ def test_compressed_prefixed():
     st = Struct("one"/d, "two"/d)
     assert st.parse(st.build(Container(one=zeros,two=zeros))) == Container(one=zeros,two=zeros)
     assert raises(d.sizeof) == SizeofError
+
+def test_rebuffered():
+    data = b"0" * 1000
+    assert Rebuffered(Array(1000,Byte)).parse_stream(io.BytesIO(data)) == [48]*1000
+    assert Rebuffered(Array(1000,Byte), tailcutoff=50).parse_stream(io.BytesIO(data)) == [48]*1000
+    assert Rebuffered(Byte).sizeof() == 1
+    assert raises(Rebuffered(Byte).sizeof) == None
+    assert raises(Rebuffered(VarInt).sizeof) == SizeofError
 
 def test_lazyfield():
     assert LazyField(Byte).parse(b"\x01garbage")() == 1

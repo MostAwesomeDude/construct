@@ -128,7 +128,6 @@ example = Struct(
     "tell" / Tell,
     "pass1" / Pass,
     "terminated0" / Prefixed(Byte, Terminated),
-    # Restreamed
     # Rebuffered
 
     "rawcopy1" / RawCopy(Byte),
@@ -141,6 +140,7 @@ example = Struct(
     "restreamdata" / RestreamData(b"\xff", Byte),
     "restreamdata_verify" / Check(this.restreamdata == 255),
     # TransformData
+    # Restreamed
     # Checksum
     "compressed_bzip2_data" / Computed(b'BZh91AY&SYSc\x11\x99\x00\x00\x00A\x00@\x00@\x00 \x00!\x00\x82\x83\x17rE8P\x90Sc\x11\x99'),
     "compressed_bzip2" / RestreamData(this.compressed_bzip2_data, Compressed(GreedyBytes, "bzip2", level=9)),

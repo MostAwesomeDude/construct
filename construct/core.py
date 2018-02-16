@@ -4031,91 +4031,6 @@ class Terminated(Construct):
         return "Terminated"
 
 
-class Restreamed(Subconstruct):
-    r"""
-    Transforms bytes between the underlying stream and the subcon.
-
-    Used internally to implement :class:`~construct.core.Bitwise` :class:`~construct.core.Bytewise` :class:`~construct.core.ByteSwapped` :class:`~construct.core.BitsSwapped` .
-
-    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
-
-    .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
-
-    :param subcon: Construct instance, subcon which will operate on the buffer
-    :param encoder: function that takes bytes and returns bytes (used when building)
-    :param encoderunit: integer ratio, encoder takes that many bytes at once
-    :param decoder: function that takes bytes and returns bytes (used when parsing)
-    :param decoderunit: integer ratio, decoder takes that many bytes at once
-    :param sizecomputer: function that computes amount of bytes outputed
-
-    Can propagate any exception from the lambda, possibly non-ConstructError.
-
-    Can also raise arbitrary exceptions in its implementation.
-
-    Example::
-
-        Bitwise  <--> Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
-        Bytewise <--> Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
-    """
-    __slots__ = ["decoder", "decoderunit", "encoder", "encoderunit", "sizecomputer"]
-
-    def __init__(self, subcon, decoder, decoderunit, encoder, encoderunit, sizecomputer):
-        super(Restreamed, self).__init__(subcon)
-        self.decoder = decoder
-        self.decoderunit = decoderunit
-        self.encoder = encoder
-        self.encoderunit = encoderunit
-        self.sizecomputer = sizecomputer
-
-    def _parse(self, stream, context, path):
-        stream2 = RestreamedBytesIO(stream, self.decoder, self.decoderunit, self.encoder, self.encoderunit)
-        obj = self.subcon._parse(stream2, context, path)
-        stream2.close()
-        return obj
-
-    def _build(self, obj, stream, context, path):
-        stream2 = RestreamedBytesIO(stream, self.decoder, self.decoderunit, self.encoder, self.encoderunit)
-        buildret = self.subcon._build(obj, stream2, context, path)
-        stream2.close()
-        return buildret
-
-    def _sizeof(self, context, path):
-        if self.sizecomputer is None:
-            raise SizeofError("Restreamed cannot calculate size without a sizecomputer")
-        else:
-            return self.sizecomputer(self.subcon._sizeof(context, path))
-
-
-class Rebuffered(Subconstruct):
-    r"""
-    Caches bytes from underlying stream, so it becomes seekable and tellable, and also becomes blocking on reading. Useful for processing non-file streams like pipes, sockets, etc.
-
-    .. warning:: Experimental implementation. May not be mature enough.
-
-    :param subcon: Construct instance, subcon which will operate on the buffered stream
-    :param tailcutoff: optional, integer, amount of bytes kept in buffer, by default buffers everything
-
-    Can also raise arbitrary exceptions in its implementation.
-
-    Example::
-
-        Rebuffered(..., tailcutoff=1024).parse_stream(nonseekable_stream)
-    """
-    __slots__ = ["stream2", "tailcutoff"]
-
-    def __init__(self, subcon, tailcutoff=None):
-        super(Rebuffered, self).__init__(subcon)
-        self.stream2 = RebufferedBytesIO(None, tailcutoff=tailcutoff)
-
-    def _parse(self, stream, context, path):
-        self.stream2.substream = stream
-        return self.subcon._parse(self.stream2, context, path)
-
-    def _build(self, obj, stream, context, path):
-        self.stream2.substream = stream
-        return self.subcon._build(obj, self.stream2, context, path)
-
-
 #===============================================================================
 # tunneling and byte/bit swapping
 #===============================================================================
@@ -4409,6 +4324,61 @@ class TransformData(Subconstruct):
         return self.encodeamount
 
 
+class Restreamed(Subconstruct):
+    r"""
+    Transforms bytes between the underlying stream and the subcon.
+
+    Used internally to implement :class:`~construct.core.Bitwise` :class:`~construct.core.Bytewise` :class:`~construct.core.ByteSwapped` :class:`~construct.core.BitsSwapped` .
+
+    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
+
+    .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
+
+    :param subcon: Construct instance, subcon which will operate on the buffer
+    :param encoder: function that takes bytes and returns bytes (used when building)
+    :param encoderunit: integer ratio, encoder takes that many bytes at once
+    :param decoder: function that takes bytes and returns bytes (used when parsing)
+    :param decoderunit: integer ratio, decoder takes that many bytes at once
+    :param sizecomputer: function that computes amount of bytes outputed
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
+
+    Can also raise arbitrary exceptions in its implementation.
+
+    Example::
+
+        Bitwise  <--> Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
+        Bytewise <--> Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
+    """
+    __slots__ = ["decoder", "decoderunit", "encoder", "encoderunit", "sizecomputer"]
+
+    def __init__(self, subcon, decoder, decoderunit, encoder, encoderunit, sizecomputer):
+        super(Restreamed, self).__init__(subcon)
+        self.decoder = decoder
+        self.decoderunit = decoderunit
+        self.encoder = encoder
+        self.encoderunit = encoderunit
+        self.sizecomputer = sizecomputer
+
+    def _parse(self, stream, context, path):
+        stream2 = RestreamedBytesIO(stream, self.decoder, self.decoderunit, self.encoder, self.encoderunit)
+        obj = self.subcon._parse(stream2, context, path)
+        stream2.close()
+        return obj
+
+    def _build(self, obj, stream, context, path):
+        stream2 = RestreamedBytesIO(stream, self.decoder, self.decoderunit, self.encoder, self.encoderunit)
+        buildret = self.subcon._build(obj, stream2, context, path)
+        stream2.close()
+        return buildret
+
+    def _sizeof(self, context, path):
+        if self.sizecomputer is None:
+            raise SizeofError("Restreamed cannot calculate size without a sizecomputer")
+        else:
+            return self.sizecomputer(self.subcon._sizeof(context, path))
+
+
 class Checksum(Construct):
     r"""
     Field that is build or validated by a hash of a given byte range. Usually used with :class:`~construct.core.RawCopy` .
@@ -4520,6 +4490,36 @@ class Compressed(Tunnel):
 
     def _emitdecompiled(self, code):
         return "Compressed(%s, %r, %r)" % (self.subcon._decompile(code), self.encoding, self.level, )
+
+
+class Rebuffered(Subconstruct):
+    r"""
+    Caches bytes from underlying stream, so it becomes seekable and tellable, and also becomes blocking on reading. Useful for processing non-file streams like pipes, sockets, etc.
+
+    .. warning:: Experimental implementation. May not be mature enough.
+
+    :param subcon: Construct instance, subcon which will operate on the buffered stream
+    :param tailcutoff: optional, integer, amount of bytes kept in buffer, by default buffers everything
+
+    Can also raise arbitrary exceptions in its implementation.
+
+    Example::
+
+        Rebuffered(..., tailcutoff=1024).parse_stream(nonseekable_stream)
+    """
+    __slots__ = ["stream2", "tailcutoff"]
+
+    def __init__(self, subcon, tailcutoff=None):
+        super(Rebuffered, self).__init__(subcon)
+        self.stream2 = RebufferedBytesIO(None, tailcutoff=tailcutoff)
+
+    def _parse(self, stream, context, path):
+        self.stream2.substream = stream
+        return self.subcon._parse(self.stream2, context, path)
+
+    def _build(self, obj, stream, context, path):
+        self.stream2.substream = stream
+        return self.subcon._build(obj, self.stream2, context, path)
 
 
 #===============================================================================
