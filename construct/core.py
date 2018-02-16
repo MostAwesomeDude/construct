@@ -402,7 +402,7 @@ class Construct(object):
                 raise NotImplementedError
             cname = "decompiled_%s" % code.allocateId()
             code.append("""
-                %s = Decompiled(lambda io,this: %s)
+                %s = Decompiled(lambda io,this,path: %s)
             """ % (cname, self._compileparse(code, recursive=True), ))
             code.decompiledcache[id(self)] = cname
             return cname
@@ -698,14 +698,11 @@ class CompilableMacro(Subconstruct):
 
 class Decompiled(Construct):
     """Used internally."""
-    __slots__ = ["parsefunc"]
+    __slots__ = ["_parse"]
 
     def __init__(self, parsefunc):
         super(Decompiled, self).__init__()
-        self.parsefunc = parsefunc
-
-    def _parse(self, stream, context, path):
-        return self.parsefunc(stream, context)
+        self._parse = parsefunc
 
 
 #===============================================================================
