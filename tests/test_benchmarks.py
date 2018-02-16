@@ -408,6 +408,7 @@ def test_class_switch_build(benchmark):
     d = Switch(this.n, { 1:Int8ub, 2:Int16ub, 4:Int32ub })
     benchmark(d.build, 0, n=4)
 
+# EmbeddedSwitch
 # StopIf
 
 # Padding

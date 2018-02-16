@@ -349,15 +349,15 @@ b'\x00\x00\x00\x05'
 EmbeddedSwitch
 ----------------
 
-Switch is not embeddable, but this macro can be used to generate something that would be considered equivalent classes to an embedded Switch. Explanation is non-trivial and avilable on API page, but here is an example:
-
-.. warning:: Created construct is parse-only, it fails during building.
+Macro that simulates embedding Switch, which under new embedding semantics is not possible. This macro does NOT produce a Switch. It generates classes that behave the same way as you would expect from embedded Switch, only that. Instance created by this macro CAN be embedded.
 
 ::
 
     d = EmbeddedSwitch(
-        this.peek.type,
-        Struct("type" / Byte),
+        Struct(
+            "type" / Byte,
+        ),
+        this.type,
         {
             0: Struct("name" / PascalString(Byte, "utf8")),
             1: Struct("value" / Byte),
@@ -365,17 +365,17 @@ Switch is not embeddable, but this macro can be used to generate something that 
     )
 
     # generates essentially following
-    d = FocusedSeq("switch",
-        "peek" / Peek(Struct("type" / Byte)),
-        "switch" / Switch(this.peek.type, {
-            0: Struct("type" / Byte, "name" / PascalString(Byte, "utf8")),
-            1: Struct("type" / Byte, "value" / Byte),
-        }),
+    d = Struct(
+        "type" / Byte,
+        "name" / If(this.type == 0, PascalString(Byte, "utf8")),
+        "value" / If(this.type == 1, Byte),
     )
 
     # both parse like following
-    assert d.parse(b"\x00\x00") == Container(type=0, name="")
-    assert d.parse(b"\x01\x00") == Container(type=1, value=0)
+    >>> d.parse(b"\x00\x00")
+    Container(type=0)(name=u'')(value=None)
+    >>> d.parse(b"\x01\x00")
+    Container(type=1)(name=None)(value=0)
 
 
 StopIf

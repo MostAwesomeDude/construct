@@ -736,17 +736,17 @@ def test_switch_issue_357():
 
 def test_embeddedswitch():
     d = EmbeddedSwitch(
-        this.peek.type,
-        Struct("type" / Byte),
+        Struct(
+            "type" / Byte,
+        ),
+        this.type,
         {
             0: Struct("name" / PascalString(Byte, "utf8")),
             1: Struct("value" / Byte),
         }
     )
-    assert d.parse(b"\x00\x00") == Container(type=0, name="")
-    assert d.parse(b"\x01\x00") == Container(type=1, value=0)
-    # common(d, b"\x00\x00", Container(type=0, name=""))
-    # common(d, b"\x01\x00", Container(type=1, value=0))
+    common(d, b"\x00\x00", Container(type=0, name=u"", value=None))
+    common(d, b"\x01\x00", Container(type=1, name=None, value=0))
 
 def test_stopif():
     d = Struct("x"/Byte, StopIf(this.x == 0), "y"/Byte)

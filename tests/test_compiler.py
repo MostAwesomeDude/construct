@@ -8,14 +8,14 @@ pytestmark = skipif(not supportscompiler, reason="compiler and bytes() require 3
 
 
 
-embeddedswitch1 = EmbeddedSwitch(
-    this.peek.type,
-    Struct("type" / Byte),
-    {
-        0: Struct("name" / PascalString(Byte, "utf8")),
-        1: Struct("value" / Byte),
-    }
-)
+# embeddedswitch1 = EmbeddedSwitch(
+#     this.peek.type,
+#     Struct("type" / Byte),
+#     {
+#         0: Struct("name" / PascalString(Byte, "utf8")),
+#         1: Struct("value" / Byte),
+#     }
+# )
 
 example = Struct(
     "num" / Byte,

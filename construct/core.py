@@ -3425,25 +3425,25 @@ class Switch(Construct):
             return "%s.get(%s, lambda io,this: %s)(io, this)" % (fname, self.keyfunc, self.default._compileparse(code))
 
 
-def EmbeddedSwitch(selector, merged, mapping):
+def EmbeddedSwitch(merged, selector, mapping):
     r"""
-    Macro that simulates embedding Switch, which under new embedding semantics is not possible. This macro does NOT produce a Switch, nor does allow Switch to be embeddable per-se. It generates classes that behave the same way as you would expect, only that.
+    Macro that simulates embedding Switch, which under new embedding semantics is not possible. This macro does NOT produce a Switch. It generates classes that behave the same way as you would expect from embedded Switch, only that.
 
-    .. warning:: Created construct is parse-only, it fails during building.
+    Both `merged` and all values in `mapping` must be Struct instances. Macro re-creates a single struct that contains all fields, where each field is wrapped in `If(selector == key, ...)`. Note that resulting dictionary contains None values for fields that were not be chosen by switch.
 
-    Both `merged` and all values in `mapping` must be Struct instances. Macro re-creates each struct by merging fields from both `merged` and respective instance, and creates a FocusedSeq that first parses Peek(merged) to obtain the selecting field, then parses a Switch over new re-created structs.
+    Instance created by this macro CAN be embedded.
 
-    Selector field must reference "peek" before the field, see example.
-
-    :param selector: this expression, that references one of `merged` fields
     :param merged: Struct instance
+    :param selector: this expression, that references one of `merged` fields
     :param mapping: dict with values being Struct instances
 
     Example::
 
         d = EmbeddedSwitch(
-            this.peek.type,
-            Struct("type" / Byte),
+            Struct(
+                "type" / Byte,
+            ),
+            this.type,
             {
                 0: Struct("name" / PascalString(Byte, "utf8")),
                 1: Struct("value" / Byte),
@@ -3451,24 +3451,25 @@ def EmbeddedSwitch(selector, merged, mapping):
         )
 
         # generates essentially following
-        d = FocusedSeq("switch",
-            "peek" / Peek(Struct("type" / Byte)),
-            "switch" / Switch(this.peek.type, {
-                0: Struct("type" / Byte, "name" / PascalString(Byte, "utf8")),
-                1: Struct("type" / Byte, "value" / Byte),
-            }),
+        d = Struct(
+            "type" / Byte,
+            "name" / If(this.type == 0, PascalString(Byte, "utf8")),
+            "value" / If(this.type == 1, Byte),
         )
 
         # both parse like following
-        assert d.parse(b"\x00\x00") == Container(type=0, name="")
-        assert d.parse(b"\x01\x00") == Container(type=1, value=0)
+        >>> d.parse(b"\x00\x00")
+        Container(type=0)(name=u'')(value=None)
+        >>> d.parse(b"\x01\x00")
+        Container(type=1)(name=None)(value=0)
     """
 
-    mapping2 = {key:Struct(*(list(merged.subcons) + list(sc.subcons))) for key,sc in mapping.items()}
-    return FocusedSeq("switch",
-        "peek" / Peek(merged),
-        "switch" / Switch(selector, mapping2),
-    )
+    merged2 = list(merged.subcons)
+    for key,sc in mapping.items():
+        for sc2 in sc.subcons:
+            merged2.append(sc2.name / If(selector == key, sc2))
+    return Struct(*merged2)
+
 
 
 class StopIf(Construct):
