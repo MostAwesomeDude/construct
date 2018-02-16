@@ -19,7 +19,7 @@ b'\xff'
 Endianness
 ----------
 
-When little endianness is needed, either use fields like ``Int*l`` or swap bytes of an arbitrary field:
+When little endianness is needed, either use integer fields like `Int*l` or `BytesInteger(swapped=True)` or swap bytes of an arbitrary field:
 
 ::
 
@@ -110,7 +110,7 @@ Data can be easily checksummed. Note that checksum field does not need to be Byt
     data = d.build(dict(fields=dict(value=dict(a=1,b=2))))
     # returned b'\x01\x02\xbd\xd8\x1a\xb23\xbc\xebj\xd23\xcd\x18qP\x93 \xa1\x8d\x035\xa8\x91\xcf\x98s\t\x90\xe8\x92>\x1d\xda\x04\xf35\x8e\x9c~\x1c=\x16\xb1o@\x8c\xfa\xfbj\xf52T\xef0#\xed$6S8\x08\xb6\xca\x993'
 
-Also data can be easily compressed. Supported encodings include zlib/gzip/bzip2/lzma and entire codecs module. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :func:`~construct.core.Prefixed` or entire stream.
+Data can also be easily compressed. Supported encodings include zlib/gzip/bzip2/lzma and entire codecs module. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :class:`~construct.core.Prefixed` or entire stream.
 
 >>> d = Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
 >>> d.build(bytes(100))

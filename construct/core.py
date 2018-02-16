@@ -803,7 +803,7 @@ def Bitwise(subcon):
 
     :param subcon: Construct instance, any field that works with bits (like BitsInteger) or is bit-byte agnostic (like Struct or Flag)
 
-    See :class:`~construct.core.Restreamed` for raisable exceptions.
+    See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -843,7 +843,7 @@ def Bytewise(subcon):
 
     :param subcon: Construct instance, any field that works with bytes or is bit-byte agnostic
 
-    See :class:`~construct.core.Restreamed` for raisable exceptions.
+    See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -932,7 +932,7 @@ class BytesInteger(Construct):
 
     Parses into an integer. Builds from an integer into specified byte count and endianness. Size is specified in ctor.
 
-    Analog to :class:`~construct.core.BitsInteger` that operates on bits. In fact, ``BytesInteger(n)`` is same as ``Bitwise(BitsInteger(8*n))`` and ``BitsInteger(n)`` is same as ``Bytewise(BytesInteger(n//8)))`` .
+    Analog to :class:`~construct.core.BitsInteger` that operates on bits. In fact, ``BytesInteger(n)`` is equivalent to ``Bitwise(BitsInteger(8*n))`` and ``BitsInteger(n)`` is equivalent to ``Bytewise(BytesInteger(n//8)))`` .
 
     :param length: integer or context lambda, number of bytes in the field
     :param signed: bool, whether the value is signed (two's complement), default is False (unsigned)
@@ -1008,7 +1008,7 @@ class BitsInteger(Construct):
 
     Note that little-endianness is only defined for multiples of 8 bits.
 
-    Analog to :class:`~construct.core.BytesInteger` that operates on bytes. In fact, ``BytesInteger(n)`` is same as ``Bitwise(BitsInteger(8*n))`` and ``BitsInteger(n)`` is same as ``Bytewise(BytesInteger(n//8)))`` .
+    Analog to :class:`~construct.core.BytesInteger` that operates on bytes. In fact, ``BytesInteger(n)`` is equivalent to ``Bitwise(BitsInteger(8*n))`` and ``BitsInteger(n)`` is equivalent to ``Bytewise(BytesInteger(n//8)))`` .
 
     :param length: integer or context lambda, number of bits in the field
     :param signed: bool, whether the value is signed (two's complement), default is False (unsigned)
@@ -1490,6 +1490,8 @@ def String(length, encoding=None):
 
     When parsing, the byte string is stripped of null bytes (per encoding unit), then decoded. Length is an integer or context lambda. When building, the string is encoded, then trimmed to specified length minus encoding unit, then padded to specified length. Size is same as length parameter.
 
+    .. warning:: String and CString only support encodings explicitly listed in :func:`~construct.core.possiblestringencodings` .
+
     :param length: integer or context lambda, length in bytes (not unicode characters)
     :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 
@@ -1555,6 +1557,8 @@ def PascalString(lengthfield, encoding=None):
 def CString(encoding=None):
     r"""
     String ending in a terminating null byte (or null bytes in case of UTF16 UTF32).
+
+    .. warning:: String and CString only support encodings explicitly listed in :func:`~construct.core.possiblestringencodings` .
 
     :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
 
@@ -1634,7 +1638,9 @@ class Enum(Adapter):
 
     Parses integer subcon, then uses that value to lookup mapping dictionary. Building is a reversed process. Can build from an integer flag or string label directly (see examples). Size is same as subcon, unless it raises SizeofError.
 
-    This class supports exposing member labels as attributes. See example.
+    This class supports enum34 module. See examples.
+
+    This class supports exposing member labels as attributes. See examples.
 
     :param subcon: Construct instance, subcon to map to/from
     :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
@@ -1715,7 +1721,9 @@ class FlagsEnum(Adapter):
 
     Parses integer subcon, then creates a Container, where flags define each key. Builds from a container by bitwise-oring of each flag if it matches a set key. Can build from an integer flag or string label directly, as well as | concatenations thereof (see examples). Size is same as subcon, unless it raises SizeofError.
 
-    This class supports exposing member labels as attributes. See example.
+    This class supports enum34 module. See examples.
+
+    This class supports exposing member labels as attributes. See examples.
 
     :param subcon: Construct instance, must operate on integers
     :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
@@ -2350,14 +2358,15 @@ class Embedded(Subconstruct):
 
 class Renamed(Subconstruct):
     r"""
-    Special wrapper that allows outer Struct or Sequence to see a field as having a name (or a different name). Library classes do not have names (its None). Renamed does not change a field, only wraps it like a candy with a label. Used internally by / operator.
+    Special wrapper that allows outer Struct or Sequence to see a field as having a name (or a different name). Library classes do not have names (its None). Renamed does not change a field, only wraps it like a candy with a label. Used internally by / and * operators.
 
     Also this wrapper is responsible for building a path info (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. Fields that are not named do not appear in the path string.
 
     Parsing building and size are deferred to subcon.
 
-    :param newname: string
-    :param subcon: Construct instance, field to rename
+    :param newname: optional, string
+    :param newdocs: optional, string
+    :param subcon: Construct instance, field to rename or docstring
 
     Example::
 
@@ -3743,12 +3752,8 @@ def AlignedStruct(modulus, *subcons, **kw):
     Example::
 
         >>> d = AlignedStruct(4, "a"/Int8ub, "b"/Int16ub)
-        >>> d.build(dict(a=1,b=5))
-        b'\x01\x00\x00\x00\x00\x05\x00\x00'
-        >>> d.parse(_)
-        Container(a=1)(b=5)
-        >>> d.sizeof()
-        8
+        >>> d.build(dict(a=0xFF,b=0xFFFF))
+        b'\xff\x00\x00\x00\xff\xff\x00\x00'
     """
     subcons = list(subcons) + list(k/v for k,v in kw.items())
     return Struct(*[Aligned(modulus, sc) for sc in subcons])
@@ -4211,13 +4216,13 @@ class RawCopy(Subconstruct):
 
 def ByteSwapped(subcon):
     r"""
-    Swap the byte order within boundaries of given subcon. Requires a fixed sized subcon.
+    Swaps the byte order within boundaries of given subcon. Requires a fixed sized subcon.
 
     :param subcon: Construct instance, subcon on top of byte swapped bytes
 
     :raises SizeofError: ctor or compiler could not compute subcon size
 
-    See :class:`~construct.core.Restreamed` for raisable exceptions.
+    See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -4234,13 +4239,13 @@ def ByteSwapped(subcon):
 
 def BitsSwapped(subcon):
     r"""
-    Swap the bit order within each byte within boundaries of given subcon. Does NOT require a fixed sized subcon.
+    Swaps the bit order within each byte within boundaries of given subcon. Does NOT require a fixed sized subcon.
 
     :param subcon: Construct instance, subcon on top of bit swapped bytes
 
     :raises SizeofError: compiler could not compute subcon size
 
-    See :class:`~construct.core.Restreamed` for raisable exceptions.
+    See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -4352,7 +4357,7 @@ class RestreamData(Subconstruct):
     r"""
     Parses a field on external data (but does not build).
 
-    Parsing defers to subcon, but provides it a separate stream based on bytes data provided by datafunc (a bytes literal or context lambda). Building is no-op. Size is 0.
+    Parsing defers to subcon, but provides it a separate stream based on bytes data provided by datafunc (a bytes literal or context lambda). Building does nothing. Size is 0 because as far as other fields see it, this field does not produce or consume any bytes from the stream.
 
     :param datafunc: bytes or context lambda, provides data for subcon to parse
     :param subcon: Construct instance, subcon used for parsing the value
@@ -4395,6 +4400,8 @@ class TransformData(Subconstruct):
     Parses a field on transfored data (or transforms data after building).
 
     Parsing reads a specified amount, processes data using a bytes-to-bytes decoding function, then parses subcon using those data. Building does build subcon into separate bytes, then processes using encoding encoding, then writes those data into main stream. Size is reported as `encodeamount`.
+
+    Possible use-cases include encryption, obfuscation.
 
     :param subcon: Construct instance
     :param decodefunc: bytes-to-bytes function, applied before parsing subcon
@@ -4447,7 +4454,7 @@ class Checksum(Construct):
     r"""
     Field that is build or validated by a hash of a given byte range. Usually used with :class:`~construct.core.RawCopy` .
 
-    semantics???
+    Parsing compares parsed subcon `checksumfield` with a context entry provided by `bytesfunc` and transformed by `hashfunc`. Building fetches the contect entry, transforms it, then writes is using subcon. Size is same as subcon.
 
     :param checksumfield: a subcon field that reads the checksum, usually Bytes(int)
     :param hashfunc: function that takes bytes and returns whatever checksumfield takes when building, usually from hashlib module
@@ -4500,6 +4507,8 @@ class Checksum(Construct):
 class Compressed(Tunnel):
     r"""
     Compresses and decompresses underlying stream when processing subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :class:`~construct.core.Prefixed` .
+
+    Parsing and building transforms all bytes using a specified codec. Since data is processed until EOF, it behaves similar to `GreedyBytes`. Size is undefined.
 
     :param subcon: Construct instance, subcon used for storing the value
     :param encoding: string, any of module names like zlib/gzip/bzip2/lzma, otherwise any of codecs module bytes<->bytes encodings, each codec usually requires some Python version

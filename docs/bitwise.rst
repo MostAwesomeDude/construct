@@ -28,7 +28,7 @@ But how are we supposed to work with raw bits? The only difference is that we mu
 BitStruct
 =========
 
-A BitStruct is a sequence of constructs that are parsed/built in the specified order, much like normal Structs. The difference is that BitStruct operates on bits rather than bytes. When parsing a BitStruct, the data is first converted to a bit stream (a stream of 1's and 0's), and only then is it fed to the subconstructs. The subconstructs are expected to operate on bits instead of bytes. For reference look at the code below:
+A BitStruct is a sequence of constructs that are parsed/built in the specified order, much like normal Structs. The difference is that BitStruct operates on bits rather than bytes. When parsing a BitStruct, the data is first converted to a bit stream (a stream of \\x01 and \\x00), and only then is it fed to the subconstructs. The subconstructs are expected to operate on bits instead of bytes. For reference look at the code below:
 
 >>> format = BitStruct(
 ...     "a" / Flag,
@@ -41,32 +41,30 @@ Container(a=True)(b=7)(c=887)(d=None)
 >>> format.sizeof()
 2
 
-.. note:: BitStruct is actually just a wrapper for the :func:`~construct.core.Bitwise` around a :func:`~construct.core.Struct` construct.
+BitStruct is actually just a wrapper for the :class:`~construct.core.Bitwise` around a :class:`~construct.core.Struct` .
 
 
 Important notes
 ===============
 
-* BitStructs are non-nestable so writing something like ``BitStruct(BitStruct(Octet))`` will not work. You can use regular Structs inside BitStructs.
+* BitStructs are non-nestable (because Bitwise are not nestable) so writing something like ``BitStruct(BitStruct(Octet))`` will not work. You can use regular Structs inside BitStructs.
 * Byte aligned - The total size of the elements of a BitStruct must be a multiple of 8 (due to alignment issues). RestreamedBytesIO will raise an error if the amount of bits and bytes does not align properly.
-* Pointers and Lazy* - Do not place Pointers and Lazy* instances inside bitwise because it uses an internal stream, so external stream offsets will turn out wrong, have side-effects or raise exceptions.
+* Pointers and Lazy* - Do not place fields that do seeking/telling or lazy parsing inside bitwise because it uses an internal stream, so external stream offsets will turn out wrong, have unknown side-effects or raise exceptions.
 * Advanced classes like tunneling may not work in bitwise context. Only basic fields like integers were throughly tested.
 
 
 Integers out of bits
 ====================
 
-.. autofunction:: construct.BitsInteger
 
-Convenience wrappers for BitsInteger
+Convenience aliases for BitsInteger
 ------------------------------------
 
-Bit
- A single bit
-Nibble
- A sequence of 4 bits (half a byte)
-Octet
- An sequence of 8 bits (byte)
+::
+
+    Bit    <--> BitsInteger(1)
+    Nibble <--> BitsInteger(4)
+    Octet  <--> BitsInteger(8)
 
 
 Fields that do both

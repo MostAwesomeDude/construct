@@ -146,7 +146,7 @@ b'\x03'
 >>> d.one|d.two
 'one|two'
 
-Both Enum and FlagsEnum support merging labels from IntEnum and IntFlag (enum module):
+Both Enum and FlagsEnum support merging labels from IntEnum and IntFlag (enum34 module):
 
 ::
 

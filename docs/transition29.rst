@@ -15,9 +15,9 @@ Overall
 General classes
 -----------------
 
-All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*kw (see `this chapter <https://construct.readthedocs.io/en/latest/meta.html>`_)
+All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*kw (see `this page <https://construct.readthedocs.io/en/latest/meta.html>`_)
 
-All constructs: `compile benchmark testcompiled` methods were added (see `this chapter <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
+All constructs: `compile benchmark testcompiled` methods were added (see `this page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
 
 All constructs: operator * can be used for docstrings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
 
@@ -27,9 +27,9 @@ String* classes require explicit encoding (see `this page <https://construct.rea
 
 String* classes apply global encoding during ctor (not during parsing and building)
 
-String* classes (all of them) support UTF16 UTF32 encodings, but String CString dropped some parameters
+String* classes (all of them) support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings`
 
-Enum FlagsEnum can merge labels from IntEnum IntFlag (enum module), but dropped `default` parameter
+Enum FlagsEnum can merge labels from IntEnum IntFlag (enum34 module), but dropped `default` parameter
 
 Enum FlagsEnum can build from integers and labels (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 

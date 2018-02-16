@@ -15,6 +15,10 @@ Embeds a struct into the enclosing struct, merging fields. Can also embed sequen
 
     Can only be used between Struct Sequence FocusedSeq Union, although they can be used interchangably, for example Struct can embed fields from a Sequence. 
 
+.. note::
+
+    Embedded Structs should not be named (using / operator).
+
 >>> outer = Struct(
 ...     Embedded(Struct(
 ...         "data" / Bytes(4),
@@ -46,7 +50,7 @@ b'IHDR'
 >>> Const(b"IHDR").parse(b"JPEG")
 construct.core.ConstError: expected b'IHDR' but parsed b'JPEG'
 
-By default, Const uses a Bytes field with size mathing the value. However, other fields can also be used:
+By default, Const uses a Bytes field with size matching the value. However, other fields can also be used:
 
 >>> Const(Int32ul, 1).build(None)
 b'\x01\x00\x00\x00'
@@ -323,7 +327,7 @@ b''
 IfThenElse
 ----------
 
-Branches the construction path based on a given condition. If the condition is met, the ``thensubcon`` is used, otherwise the ``elsesubcon`` is used. Fields like Pass or Error can be used here. Just for your curiosity, If is just a macro around this class.
+Branches the construction path based on a given condition. If the condition is met, the ``thensubcon`` is used, otherwise the ``elsesubcon`` is used. Fields like Pass and Error can be used here. Just for your curiosity, If is just a macro around this class.
 
 >>> IfThenElse(this.x > 0, VarInt, Byte).build(255, x=1)
 b'\xff\x01'
@@ -334,7 +338,7 @@ b'\xff'
 Switch
 ------
 
-Branches the construction based on a return value from a function. This is a more general implementation then IfThenElse.
+Branches the construction based on a return value from a function. This is a more general implementation than IfThenElse.
 
 >>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, n=1)
 b'\x05'
@@ -391,7 +395,7 @@ Alignment and padding
 Padding
 -------
 
-Adds additional null bytes (a filler) analog to Padded but without a subcon that follows it. This field can usually be anonymous inside a Struct.
+Adds additional null bytes (a filler) analog to Padded but without a subcon that follows it. This field is usually anonymous inside a Struct.
 
 >>> Padding(4).build(None)
 b'\x00\x00\x00\x00'
@@ -423,5 +427,6 @@ AlignedStruct
 
 Automatically aligns each member to modulus boundary. It does NOT align entire Struct, but each member separately.
 
->>> AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5))
-b'\x01\x00\x00\x00\x00\x05\x00\x00'
+>>> d = AlignedStruct(4, "a"/Int8ub, "b"/Int16ub)
+>>> d.build(dict(a=0xFF,b=0xFFFF))
+b'\xff\x00\x00\x00\xff\xff\x00\x00'
