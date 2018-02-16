@@ -24,6 +24,10 @@ setup(
     author = "Arkadiusz Bulski, Tomer Filiba, Corbin Simpson",
     author_email = "arek.bulski@gmail.com, tomerfiliba@gmail.com, MostAwesomeDude@gmail.com",
     install_requires = [],
+    extras_require = {
+        "recommended": [],
+        "supported": ["enum34", "numpy"],
+    },
     requires = [],
     provides = ["construct"],
     keywords = [
