@@ -8,21 +8,50 @@ Lazy parsing
 LazyBound
 ---------
 
-A lazy-bound construct that binds to the construct only at runtime. Useful for recursive data structures (like linked lists or trees), where a construct needs to refer to itself (while it doesn't exist yet).
+Field that binds to the subcon only at runtime (during parsing and building, not ctor). Useful for recursive data structures, like linked-lists and trees, where a construct needs to refer to itself (while it does not exist yet in the namespace).
 
->>> st = Struct(
-...     "value"/Byte,
-...     "next"/If(this.value > 0, LazyBound(lambda ctx: st)),
-... )
-...
->>> st.parse(b"\x05\x09\x00")
-Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None)))
-...
->>> print(st.parse(b"\x05\x09\x00"))
-Container: 
-    value = 5
-    next = Container: 
-        value = 9
+Note that it is possible to obtain same effect without using this class, using a loop. However there are usecases where that is not possible (if remaining nodes cannot be sized-up, and there is data following the recursive structure). There is also a significant difference, namely that LazyBound actually does greedy parsing while the loop does lazy parsing. See examples.
+
+To break recursion, use `If` field. See examples.
+
+::
+
+    d = Struct(
+        "value" / Byte,
+        "next" / If(this.value > 0, LazyBound(lambda: d)),
+    )
+
+    >>> print(d.parse(b"\x05\x09\x00"))
+    Container: 
+        value = 5
         next = Container: 
-            value = 0
-            next = None
+            value = 9
+            next = Container: 
+                value = 0
+                next = None
+
+::
+
+    d = Struct(
+        "value" / Byte,
+        "next" / GreedyBytes,
+    )
+
+    data = b"\x05\x09\x00"
+    while data:
+        x = d.parse(data)
+        data = x.next
+        print(x)
+
+    # print outputs
+    Container: 
+        value = 5
+        next = \t\x00 (total 2)
+    # print outputs
+    Container: 
+        value = 9
+        next = \x00 (total 1)
+    # print outputs
+    Container: 
+        value = 0
+        next =  (total 0)

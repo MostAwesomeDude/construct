@@ -4527,28 +4527,50 @@ class Rebuffered(Subconstruct):
 #===============================================================================
 class LazyBound(Construct):
     r"""
-    Lazy-bound construct that binds to the construct only at runtime. Useful for recursive data structures (like linked-lists or trees), where a construct needs to refer to itself (while it does not exist yet).
+    Field that binds to the subcon only at runtime (during parsing and building, not ctor). Useful for recursive data structures, like linked-lists and trees, where a construct needs to refer to itself (while it does not exist yet in the namespace).
 
-    :param subconfunc: context lambda returning a Construct instance, can also return Pass or itself
+    Note that it is possible to obtain same effect without using this class, using a loop. However there are usecases where that is not possible (if remaining nodes cannot be sized-up, and there is data following the recursive structure). There is also a significant difference, namely that LazyBound actually does greedy parsing while the loop does lazy parsing. See examples.
+
+    To break recursion, use `If` field. See examples.
+
+    :param subconfunc: parameter-less lambda returning Construct instance, can also return itself
 
     Example::
 
-        >>> d = Struct(
-        ...     "value"/Byte,
-        ...     "next"/If(this.value > 0, LazyBound(lambda ctx: d)),
-        ... )
-        ...
-        >>> d.parse(b"\x05\x09\x00")
-        Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None)))
-        ...
+        d = Struct(
+            "value" / Byte,
+            "next" / If(this.value > 0, LazyBound(lambda: d)),
+        )
         >>> print(d.parse(b"\x05\x09\x00"))
-        Container:
+        Container: 
             value = 5
-            next = Container:
+            next = Container: 
                 value = 9
-                next = Container:
+                next = Container: 
                     value = 0
                     next = None
+
+        d = Struct(
+            "value" / Byte,
+            "next" / GreedyBytes,
+        )
+        data = b"\x05\x09\x00"
+        while data:
+            x = d.parse(data)
+            data = x.next
+            print(x)
+        # print outputs
+        Container: 
+            value = 5
+            next = \t\x00 (total 2)
+        # print outputs
+        Container: 
+            value = 9
+            next = \x00 (total 1)
+        # print outputs
+        Container: 
+            value = 0
+            next =  (total 0)
     """
     __slots__ = ["subconfunc"]
 
@@ -4557,16 +4579,10 @@ class LazyBound(Construct):
         self.subconfunc = subconfunc
 
     def _parse(self, stream, context, path):
-        return self.subconfunc(context)._parse(stream, context, path)
+        return self.subconfunc()._parse(stream, context, path)
 
     def _build(self, obj, stream, context, path):
-        return self.subconfunc(context)._build(obj, stream, context, path)
-
-    def _sizeof(self, context, path):
-        try:
-            return self.subconfunc(context)._sizeof(context, path)
-        except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+        return self.subconfunc()._build(obj, stream, context, path)
 
 
 #===============================================================================

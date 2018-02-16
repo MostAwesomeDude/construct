@@ -1029,19 +1029,24 @@ def test_rebuffered():
     assert raises(Rebuffered(VarInt).sizeof) == SizeofError
 
 def test_lazybound():
-    common(LazyBound(lambda ctx: Byte), b"\x01", 1, 1)
+    d = LazyBound(lambda: Byte)
+    common(d, b"\x01", 1)
 
-    st = Struct(
-        "value"/Byte,
-        "next"/If(this.value > 0, LazyBound(lambda ctx: st)),
+    d = Struct(
+        "value" / Byte,
+        "next" / If(this.value > 0, LazyBound(lambda: d)),
     )
-    common(st, b"\x05\x09\x00", Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None))), SizeofError)
+    common(d, b"\x05\x09\x00", Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None))))
 
-def test_lazybound_node():
-    print("need some ideas how to test it")
-    Node = Struct(
-        "value" / Int8ub,
-        "next" / LazyBound(lambda ctx: Node), )
+    d = Struct(
+        "value" / Byte,
+        "next" / GreedyBytes,
+    )
+    data = b"\x05\x09\x00"
+    while data:
+        x = d.parse(data)
+        data = x.next
+        print(x)
 
 def test_expradapter():
     MulDiv = ExprAdapter(Byte, obj_ * 7, obj_ // 7)

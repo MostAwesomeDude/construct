@@ -67,7 +67,7 @@ Adapter-related classes changed parameters, added `path` to `_encode _decode _va
 
 LazyStruct LazySequence LazyRange LazyField(OnDemand) removed
 
-LazyBound remains
+LazyBound remains, but changed to parameter-less lambda
 
 FlagsContainer removed
 
