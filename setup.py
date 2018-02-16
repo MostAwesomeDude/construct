@@ -25,8 +25,12 @@ setup(
     author_email = "arek.bulski@gmail.com, tomerfiliba@gmail.com, MostAwesomeDude@gmail.com",
     install_requires = [],
     extras_require = {
-        "recommended": [],
-        "supported": ["enum34", "numpy"],
+        "recommended": [
+        ],
+        "supported": [
+            "enum34",
+            "numpy",
+        ],
     },
     requires = [],
     provides = ["construct"],
@@ -53,6 +57,7 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Software Development :: Build Tools",
+        "Topic :: Software Development :: Code Generators",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
