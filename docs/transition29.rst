@@ -23,21 +23,13 @@ All constructs: operator * can be used for docstrings (see `this page <https://c
 
 Compiled CompilableMacro Decompiled added (used internally)
 
-String* classes require explicit encoding (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
-
-String* classes apply global encoding during ctor (not during parsing and building)
-
-String* classes (all of them) support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings`
+String* classes require explicit encodings, all of them support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
 Enum FlagsEnum can merge labels from IntEnum IntFlag (enum34 module), but dropped `default` parameter
 
-Enum FlagsEnum can build from integers and labels (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+Enum FlagsEnum can build from integers and labels, and expose labels as attributes as bitwisable strings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
-Enum FlagsEnum expose labels as attributes, as bitwisable strings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
-
-Mapping replaced by SymmetricMapping, and dropped `default` parameter
-
-Struct Sequence Union FocusedSeq are nesting context (in parse build and sizeof)
+Mapping replaced SymmetricMapping, and dropped `default` parameter
 
 Struct Sequence Union FocusedSeq are supporting new embedding semantics (see `this page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
 
@@ -46,6 +38,8 @@ EmbeddedBitStruct removed
 Array reimplemented without Range, does not use stream.tell()
 
 Range removed, GreedyRange remains
+
+Const has reordered parameters, like ``Const(b"\\x00")`` and ``Const(0, Int8ub)``.
 
 Index added, in Miscellaneous
 
@@ -65,7 +59,7 @@ TransformData added, in Tunneling
 
 ExprAdapter Mapping Restreamed changed parameters order (decoders before encoders)
 
-Adapter-related classes changed parameters, added `path` to `_encode _decode _validate`
+Adapter changed parameters, added `path` to `_encode _decode _validate`
 
 LazyStruct LazySequence LazyRange LazyField(OnDemand) removed
 

@@ -37,7 +37,7 @@ Some classes require constant selectors like FocusedSeq Union (otherwise raise N
 
 Exceptions do not include `path` information
 
-Adapters and validators, and mappings are in general not compilable
+Adapters and validators are in general not compilable
 
 TransformBytes Restreamed are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
 
