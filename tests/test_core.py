@@ -164,7 +164,6 @@ def test_varint():
     assert raises(VarInt.build, -1) == IntegerError
 
 def test_string():
-    common(String(10, encoding=StringsAsBytes), b"hello\x00\x00\x00\x00\x00", b"hello", 10)
     common(String(10, encoding="utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
 
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
@@ -175,21 +174,17 @@ def test_string():
         data = (s.encode(e)+b"\x00"*100)[:100]
         common(String(100, encoding=e), data, s, 100)
 
-    for e in [StringsAsBytes,"ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+    for e in ["ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
         String(10, encoding=e).sizeof() == 10
         String(this.n, encoding=e).sizeof(n=10) == 10
 
 def test_pascalstring():
-    common(PascalString(Byte, encoding=StringsAsBytes), b"\x05hello", b"hello")
     common(PascalString(Byte, encoding="utf8"), b"\x05hello", u"hello")
-    common(PascalString(Int16ub, encoding=StringsAsBytes), b"\x00\x05hello", b"hello")
     common(PascalString(Int16ub, encoding="utf8"), b"\x00\x05hello", u"hello")
-    common(PascalString(VarInt, encoding=StringsAsBytes), b"\x05hello", b"hello")
     common(PascalString(VarInt, encoding="utf8"), b"\x05hello", u"hello")
-    common(PascalString(Byte, encoding=StringsAsBytes), b"\x00", b"")
     common(PascalString(Byte, encoding="utf8"), b"\x00", u"")
 
-    for e in [StringsAsBytes,"ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+    for e in ["ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
         raises(PascalString(Byte, encoding=e).sizeof) == SizeofError
         raises(PascalString(VarInt, encoding=e).sizeof) == SizeofError
 
@@ -200,13 +195,11 @@ def test_cstring():
         s = u""
         common(CString(encoding=e), s.encode(e)+b"\x00"*us, s)
 
-    common(CString(encoding=StringsAsBytes), b"aooh"+b"\x00", b"aooh")
-
     CString(encoding="utf8").build(s) == b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'+b"\x00"
     CString(encoding="utf16").build(s) == b'\xff\xfe\x10\x04D\x04>\x04=\x04'+b"\x00\x00"
     CString(encoding="utf32").build(s) == b'\xff\xfe\x00\x00\x10\x04\x00\x00D\x04\x00\x00>\x04\x00\x00=\x04\x00\x00'+b"\x00\x00\x00\x00"
 
-    for e in [StringsAsBytes,"ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+    for e in ["ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
         raises(CString(encoding=e).sizeof) == SizeofError
 
 def test_greedystring():
@@ -214,21 +207,15 @@ def test_greedystring():
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
         common(GreedyString(encoding=e), s.encode(e), s)
 
-    common(GreedyString(encoding=StringsAsBytes), b"hello", b"hello")
     common(GreedyString(encoding="utf8"), b"hello", u"hello")
-    common(GreedyString(encoding=StringsAsBytes), b"", b"")
     common(GreedyString(encoding="utf8"), b"", u"")
 
-    for e in [StringsAsBytes,"ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+    for e in ["ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
         raises(GreedyString(encoding=e).sizeof) == SizeofError
 
-def test_string_global_encoding():
-    setglobalstringencoding("utf8")
-    assert String(20).build(u"Афон") == String(20, encoding="utf8").build(u"Афон")
-    assert PascalString(VarInt).build(u"Афон") == PascalString(VarInt, encoding="utf8").build(u"Афон")
-    assert CString().build(u"Афон") == CString(encoding="utf8").build(u"Афон")
-    assert GreedyString().build(u"Афон") == GreedyString(encoding="utf8").build(u"Афон")
-    setglobalstringencoding(None)
+def test_string_encodings():
+    common(GreedyString("utf-8"), b"", u"")
+    common(GreedyString("UTF-8"), b"", u"")
 
 def test_flag():
     common(Flag, b"\x00", False, 1)
@@ -1241,25 +1228,32 @@ def test_from_issue_175():
     assert test.parse(b'\x87\x0f').value == 34575
 
 def test_from_issue_71():
-    setglobalstringencoding(StringsAsBytes)
     Inner = Struct(
-        'name' / PascalString(Byte),
-        'occupation' / PascalString(Byte),
+        'name' / PascalString(Byte, "utf8"),
+        'occupation' / PascalString(Byte, "utf8"),
     )
     Outer = Struct(
         'struct_type' / Int16ub,
         'payload_len' / Int16ub,
         'payload' / RawCopy(Inner),
         'serial' / Int16ub,
-        'checksum' / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), this.payload.data),
+        'checksum' / Checksum(Bytes(64),
+            lambda data: hashlib.sha512(data).digest(),
+            this.payload.data),
         Check(len_(this.payload.data) == this.payload_len),
         Terminated,
     )
 
-    payload = Inner.build(dict(name=b"unknown", occupation=b"worker"))
-    payload_len = len(payload)
-    Outer.build(Container(payload=Container(data=payload), payload_len=payload_len, serial=12345, struct_type=9001))
-    setglobalstringencoding(None)
+    payload = Inner.build(Container(
+        name=u"unknown",
+        occupation=u"worker",
+        ))
+    Outer.build(Container(
+        struct_type=9001,
+        payload_len=len(payload),
+        payload=Container(data=payload),
+        serial=12345,
+        ))
 
 def test_from_issue_231():
     u = Union(0, "raw"/Byte[8], "ints"/Int[2])

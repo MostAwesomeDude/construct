@@ -15,7 +15,7 @@ Implementation of the following grammar for the GIF89a file format
 from construct import *
 
 
-data_sub_block = PascalString(Int8ul, StringsAsBytes)
+data_sub_block = PascalString(Int8ul, "utf8")
 
 gif_logical_screen = Struct(
     "width" / Int16ul,
@@ -39,8 +39,8 @@ gif_logical_screen = Struct(
 
 application_extension = Struct(
     "block_size" / Const(11, Int8ul),
-    "application_identifier" / String(8, StringsAsBytes),
-    "application_auth_code" / String(3, StringsAsBytes),
+    "application_identifier" / String(8, "utf8"),
+    "application_auth_code" / String(3, "utf8"),
     "data_sub_block" / data_sub_block,
     "block_terminator" / Int8ul,
 )

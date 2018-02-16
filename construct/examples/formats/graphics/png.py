@@ -62,7 +62,7 @@ gama_info = "gama_info" / Struct(
 # 11.3.3.3: iCCP - Embedded ICC profile
 #===============================================================================
 iccp_info = "iccp_info" / Struct(
-    "name" / CString(StringsAsBytes),
+    "name" / CString("utf8"),
     compression_method,
     "compressed_profile" / Bytes(this._.length - (len_(this.name) + 2)),
 )
@@ -95,7 +95,7 @@ srgb_info = "rendering_intent" / Enum(Byte,
 # 11.3.4.3: tEXt - Textual data
 #===============================================================================
 text_info = "text_info" / Struct(
-    "keyword" / CString(StringsAsBytes),
+    "keyword" / CString("utf8"),
     "text" / Bytes(this._.length - (len_(this.keyword) + 1)),
 )
 
@@ -103,7 +103,7 @@ text_info = "text_info" / Struct(
 # 11.3.4.4: zTXt - Compressed textual data
 #===============================================================================
 ztxt_info = "ztxt_info" / Struct(
-    "keyword" / CString(StringsAsBytes),
+    "keyword" / CString("utf8"),
     compression_method,
     # As with iCCP, length is chunk length, minus length of
     # keyword, minus two: one byte for the null terminator,
@@ -115,11 +115,11 @@ ztxt_info = "ztxt_info" / Struct(
 # 11.3.4.5: iTXt - International textual data
 #===============================================================================
 itxt_info = "itxt_info" / Struct(
-    "keyword" / CString(StringsAsBytes),
+    "keyword" / CString("utf8"),
     "compression_flag" / Byte,
     compression_method,
-    "language_tag" / CString(StringsAsBytes),
-    "translated_keyword" / CString(StringsAsBytes),
+    "language_tag" / CString("utf8"),
+    "translated_keyword" / CString("utf8"),
     "text" / Bytes(this._.length - (len_(this.keyword) + len_(this.language_tag) + len_(this.translated_keyword) + 5)),
 )
 
@@ -158,7 +158,7 @@ def splt_info_data_length(ctx):
     return (ctx._.length - len(ctx.name) - 2) // entry_size
 
 splt_info = "data" / Struct(
-    "name" / CString(StringsAsBytes),
+    "name" / CString("utf8"),
     "sample_depth" / Byte,
     "table" / Array(splt_info_data_length,
         IfThenElse(this.sample_depth == 8,

@@ -1306,29 +1306,19 @@ class VarInt(Construct):
 #===============================================================================
 # strings
 #===============================================================================
-globalstringencoding = None
 
-
-@singleton
-class StringsAsBytes:
-    """
-    Used for marking String* classes to not encode/decode bytes (allows using `str` on Python 2).
-    """
-    pass
-
-
+#: Explicitly supported encodings (by String and CString classes).
+#:
 possiblestringencodings = dict(
-    StringsAsBytes=1,
     ascii=1,
-    utf8=1, utf_8=1, U8=1,
-    utf16=2, utf_16=2, U16=2, utf_16_be=2, utf_16_le=2,
-    utf32=4, utf_32=4, U32=4, utf_32_be=4, utf_32_le=4,
+    utf8=1, utf_8=1, u8=1,
+    utf16=2, utf_16=2, u16=2, utf_16_be=2, utf_16_le=2,
+    utf32=4, utf_32=4, u32=4, utf_32_be=4, utf_32_le=4,
 )
 
 
-def selectencoding(localencoding):
+def selectencoding(encoding):
     """Used internally."""
-    encoding = localencoding or globalstringencoding
     if not encoding:
         raise StringError("String* classes require explicit encoding")
     return encoding
@@ -1336,25 +1326,12 @@ def selectencoding(localencoding):
 
 def calculateunits(encoding):
     """Used internally."""
-    if encoding is StringsAsBytes:
-        encoding = "StringsAsBytes"
+    encoding = encoding.replace("-","_").lower()
     if encoding not in possiblestringencodings:
-        raise StringError("encoding not implemented: %r" % (encoding,))
+        raise StringError("encoding %r not among %r" % (encoding, possiblestringencodings,))
     unitsize = possiblestringencodings[encoding]
     finalunit = b"\x00" * unitsize
     return unitsize, finalunit
-
-
-def setglobalstringencoding(encoding):
-    r"""
-    Sets the encoding globally for all String PascalString CString GreedyString instances. Note that encoding specified expiciltly in a particular construct supersedes it. Note also that global encoding is applied during parsing and building (not class instantiation).
-
-    See :class:`~construct.core.StringsAsBytes` for non-encoding, allowing using `str` on Python 2.
-
-    :param encoding: string like "utf8", or StringsAsBytes, or None (disable global override)
-    """
-    global globalstringencoding
-    globalstringencoding = encoding
 
 
 class StringEncoded(Adapter):
@@ -1366,29 +1343,15 @@ class StringEncoded(Adapter):
         self.encoding = selectencoding(encoding)
 
     def _decode(self, obj, context, path):
-        encoding = self.encoding
-        if isinstance(encoding, str):
-            return obj.decode(encoding)
-        if isinstance(encoding, StringsAsBytes.__class__):
-            return obj
+        return obj.decode(self.encoding)
 
     def _encode(self, obj, context, path):
-        encoding = self.encoding
-        if isinstance(encoding, str):
-            if not isinstance(obj, unicodestringtype):
-                raise StringError("string encoding failed, expected unicode string")
-            return obj.encode(encoding)
-        if isinstance(encoding, StringsAsBytes.__class__):
-            if not isinstance(obj, bytestringtype):
-                raise StringError("string encoding failed, expected byte string")
-            return obj
+        if not isinstance(obj, unicodestringtype):
+            raise StringError("string encoding failed, expected unicode string")
+        return obj.encode(self.encoding)
 
     def _emitparse(self, code):
-        encoding = self.encoding
-        if isinstance(encoding, str):
-            return "(%s).decode(%r)" % (self.subcon._compileparse(code), encoding, )
-        if isinstance(encoding, StringsAsBytes.__class__):
-            return "(%s)" % (self.subcon._compileparse(code), )
+        return "(%s).decode(%r)" % (self.subcon._compileparse(code), self.encoding, )
 
 
 class StringPaddedTrimmed(Construct):
@@ -1431,7 +1394,7 @@ class StringPaddedTrimmed(Construct):
 
     def _emitparse(self, code):
         unitsize, finalunit = calculateunits(self.encoding)
-        code.append(r"""
+        code.append("""
             def parse_paddedtrimmedstring(io, length, unitsize, finalunit):
                 if length % unitsize:
                     raise StringError
@@ -1484,19 +1447,18 @@ class StringNullTerminated(Construct):
         return "parse_nullterminatedstring(io, %s, %r)" % (unitsize, finalunit, )
 
 
-def String(length, encoding=None):
+def String(length, encoding):
     r"""
     Configurable, fixed-length or variable-length string field.
 
     When parsing, the byte string is stripped of null bytes (per encoding unit), then decoded. Length is an integer or context lambda. When building, the string is encoded, then trimmed to specified length minus encoding unit, then padded to specified length. Size is same as length parameter.
 
-    .. warning:: String and CString only support encodings explicitly listed in :func:`~construct.core.possiblestringencodings` .
+    .. warning:: String and CString only support encodings explicitly listed in :class:`~construct.core.possiblestringencodings` .
 
     :param length: integer or context lambda, length in bytes (not unicode characters)
-    :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
+    :param encoding: string like "utf8" "utf16" "utf32"
 
-    :raises StringError: String* classes require explicit encoding
-    :raises StringError: building a unicode string but no encoding
+    :raises StringError: building a non-unicode string
     :raises StringError: specified length or object for building is not a multiple of unit
     :raises StringError: selected encoding is not on supported list
 
@@ -1531,17 +1493,16 @@ def String(length, encoding=None):
     return StringEncoded(StringPaddedTrimmed(length, encoding), encoding)
 
 
-def PascalString(lengthfield, encoding=None):
+def PascalString(lengthfield, encoding):
     r"""
     Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). VarInt is recommended when designing new protocols. Stored length is in bytes, not characters. Size is not defined.
 
     :class:`~construct.core.VarInt` is recommended for new protocols, as it is more compact and never overflows.
 
     :param lengthfield: Construct instance, field used to parse and build the length (like VarInt Int64ub)
-    :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
+    :param encoding: string like "utf8" "utf16" "utf32"
 
-    :raises StringError: String* classes require explicit encoding
-    :raises StringError: building a unicode string but no encoding
+    :raises StringError: building a non-unicode string
 
     Example::
 
@@ -1554,16 +1515,15 @@ def PascalString(lengthfield, encoding=None):
     return StringEncoded(Prefixed(lengthfield, GreedyBytes), encoding)
 
 
-def CString(encoding=None):
+def CString(encoding):
     r"""
     String ending in a terminating null byte (or null bytes in case of UTF16 UTF32).
 
-    .. warning:: String and CString only support encodings explicitly listed in :func:`~construct.core.possiblestringencodings` .
+    .. warning:: String and CString only support encodings explicitly listed in :class:`~construct.core.possiblestringencodings` .
 
-    :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
+    :param encoding: string like "utf8" "utf16" "utf32"
 
-    :raises StringError: String* classes require explicit encoding
-    :raises StringError: building a unicode string but no encoding
+    :raises StringError: building a non-unicode string
     :raises StringError: object for building is not a multiple of unit
     :raises StringError: selected encoding is not on supported list
 
@@ -1578,16 +1538,15 @@ def CString(encoding=None):
     return StringEncoded(StringNullTerminated(encoding), encoding)
 
 
-def GreedyString(encoding=None):
+def GreedyString(encoding):
     r"""
     String that reads entire stream until EOF, and writes a given string as-is. If no encoding is specified, this is essentially GreedyBytes.
 
     Analog to :class:`~construct.core.GreedyBytes` , and identical when no enoding is used.
 
-    :param encoding: string like "utf8" "utf16" "utf32", or StringsAsBytes, or None (use global override)
+    :param encoding: string like "utf8" "utf16" "utf32"
 
-    :raises StringError: String* classes require explicit encoding
-    :raises StringError: building a unicode string but no encoding
+    :raises StringError: building a non-unicode string
     :raises StreamError: stream failed when reading until EOF
 
     Example::

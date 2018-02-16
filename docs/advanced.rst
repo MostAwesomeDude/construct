@@ -46,6 +46,12 @@ b'\x01\x00\x00\x00'
 Bytes and bits
 ==============
 
+.. warning::
+
+    Python 3 known problem:
+
+    Unprefixed string literals like "data" are on Python 3 interpreted as unicode. This casues failures when using fields like `Bytes`.
+
 "Strings" of bytes (`str` in PY2 and `bytes` in PY3) can be moved around as-is. Bits are discussed in a later chapter.
 
 >>> Bytes(5).build(b"12345")
@@ -64,19 +70,13 @@ Strings
 
 .. warning::
 
-    Python 3 known problem:
-
-    Unprefixed string literals like "data" are on Python 3 interpreted as unicode (not bytes). If you look at the documentation on this site, you will notice that most examples use b"\\x00" literals (so called b-strings). Unicode strings are processed by String* classes, and require explicit encoding like "utf8".
-
-.. warning::
-
     Python 2 known problem:
 
-    Encoding needs to be specified explicitly, although  :func:`~construct.core.setglobalstringencoding` can be used for that as well. Encodings like UTF8 UTF16 UTF32 are recommended. `StringsAsBytes` can be used to specify non-encoding (to allow `str` on Python 2).
+    Unprefixed string literals like "text" are on Python 2 interpreted as bytes. This casues failures when using fields that operate on unicode objects like String* classes.
 
 .. note::
 
-    Encodings like UTF16 UTF32 (including little-endian) work fine with all String* classes.
+    Encodings like UTF8 UTF16 UTF32 (including little-endian) work fine with all String* classes. However two of them, String and CString, support only encodings listed exclusively in :class:`~construct.core.possiblestringencodings` .
 
 String is a fixed-length construct that pads built string with null bytes, and strips those same null bytes when parsing. Strings can also be trimmed when building. If you supply a too long string, the construct will chop it off apart instead of raising a StringError.
 
