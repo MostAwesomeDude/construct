@@ -6,12 +6,15 @@ from construct.lib import *
 def test_path():
     path = Path("path")
     x = ~((path.foo * 2 + 3 << 2) % 11)
-    assert str(x) == 'not ((((path.foo * 2) + 3) << 2) % 11)'
-    assert repr(x) == 'not ((((path.foo * 2) + 3) << 2) % 11)'
+    assert repr(x) == "not ((((path.foo * 2) + 3) << 2) % 11)"
+    assert str(x) == "not ((((path['foo'] * 2) + 3) << 2) % 11)"
     assert not x(dict(foo=7))
 
 def test_this():
-    assert repr(this) == "this"
+    assert repr(this.x) == "this.x"
+    assert str(this.x) == "this['x']"
+    assert repr(this.x == 0) == "(this.x == 0)"
+    assert str(this.x == 0) == "(this['x'] == 0)"
 
     this_example = Struct(
         # straight-forward usage: instead of passing (lambda ctx: ctx["length"]) use this.length
@@ -46,9 +49,9 @@ def test_this_getitem():
 
 def test_functions():
     assert repr(len_(this.x)) == "len_(this.x)"
-    assert repr(sum_(this.x)) == "sum_(this.x)"
+    assert str(len_(this.x)) == "len_(this['x'])"
     assert repr(len_) == "len_"
-    assert repr(sum_) == "sum_"
+    assert str(len_) == "len_"
 
     example = Struct(
         "items" / Byte[2],
@@ -66,6 +69,8 @@ def test_functions():
 def test_obj():
     assert repr(obj_) == "obj_"
     assert repr(obj_ + 1 == 12) == "((obj_ + 1) == 12)"
+    assert str(obj_) == "obj_"
+    assert str(obj_ + 1 == 12) == "((obj_ + 1) == 12)"
 
     assert (obj_)(1,{}) == 1
     assert (obj_ + 10)(1,{}) == 11
@@ -90,6 +95,7 @@ def test_list():
     assert repr(list_[-1]) == "list_[-1]"
     assert repr(list_[-1] == 0) == "(list_[-1] == 0)"
     assert repr(list_[-1] + 1) == "(list_[-1] + 1)"
+    # missing str
 
     assert (list_)(1,[],{}) == []
     assert (list_[-1])(1,[2,3,4],{}) == 4

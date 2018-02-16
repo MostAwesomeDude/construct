@@ -118,6 +118,9 @@ class UniExpr(ExprMixin):
     def __repr__(self):
         return "%s %r" % (opnames[self.op], self.operand)
 
+    def __str__(self):
+        return "%s %s" % (opnames[self.op], self.operand)
+
     def __call__(self, obj, *args):
         operand = self.operand(obj) if callable(self.operand) else self.operand
         return self.op(operand)
@@ -133,6 +136,9 @@ class BinExpr(ExprMixin):
 
     def __repr__(self):
         return "(%r %s %r)" % (self.lhs, opnames[self.op], self.rhs)
+
+    def __str__(self):
+        return "(%s %s %s)" % (self.lhs, opnames[self.op], self.rhs)
 
     def __call__(self, obj, *args):
         lhs = self.lhs(obj) if callable(self.lhs) else self.lhs
@@ -153,6 +159,12 @@ class Path(ExprMixin):
             return self.__name
         else:
             return "%r.%s" % (self.__parent, self.__field)
+
+    def __str__(self):
+        if self.__parent is None:
+            return self.__name
+        else:
+            return "%s[%r]" % (self.__parent, self.__field)
 
     def __call__(self, obj, *args):
         if self.__parent is None:
@@ -203,6 +215,12 @@ class FuncPath(ExprMixin):
             return "%s_" % (self.__func.__name__)
         else:
             return "%s_(%r)" % (self.__func.__name__, self.__operand)
+
+    def __str__(self):
+        if self.__operand is None:
+            return "%s_" % (self.__func.__name__)
+        else:
+            return "%s_(%s)" % (self.__func.__name__, self.__operand)
 
     def __call__(self, operand, *args):
         if self.__operand is None:

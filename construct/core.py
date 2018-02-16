@@ -1444,7 +1444,7 @@ class StringPaddedTrimmed(Construct):
                     endsat -= unitsize
                 return obj[:endsat]
         """)
-        return "parse_paddedtrimmedstring(io, %r, %r, %r)" % (self.length, unitsize, finalunit, )
+        return "parse_paddedtrimmedstring(io, %s, %s, %r)" % (self.length, unitsize, finalunit, )
 
 
 class StringNullTerminated(Construct):
@@ -1484,7 +1484,7 @@ class StringNullTerminated(Construct):
                     result.append(unit)
                 return b"".join(result)
         """)
-        return "parse_nullterminatedstring(io, %r, %r)" % (unitsize, finalunit, )
+        return "parse_nullterminatedstring(io, %s, %r)" % (unitsize, finalunit, )
 
 
 def String(length, encoding=None):
@@ -1796,7 +1796,7 @@ class FlagsEnum(Adapter):
             raise MappingError("building failed, unknown object: %r" % (obj,))
 
     def _emitparse(self, code):
-        return "reuse(%s, lambda x: Container(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %r)" % (k,v) for k,v in self.flags.items()), )
+        return "reuse(%s, lambda x: Container(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %s)" % (k,v) for k,v in self.flags.items()), )
 
 
 class Mapping(Adapter):
@@ -1976,8 +1976,8 @@ class Struct(Construct):
                     pass
                 except StopIteration:
                     pass
-                del this._
-                del this._index
+                del this['_']
+                del this['_index']
                 return this
         """
         code.append(block)
@@ -2161,7 +2161,7 @@ class Array(Subconstruct):
         fname = "parse_array_%s" % code.allocateId()
         block = """
             def %s(io, this):
-                count = %r
+                count = %s
                 """ % (fname, self.count, )
         if not isinstance(self.count, int) or not self.count >= 0:
             block += """
@@ -2171,7 +2171,7 @@ class Array(Subconstruct):
         block += """
                 obj = ListContainer()
                 for i in range(count):
-                    this._index = i
+                    this['_index'] = i
                     obj.append(%s)
                 return obj
                 """ % (self.subcon._compileparse(code), )
@@ -2310,10 +2310,10 @@ class RepeatUntil(Subconstruct):
             def %s(io, this):
                 list_ = ListContainer()
                 for i in itertools.count():
-                    this._index = i
+                    this['_index'] = i
                     obj_ = %s
                     list_.append(obj_)
-                    if %r:
+                    if %s:
                         return list_
         """ % (fname, self.subcon._compileparse(code), self.predicate, )
         code.append(block)
@@ -2521,7 +2521,7 @@ class Computed(Construct):
         return 0
 
     def _emitparse(self, code):
-        return "%r" % (self.func,)
+        return "%s" % (self.func,)
 
 
 @singleton
@@ -2697,7 +2697,7 @@ class Check(Construct):
             def parse_check(condition):
                 if not condition: raise CheckError
         """)
-        return "parse_check(%r)" % (self.func,)
+        return "parse_check(%s)" % (self.func,)
 
 
 @singleton
@@ -3207,8 +3207,8 @@ class Union(Construct):
                 io.seek(forward)
             """
         block += """
-                del this._
-                del this._index
+                del this['_']
+                del this['_index']
                 return this
         """
         code.append(block)
@@ -3433,9 +3433,9 @@ class Switch(Construct):
         fname = "factory_%s" % code.allocateId()
         code.append("%s = {%s}" % (fname, ", ".join("%r : lambda io,this: %s" % (key, sc._compileparse(code)) for key,sc in self.cases.items()), ))
         if self.default is self.NoDefault:
-            return "%s[%r](io, this)" % (fname, self.keyfunc, )
+            return "%s[%s](io, this)" % (fname, self.keyfunc, )
         else:
-            return "%s.get(%r, lambda io,this: %s)(io, this)" % (fname, self.keyfunc, self.default._compileparse(code))
+            return "%s.get(%s, lambda io,this: %s)(io, this)" % (fname, self.keyfunc, self.default._compileparse(code))
 
 
 def EmbeddedSwitch(selector, merged, mapping):
@@ -3531,7 +3531,7 @@ class StopIf(Construct):
                 if condition:
                     raise StopIteration
         """)
-        return "parse_stopif(%r)" % (self.condfunc,)
+        return "parse_stopif(%s)" % (self.condfunc,)
 
 
 #===============================================================================
@@ -3823,7 +3823,7 @@ class Pointer(Subconstruct):
                 io.seek(fallback)
                 return obj
         """)
-        return "parse_pointer(io, %r, lambda: %s)" % (self.offset, self.subcon._compileparse(code),)
+        return "parse_pointer(io, %s, lambda: %s)" % (self.offset, self.subcon._compileparse(code),)
 
 
 class Peek(Subconstruct):
@@ -4368,7 +4368,7 @@ class RestreamData(Subconstruct):
         return 0
 
     def _emitparse(self, code):
-        return "restream(%r, lambda io: %s)" % (self.datafunc, self.subcon._compileparse(code), )
+        return "restream(%s, lambda io: %s)" % (self.datafunc, self.subcon._compileparse(code), )
 
 
 class TransformData(Subconstruct):
