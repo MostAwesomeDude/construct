@@ -107,6 +107,25 @@ class ExprMixin(object):
     def __ne__(self, other):
         return BinExpr(operator.ne, self, other)
 
+    def __getstate__(self):
+        attrs = {}
+        if hasattr(self, "__dict__"):
+            attrs.update(self.__dict__)
+        slots = []
+        c = self.__class__
+        while c is not None:
+            if hasattr(c, "__slots__"):
+                slots.extend(c.__slots__)
+            c = c.__base__
+        for name in slots:
+            if hasattr(self, name):
+                attrs[name] = getattr(self, name)
+        return attrs
+
+    def __setstate__(self, attrs):
+        for name, value in attrs.items():
+            setattr(self, name, value)
+
 
 class UniExpr(ExprMixin):
     __slots__ = ["op", "operand"]

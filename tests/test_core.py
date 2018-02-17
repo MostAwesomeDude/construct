@@ -1382,15 +1382,41 @@ def test_compiled_benchmark_testcompiled():
     Struct().compile().benchmark(b"")
     Struct().compile().testcompiled(b"")
 
-@xfail(reason="unknown cause")
+@xfail(reason="unknown causes")
 def test_pickling_constructs():
-    # it seems there are at least 2 problems:
-    # - this expressions not pickle?
-    # - Construct getstate/setstate is broken?
+    # it seems there are few problems:
+    # - this expressions, ExprMixin added __get(set)state__
+    # - CompilableMacro not pickle, eg. IfThenElse
+    # what was fixed so far:
+    # - singleton decorator adds __reduce__ to instance
 
     import pickle
 
-    d = Struct("count"/Byte, "items"/Byte[this.count], "text"/CString("utf8"))
+    d = Struct(
+        "count" / Byte,
+        "greedybytes" / Prefixed(Byte, GreedyBytes),
+        "formatfield" / FormatField("=","Q"),
+        "bytesinteger" / BytesInteger(1),
+        "varint" / VarInt,
+        "text1" / PascalString(Byte, "utf8"),
+        "text2" / CString("utf8"),
+        "enum" / Enum(Byte, zero=0),
+        "flagsenum" / FlagsEnum(Byte, zero=0),
+        "array1" / Byte[5],
+        # - uses this-expression
+        # "array2" / Byte[this.count],
+        "greedyrange" / Prefixed(Byte, GreedyRange(Byte)),
+        # - its a macro around Switch, should reimplement
+        # "if1" / IfThenElse(True, Byte, Byte),
+        "padding" / Padding(1),
+        "peek" / Peek(Byte),
+        "tell" / Tell,
+        # - unknown causes
+        # "this1" / Byte[this.count],
+        # "obj_1" / RepeatUntil(obj_ == 0, Byte),
+        # "len_1" / Computed(len_(this.array1)),
+    )
+    data = b"\x00"*100
+
     du = pickle.loads(pickle.dumps(d))
-    assert d.parse(bytes(100)) == du.parse(bytes(100))
-    assert du == d
+    assert du.parse(data) == d.parse(data)

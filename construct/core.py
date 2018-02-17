@@ -62,7 +62,9 @@ class ChecksumError(ConstructError):
 # used internally
 #===============================================================================
 def singleton(arg):
-    return arg()
+    x = arg()
+    x.__reduce__ = lambda: arg.__name__
+    return x
 
 
 def _read_stream(stream, length):
@@ -189,7 +191,7 @@ class Construct(object):
 
     All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can be a string, or None by default. A single underscore "_" is a reserved name, used as up-level in nested containers. The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced. The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are often inherited from inner subconstructs but that depends on each class.
     """
-    __slots__ = ["name", "docs", "flagbuildnone", "flagembedded"]
+    __slots__ = ["name", "docs", "flagbuildnone", "flagembedded", "__reduce__"]
 
     def __init__(self):
         self.name = None
