@@ -10,12 +10,12 @@ Adapters are the standard way to extend and customize the library. Adapters oper
 In order to write custom adapters, implement ``_encode`` and ``_decode``::
 
     class MyAdapter(Adapter):
-        def _encode(self, obj, context):
+        def _encode(self, obj, context, path):
             # called at building time to return a modified version of obj
             # reverse version of _decode
             pass
         
-        def _decode(self, obj, context):
+        def _decode(self, obj, context, path):
             # called at parsing time to return a modified version of obj
             # reverse version of _encode
             pass
@@ -27,11 +27,9 @@ Generally speaking, you should not write constructs by yourself:
 
 * It's a craft that requires skills and understanding of the internals of the library (which change over time).
 * Adapters should really be all you need and are much more simpler to implement.
-* To make things faster, try using pypy, or write your code in cython. The python-level classes are as fast as it gets, assuming generality.
+* To make things faster, try using compilation feature, or pypy. The python-level classes are as fast as it gets, assuming generality.
 
-The only reason you might want to write a custom class is to achieve something that's not currently possible. This might be a construct that computes/corrects the checksum of data, altough that already exists. Or a compression, or hashing. These also exist. But surely there is something that was not invented yet.
-
-If you need a semantics modification to an existing class, you can post a question or feature request as an Issue, or copy paste the class code and modify it.
+The only reason you might want to write a custom class is to achieve something that's not currently possible. This might be a construct that computes/corrects the checksum of data, altough that already exists. Or a compression, or hashing. These also exist. But surely there is something that was not invented yet. If you need a semantics modification to an existing class, you can post a question or feature request as an Issue, or copy paste the class code and modify it.
 
 There are two kinds of constructs: raw construct and subconstructs.
 
