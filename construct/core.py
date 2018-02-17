@@ -87,6 +87,8 @@ def _read_stream_entire(stream):
 
 
 def _write_stream(stream, data, length=None):
+    if not isinstance(data, bytestringtype):
+        raise StringError("given non-bytes value, perhaps unicode? %r" % (data,))
     if length is None:
         length = len(data)
     if length < 0:
@@ -719,6 +721,7 @@ class Bytes(Construct):
     :param length: integer or context lambda
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises StringError: building from non-bytes value, perhaps unicode
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -772,6 +775,7 @@ class GreedyBytes(Construct):
     Parses the stream to the end. Builds into the stream directly (without checks). Size is undefined.
 
     :raises StreamError: stream failed when reading until EOF
+    :raises StringError: building from non-bytes value, perhaps unicode
 
     Example::
 
@@ -2361,7 +2365,7 @@ class Const(Subconstruct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises ConstError: parsed data does not match specified value, or building from wrong value
-    :raises StringError: given non-bytes value, perhaps unicode
+    :raises StringError: building from non-bytes value, perhaps unicode
 
     Example::
 
@@ -3444,7 +3448,6 @@ def EmbeddedSwitch(merged, selector, mapping):
     return Struct(*merged2)
 
 
-
 class StopIf(Construct):
     r"""
     Checks for a condition, and stops certain classes (:class:`~construct.core.Struct` :class:`~construct.core.Sequence` :class:`~construct.core.GreedyRange`) from parsing or building further.
@@ -4020,6 +4023,7 @@ class RawCopy(Subconstruct):
 
     :raises StreamError: stream is not seekable and tellable
     :raises RawCopyError: building and neither data or value was given
+    :raises StringError: building from non-bytes value, perhaps unicode
 
     Example::
 
@@ -4260,6 +4264,7 @@ class TransformData(Subconstruct):
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: subcon parsed less than `decodeamount` bytes
     :raises StreamError: subcon build (and encoder transformed) more or less than `encodeamount` bytes
+    :raises StringError: building from non-bytes value, perhaps unicode
 
     Can propagate any exception from the lambdas, possibly non-ConstructError.
 
