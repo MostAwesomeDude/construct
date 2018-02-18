@@ -853,11 +853,11 @@ def test_pass():
 @xfail(reason="unknown cause, Bitwise was reimplemented using TransformData")
 def test_terminated():
     common(Terminated, b"", None, 0)
-    common(Struct("end"/Terminated), b"", Container(end=None), 0)
-    common(BitStruct("end"/Terminated), b"", Container(end=None), 0)
+    common(Struct(Terminated), b"", Container(), 0)
+    common(BitStruct(Terminated), b"", Container(), 0)
     assert raises(Terminated.parse, b"x") == TerminatedError
-    assert raises(Struct("end"/Terminated).parse, b"x") == TerminatedError
-    assert raises(BitStruct("end"/Terminated).parse, b"x") == TerminatedError
+    assert raises(Struct(Terminated).parse, b"x") == TerminatedError
+    assert raises(BitStruct(Terminated).parse, b"x") == TerminatedError
 
 def test_rawcopy():
     assert RawCopy(Byte).parse(b"\xff") == dict(data=b"\xff", value=255, offset1=0, offset2=1, length=1)

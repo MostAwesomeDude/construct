@@ -3991,12 +3991,8 @@ class Terminated(Construct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        try:
-            if stream.read(1):
-                raise TerminatedError("expected end of stream")
-        except IOError:
-            # Restreamed.read(1) does not return empty string like BytesIO
-            pass
+        if stream.read(1):
+            raise TerminatedError("expected end of stream")
 
     def _build(self, obj, stream, context, path):
         pass
