@@ -7,7 +7,7 @@ Transition to 2.9
 Overall
 =======
 
-**Compilation feature for faster performance!** Read `this chapter <https://construct.readthedocs.io/en/latest/compilation.html>`_ for tutorial, particularly its restrictions section.
+**Compilation feature for faster performance!** Read `this tutorial chapter <https://construct.readthedocs.io/en/latest/compilation.html>`_, particularly its restrictions section.
 
 **Docstrings of all classes were overhauled.** Check the `Core API pages <https://construct.readthedocs.io/en/latest/index.html#api-reference>`_.
 
@@ -15,23 +15,25 @@ Overall
 General classes
 -----------------
 
-All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*kw (see `this page <https://construct.readthedocs.io/en/latest/meta.html>`_)
+All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*kw (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html>`_)
 
-All constructs: `compile benchmark testcompiled` methods were added (see `this page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
+All constructs: `compile benchmark testcompiled` methods were added (`see tutorial page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
 
-All constructs: operator * can be used for docstrings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
+All constructs: operator * can be used for docstrings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
 
 Compiled CompilableMacro Decompiled added (used internally)
 
-String* classes require explicit encodings, all of them support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
+String* classes require explicit encodings, all of them support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
-Enum FlagsEnum can merge labels from IntEnum IntFlag (enum34 module), but dropped `default` parameter
+Enum FlagsEnum can merge labels from IntEnum IntFlag (enum34 module), but dropped `default` parameter (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
-Enum FlagsEnum can build from integers and labels, and expose labels as attributes as bitwisable strings (see `this page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+Enum FlagsEnum can build from integers and labels, and expose labels as attributes as bitwisable strings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
-Mapping replaced SymmetricMapping, and dropped `default` parameter
+Mapping replaced SymmetricMapping, and dropped `default` parameter (`see API page <https://construct.readthedocs.io/en/latest/api/mappings.html#construct.Mapping>`_)
 
-Struct Sequence Union FocusedSeq are supporting new embedding semantics (see `this page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
+Struct Sequence Union FocusedSeq have new embedding semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
+
+Struct Sequence Union FocusedSeq are exposing subcons in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
 
 EmbeddedBitStruct removed
 
@@ -39,23 +41,25 @@ Array reimplemented without Range, does not use stream.tell()
 
 Range removed, GreedyRange remains
 
-Const has reordered parameters, like ``Const(b"\\x00")`` and ``Const(0, Int8ub)``.
+Const has reordered parameters, like ``Const(b"\\x00")`` and ``Const(0, Int8ub)``. (`see API page <https://construct.readthedocs.io/en/latest/api/misc.html#construct.Const>`_)
 
-Index added, in Miscellaneous
+Index added, in Miscellaneous (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#index>`_)
 
-Pickled added, in Miscellaneous
+Pickled added, in Miscellaneous (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#pickled>`_)
 
-Hex HexDump reimplemented (see `this page <https://construct.readthedocs.io/en/latest/misc.html#hex-and-hexdump>`_)
+Timestamp added, in Miscellaneous (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#timestamp>`_)
 
-If IfThenElse parameter renamed `predicate` to `condfunc`, and cannot be embedded
+Hex HexDump reimplemented (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#hex-and-hexdump>`_)
 
-Switch dropped `includekey` parameter, and cannot be embedded
+If IfThenElse parameter renamed `predicate` to `condfunc`, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.If>`_)
 
-EmbeddedSwitch added, in Conditional
+Switch dropped `includekey` parameter, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.Switch>`_)
 
-RestreamData added, in Tunneling
+EmbeddedSwitch added, in Conditional (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#embeddedswitch>`_)
 
-TransformData added, in Tunneling
+RestreamData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
+
+TransformData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
 
 ExprAdapter Mapping Restreamed changed parameters order (decoders before encoders)
 
@@ -63,7 +67,7 @@ Adapter changed parameters, added `path` to `_encode _decode _validate`
 
 LazyStruct LazySequence LazyRange LazyField(OnDemand) removed
 
-LazyBound remains, but changed to parameter-less lambda
+LazyBound remains, but changed to parameter-less lambda (`see tutorial page <https://construct.readthedocs.io/en/latest/lazy.html#lazybound>`_)
 
 FlagsContainer removed
 
