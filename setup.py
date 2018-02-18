@@ -30,6 +30,7 @@ setup(
         "supported": [
             "enum34",
             "numpy",
+            "arrow",
         ],
     },
     requires = [],

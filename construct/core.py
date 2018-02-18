@@ -42,6 +42,8 @@ class ExplicitError(ConstructError):
     pass
 class NamedTupleError(ConstructError):
     pass
+class TimestampError(ConstructError):
+    pass
 class UnionError(ConstructError):
     pass
 class SelectError(ConstructError):
@@ -2925,6 +2927,83 @@ class NamedTuple(Adapter):
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return "%s(*(%s))" % (fname, self.subcon._compileparse(code), )
         raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRange")
+
+
+def Timestamp(subcon, unit, epoch):
+    r"""
+    Datetime, represented as Arrow object.
+
+    Note that accuracy is not guaranteed, because building rounds the value to integer (even when Float subcon is used), due to floating-point errors in general, and because MSDOS scheme has only 5-bit (32 values) seconds field (seconds are rounded to multiple of 2).
+
+    To use a different epoch, provide an Arrow object that would be the base epoch like Arrow(1900,1,1). To use a different unit, provide a float as fraction of seconds (1. on Unix and MacOSX, 10**-7 on Windows). MSDOS format doesnt support custom epoch or unit.
+
+    :param subcon: Construct instance like Int* Float*, or None with msdos format
+    :param unit: string like unix macosx windows msdos, or float
+    :param epoch: string like unix macosx windows msdos, or Arrow instance
+
+    :raises TimestampError: subcon is not a Construct instance or None
+    :raises TimestampError: unit is a wrong string and not float
+    :raises TimestampError: epoch is a wrong string and not Arrow instance
+
+    Example::
+
+        >>> d = Timestamp(Int64ub, "unix", "unix")
+        >>> d.parse(b'\x00\x00\x00\x00ZIz\x00')
+        <Arrow [2018-01-01T00:00:00+00:00]>
+        >>> d = Timestamp(None, "msdos", "msdos")
+        >>> d.parse(b'H9\x8c"')
+        <Arrow [2016-01-25T17:33:04+00:00]>
+    """
+    import arrow
+
+    if not isinstance(subcon, (Construct, None.__class__)):
+        raise TimestampError("subcon should be Int32/Int64, experimentally Float, or None when using msdos format")
+    if not isinstance(unit, (stringtypes, float)):
+        raise TimestampError("unit must be a float or string constant")
+    if not isinstance(epoch, (stringtypes, arrow.Arrow)):
+        raise TimestampError("epoch must be an Arrow or string constant")
+    if isinstance(unit, stringtypes):
+        if unit not in ["unix","macosx","windows","msdos"]:
+            raise TimestampError("unit string constant must be like: unix macosx windows msdos")
+    if isinstance(epoch, stringtypes):
+        if epoch not in ["unix","macosx","windows","msdos"]:
+            raise TimestampError("epoch string constant must be like: unix macosx windows msdos")
+
+    if unit == "msdos" or epoch == "msdos":
+        st = BitStruct(
+            "year" / BitsInteger(7),
+            "month" / BitsInteger(4),
+            "day" / BitsInteger(5),
+            "hour" / BitsInteger(5),
+            "minute" / BitsInteger(6),
+            "second" / BitsInteger(5),
+        )
+        class MsdosTimestampAdapter(Adapter):
+            def _decode(self, obj, context, path):
+                return arrow.Arrow(1980,1,1).shift(years=obj.year, months=obj.month-1, days=obj.day-1, hours=obj.hour, minutes=obj.minute, seconds=obj.second*2)
+            def _encode(self, obj, context, path):
+                t = obj.timetuple()
+                return Container(year=t.tm_year-1980, month=t.tm_mon, day=t.tm_mday, hour=t.tm_hour, minute=t.tm_min, second=t.tm_sec//2)
+        return MsdosTimestampAdapter(st)
+
+    if unit == "unix":
+        unit = 1.
+    if unit == "macosx":
+        unit = 1.
+    if unit == "windows":
+        unit = 10**-7
+    if epoch == "unix":
+        epoch = arrow.Arrow(1970, 1, 1)
+    if epoch == "macosx":
+        epoch = arrow.Arrow(1904, 1, 1)
+    if epoch == "windows":
+        epoch = arrow.Arrow(1600, 1, 1)
+    class TimestampAdapter(Adapter):
+        def _decode(self, obj, context, path):
+            return epoch.shift(seconds=obj*unit)
+        def _encode(self, obj, context, path):
+            return int((obj-epoch).total_seconds()/unit)
+    return TimestampAdapter(subcon)
 
 
 class Hex(Adapter):

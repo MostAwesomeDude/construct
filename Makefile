@@ -18,9 +18,9 @@ benchsave:
 	python3.6 -m pytest --benchmark-enable --benchmark-columns=min,stddev --benchmark-sort=name --benchmark-compare --benchmark-autosave
 
 installdeps:
-	python3.6 -m pip install pytest pytest-benchmark pytest-cov enum34 numpy --upgrade
-	python2.7 -m pip install pytest pytest-benchmark            enum34 numpy --upgrade
-	pypy      -m pip install pytest pytest-benchmark            enum34       --upgrade
+	python3.6 -m pip install pytest pytest-benchmark pytest-cov enum34 numpy arrow --upgrade
+	python2.7 -m pip install pytest pytest-benchmark            enum34 numpy arrow --upgrade
+	pypy      -m pip install pytest pytest-benchmark            enum34       arrow --upgrade
 
 upload:
 	./setup.py sdist upload

@@ -572,6 +572,17 @@ def test_namedtuple():
 
     assert raises(lambda: NamedTuple("coord", "x y z", BitStruct("x"/Byte, "y"/Byte, "z"/Byte))) == NamedTupleError
 
+def test_timestamp():
+    import arrow
+    d = Timestamp(Int64ub, "unix", "unix")
+    common(d, b'\x00\x00\x00\x00ZIz\x00', arrow.Arrow(2018,1,1), 8)
+    d = Timestamp(Int64ub, "macosx", "macosx")
+    common(d, b'\x00\x00\x00\x00\xd6o*\x80', arrow.Arrow(2018,1,1), 8)
+    d = Timestamp(Int64ub, "windows", "windows")
+    common(d, b'\x01\xd4\xa2.\x1a\xa8\x00\x00', arrow.Arrow(2018,1,1), 8)
+    d = Timestamp(None, "msdos", "msdos")
+    common(d, b'H9\x8c"', arrow.Arrow(2016,1,25,17,33,4), 4)
+
 def test_hex():
     d = Hex(Int32ub)
     common(d, b"\x00\x00\x01\x02", 0x0102, 4)

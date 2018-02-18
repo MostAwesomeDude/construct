@@ -13,5 +13,6 @@ Core API: Miscellaneous
 .. autofunction:: construct.Pickled
 .. autofunction:: construct.Numpy
 .. autofunction:: construct.NamedTuple
+.. autofunction:: construct.Timestamp
 .. autofunction:: construct.Hex
 .. autofunction:: construct.HexDump
