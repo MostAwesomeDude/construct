@@ -10,9 +10,9 @@ import time
 
 class EpochTimeStampAdapter(Adapter):
     """ Convert epoch timestamp <-> localtime """
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         return time.ctime(obj)
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         return int(time.mktime(time.strptime(obj)))
 
 packet_record = Struct(

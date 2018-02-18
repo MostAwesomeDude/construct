@@ -9,9 +9,9 @@ import time, datetime
 
 
 class MicrosecAdapter(Adapter):
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         return datetime.datetime.fromtimestamp(obj[0] + obj[1] / 1000000.0)
-    def _encode(self, obj, context):
+    def _encode(self, obj, context, path):
         epoch = datetime.datetime.utcfromtimestamp(0)
         return [int((obj-epoch).total_seconds()), 0]
 

@@ -28,9 +28,9 @@ uncompressed_pixels = Switch(this.bpp,
 # pixels: Run Length Encoding (RLE) 8 bit
 #===============================================================================
 class RunLengthAdapter(Adapter):
-    def _encode(self, obj):
+    def _encode(self, obj, context, path):
         return len(obj), obj[0]
-    def _decode(self, obj):
+    def _decode(self, obj, context, path):
         length,value = obj
         return [value] * length
 

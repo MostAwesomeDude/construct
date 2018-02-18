@@ -629,17 +629,17 @@ class Tunnel(Subconstruct):
     """
     def _parse(self, stream, context, path):
         data = _read_stream_entire(stream)  # reads entire stream
-        data = self._decode(data, context)
+        data = self._decode(data, context, path)
         return self.subcon.parse(data, **context)
     def _build(self, obj, stream, context, path):
         data = self.subcon.build(obj, **context)
-        data = self._encode(data, context)
+        data = self._encode(data, context, path)
         _write_stream(stream, data)
     def _sizeof(self, context, path):
         raise SizeofError
-    def _decode(self, data, context):
+    def _decode(self, data, context, path):
         raise NotImplementedError
-    def _encode(self, data, context):
+    def _encode(self, data, context, path):
         raise NotImplementedError
 
 
@@ -4569,12 +4569,12 @@ class Compressed(Tunnel):
             import codecs
             self.lib = codecs
 
-    def _decode(self, data, context):
+    def _decode(self, data, context, path):
         if self.encoding in ("zlib", "gzip", "bzip2", "lzma"):
             return self.lib.decompress(data)
         return self.lib.decode(data, self.encoding)
 
-    def _encode(self, data, context):
+    def _encode(self, data, context, path):
         if self.encoding in ("zlib", "gzip", "bzip2", "lzma"):
             if self.level is None or self.encoding == "lzma":
                 return self.lib.compress(data)
