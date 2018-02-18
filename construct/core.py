@@ -2967,17 +2967,17 @@ class NamedTuple(Adapter):
 
 def Timestamp(subcon, unit, epoch):
     r"""
-    Datetime, represented as Arrow object.
+    Datetime, represented as `Arrow <https://pypi.org/project/arrow/>`_ object.
 
     Note that accuracy is not guaranteed, because building rounds the value to integer (even when Float subcon is used), due to floating-point errors in general, and because MSDOS scheme has only 5-bit (32 values) seconds field (seconds are rounded to multiple of 2).
 
     To use a different epoch, provide an Arrow object that would be the base epoch like Arrow(1900,1,1). To use a different unit, provide a float as fraction of seconds (1. on Unix and MacOSX, 10**-7 on Windows). MSDOS format doesnt support custom epoch or unit.
 
-    :param subcon: Construct instance like Int* Float*, or None with msdos format
+    :param subcon: Construct instance like Int* Float*, Int32ub with msdos format
     :param unit: string like unix macosx windows msdos, or float
     :param epoch: string like unix macosx windows msdos, or Arrow instance
 
-    :raises TimestampError: subcon is not a Construct instance or None
+    :raises TimestampError: subcon is not a Construct instance
     :raises TimestampError: unit is a wrong string and not float
     :raises TimestampError: epoch is a wrong string and not Arrow instance
 
@@ -2986,14 +2986,14 @@ def Timestamp(subcon, unit, epoch):
         >>> d = Timestamp(Int64ub, "unix", "unix")
         >>> d.parse(b'\x00\x00\x00\x00ZIz\x00')
         <Arrow [2018-01-01T00:00:00+00:00]>
-        >>> d = Timestamp(None, "msdos", "msdos")
+        >>> d = Timestamp(Int32ub, "msdos", "msdos")
         >>> d.parse(b'H9\x8c"')
         <Arrow [2016-01-25T17:33:04+00:00]>
     """
     import arrow
 
-    if not isinstance(subcon, (Construct, None.__class__)):
-        raise TimestampError("subcon should be Int32/Int64, experimentally Float, or None when using msdos format")
+    if not isinstance(subcon, Construct):
+        raise TimestampError("subcon should be Int*, experimentally Float*, or Int32ub when using msdos format")
     if not isinstance(unit, (stringtypes, float)):
         raise TimestampError("unit must be a float or string constant")
     if not isinstance(epoch, (stringtypes, arrow.Arrow)):

@@ -212,7 +212,7 @@ Datetimes can be represented using Timestamp class. It supports modern formats a
 >>> d = Timestamp(Int64ub, "unix", "unix")
 >>> d.parse(b'\x00\x00\x00\x00ZIz\x00')
 <Arrow [2018-01-01T00:00:00+00:00]>
->>> d = Timestamp(None, "msdos", "msdos")
+>>> d = Timestamp(Int32ub, "msdos", "msdos")
 >>> d.parse(b'H9\x8c"')
 <Arrow [2016-01-25T17:33:04+00:00]>
 
