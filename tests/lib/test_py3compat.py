@@ -3,7 +3,7 @@ from construct.lib.py3compat import *
 
 
 def test_version():
-    assert atmostone(PY2, PY3)
+    assert PY2 or PY3
 
 def test_int_byte():
     assert int2byte(5) == b"\x05"
