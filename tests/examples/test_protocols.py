@@ -41,7 +41,6 @@ def test_tcp():
 def test_udp():
     commonhex(udp_header, b"0bcc003500280689")
 
-@xfail(PY2, reason="string encoding problem")
 def test_dns():
     commonhex(dns, b"2624010000010000000000000377777706676f6f676c6503636f6d0000010001")
 

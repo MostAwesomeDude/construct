@@ -612,9 +612,9 @@ udp_header = Struct(
 
 class DnsStringAdapter(Adapter):
     def _decode(self, obj, context, path):
-        return ".".join(obj[:-1])
+        return u".".join(obj[:-1])
     def _encode(self, obj, context, path):
-        return obj.split(".") + [""]
+        return obj.split(u".") + [u""]
 
 class DnsNamesAdapter(Adapter):
     def _decode(self, obj, context, path):
