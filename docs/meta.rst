@@ -2,6 +2,7 @@
 The Context
 ===========
 
+
 Meta constructs are the key to the declarative power of Construct. Meta constructs are constructs which are affected by the context of the construction (during parsing and building). The context is a dictionary that is created during the parsing and building process by Structs and Sequences, and is "propagated" down and up to all constructs along the way, so that other members can access other members parsing or building resuslts. It basically represents a mirror image of the construction tree, as it is altered by the different constructs. Nested structs create nested contexts, just as they create nested containers.
 
 In order to see the context, let's try this snippet:
@@ -37,12 +38,17 @@ Using the context is easy. All meta constructs take a function as a parameter, w
 >>> st.parse(b"\x05abcde")
 Container(count=5)(data=b'abcde')
 
-Of course the function can return anything (it does not need to depend on the context):
+Of course a function can return anything (it does not need to depend on the context):
 
 >>> Computed(lambda ctx: 7)
 >>> Computed(lambda ctx: os.urandom(16))
 
-And here's how we use the special '_' name to get to the upper container in a nested containers situation (which happens when parsing nested Structs). Here the length of the string is calculated as ``length1 + length2`` but note the fields are on different levels:
+
+
+Nesting and embedding
+============================
+
+And here's how we use the special "_" name to get to the upper container in a nested containers situation (which happens when parsing nested Structs). Notice that `length1` is on different (upper) level than `length2`, therefore it exists within a different up-level containter.
 
 >>> st = Struct(
 ...     "length1" / Byte,
@@ -53,11 +59,6 @@ And here's how we use the special '_' name to get to the upper container in a ne
 ... )
 >>> st.parse(b"12")
 Container(length1=49)(inner=Container(length2=50)(sum=99))
-
-
-
-Nesting and embedding
-============================
 
 Context entries can also be passed directly through `parse` and `build` methods. However, one should take into account that some classes are nesting context (like Struct Sequence Union FocusedSeq), so entries passed to these end up on upper level. Compare these two examples:
 
@@ -81,6 +82,20 @@ Embedding also complicates using the context. Notice that `count` is on same lev
 ... )
 >>> outer.parse(b"\x041234")
 Container(count=4)(data=b'1234')
+
+
+
+Refering to inlined constructs
+============================
+
+If you need to refer to a size of a field, that was inlined in same struct (and therefore wasnt assigned to any variable in namespace), you can use a special "_subcons" context entry that contains all Struct members. Note that you need to use a lambda (because this expression is not supported).
+
+>>> d = Struct(
+...     "count" / Byte,
+...     "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
+... )
+>>> d.parse(b"\x05four")
+Container(count=5)(data=b'four')
 
 
 

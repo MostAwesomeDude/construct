@@ -1431,3 +1431,30 @@ def test_pickling_constructs():
 
     du = pickle.loads(pickle.dumps(d))
     assert du.parse(data) == d.parse(data)
+
+def test_exposing_members():
+    d = Struct(
+        "count" / Byte,
+        "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
+        Check(lambda this: this._subcons.count.sizeof() == 1),
+    )
+    common(d, b"\x05four", Container(count=5, data=b"four"))
+
+    d = Sequence(
+        "count" / Byte,
+        "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
+        Check(lambda this: this._subcons.count.sizeof() == 1),
+    )
+    common(d, b"\x05four", [5,b"four",None])
+
+    d = Union(None,
+        "count" / Byte,
+        Check(lambda this: this._subcons.count.sizeof() == 1),
+    )
+    common(d, b"\x05", Container(count=5))
+
+    d = FocusedSeq(0,
+        "count" / Byte,
+        Check(lambda this: this._subcons.count.sizeof() == 1),
+    )
+    common(d, b"\x05", 5, 1)

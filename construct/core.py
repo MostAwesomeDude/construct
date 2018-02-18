@@ -1826,6 +1826,8 @@ class Struct(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
+    This class supports exposing subcons in the context. You can refer to subcons that were defined inlined (and therefore do not exist in namespace) using context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, the parsing result. Note that you need to use a lambda (this expression is not supported).
+
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
 
     :param \*subcons: Construct instances, list of members, some can be anonymous
@@ -1850,6 +1852,13 @@ class Struct(Construct):
         >>> d.sizeof()
         4
 
+        >>> d = Struct(
+        ...     "count" / Byte,
+        ...     "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
+        ... )
+        >>> d.parse(b"\x05four")
+        Container(count=5)(data=b'four')
+
         Alternative syntax (not recommended):
         >>> ("a"/Byte + "b"/Byte + "c"/Byte + "d"/Byte)
 
@@ -1866,6 +1875,7 @@ class Struct(Construct):
     def _parse(self, stream, context, path):
         obj = Container()
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         for sc in self.subcons:
             try:
                 subobj = sc._parse(stream, context, path)
@@ -1878,6 +1888,7 @@ class Struct(Construct):
 
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -1899,6 +1910,7 @@ class Struct(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -1939,6 +1951,8 @@ class Sequence(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
+    This class supports exposing subcons in the context. You can refer to subcons that were defined inlined (and therefore do not exist in namespace) using context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, the parsing result. Note that you need to use a lambda (this expression is not supported).
+
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
 
     :param \*subcons: Construct instances, list of members, some can be named
@@ -1954,6 +1968,20 @@ class Sequence(Construct):
         b'\x00?\x9dp\xa4'
         >>> d.parse(_)
         [0, 1.2300000190734863] # a ListContainer
+
+        >>> d = Struct(
+        ...     "count" / Byte,
+        ...     "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
+        ... )
+        >>> d.parse(b"\x05four")
+        Container(count=5)(data=b'four')
+
+        >>> d = Sequence(
+        ...     "count" / Byte,
+        ...     "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
+        ... )
+        >>> d.parse(b"\x05four")
+        [5, b'four']
 
         Alternative syntax (not recommended):
         >>> (Byte >> "Byte >> "c"/Byte >> "d"/Byte)
@@ -1971,6 +1999,7 @@ class Sequence(Construct):
     def _parse(self, stream, context, path):
         obj = ListContainer()
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         for i,sc in enumerate(self.subcons):
             try:
                 subobj = sc._parse(stream, context, path)
@@ -1983,6 +2012,7 @@ class Sequence(Construct):
 
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         for i,(sc,subobj) in enumerate(zip(self.subcons, obj)):
             try:
                 if sc.name:
@@ -1997,6 +2027,7 @@ class Sequence(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -2694,6 +2725,8 @@ class FocusedSeq(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
+    This class supports exposing subcons in the context. You can refer to subcons that were defined inlined (and therefore do not exist in namespace) using context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, the parsing result. Note that you need to use a lambda (this expression is not supported).
+
     This class is used internally to implement :class:`~construct.core.PrefixedArray`.
 
     :param parsebuildfrom: integer index or string name or context lambda, selects a subcon
@@ -2730,6 +2763,7 @@ class FocusedSeq(Construct):
 
     def _parse(self, stream, context, path):
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         parsebuildfrom = self.parsebuildfrom
         if callable(parsebuildfrom):
             parsebuildfrom = parsebuildfrom(context)
@@ -2748,6 +2782,7 @@ class FocusedSeq(Construct):
 
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         parsebuildfrom = self.parsebuildfrom
         if callable(parsebuildfrom):
             parsebuildfrom = parsebuildfrom(context)
@@ -2771,6 +2806,7 @@ class FocusedSeq(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -3124,6 +3160,8 @@ class Union(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
+    This class supports exposing subcons in the context. You can refer to subcons that were defined inlined (and therefore do not exist in namespace) using context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, the parsing result. Note that you need to use a lambda (this expression is not supported).
+
     .. warning:: If you skip `parsefrom` parameter then stream will be left back at starting offset, not seeked to any common denominator.
 
     :param parsefrom: how to leave stream after parsing, can be integer index or string name selecting a subcon, or None (leaves stream at initial offset, the default), or context lambda
@@ -3163,6 +3201,7 @@ class Union(Construct):
     def _parse(self, stream, context, path):
         obj = Container()
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         fallback = _tell_stream(stream)
         forwards = {}
         for i,sc in enumerate(self.subcons):
@@ -3183,6 +3222,7 @@ class Union(Construct):
 
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
+        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         context.update(obj)
         for sc in self.subcons:
             if sc.flagbuildnone:
