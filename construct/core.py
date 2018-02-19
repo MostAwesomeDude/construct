@@ -1599,15 +1599,23 @@ class Flag(Construct):
         return "(read_bytes(io, 1) != b'\\x00')"
 
 
+class IntegerString(str):
+    """Used internally."""
+    def __int__(self):
+        return self.intvalue
+
+
 class Enum(Adapter):
     r"""
     Translates unicode label names to subcon values, and vice versa.
 
-    Parses integer subcon, then uses that value to lookup mapping dictionary. Building is a reversed process. Can build from an integer flag or string label directly (see examples). Size is same as subcon, unless it raises SizeofError.
+    Parses integer subcon, then uses that value to lookup mapping dictionary. Returns an integer-convertible string (if mapping found) or an integer (otherwise). Building is a reversed process. Can build from an integer flag or string label. Size is same as subcon, unless it raises SizeofError.
+
+    There is no default parameter, because if no mapping is found, it parses into an integer without error.
 
     This class supports enum34 module. See examples.
 
-    This class supports exposing member labels as attributes. See examples.
+    This class supports exposing member labels as attributes, as integer-convertible strings. See examples.
 
     :param subcon: Construct instance, subcon to map to/from
     :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
@@ -1620,6 +1628,8 @@ class Enum(Adapter):
         >>> d = Enum(Byte, one=1, two=2, four=4, eight=8)
         >>> d.parse(b"\x01")
         'one'
+        >>> d.parse(b"\xff")
+        255
         >>> d.build(d.one)
         b'\x01'
         >>> d.build("one")
@@ -1628,6 +1638,8 @@ class Enum(Adapter):
         b'\x01'
         >>> d.one
         'one'
+        >>> int(d.one)
+        1
 
         import enum
         class E(enum.IntEnum):
@@ -1651,14 +1663,18 @@ class Enum(Adapter):
 
     def __getattr__(self, name):
         if name in self.encmapping:
-            return name
+            retobj = IntegerString(name)
+            retobj.intvalue = self.encmapping[name]
+            return retobj
         return super(Enum, self).__getattr__(name)
 
     def _decode(self, obj, context, path):
         try:
-            return self.decmapping[obj]
+            retobj = IntegerString(self.decmapping[obj])
+            retobj.intvalue = obj
+            return retobj
         except KeyError:
-            raise MappingError("parsing failed, no mapping for %r" % (obj,))
+            return obj
 
     def _encode(self, obj, context, path):
         try:
@@ -1690,7 +1706,7 @@ class FlagsEnum(Adapter):
 
     This class supports enum34 module. See examples.
 
-    This class supports exposing member labels as attributes. See examples.
+    This class supports exposing member labels as attributes, as bitwisable strings. See examples.
 
     :param subcon: Construct instance, must operate on integers
     :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from

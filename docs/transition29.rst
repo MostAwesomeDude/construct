@@ -25,7 +25,9 @@ Compiled CompilableMacro Decompiled added (used internally)
 
 String* classes require explicit encodings, all of them support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
-Enum FlagsEnum can merge labels from IntEnum IntFlag (enum34 module), but dropped `default` parameter (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+Enum FlagsEnum can merge labels from IntEnum IntFlag, from enum34 module (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+
+Enum FlagsEnum dropped `default` parameter but returns integer if no mapping found (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
 Enum FlagsEnum can build from integers and labels, and expose labels as attributes as bitwisable strings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 

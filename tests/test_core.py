@@ -224,13 +224,18 @@ def test_flag():
 def test_enum():
     d = Enum(Byte, one=1, two=2, four=4, eight=8)
     common(d, b"\x01", "one", 1)
-    common(d, b"\x02", "two", 1)
+    common(d, b"\xff", 255, 1)
+    assert d.parse(b"\x01") == d.one
+    assert d.parse(b"\x01") == "one"
+    assert int(d.parse(b"\x01")) == 1
+    assert d.parse(b"\xff") == 255
+    assert int(d.parse(b"\xff")) == 255
     assert d.build(8) == b'\x08'
     assert d.build(255) == b"\xff"
     assert d.build(d.eight) == b'\x08'
-    assert raises(d.parse, b"\xff") == MappingError
-    assert raises(d.build, "unknown") == MappingError
     assert d.one == "one"
+    assert int(d.one) == 1
+    assert raises(d.build, "unknown") == MappingError
     assert raises(lambda: d.missing) == AttributeError
 
 @xfail(not supportsintenum, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")

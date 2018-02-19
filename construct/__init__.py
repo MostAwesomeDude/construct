@@ -101,6 +101,7 @@ __all__ = [
     'Indexing',
     'Int',
     'IntegerError',
+    'IntegerString',
     'LazyBound',
     'len_',
     'lib',
