@@ -1672,7 +1672,7 @@ class Enum(Adapter):
 
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
-        code.append("%s = dict(%r)" % (fname, list(self.decmapping.items()), ))
+        code.append("%s = %r" % (fname, self.decmapping, ))
         return "%s[%s]" % (fname, self.subcon._compileparse(code), )
 
 
@@ -1805,7 +1805,7 @@ class Mapping(Adapter):
 
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
-        code.append("%s = dict(%r)" % (fname, list(self.decmapping.items()), ))
+        code.append("%s = %r" % (fname, self.decmapping, ))
         return "%s[%s]" % (fname, self.subcon._compileparse(code), )
 
 
@@ -3515,10 +3515,13 @@ class Switch(Construct):
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
         code.append("%s = {%s}" % (fname, ", ".join("%r : lambda io,this: %s" % (key, sc._compileparse(code)) for key,sc in self.cases.items()), ))
+
         if self.default is self.NoDefault:
             return "%s[%s](io, this)" % (fname, self.keyfunc, )
         else:
-            return "%s.get(%s, lambda io,this: %s)(io, this)" % (fname, self.keyfunc, self.default._compileparse(code))
+            defaultfname = "compiled_%s" % code.allocateId()
+            code.append("%s = lambda io,this: %s" % (defaultfname, self.default._compileparse(code), ))
+            return "%s.get(%s, %s)(io, this)" % (fname, self.keyfunc, defaultfname)
 
 
 def EmbeddedSwitch(merged, selector, mapping):

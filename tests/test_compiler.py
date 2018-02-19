@@ -7,15 +7,16 @@ from construct.lib import *
 pytestmark = skipif(not supportscompiler, reason="compiler and bytes() require 3.6")
 
 
-
-# embeddedswitch1 = EmbeddedSwitch(
-#     this.peek.type,
-#     Struct("type" / Byte),
-#     {
-#         0: Struct("name" / PascalString(Byte, "utf8")),
-#         1: Struct("value" / Byte),
-#     }
-# )
+embeddedswitch1 = EmbeddedSwitch(
+    Struct(
+        "type" / Byte,
+    ),
+    this.type,
+    {
+        0: Struct("name" / PascalString(Byte, "utf8")),
+        1: Struct("value" / Byte),
+    }
+)
 
 example = Struct(
     "num" / Byte,
@@ -109,7 +110,7 @@ example = Struct(
     "ifthenelse" / IfThenElse(this.num == 0, Byte, Byte),
     "switch1" / Switch(this.num, {0 : Byte, 255 : Error}),
     "switch2" / Switch(this.num, {}, default=Byte),
-    # "embeddedswitch1" / embeddedswitch1,
+    "embeddedswitch1" / embeddedswitch1,
     "stopif0" / StopIf(this.num == 255),
     "stopif1" / Struct(StopIf(this._.num == 0), Error),
     "stopif2" / Sequence(StopIf(this._.num == 0), Error),
@@ -127,7 +128,6 @@ example = Struct(
     "tell" / Tell,
     "pass1" / Pass,
     "terminated0" / Prefixed(Byte, Terminated),
-    # Rebuffered
 
     "rawcopy1" / RawCopy(Byte),
     "rawcopy2" / RawCopy(RawCopy(RawCopy(Byte))),
@@ -143,6 +143,7 @@ example = Struct(
     # Checksum
     "compressed_bzip2_data" / Computed(b'BZh91AY&SYSc\x11\x99\x00\x00\x00A\x00@\x00@\x00 \x00!\x00\x82\x83\x17rE8P\x90Sc\x11\x99'),
     "compressed_bzip2" / RestreamData(this.compressed_bzip2_data, Compressed(GreedyBytes, "bzip2", level=9)),
+    # Rebuffered
 
     # LazyBound
 
@@ -154,7 +155,6 @@ example = Struct(
 
     "items1" / Computed([1,2,3]),
     "len_" / Computed(len_(this.items1)),
-
     # faulty list_ implementation, compiles into correct code
     # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
     # "repeatuntil3" / RepeatUntil(list_[-1] == 0, Byte),
