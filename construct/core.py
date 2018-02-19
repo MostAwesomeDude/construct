@@ -1464,7 +1464,7 @@ def String(length, encoding):
     .. warning:: String and CString only support encodings explicitly listed in :class:`~construct.core.possiblestringencodings` .
 
     :param length: integer or context lambda, length in bytes (not unicode characters)
-    :param encoding: string like "utf8" "utf16" "utf32"
+    :param encoding: string like: utf8 utf16 utf32 ascii
 
     :raises StringError: building a non-unicode string
     :raises StringError: specified length or object for building is not a multiple of unit
@@ -1508,7 +1508,7 @@ def PascalString(lengthfield, encoding):
     :class:`~construct.core.VarInt` is recommended for new protocols, as it is more compact and never overflows.
 
     :param lengthfield: Construct instance, field used to parse and build the length (like VarInt Int64ub)
-    :param encoding: string like "utf8" "utf16" "utf32"
+    :param encoding: string like: utf8 utf16 utf32 ascii
 
     :raises StringError: building a non-unicode string
 
@@ -1529,7 +1529,7 @@ def CString(encoding):
 
     .. warning:: String and CString only support encodings explicitly listed in :class:`~construct.core.possiblestringencodings` .
 
-    :param encoding: string like "utf8" "utf16" "utf32"
+    :param encoding: string like: utf8 utf16 utf32 ascii
 
     :raises StringError: building a non-unicode string
     :raises StringError: object for building is not a multiple of unit
@@ -1552,7 +1552,7 @@ def GreedyString(encoding):
 
     Analog to :class:`~construct.core.GreedyBytes` , and identical when no enoding is used.
 
-    :param encoding: string like "utf8" "utf16" "utf32"
+    :param encoding: string like: utf8 utf16 utf32 ascii
 
     :raises StringError: building a non-unicode string
     :raises StreamError: stream failed when reading until EOF
@@ -1826,9 +1826,9 @@ class Struct(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
-    This class supports exposing subcons in the context. You can refer to subcons that were defined inlined (and therefore do not exist in namespace) using context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, the parsing result. Note that you need to use a lambda (this expression is not supported).
+    This class supports exposing subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) using the context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, which is the parsing result. Note that you need to use a lambda (this expression is not supported). Also note that compiler does not support this feature.
 
-    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
+    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
 
     :param \*subcons: Construct instances, list of members, some can be anonymous
     :param \*\*kw: Construct instances, list of members (requires Python 3.6)
@@ -1951,9 +1951,9 @@ class Sequence(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
-    This class supports exposing subcons in the context. You can refer to subcons that were defined inlined (and therefore do not exist in namespace) using context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, the parsing result. Note that you need to use a lambda (this expression is not supported).
+    This class supports exposing subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) using the context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, which is the parsing result. Note that you need to use a lambda (this expression is not supported). Also note that compiler does not support this feature.
 
-    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
+    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
 
     :param \*subcons: Construct instances, list of members, some can be named
     :param \*\*kw: Construct instances, list of members (requires Python 3.6)
@@ -2159,7 +2159,7 @@ class GreedyRange(Subconstruct):
 
     Parses into a ListContainer (a list). Parsing stops when an exception occured inside subcon, possibly due to EOF. Builds from enumerable. Size is undefined.
 
-    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lamabda as positive, this class ends parsing and building as successful without processing further fields.
+    This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
 
     Operator [] can be used to make Array and GreedyRange instances (recommended).
 
@@ -2725,7 +2725,7 @@ class FocusedSeq(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
-    This class supports exposing subcons in the context. You can refer to subcons that were defined inlined (and therefore do not exist in namespace) using context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, the parsing result. Note that you need to use a lambda (this expression is not supported).
+    This class supports exposing subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) using the context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, which is the parsing result. Note that you need to use a lambda (this expression is not supported). Also note that compiler does not support this feature.
 
     This class is used internally to implement :class:`~construct.core.PrefixedArray`.
 
@@ -3160,7 +3160,7 @@ class Union(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
-    This class supports exposing subcons in the context. You can refer to subcons that were defined inlined (and therefore do not exist in namespace) using context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, the parsing result. Note that you need to use a lambda (this expression is not supported).
+    This class supports exposing subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) using the context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, which is the parsing result. Note that you need to use a lambda (this expression is not supported). Also note that compiler does not support this feature.
 
     .. warning:: If you skip `parsefrom` parameter then stream will be left back at starting offset, not seeked to any common denominator.
 
