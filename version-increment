@@ -1,0 +1,19 @@
+#!/usr/bin/python3.6
+
+import construct
+x,y,z = construct.version
+z += 1
+
+import arrow
+date = arrow.utcnow().datetime
+
+content = f"""
+version = ({x},{y},{z})
+version_string = "{x}.{y}.{z}"
+release_date = "{date.year}.{date.month:02}.{date.day:02}"
+""".lstrip()
+
+with open("construct/version.py","wt") as f:
+    f.write(content)
+
+print(f"git commit -a -m 'version uped to {x}.{y}.{z}'")
