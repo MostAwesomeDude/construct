@@ -1356,6 +1356,8 @@ class StringEncoded(Adapter):
     def _encode(self, obj, context, path):
         if not isinstance(obj, unicodestringtype):
             raise StringError("string encoding failed, expected unicode string")
+        if obj == u"":
+            return b""
         return obj.encode(self.encoding)
 
     def _emitparse(self, code):

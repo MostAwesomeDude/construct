@@ -171,20 +171,22 @@ def test_string():
         data = (s.encode(e)+b"\x00"*100)[:100]
         common(String(100, encoding=e), data, s, 100)
         s = u""
-        data = (s.encode(e)+b"\x00"*100)[:100]
+        data = b"\x00"*100
         common(String(100, encoding=e), data, s, 100)
 
-    for e in ["ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+    for e in ["ascii","utf8","utf16","utf-16-le","utf32","utf-32-le"]:
         String(10, encoding=e).sizeof() == 10
         String(this.n, encoding=e).sizeof(n=10) == 10
 
 def test_pascalstring():
-    common(PascalString(Byte, encoding="utf8"), b"\x05hello", u"hello")
-    common(PascalString(Int16ub, encoding="utf8"), b"\x00\x05hello", u"hello")
-    common(PascalString(VarInt, encoding="utf8"), b"\x05hello", u"hello")
-    common(PascalString(Byte, encoding="utf8"), b"\x00", u"")
+    for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
+        for sc in [Byte, Int16ub, Int16ul, VarInt]:
+            s = u"Афон"
+            data = sc.build(len(s.encode(e))) + s.encode(e)
+            common(PascalString(sc, encoding=e), data, s)
+            common(PascalString(sc, encoding=e), sc.build(0), u"")
 
-    for e in ["ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+    for e in ["utf8","utf16","utf-16-le","utf32","utf-32-le","ascii"]:
         raises(PascalString(Byte, encoding=e).sizeof) == SizeofError
         raises(PascalString(VarInt, encoding=e).sizeof) == SizeofError
 
@@ -192,30 +194,28 @@ def test_cstring():
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
         s = u"Афон"
         common(CString(encoding=e), s.encode(e)+b"\x00"*us, s)
-        s = u""
-        common(CString(encoding=e), s.encode(e)+b"\x00"*us, s)
+        common(CString(encoding=e), b"\x00"*us, u"")
 
     CString(encoding="utf8").build(s) == b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'+b"\x00"
     CString(encoding="utf16").build(s) == b'\xff\xfe\x10\x04D\x04>\x04=\x04'+b"\x00\x00"
     CString(encoding="utf32").build(s) == b'\xff\xfe\x00\x00\x10\x04\x00\x00D\x04\x00\x00>\x04\x00\x00=\x04\x00\x00'+b"\x00\x00\x00\x00"
 
-    for e in ["ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+    for e in ["utf8","utf16","utf-16-le","utf32","utf-32-le","ascii"]:
         raises(CString(encoding=e).sizeof) == SizeofError
 
 def test_greedystring():
-    s = u"Афон"
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
+        s = u"Афон"
         common(GreedyString(encoding=e), s.encode(e), s)
+        common(GreedyString(encoding=e), b"", u"")
 
-    common(GreedyString(encoding="utf8"), b"hello", u"hello")
-    common(GreedyString(encoding="utf8"), b"", u"")
-
-    for e in ["ascii","utf8","utf16","utf_16_le","utf32","utf_32_le"]:
+    for e in ["utf8","utf16","utf-16-le","utf32","utf-32-le","ascii"]:
         raises(GreedyString(encoding=e).sizeof) == SizeofError
 
 def test_string_encodings():
+    # checks that "-" is replaced with "_"
     common(GreedyString("utf-8"), b"", u"")
-    common(GreedyString("UTF-8"), b"", u"")
+    common(GreedyString("utf-8"), b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd', u"Афон")
 
 def test_flag():
     common(Flag, b"\x00", False, 1)
