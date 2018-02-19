@@ -37,7 +37,7 @@ class Container(dict):
     r"""
     Generic ordered dictionary that allows both key and attribute access, and preserves key order by insertion. Adding keys is preferred using \*\*kw (requires Python 3.6). Equality does NOT check item order. Also provides regex searching.
 
-	This container is mostly used by Struct construct, since its members have order, so do the values parsed.
+    This container is mostly used by Struct construct, since its members have order, so do the values parsed.
 
     Example::
 
@@ -234,10 +234,16 @@ class Container(dict):
             return None
 
     def search(self, pattern):
+        """
+        Searches a container (optionally recursively) using regex.
+        """
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, False)
 
     def search_all(self, pattern):
+        """
+        Searches a container (optionally recursively) using regex.
+        """
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, True)
 
@@ -274,10 +280,15 @@ class ListContainer(list):
             return None
 
     def search(self, pattern):
+        """
+        Searches a container (optionally recursively) using regex.
+        """
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, False)
 
     def search_all(self, pattern):
+        """
+        Searches a container (optionally recursively) using regex.
+        """
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, True)
-

@@ -1,4 +1,5 @@
 from construct.lib.py3compat import *
+import binascii
 
 
 def integer2bits(number, width):
@@ -152,3 +153,13 @@ def swapbitsinbytes(data):
         b'\x0f'
     """
     return b"".join(SWAPBITSINBYTES_CACHE[b] for b in iterateints(data))
+
+
+def hexlify(data):
+    """Returns binascii.hexlify(data)."""
+    return binascii.hexlify(data)
+
+
+def unhexlify(data):
+    """Returns binascii.unhexlify(data)."""
+    return binascii.unhexlify(data)

@@ -17,94 +17,110 @@ except ImportError:
 
 
 if PY3:
+    #: PY2: str unicode
+    #: PY3: bytes str
     stringtypes = (bytes, str, )
+    #: PY2: int long
+    #: PY3: int
     integertypes = (int, )
+    #: PY2: unicode
+    #: PY3: str
     unicodestringtype = str
+    #: PY2: str
+    #: PY3: bytes
     bytestringtype = bytes
 
     INT2BYTE_CACHE = {i:bytes((i,)) for i in range(256)}
-    def int2byte(i):
+    def int2byte(character):
         """Converts integer (0 through 255) into b'...' character."""
-        return INT2BYTE_CACHE[i]
+        return INT2BYTE_CACHE[character]
 
-    def byte2int(b):
+    def byte2int(character):
         """Converts b'...' character into integer (0 through 255)."""
-        return ord(b)
+        return ord(character)
 
-    def str2bytes(s):
-        """Converts '...' string into b'...' string. On PY2 they are equivalent."""
-        return s.encode("utf8")
+    def str2bytes(string):
+        """Converts '...' string into b'...' string. On PY2 they are equivalent. On PY3 its utf8 encoded."""
+        return string.encode("utf8")
 
-    def bytes2str(b):
-        """Converts b'...' string into '...' string. On PY2 they are equivalent."""
-        return b.decode("utf8")
+    def bytes2str(string):
+        """Converts b'...' string into '...' string. On PY2 they are equivalent. On PY3 its utf8 decoded."""
+        return string.decode("utf8")
 
-    def str2unicode(s):
-        """Converts '...' string into u'...' string. On PY3 they are equivalent."""
-        return s
+    def str2unicode(string):
+        """Converts '...' string into u'...' string. On PY2 its utf8 encoded. On PY3 they are equivalent."""
+        return string
 
-    def unicode2str(s):
-        """Converts u'...' string into '...' string. On PY3 they are equivalent."""
-        return s
+    def unicode2str(string):
+        """Converts u'...' string into '...' string. On PY2 its utf8 decoded. On PY3 they are equivalent."""
+        return string
 
     ITERATEBYTES_CACHE = {i:bytes((i,)) for i in range(256)}
-    def iteratebytes(s):
-        """Iterates though b'...' string yielding b'...' characters. On PY2 iter is the same."""
-        return (ITERATEBYTES_CACHE[i] for i in s)
+    def iteratebytes(data):
+        """Iterates though b'...' string yielding b'...' characters."""
+        return (ITERATEBYTES_CACHE[i] for i in data)
 
-    def iterateints(s):
-        """Iterates though b'...' string yielding integers. On PY3 iter is the same."""
-        return s
+    def iterateints(data):
+        """Iterates though b'...' string yielding integers."""
+        return data
 
-    def reprbytes(b):
-        """Trims b- u- prefix and both apostrophies."""
-        if isinstance(b, bytes):
-            return repr(b)[2:-1]
-        if isinstance(b, str):
-            return repr(b)[1:-1]
+    def reprbytes(data):
+        """Trims b- prefix and both apostrophies."""
+        if isinstance(data, bytes):
+            return repr(data)[2:-1]
+        if isinstance(data, str):
+            return repr(data)[1:-1]
 
 
 else:
+    #: PY2: str unicode
+    #: PY3: bytes str
     stringtypes = (str, unicode, )
+    #: PY2: int long
+    #: PY3: int
     integertypes = (long, int, )
+    #: PY2: unicode
+    #: PY3: str
     unicodestringtype = unicode
+    #: PY2: str
+    #: PY3: bytes
     bytestringtype = str
 
-    def int2byte(i):
+    def int2byte(character):
         """Converts integer (0 through 255) into b'...' character."""
-        return chr(i)
+        return chr(character)
 
-    def byte2int(s):
+    def byte2int(character):
         """Converts b'...' character into integer (0 through 255)."""
-        return ord(s)
+        return ord(character)
 
-    def str2bytes(s):
-        """Converts '...' string into b'...' string. On PY2 they are equivalent."""
-        return s
+    def str2bytes(string):
+        """Converts '...' string into b'...' string. On PY2 they are equivalent. On PY3 its utf8 encoded."""
+        return string
 
-    def bytes2str(b):
-        """Converts b'...' string into '...' string. On PY2 they are equivalent."""
-        return b
+    def bytes2str(string):
+        """Converts b'...' string into '...' string. On PY2 they are equivalent. On PY3 its utf8 decoded."""
+        return string
 
-    def str2unicode(b):
-        """Converts '...' string into u'...' string. On PY3 they are equivalent."""
-        return b.encode("utf8")
+    def str2unicode(string):
+        """Converts '...' string into u'...' string. On PY2 its utf8 encoded. On PY3 they are equivalent."""
+        return string.encode("utf8")
 
-    def unicode2str(s):
-        """Converts u'...' string into '...' string. On PY3 they are equivalent."""
-        return s.decode("utf8")
+    def unicode2str(string):
+        """Converts u'...' string into '...' string. On PY2 its utf8 decoded. On PY3 they are equivalent."""
+        return string.decode("utf8")
 
-    def iteratebytes(s):
-        """Iterates though b'...' string yielding b'...' characters. On PY2 iter is the same."""
-        return s
+    def iteratebytes(data):
+        """Iterates though b'...' string yielding b'...' characters."""
+        return data
 
-    def iterateints(s):
-        """Iterates though b'...' string yielding integers. On PY3 iter is the same."""
-        return (ord(c) for c in s)
+    def iterateints(data):
+        """Iterates though b'...' string yielding integers."""
+        return (ord(c) for c in data)
 
-    def reprbytes(b):
-        """Trims b- u- prefix and both apostrophies."""
-        if isinstance(b, str):
-            return repr(b)[1:-1]
-        if isinstance(b, unicode):
-            return repr(b)[2:-1]
+    def reprbytes(data):
+        """Trims b- prefix and both apostrophies."""
+        if isinstance(data, str):
+            return repr(data)[1:-1]
+        if isinstance(data, unicode):
+            return repr(data)[2:-1]

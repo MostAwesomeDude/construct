@@ -1,30 +1,35 @@
 from construct.lib.py3compat import *
-from binascii import hexlify, unhexlify
+import binascii
 
 
 class HexDisplayedInteger(integertypes[0]):
+    """Used internally."""
     def __str__(self):
         return "0x" + format(self, self.fmtstr).upper()
 
 class HexDisplayedBytes(bytestringtype):
+    """Used internally."""
     def __str__(self):
         if not hasattr(self, "render"):
-            self.render = "unhexlify('{}')".format(reprbytes(hexlify(self)))
+            self.render = "unhexlify('{}')".format(reprbytes(binascii.hexlify(self)))
         return self.render
 
 class HexDisplayedDict(dict):
+    """Used internally."""
     def __str__(self):
         if not hasattr(self, "render"):
-            self.render = "unhexlify('{}')".format(reprbytes(hexlify(self["data"])))
+            self.render = "unhexlify('{}')".format(reprbytes(binascii.hexlify(self["data"])))
         return self.render
 
 class HexDumpDisplayedBytes(bytestringtype):
+    """Used internally."""
     def __str__(self):
         if not hasattr(self, "render"):
             self.render = hexdump(self, 16)
         return self.render
 
 class HexDumpDisplayedDict(dict):
+    """Used internally."""
     def __str__(self):
         if not hasattr(self, "render"):
             self.render = hexdump(self["data"], 16)
@@ -40,17 +45,18 @@ def hexdump(data, linesize):
     r"""
     Turns bytes into a unicode string of the format:
 
-    >>>print(hexdump(b'0' * 100, 16))
-    hexundump(\"\"\"
-    0000   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
-    0010   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
-    0020   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
-    0030   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
-    0040   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
-    0050   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
-    0060   30 30 30 30                                       0000
-    \"\"\")
-    (newlines dont render corretly in documentation page)
+    ::
+
+        >>>print(hexdump(b'0' * 100, 16))
+        hexundump(\"\"\"
+        0000   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
+        0010   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
+        0020   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
+        0030   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
+        0040   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
+        0050   30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30   0000000000000000
+        0060   30 30 30 30                                       0000
+        \"\"\")
     """
     if len(data) < 16**4:
         fmt = "%%04X   %%-%ds   %%s" % (3*linesize-1,)
