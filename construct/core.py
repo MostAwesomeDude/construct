@@ -195,7 +195,6 @@ class Construct(object):
 
     All constructs have a name and flags. The name is used for naming struct members and context dictionaries. Note that the name can be a string, or None by default. A single underscore "_" is a reserved name, used as up-level in nested containers. The name should be descriptive, short, and valid as a Python identifier, although these rules are not enforced. The flags specify additional behavioral information about this construct. Flags are used by enclosing constructs to determine a proper course of action. Flags are often inherited from inner subconstructs but that depends on each class.
     """
-    __slots__ = ["name", "docs", "flagbuildnone", "flagembedded", "__reduce__"]
 
     def __init__(self):
         self.name = None
@@ -558,7 +557,6 @@ class Subconstruct(Construct):
 
     :param subcon: Construct instance
     """
-    __slots__ = ["subcon"]
     def __init__(self, subcon):
         if not isinstance(subcon, Construct):
             raise TypeError("subcon should be a Construct field")
@@ -645,7 +643,6 @@ class Tunnel(Subconstruct):
 
 class Compiled(Construct):
     """Used internally."""
-    __slots__ = ["source", "defersubcon", "parsefunc", "buildfunc", "sizefunc"]
 
     def __init__(self, source, defersubcon, parsefunc=None, buildfunc=None, sizefunc=None):
         super(Compiled, self).__init__()
@@ -692,7 +689,6 @@ class Compiled(Construct):
 
 class CompilableMacro(Subconstruct):
     """Used internally."""
-    __slots__ = ["emitparsefunc"]
 
     def __init__(self, subcon, emitparsefunc):
         super(CompilableMacro, self).__init__(subcon)
@@ -704,7 +700,6 @@ class CompilableMacro(Subconstruct):
 
 class Decompiled(Construct):
     """Used internally."""
-    __slots__ = ["_parse"]
 
     def __init__(self, parsefunc):
         super(Decompiled, self).__init__()
@@ -743,7 +738,6 @@ class Bytes(Construct):
         >>> d = Bytes(this.field1)
         ...
     """
-    __slots__ = ["length"]
 
     def __init__(self, length):
         super(Bytes, self).__init__()
@@ -902,7 +896,6 @@ class FormatField(Construct):
         >>> d.sizeof()
         2
     """
-    __slots__ = ["fmtstr","length"]
 
     def __init__(self, endianity, format):
         if endianity not in list("=<>"):
@@ -961,7 +954,6 @@ class BytesInteger(Construct):
         >>> d.sizeof()
         4
     """
-    __slots__ = ["length", "signed", "swapped"]
 
     def __init__(self, length, signed=False, swapped=False):
         super(BytesInteger, self).__init__()
@@ -1037,7 +1029,6 @@ class BitsInteger(Construct):
         >>> d.sizeof()
         1
     """
-    __slots__ = ["length", "signed", "swapped"]
 
     def __init__(self, length, signed=False, swapped=False):
         super(BitsInteger, self).__init__()
@@ -1344,7 +1335,6 @@ def calculateunits(encoding):
 
 class StringEncoded(Adapter):
     """Used internally."""
-    __slots__ = ["encoding"]
 
     def __init__(self, subcon, encoding):
         super(StringEncoded, self).__init__(subcon)
@@ -1366,7 +1356,6 @@ class StringEncoded(Adapter):
 
 class StringPaddedTrimmed(Construct):
     """Used internally."""
-    __slots__ = ["length", "encoding"]
 
     def __init__(self, length, encoding):
         super(StringPaddedTrimmed, self).__init__()
@@ -1419,7 +1408,6 @@ class StringPaddedTrimmed(Construct):
 
 class StringNullTerminated(Construct):
     """Used internally."""
-    __slots__ = ["encoding"]
 
     def __init__(self, encoding=None):
         super(StringNullTerminated, self).__init__()
@@ -1651,7 +1639,6 @@ class Enum(Adapter):
         Enum(Byte,      E, F) <--> Enum(Byte,      one=1, two=2)
         FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
     """
-    __slots__ = ["encmapping", "decmapping"]
 
     def __init__(self, subcon, *merge, **mapping):
         super(Enum, self).__init__(subcon)
@@ -1742,7 +1729,6 @@ class FlagsEnum(Adapter):
         Enum(Byte,      E, F) <--> Enum(Byte,      one=1, two=2)
         FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
     """
-    __slots__ = ["flags"]
 
     def __init__(self, subcon, *merge, **flags):
         super(FlagsEnum, self).__init__(subcon)
@@ -1800,7 +1786,6 @@ class Mapping(Adapter):
         >>> d.parse(b"\x00")
         'zero'
     """
-    __slots__ = ["decmapping", "encmapping"]
 
     def __init__(self, subcon, mapping):
         super(Mapping, self).__init__(subcon)
@@ -1881,7 +1866,6 @@ class Struct(Construct):
         Alternative syntax, but requires Python 3.6:
         >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
     """
-    __slots__ = ["subcons"]
 
     def __init__(self, *subcons, **kw):
         super(Struct, self).__init__()
@@ -2005,7 +1989,6 @@ class Sequence(Construct):
         Alternative syntax, but requires Python 3.6:
         >>> Sequence(a=Byte, b=Byte, c=Byte, d=Byte)
     """
-    __slots__ = ["subcons"]
 
     def __init__(self, *subcons, **kw):
         super(Sequence, self).__init__()
@@ -2108,7 +2091,6 @@ class Array(Subconstruct):
         >>> Byte[3:5], Byte[3:], Byte[:5] are invalid
         >>> Byte[:] creates GreedyRange
     """
-    __slots__ = ["count"]
 
     def __init__(self, count, subcon):
         super(Array, self).__init__(subcon)
@@ -2261,7 +2243,6 @@ class RepeatUntil(Subconstruct):
         >>> d.parse(b"\x01\x00\x00\xff")
         [1, 0, 0]
     """
-    __slots__ = ["predicate"]
 
     def __init__(self, predicate, subcon):
         super(RepeatUntil, self).__init__(subcon)
@@ -2428,7 +2409,6 @@ class Const(Subconstruct):
         >>> d.build(None)
         b'\xff\x00\x00\x00'
     """
-    __slots__ = ["value"]
 
     def __init__(self, value, subcon=None):
         if subcon is None:
@@ -2495,7 +2475,6 @@ class Computed(Construct):
         >>> d.parse(b"")
         b'\x98\xc2\xec\x10\x07\xf5\x8e\x98\xc2\xec'
     """
-    __slots__ = ["func"]
 
     def __init__(self, func):
         super(Computed, self).__init__()
@@ -2592,7 +2571,6 @@ class Rebuild(Subconstruct):
         >>> d.build(dict(items=[1,2,3]))
         b'\x03\x01\x02\x03'
     """
-    __slots__ = ["func"]
 
     def __init__(self, subcon, func):
         super(Rebuild, self).__init__(subcon)
@@ -2631,7 +2609,6 @@ class Default(Subconstruct):
         >>> d.build(dict())
         b'\x00'
     """
-    __slots__ = ["value"]
 
     def __init__(self, subcon, value):
         super(Default, self).__init__(subcon)
@@ -2945,7 +2922,6 @@ class NamedTuple(Adapter):
         >>> d.parse(b"123")
         coord(x=49, y=50, z=51)
     """
-    __slots__ = ["tuplename", "tuplefields"]
 
     def __init__(self, tuplename, tuplefields, subcon):
         if not isinstance(subcon, (Struct,Sequence,Array,GreedyRange)):
@@ -3204,7 +3180,6 @@ class Union(Construct):
         Alternative syntax, but requires Python 3.6:
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     """
-    __slots__ = ["parsefrom", "subcons"]
 
     def __init__(self, parsefrom, *subcons, **kw):
         if isinstance(parsefrom, Construct):
@@ -3339,7 +3314,6 @@ class Select(Construct):
         Alternative syntax, but requires Python 3.6:
         >>> Select(num=Int32ub, text=CString(encoding="utf8"))
     """
-    __slots__ = ["subcons", "includename"]
 
     def __init__(self, *subcons, **kw):
         super(Select, self).__init__()
@@ -3499,7 +3473,6 @@ class Switch(Construct):
         def _sizeof(self, context, path):
             raise SwitchError("no default case defined, sizeof failed")
 
-    __slots__ = ["keyfunc", "cases", "default"]
 
     def __init__(self, keyfunc, cases, default=NoDefault):
         super(Switch, self).__init__()
@@ -3701,7 +3674,6 @@ class Padded(Subconstruct):
         >>> d.build(70000)
         b'\xf0\xa2\x04\x00'
     """
-    __slots__ = ["length", "pattern"]
 
     def __init__(self, length, subcon, pattern=b"\x00"):
         if not isinstance(pattern, bytes) or len(pattern) != 1:
@@ -3768,7 +3740,6 @@ class Aligned(Subconstruct):
         >>> d.sizeof()
         4
     """
-    __slots__ = ["subcon", "modulus", "pattern"]
 
     def __init__(self, modulus, subcon, pattern=b"\x00"):
         if not isinstance(pattern, bytes) or len(pattern) != 1:
@@ -3887,7 +3858,6 @@ class Pointer(Subconstruct):
         >>> d.build(b"Z")
         b'\x00\x00\x00\x00\x00\x00\x00\x00Z'
     """
-    __slots__ = ["offset"]
 
     def __init__(self, offset, subcon):
         super(Pointer, self).__init__(subcon)
@@ -4008,7 +3978,6 @@ class Seek(Construct):
         >>> d.build([b"0123456789", None, 255])
         b'01234\xff6789'
     """
-    __slots__ = ["at", "whence"]
 
     def __init__(self, at, whence=0):
         super(Seek, self).__init__()
@@ -4277,7 +4246,6 @@ class Prefixed(Subconstruct):
         >>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
         [1684234849, 1751606885]
     """
-    __slots__ = ["name", "lengthfield", "subcon", "includelength"]
 
     def __init__(self, lengthfield, subcon, includelength=False):
         super(Prefixed, self).__init__(subcon)
@@ -4358,7 +4326,6 @@ class RestreamData(Subconstruct):
         >>> d.build(0)
         b''
     """
-    __slots__ = ["datafunc"]
 
     def __init__(self, datafunc, subcon):
         super(RestreamData, self).__init__(subcon)
@@ -4408,7 +4375,6 @@ class TransformData(Subconstruct):
         >>> d.parse(b"\x00\x00")
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
     """
-    __slots__ = ["decodefunc", "decodeamount", "encodefunc", "encodeamount"]
 
     def __init__(self, subcon, decodefunc, decodeamount, encodefunc, encodeamount):
         super(TransformData, self).__init__(subcon)
@@ -4463,7 +4429,6 @@ class Restreamed(Subconstruct):
         Bitwise  <--> Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n//8)
         Bytewise <--> Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n*8)
     """
-    __slots__ = ["decoder", "decoderunit", "encoder", "encoderunit", "sizecomputer"]
 
     def __init__(self, subcon, decoder, decoderunit, encoder, encoderunit, sizecomputer):
         super(Restreamed, self).__init__(subcon)
@@ -4519,7 +4484,6 @@ class Checksum(Construct):
         d.build(dict(fields=dict(value=dict(a=1,b=2))))
         -> b'\x01\x02\xbd\xd8\x1a\xb23\xbc\xebj\xd23\xcd'...
     """
-    __slots__ = ["checksumfield", "hashfunc", "bytesfunc"]
 
     def __init__(self, checksumfield, hashfunc, bytesfunc):
         super(Checksum, self).__init__()
@@ -4566,7 +4530,6 @@ class Compressed(Tunnel):
         b'\x0cx\x9cc`\xa0=\x00\x00\x00d\x00\x01'
 
    """
-    __slots__ = ["encoding", "level", "lib"]
 
     def __init__(self, subcon, encoding, level=None):
         super(Compressed, self).__init__(subcon)
@@ -4620,7 +4583,6 @@ class Rebuffered(Subconstruct):
 
         Rebuffered(..., tailcutoff=1024).parse_stream(nonseekable_stream)
     """
-    __slots__ = ["stream2", "tailcutoff"]
 
     def __init__(self, subcon, tailcutoff=None):
         super(Rebuffered, self).__init__(subcon)
@@ -4685,7 +4647,6 @@ class LazyBound(Construct):
             value = 0
             next =  (total 0)
     """
-    __slots__ = ["subconfunc"]
 
     def __init__(self, subconfunc):
         super(LazyBound, self).__init__()
@@ -4716,7 +4677,6 @@ class ExprAdapter(Adapter):
             encoder = lambda x,ctx: x+1,
             decoder = lambda x,ctx: x-1 )
     """
-    __slots__ = ["_decode","_encode"]
     def __init__(self, subcon, decoder, encoder):
         super(ExprAdapter, self).__init__(subcon)
         self._decode = lambda obj,ctx,path: decoder(obj,ctx)
@@ -4832,7 +4792,6 @@ class Slicing(Adapter):
 
         example???
     """
-    __slots__ = ["count", "start", "stop", "step", "empty"]
     def __init__(self, subcon, count, start, stop, step=1, empty=None):
         super(Slicing, self).__init__(subcon)
         self.count = count
@@ -4867,7 +4826,6 @@ class Indexing(Adapter):
 
         example???
     """
-    __slots__ = ["count", "index", "empty"]
     def __init__(self, subcon, count, index, empty=None):
         super(Indexing, self).__init__(subcon)
         self.count = count

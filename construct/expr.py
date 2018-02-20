@@ -30,7 +30,6 @@ opnames = {
 
 
 class ExprMixin(object):
-    __slots__ = []
 
     def __add__(self, other):
         return BinExpr(operator.add, self, other)
@@ -128,7 +127,6 @@ class ExprMixin(object):
 
 
 class UniExpr(ExprMixin):
-    __slots__ = ["op", "operand"]
 
     def __init__(self, op, operand):
         self.op = op
@@ -146,7 +144,6 @@ class UniExpr(ExprMixin):
 
 
 class BinExpr(ExprMixin):
-    __slots__ = ["op", "lhs", "rhs"]
 
     def __init__(self, op, lhs, rhs):
         self.op = op
@@ -166,7 +163,6 @@ class BinExpr(ExprMixin):
 
 
 class Path(ExprMixin):
-    __slots__ = ["__name", "__field", "__parent"]
 
     def __init__(self, name, field=None, parent=None):
         self.__name = name
@@ -199,7 +195,6 @@ class Path(ExprMixin):
 
 
 class Path2(ExprMixin):
-    __slots__ = ["__name", "__index", "__parent"]
 
     def __init__(self, name, index=None, parent=None):
         self.__name = name
@@ -223,7 +218,6 @@ class Path2(ExprMixin):
 
 
 class FuncPath(ExprMixin):
-    __slots__ = ["__func", "__operand"]
 
     def __init__(self, func, operand=None):
         self.__func = func

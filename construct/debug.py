@@ -41,7 +41,6 @@ class Probe(Construct):
         ================================================================================
         [63, None]
     """
-    __slots__ = ["show_stream", "show_context", "stream_lookahead", "func"]
     
     def __init__(self, show_stream=True, show_context=True, stream_lookahead=128, func=None):
         super(Probe, self).__init__()
@@ -164,7 +163,6 @@ class Debugger(Subconstruct):
         (Pdb) self.retval = "???"
         (Pdb) q
     """
-    __slots__ = ["retval"]
 
     def _parse(self, stream, context, path):
         try:
