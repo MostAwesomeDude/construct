@@ -1195,14 +1195,16 @@ def test_indexing():
 def test_probe():
     Probe().parse(b"")
     Probe().build(None)
-    Struct("inserted"/Probe()).parse(b"")
-    Struct("inserted"/Probe()).build({})
+    Struct(Probe()).parse(b"")
+    Struct(Probe()).build({})
 
-def test_probeinto():
-    Struct("inner"/Struct("nums"/Byte[:]), ProbeInto(this.inner)).parse(b"\x01\xff")
-    Struct("inner"/Struct("nums"/Byte[:]), ProbeInto(this.inner)).build(dict(inner=dict(nums=[1,255])))
-    Struct(ProbeInto(this.inner)).parse(b"")
-    Struct(ProbeInto(this.inner)).build({})
+    Probe(lookahead=32).parse(b"")
+    Probe(lookahead=32).build(None)
+    Struct(Probe(lookahead=32)).parse(b"")
+    Struct(Probe(lookahead=32)).build({})
+
+    Struct("value"/Computed(7), Probe(this.value)).parse(b"")
+    Struct("value"/Computed(7), Probe(this.value)).build({})
 
 def test_operators():
     common(Struct("new" / ("old" / Byte)), b"\x01", Container(new=1), 1)

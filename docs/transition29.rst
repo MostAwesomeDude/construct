@@ -73,6 +73,8 @@ LazyStruct LazySequence LazyRange LazyField(OnDemand) removed
 
 LazyBound remains, but changed to parameter-less lambda (`see tutorial page <https://construct.readthedocs.io/en/latest/lazy.html#lazybound>`_)
 
+Probe Debugger updated, ProbeInto removed
+
 FlagsContainer removed
 
 HexString removed
