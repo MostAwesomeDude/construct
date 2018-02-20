@@ -1457,6 +1457,7 @@ def test_compiled_benchmark_testcompiled():
 @xfail(reason="unknown causes")
 def test_pickling_constructs():
     # it seems there are few problems:
+    # - singletons still dont pickle (_pickle.PicklingError: Can't pickle <class 'construct.core.GreedyBytes'>: it's not the same object as construct.core.GreedyBytes)
     # - this expressions, ExprMixin added __get(set)state__
     # - CompilableMacro not pickle, eg. IfThenElse
     # what was fixed so far:
@@ -1465,10 +1466,13 @@ def test_pickling_constructs():
     import pickle
 
     d = Struct(
+        # - singletons still dont pickle
         "count" / Byte,
+        # - singletons still dont pickle
         "greedybytes" / Prefixed(Byte, GreedyBytes),
         "formatfield" / FormatField("=","Q"),
         "bytesinteger" / BytesInteger(1),
+        # - singletons still dont pickle
         "varint" / VarInt,
         "text1" / PascalString(Byte, "utf8"),
         "text2" / CString("utf8"),
@@ -1482,6 +1486,7 @@ def test_pickling_constructs():
         # "if1" / IfThenElse(True, Byte, Byte),
         "padding" / Padding(1),
         "peek" / Peek(Byte),
+        # - singletons still dont pickle
         "tell" / Tell,
         # - unknown causes
         # "this1" / Byte[this.count],
@@ -1490,7 +1495,7 @@ def test_pickling_constructs():
     )
     data = b"\x00"*100
 
-    du = pickle.loads(pickle.dumps(d))
+    du = pickle.loads(pickle.dumps(d, protocol=-1))
     assert du.parse(data) == d.parse(data)
 
 def test_exposing_members():
