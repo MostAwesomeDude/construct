@@ -61,15 +61,15 @@ User Guide
    transition29
    basics
    advanced
-   compilation
    bitwise
-   adapters
    meta
    misc
    streaming
    tunneling
    lazy
+   adapters
    extending
+   compilation
    debugging
 
 API Reference

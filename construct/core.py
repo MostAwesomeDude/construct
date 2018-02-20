@@ -4689,18 +4689,19 @@ class LazyBound(Construct):
 #===============================================================================
 class ExprAdapter(Adapter):
     r"""
-    A generic adapter that takes ``encoder`` and ``decoder`` as parameters. You can use ExprAdapter instead of writing a full-blown class when only a simple lambda is needed.
+    Generic adapter that takes `decoder` and `encoder` lambdas as parameters. You can use ExprAdapter instead of writing a full-blown class deriving from Adapter when only a simple lambda is needed.
 
     :param subcon: Construct instance, subcon to adapt
-    :param encoder: lambda that takes (obj, context) and returns an encoded version of obj, or None for identity function
-    :param decoder: lambda that takes (obj, context) and returns an decoded version of obj, or None for identity function
+    :param encoder: lambda that takes (obj, context) and returns an encoded version of obj
+    :param decoder: lambda that takes (obj, context) and returns an decoded version of obj
 
     Example::
 
-        # adds +1 to build values and subtracts -1 from parsed objects
-        ExprAdapter(Byte,
-            encoder = lambda x,ctx: x+1,
-            decoder = lambda x,ctx: x-1 )
+        >>> d = ExprAdapter(Byte, obj_+1, obj_-1)
+        >>> d.parse(b'\x04')
+        5
+        >>> d.build(5)
+        b'\x04'
     """
     def __init__(self, subcon, decoder, encoder):
         super(ExprAdapter, self).__init__(subcon)
@@ -4713,14 +4714,15 @@ class ExprSymmetricAdapter(ExprAdapter):
     Macro around :class:`~construct.core.ExprAdapter`.
 
     :param subcon: Construct instance, subcon to adapt
-    :param encoder: lambda that takes (obj, context) and returns both encoded version and decoded version of obj, or None for identity function
-
-    implement???
+    :param encoder: lambda that takes (obj, context) and returns both encoded version and decoded version of obj
 
     Example::
 
-        # unsets 4 out of 8 bits in parsed and build values
-        ExprSymmetricAdapter(Byte, encoder = lambda x,ctx: x & 0b00001111)
+        >>> d = ExprSymmetricAdapter(Byte, obj_ & 0b00001111)
+        >>> d.parse(b"\xff")
+        15
+        >>> d.build(255)
+        b'\x0f'
     """
     def __init__(self, subcon, encoder):
         super(ExprAdapter, self).__init__(subcon)
@@ -4730,15 +4732,19 @@ class ExprSymmetricAdapter(ExprAdapter):
 
 class ExprValidator(Validator):
     r"""
-    A generic adapter that takes ``validator`` as parameter. You can use ExprValidator instead of writing a full-blown class when only a simple lambda is needed.
+    Generic adapter that takes `validator` lambda as parameter. You can use ExprValidator instead of writing a full-blown class deriving from Validator when only a simple lambda is needed.
 
     :param subcon: Construct instance, subcon to adapt
     :param encoder: lambda that takes (obj, context) and returns a bool
 
     Example::
 
-        ExprValidator(Byte, validator = lambda obj,ctx: obj in [1,3,5])
-        OneOf(Byte, [1,3,5])
+        >>> d = ExprValidator(Byte, obj_ & 0b11111110 == 0)
+        >>> d.build(1)
+        b'\x01'
+        >>> d.build(88)
+        ValidationError: object failed validation: 88
+
     """
     def __init__(self, subcon, validator):
         super(ExprValidator, self).__init__(subcon)
@@ -4815,7 +4821,10 @@ class Slicing(Adapter):
 
     Example::
 
-        example???
+        d = Slicing(Array(4,Byte), 4, 1, 3, empty=0)
+        assert d.parse(b"\x01\x02\x03\x04") == [2,3]
+        assert d.build([2,3]) == b"\x00\x02\x03\x00"
+        assert d.sizeof() == 4
     """
     def __init__(self, subcon, count, start, stop, step=1, empty=None):
         super(Slicing, self).__init__(subcon)
@@ -4849,7 +4858,10 @@ class Indexing(Adapter):
 
     Example::
 
-        example???
+        d = Indexing(Array(4,Byte), 4, 2, empty=0)
+        assert d.parse(b"\x01\x02\x03\x04") == 3
+        assert d.build(3) == b"\x00\x00\x03\x00"
+        assert d.sizeof() == 4
     """
     def __init__(self, subcon, count, index, empty=None):
         super(Indexing, self).__init__(subcon)

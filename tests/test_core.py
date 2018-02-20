@@ -1183,14 +1183,16 @@ def test_filter():
     assert Filter(obj_ != 0, Byte[:]).build([0,1,0,2,0]) == b"\x01\x02"
 
 def test_slicing():
-    assert Slicing(Array(4,Byte), 4, 1, 3, empty=0).parse(b"\x01\x02\x03\x04") == [2,3]
-    assert Slicing(Array(4,Byte), 4, 1, 3, empty=0).build([2,3]) == b"\x00\x02\x03\x00"
-    assert Slicing(Array(4,Byte), 4, 1, 3, empty=0).sizeof() == 4
+    d = Slicing(Array(4,Byte), 4, 1, 3, empty=0)
+    assert d.parse(b"\x01\x02\x03\x04") == [2,3]
+    assert d.build([2,3]) == b"\x00\x02\x03\x00"
+    assert d.sizeof() == 4
 
 def test_indexing():
-    assert Indexing(Array(4,Byte), 4, 2, empty=0).parse(b"\x01\x02\x03\x04") == 3
-    assert Indexing(Array(4,Byte), 4, 2, empty=0).build(3) == b"\x00\x00\x03\x00"
-    assert Indexing(Array(4,Byte), 4, 2, empty=0).sizeof() == 4
+    d = Indexing(Array(4,Byte), 4, 2, empty=0)
+    assert d.parse(b"\x01\x02\x03\x04") == 3
+    assert d.build(3) == b"\x00\x00\x03\x00"
+    assert d.sizeof() == 4
 
 def test_probe():
     Probe().parse(b"")
