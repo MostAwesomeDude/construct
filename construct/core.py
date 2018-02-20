@@ -2346,31 +2346,16 @@ class Renamed(Subconstruct):
         self.docs = newdocs if newdocs else subcon.docs
 
     def _parse(self, stream, context, path):
-        try:
-            path += " -> %s" % (self.name,)
-            return self.subcon._parse(stream, context, path)
-        except ConstructError as e:
-            if "\n" in str(e):
-                raise
-            raise e.__class__("%s\n    %s" % (e, path))
+        path += " -> %s" % (self.name,)
+        return self.subcon._parse(stream, context, path)
 
     def _build(self, obj, stream, context, path):
-        try:
-            path += " -> %s" % (self.name,)
-            return self.subcon._build(obj, stream, context, path)
-        except ConstructError as e:
-            if "\n" in str(e):
-                raise
-            raise e.__class__("%s\n    %s" % (e, path))
+        path += " -> %s" % (self.name,)
+        return self.subcon._build(obj, stream, context, path)
 
     def _sizeof(self, context, path):
-        try:
-            path += " -> %s" % (self.name,)
-            return self.subcon._sizeof(context, path)
-        except ConstructError as e:
-            if "\n" in str(e):
-                raise
-            raise e.__class__("%s\n    %s" % (e, path))
+        path += " -> %s" % (self.name,)
+        return self.subcon._sizeof(context, path)
 
     def _emitdecompiled(self, code):
         return self.subcon._decompile(code)
