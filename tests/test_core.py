@@ -264,6 +264,7 @@ def test_enum_issue_298():
             NAK = 0x15,
             STX = 0x02,
         ),
+        Probe(),
         "optional" / If(this.ctrl == "NAK", Byte),
     )
     common(st, b"\x15\xff", Container(ctrl='NAK')(optional=255))
@@ -495,10 +496,59 @@ def test_index():
     common(d, b"", [0,1,2])
 
 def test_rebuild():
-    d = Struct("count"/Rebuild(Byte, len_(this.items)), "items"/Byte[this.count])
+    d = Struct(
+        "count" / Rebuild(Byte, len_(this.items)),
+        "items"/Byte[this.count],
+    )
     assert d.parse(b"\x02ab") == Container(count=2)(items=[97,98])
     assert d.build(dict(count=None,items=[255])) == b"\x01\xff"
     assert d.build(dict(items=[255])) == b"\x01\xff"
+
+def test_rebuild_issue_664():
+    d = Struct(
+        "bytes" / Bytes(1),
+        Check(this.bytes == b"\x00"),
+        "bytesinteger" / BytesInteger(4),
+        Check(this.bytesinteger == 255),
+        "pascalstring" / PascalString(Byte, "utf8"),
+        Check(this.pascalstring == u"text"),
+        "enum" / Enum(Byte, label=255),
+        Check(this.enum == "label"),
+        "flagsenum" / FlagsEnum(Byte, label=255),
+        Check(lambda this: this.flagsenum == Container(label=True)),
+        "upfield" / Computed(200),
+        "nestedstruct" / Struct(
+            "nestedfield" / Computed(255),
+            Check(this._.upfield == 200),
+            Check(this.nestedfield == 255),
+        ),
+        Check(this.upfield == 200),
+        Check(this.nestedstruct.nestedfield == 255),
+        "sequence" / Sequence(Computed(1), Computed(2), Computed(3), Computed(4)),
+        Check(this.sequence == [1,2,3,4]),
+        "array" / Array(4, Byte),
+        Check(this.array == [1,2,3,4]),
+        "greedyrange" / GreedyRange(Byte),
+        Check(this.greedyrange == [1,2,3,4]),
+        "repeatuntil" / RepeatUntil(obj_ == 4, Byte),
+        Check(this.repeatuntil == [1,2,3,4]),
+        # Timestamp
+        # Union
+        # IfThenElse
+    )
+    obj = Container(
+        bytes = 0,
+        bytesinteger = 255,
+        pascalstring = u"text",
+        enum = "label",
+        flagsenum = dict(label=True),
+        # nestedstruct = dict(),
+        # sequence = [1,2,3,4],
+        array = [1,2,3,4],
+        greedyrange = [1,2,3,4],
+        repeatuntil = [1,2,3,4],
+    )
+    d.build(obj)
 
 def test_default():
     common(Struct("a"/Default(Byte,0), "b"/Default(Byte,0)), b"\x01\x02", Container(a=1)(b=2), 2)
@@ -1379,12 +1429,10 @@ def test_from_issue_362():
 def test_compiler_recursion():
     raises(Construct().compile) == NotImplementedError
 
-@xfail(reason="unknown cause")
 def test_this_expresion_compare_container():
-    # lambda is fine, but this equality with Container fails
     st = Struct(
         "flags" / FlagsEnum(Byte, a=1),
-        Check(this.flags == Container(a=1)),
+        Check(lambda this: this.flags == Container(a=1)),
     )
     common(st, b"\x01", dict(flags=Container(a=True)), 1)
 

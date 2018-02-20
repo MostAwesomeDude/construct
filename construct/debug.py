@@ -41,7 +41,7 @@ class Probe(Construct):
         ================================================================================
         [63, None]
     """
-    
+
     def __init__(self, show_stream=True, show_context=True, stream_lookahead=128, func=None):
         super(Probe, self).__init__()
         self.flagbuildnone = True
@@ -177,7 +177,7 @@ class Debugger(Subconstruct):
 
     def _build(self, obj, stream, context, path):
         try:
-            self.subcon._build(obj, stream, context, path)
+            return self.subcon._build(obj, stream, context, path)
         except Exception:
             self.handle_exc(path)
 
