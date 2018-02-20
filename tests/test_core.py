@@ -397,6 +397,10 @@ def test_struct_issue_566():
     outer.parse(b'\x01\x02\x03') == Container(a=1)(inner=Container(b=2)(c=3))
     outer.build(Container(a=1)(inner=Container(b=2)(c=3))) == b'\x01\x02\x80\x03\x04'
 
+def test_struct_buildfromnone():
+    d = Struct(Computed(7), Const(b"JPEG"), Pass, Terminated)
+    assert d.build(None) == d.build({})
+
 def test_sequence():
     common(Sequence(), b"", [], 0)
     common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
@@ -405,6 +409,10 @@ def test_sequence():
 def test_sequence_nested_embedded():
     common(Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)), b"\x01\x00\x02\x03\x04", [1,2,[3,4]], 5)
     common(Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))), b"\x01\x00\x02\x03\x04", [1,2,3,4], 5)
+
+def test_sequence_buildfromnone():
+    d = Sequence(Computed(7), Const(b"JPEG"), Pass, Terminated)
+    assert d.build(None) == d.build([None,None,None,None])
 
 def test_array():
     common(Byte[0], b"", [], 0)
