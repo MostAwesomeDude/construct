@@ -3432,7 +3432,7 @@ def If(condfunc, subcon):
     return IfThenElse(condfunc, subcon, Pass)
 
 
-def IfThenElse(condfunc, thensubcon, elsesubcon):
+class IfThenElse(Construct):
     r"""
     If-then-else conditional construct, similar to ternary operator.
 
@@ -3454,13 +3454,37 @@ def IfThenElse(condfunc, thensubcon, elsesubcon):
         >>> d.build(255, dict(x=0))
         b'\xff'
     """
-    macro = Switch(
-        lambda ctx: bool(condfunc(ctx)) if callable(condfunc) else bool(condfunc),
-        {True:thensubcon, False:elsesubcon},
-    )
+
+    def __init__(self, condfunc, thensubcon, elsesubcon):
+        super(IfThenElse, self).__init__()
+        self.condfunc = condfunc
+        self.thensubcon = thensubcon
+        self.elsesubcon = elsesubcon
+        self.flagbuildnone = thensubcon.flagbuildnone and elsesubcon.flagbuildnone
+
+    def _parse(self, stream, context, path):
+        condfunc = self.condfunc
+        if callable(condfunc):
+            condfunc = condfunc(context)
+        sc = self.thensubcon if condfunc else self.elsesubcon
+        return sc._parse(stream, context, path)
+
+    def _build(self, obj, stream, context, path):
+        condfunc = self.condfunc
+        if callable(condfunc):
+            condfunc = condfunc(context)
+        sc = self.thensubcon if condfunc else self.elsesubcon
+        return sc._build(obj, stream, context, path)
+
+    def _sizeof(self, context, path):
+        condfunc = self.condfunc
+        if callable(condfunc):
+            condfunc = condfunc(context)
+        sc = self.thensubcon if condfunc else self.elsesubcon
+        return sc._sizeof(context, path)
+
     def _emitparse(self, code):
-        return "(%s) if (%s) else (%s)" % (thensubcon._compileparse(code), condfunc, elsesubcon._compileparse(code), )
-    return CompilableMacro(macro, _emitparse)
+        return "(%s) if (%s) else (%s)" % (self.thensubcon._compileparse(code), self.condfunc, self.elsesubcon._compileparse(code), )
 
 
 class Switch(Construct):
