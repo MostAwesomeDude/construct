@@ -1658,10 +1658,8 @@ class Enum(Adapter):
         for enum in merge:
             for enumentry in enum:
                 mapping[enumentry.name] = enumentry.value
-        self.encmapping =      {k:v for k,v in mapping.items()}
-        self.encmapping.update({v:v for k,v in mapping.items()})
-        self.decmapping =      {v:k for k,v in mapping.items()}
-        self.decmapping.update({k:k for k,v in mapping.items()})
+        self.encmapping = {k:v for k,v in mapping.items()}
+        self.decmapping = {v:k for k,v in mapping.items()}
 
     def __getattr__(self, name):
         if name in self.encmapping:
@@ -1680,9 +1678,9 @@ class Enum(Adapter):
 
     def _encode(self, obj, context, path):
         try:
-            if isinstance(obj, int):
+            if isinstance(obj, integertypes):
                 return obj
-            if isinstance(obj, str):
+            if isinstance(obj, stringtypes):
                 return self.encmapping[obj]
             return self.encmapping[obj]
         except KeyError:
