@@ -35,7 +35,7 @@ def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"
 
 class Container(dict):
     r"""
-    Generic ordered dictionary that allows both key and attribute access, and preserves key order by insertion. Adding keys is preferred using \*\*kw (requires Python 3.6). Equality does NOT check item order. Also provides regex searching.
+    Generic ordered dictionary that allows both key and attribute access, and preserves key order by insertion. Adding keys is preferred using \*\*entrieskw (requires Python 3.6). Equality does NOT check item order. Also provides regex searching.
 
     This container is mostly used by Struct construct, since its members have order, so do the values parsed.
 
@@ -101,7 +101,7 @@ class Container(dict):
             self.__keys_order__.remove(key)
             dict.__delitem__(self, key)
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args, **entrieskw):
         self.__keys_order__ = []
         for arg in args:
             if isinstance(arg, dict):
@@ -110,12 +110,12 @@ class Container(dict):
             else:
                 for k,v in arg:
                     self[k] = v
-        for k,v in kw.items():
+        for k,v in entrieskw.items():
             self[k] = v
 
-    def __call__(self, **kw):
+    def __call__(self, **entrieskw):
         """Chains adding new entries to the same container. See ctor."""
-        for k,v in kw.items():
+        for k,v in entrieskw.items():
             self[k] = v
         return self
 

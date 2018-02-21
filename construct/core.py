@@ -229,37 +229,37 @@ class Construct(object):
         self2.__setstate__(self, self.__getstate__())
         return self2
 
-    def parse(self, data, **kw):
+    def parse(self, data, **contextkw):
         r"""
         Parse an in-memory buffer (often bytes object). Strings, buffers, memoryviews, and other complete buffers can be parsed with this method.
 
         Whenever data cannot be read, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
 
-        Context entries are passed only as keyword parameters \*\*kw.
+        Context entries are passed only as keyword parameters \*\*contextkw.
 
-        :param \*\*kw: context entries, usually empty
+        :param \*\*contextkw: context entries, usually empty
 
         :returns: some value, usually based on bytes read from the stream but sometimes it is computed from nothing or from the context dictionary, sometimes its non-deterministic
 
         :raises ConstructError: raised for any reason
         """
-        return self.parse_stream(io.BytesIO(data), **kw)
+        return self.parse_stream(io.BytesIO(data), **contextkw)
 
-    def parse_stream(self, stream, **kw):
+    def parse_stream(self, stream, **contextkw):
         r"""
         Parse a stream. Files, pipes, sockets, and other streaming sources of data are handled by this method.
 
         Whenever data cannot be read, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
 
-        Context entries are passed only as keyword parameters \*\*kw.
+        Context entries are passed only as keyword parameters \*\*contextkw.
 
-        :param \*\*kw: context entries, usually empty
+        :param \*\*contextkw: context entries, usually empty
 
         :returns: some value, usually based on bytes read from the stream but sometimes it is computed from nothing or from the context dictionary, sometimes its non-deterministic
 
         :raises ConstructError: raised for any reason
         """
-        context = Container(**kw)
+        context = Container(**contextkw)
         return self._parse(stream, context, "(parsing)")
 
     def _parse(self, stream, context, path):
@@ -268,37 +268,37 @@ class Construct(object):
         """
         raise NotImplementedError
 
-    def build(self, obj, **kw):
+    def build(self, obj, **contextkw):
         r"""
         Build an object in memory (a bytes object).
 
         Whenever data cannot be written, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
 
-        Context entries are passed only as keyword parameters \*\*kw.
+        Context entries are passed only as keyword parameters \*\*contextkw.
 
-        :param \*\*kw: context entries, usually empty
+        :param \*\*contextkw: context entries, usually empty
 
         :returns: bytes
 
         :raises ConstructError: raised for any reason
         """
         stream = io.BytesIO()
-        self.build_stream(obj, stream, **kw)
+        self.build_stream(obj, stream, **contextkw)
         return stream.getvalue()
 
-    def build_stream(self, obj, stream, **kw):
+    def build_stream(self, obj, stream, **contextkw):
         r"""
         Build an object directly into a stream.
 
         Whenever data cannot be written, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
 
-        Context entries are passed only as keyword parameters \*\*kw.
+        Context entries are passed only as keyword parameters \*\*contextkw.
 
-        :param \*\*kw: context entries, usually empty
+        :param \*\*contextkw: context entries, usually empty
 
         :raises ConstructError: raised for any reason
         """
-        context = Container(**kw)
+        context = Container(**contextkw)
         self._build(obj, stream, context, "(building)")
 
     def _build(self, obj, stream, context, path):
@@ -307,7 +307,7 @@ class Construct(object):
         """
         raise NotImplementedError
 
-    def sizeof(self, **kw):
+    def sizeof(self, **contextkw):
         r"""
         Calculate the size of this object, optionally using a context.
 
@@ -315,15 +315,15 @@ class Construct(object):
 
         Whenever size cannot be determined, SizeofError is raised. This method is NOT ALLOWED to raise any other exception, even if eg. context dictionary is missing a key, or subcon propagates ConstructError-derivative exception.
 
-        Context entries are passed only as keyword parameters \*\*kw.
+        Context entries are passed only as keyword parameters \*\*contextkw.
 
-        :param \*\*kw: context entries, usually empty
+        :param \*\*contextkw: context entries, usually empty
 
         :returns: integer if computable, SizeofError otherwise
 
         :raises SizeofError: size could not be determined in actual context, or is impossible to be determined
         """
-        context = Container(**kw)
+        context = Container(**contextkw)
         return self._sizeof(context, "(sizeof)")
 
     def _sizeof(self, context, path):
@@ -1848,7 +1848,7 @@ class Struct(Construct):
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
 
     :param \*subcons: Construct instances, list of members, some can be anonymous
-    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+    :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises KeyError: building a subcon but found no corresponding key in dictionary
@@ -1883,9 +1883,9 @@ class Struct(Construct):
         >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
     """
 
-    def __init__(self, *subcons, **kw):
+    def __init__(self, *subcons, **subconskw):
         super(Struct, self).__init__()
-        subcons = list(subcons) + list(k/v for k,v in kw.items())
+        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
 
@@ -1974,7 +1974,7 @@ class Sequence(Construct):
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
 
     :param \*subcons: Construct instances, list of members, some can be named
-    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+    :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises KeyError: building a subcon but found no corresponding key in dictionary
@@ -2008,9 +2008,9 @@ class Sequence(Construct):
         >>> Sequence(a=Byte, b=Byte, c=Byte, d=Byte)
     """
 
-    def __init__(self, *subcons, **kw):
+    def __init__(self, *subcons, **subconskw):
         super(Sequence, self).__init__()
-        subcons = list(subcons) + list(k/v for k,v in kw.items())
+        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
 
@@ -2739,7 +2739,7 @@ class FocusedSeq(Construct):
 
     :param parsebuildfrom: integer index or string name or context lambda, selects a subcon
     :param \*subcons: Construct instances, list of members, some can be named
-    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+    :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises IndexError: selector does not match any subcon
@@ -2763,10 +2763,10 @@ class FocusedSeq(Construct):
         )
     """
 
-    def __init__(self, parsebuildfrom, *subcons, **kw):
+    def __init__(self, parsebuildfrom, *subcons, **subconskw):
         super(FocusedSeq, self).__init__()
         self.parsebuildfrom = parsebuildfrom
-        subcons = list(subcons) + list(k/v for k,v in kw.items())
+        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
 
     def _parse(self, stream, context, path):
@@ -3174,7 +3174,7 @@ class Union(Construct):
 
     :param parsefrom: how to leave stream after parsing, can be integer index or string name selecting a subcon, or None (leaves stream at initial offset, the default), or context lambda
     :param \*subcons: Construct instances, list of members, some can be anonymous
-    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+    :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
@@ -3197,12 +3197,12 @@ class Union(Construct):
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     """
 
-    def __init__(self, parsefrom, *subcons, **kw):
+    def __init__(self, parsefrom, *subcons, **subconskw):
         if isinstance(parsefrom, Construct):
             raise UnionError("parsefrom should be either: None int str context-function")
         super(Union, self).__init__()
         self.parsefrom = parsefrom
-        subcons = list(subcons) + list(k/v for k,v in kw.items())
+        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
 
     def _parse(self, stream, context, path):
@@ -3311,7 +3311,7 @@ class Select(Construct):
     Parses and builds by literally trying each subcon in sequence until one of them parses or builds without exception. Stream gets reverted back to original position after each failed attempt. Size is not defined.
 
     :param \*subcons: Construct instances, list of members, some can be anonymous
-    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+    :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
     :param includename: indicates whether to include name of selected subcon in the return value of parsing, default is False
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
@@ -3330,12 +3330,12 @@ class Select(Construct):
         >>> Select(num=Int32ub, text=CString(encoding="utf8"))
     """
 
-    def __init__(self, *subcons, **kw):
+    def __init__(self, *subcons, **subconskw):
         super(Select, self).__init__()
-        self.subcons = list(subcons) + list(k/v for k,v in kw.items() if k != "includename")
+        self.subcons = list(subcons) + list(k/v for k,v in subconskw.items() if k != "includename")
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
         self.flagembedded = all(sc.flagembedded for sc in self.subcons)
-        self.includename = kw.pop("includename", False)
+        self.includename = subconskw.pop("includename", False)
 
     def _parse(self, stream, context, path):
         for sc in self.subcons:
@@ -3822,7 +3822,7 @@ class Aligned(Subconstruct):
         return "(%s, read_bytes(io, -%s %% %s))[0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
 
 
-def AlignedStruct(modulus, *subcons, **kw):
+def AlignedStruct(modulus, *subcons, **subconskw):
     r"""
     Makes a structure where each field is aligned to the same modulus (it is a struct of aligned fields, NOT an aligned struct).
 
@@ -3830,7 +3830,7 @@ def AlignedStruct(modulus, *subcons, **kw):
 
     :param modulus: integer or context lambda, passed to each member
     :param \*subcons: Construct instances, list of members, some can be anonymous
-    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+    :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
 
     Example::
 
@@ -3838,18 +3838,18 @@ def AlignedStruct(modulus, *subcons, **kw):
         >>> d.build(dict(a=0xFF,b=0xFFFF))
         b'\xff\x00\x00\x00\xff\xff\x00\x00'
     """
-    subcons = list(subcons) + list(k/v for k,v in kw.items())
+    subcons = list(subcons) + list(k/v for k,v in subconskw.items())
     return Struct(*[Aligned(modulus, sc) for sc in subcons])
 
 
-def BitStruct(*subcons, **kw):
+def BitStruct(*subcons, **subconskw):
     r"""
     Makes a structure inside a Bitwise.
 
     See :class:`~construct.core.Bitwise` and :class:`~construct.core.Struct` for semantics and raisable exceptions.
 
     :param \*subcons: Construct instances, list of members, some can be anonymous
-    :param \*\*kw: Construct instances, list of members (requires Python 3.6)
+    :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
 
     Example::
 
@@ -3866,7 +3866,7 @@ def BitStruct(*subcons, **kw):
         >>> d.sizeof()
         2
     """
-    return Bitwise(Struct(*subcons, **kw))
+    return Bitwise(Struct(*subcons, **subconskw))
 
 
 #===============================================================================

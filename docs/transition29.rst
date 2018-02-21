@@ -15,7 +15,7 @@ Overall
 General classes
 -----------------
 
-All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*kw (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html>`_)
+All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*contextkw (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html>`_)
 
 All constructs: `compile benchmark testcompiled` methods were added (`see tutorial page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
 
