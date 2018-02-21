@@ -181,7 +181,7 @@ Like Structs, Sequences are compatible with the Embedded wrapper. Embedding one 
 >>> nseq.parse(b"abcd")
 [97, 98, 99, 100]
 
-.. seealso:: The :func:`~construct.core.Embedded` macro.
+.. seealso:: The :class:`~construct.core.Embedded` macro.
 
 
 Repeaters
