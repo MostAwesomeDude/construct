@@ -171,25 +171,25 @@ class Construct(object):
 
     The external user API:
 
-    * ``parse()``
-    * ``parse_stream()``
-    * ``build()``
-    * ``build_stream()``
-    * ``sizeof()``
-    * ``compile()``
-    * ``benchmark()``
-    * ``testcompiled()``
+    * `parse`
+    * `parse_stream`
+    * `build`
+    * `build_stream`
+    * `sizeof`
+    * `compile`
+    * `benchmark`
+    * `testcompiled`
 
     Subclass authors should not override the external methods. Instead, another API is available:
 
-    * ``_parse()``
-    * ``_build()``
-    * ``_sizeof()``
-    * ``_emitdecompiled()``
-    * ``_emitparse()``
-    * ``_emitbuild()``
-    * ``__getstate__()``
-    * ``__setstate__()``
+    * `_parse`
+    * `_build`
+    * `_sizeof`
+    * `_emitdecompiled`
+    * `_emitparse`
+    * `_emitbuild`
+    * `__getstate__`
+    * `__setstate__`
 
     Attributes and Inheritance:
 
@@ -338,7 +338,7 @@ class Construct(object):
 
         There are restrictions on what can be compiled (see documentation site, Compilation chapter). Some classes do not compile or compile only in certain circumstances.
 
-        Returned instance has additional ``source`` field and ``tofile`` method, aside of regular ``parse`` ``build`` ``sizeof``.
+        Returned instance has additional `source` field and `tofile` method, aside of regular `parse` `build` `sizeof`.
 
         :returns: Compiled instance
 
@@ -580,7 +580,7 @@ class Adapter(Subconstruct):
     r"""
     Abstract adapter class.
 
-    Needs to implement ``_decode()`` for parsing and ``_encode()`` for building.
+    Needs to implement `_decode()` for parsing and `_encode()` for building.
 
     :param subcon: Construct instance
     """
@@ -604,7 +604,7 @@ class SymmetricAdapter(Adapter):
     r"""
     Abstract adapter class.
 
-    Needs to implement ``_decode()`` only, for both parsing and building.
+    Needs to implement `_decode()` only, for both parsing and building.
 
     :param subcon: Construct instance
     """
@@ -616,7 +616,7 @@ class Validator(SymmetricAdapter):
     r"""
     Abstract class that validates a condition on the encoded/decoded object.
 
-    Needs to implement ``_validate()`` that returns a bool (or a truthy value)
+    Needs to implement `_validate()` that returns a bool (or a truthy value)
 
     :param subcon: Construct instance
     """
@@ -633,7 +633,7 @@ class Tunnel(Subconstruct):
     r"""
     Abstract class that allows other constructs to read part of the stream as if they were reading the entrie stream. See Prefixed for example.
 
-    Needs to implement ``_decode()`` for parsing and ``_encode()`` for building.
+    Needs to implement `_decode()` for parsing and `_encode()` for building.
     """
     def _parse(self, stream, context, path):
         data = _read_stream_entire(stream)  # reads entire stream
@@ -696,7 +696,7 @@ class Compiled(Construct):
 
     def tofile(self, filename):
         """
-        Saves the ``source`` field into a text file (preferably with .py extension).
+        Saves the `source` field into a text file (preferably with .py extension).
         """
         with open(filename, 'wt') as f:
             f.write(self.source)
