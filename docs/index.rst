@@ -6,10 +6,15 @@
     <ul>
     <li><a href="#user-guide" title="Jump to user guide">User Guide</a></li>
     <li><a href="#api-reference" title="Jump to API reference">API Reference</a></li>
-    <li><a href="https://github.com/construct/construct/issues">Questions and Issues</a></li>
+    <li><a href="https://github.com/construct/construct/issues">Questions on Issues</a></li>
+    <li><a href="https://gitter.im/construct-construct/Lobby">Questions on Chat</a></li>
     <li><a href="https://pypi.org/project/construct/">Download</a></li>
     </ul>
     <hr/>
+    <a href="https://github.com/construct/construct" target="_blank">
+    <img style="display: block; margin-left: auto; margin-right: auto"
+    src="_static/logo-sketch-120.png" title="GitHub repository"/></a>
+    <br/>
     <a href="https://arekbulski.github.io/" target="_blank">
     <img style="display: block; margin-left: auto; margin-right: auto"
     src="_static/constructocatab120p.png" title="Arkadiusz'es personal site"/></a>
