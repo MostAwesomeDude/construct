@@ -815,10 +815,6 @@ def Bitwise(subcon):
 
     Analog to :class:`~construct.core.Bytewise` that transforms bits back to bytes.
 
-    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
-
-    .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
-
     :param subcon: Construct instance, any field that works with bits (like BitsInteger) or is bit-byte agnostic (like Struct or Flag)
 
     See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
@@ -854,10 +850,6 @@ def Bytewise(subcon):
     Parsing building and size are deferred to subcon, although size gets multiplied by 8.
 
     Analog to :class:`~construct.core.Bitwise` that transforms bytes to bits.
-
-    .. warning:: Remember that subcon must consume or produce an amount of bytes that is a multiple of encoding or decoding units. For example, in a Bitwise context you should process a multiple of 8 bits or the stream will fail during parsing/building.
-
-    .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
 
     :param subcon: Construct instance, any field that works with bytes or is bit-byte agnostic
 
@@ -4127,7 +4119,7 @@ class Terminated(Construct):
     r"""
     Asserts end of stream (EOF). You can use it to ensure no more unparsed data follows in the stream.
 
-    Parsing checks if stream reached EOF, and raises TerminatedError if not. Building does nothing. Size is defined as 0 because parsing and building does not consume or add into the stream.
+    Parsing checks if stream reached EOF, and raises TerminatedError if not. Building does nothing. Size is defined as 0 because parsing and building does not consume or add into the stream, as far as other constructs see it.
 
     :raises TerminatedError: stream not at EOF when parsing
 
@@ -4400,7 +4392,13 @@ class TransformData(Subconstruct):
 
     Parsing reads a specified amount, processes data using a bytes-to-bytes decoding function, then parses subcon using those data. Building does build subcon into separate bytes, then processes using encoding encoding, then writes those data into main stream. Size is reported as `encodeamount`.
 
-    Possible use-cases include encryption, obfuscation.
+    Used internally to implement :class:`~construct.core.Bitwise` :class:`~construct.core.Bytewise` :class:`~construct.core.ByteSwapped` :class:`~construct.core.BitsSwapped` .
+
+    Possible use-cases include encryption, obfuscation, byte-level encoding.
+
+    .. warning:: Remember that subcon must consume (or produce) an amount of bytes that is same as `decodeamount` (or `encodeamount`).
+
+    .. warning:: Do NOT use seeking/telling classes inside TransformData context.
 
     :param subcon: Construct instance
     :param decodefunc: bytes-to-bytes function, applied before parsing subcon
@@ -4716,8 +4714,8 @@ class ExprAdapter(Adapter):
     Generic adapter that takes `decoder` and `encoder` lambdas as parameters. You can use ExprAdapter instead of writing a full-blown class deriving from Adapter when only a simple lambda is needed.
 
     :param subcon: Construct instance, subcon to adapt
-    :param encoder: lambda that takes (obj, context) and returns an encoded version of obj
     :param decoder: lambda that takes (obj, context) and returns an decoded version of obj
+    :param encoder: lambda that takes (obj, context) and returns an encoded version of obj
 
     Example::
 
@@ -4759,7 +4757,7 @@ class ExprValidator(Validator):
     Generic adapter that takes `validator` lambda as parameter. You can use ExprValidator instead of writing a full-blown class deriving from Validator when only a simple lambda is needed.
 
     :param subcon: Construct instance, subcon to adapt
-    :param encoder: lambda that takes (obj, context) and returns a bool
+    :param validator: lambda that takes (obj, context) and returns a bool
 
     Example::
 
@@ -4779,7 +4777,7 @@ def OneOf(subcon, valids):
     r"""
     Validates that the object is one of the listed values, both during parsing and building.
 
-    .. note:: For performance, you should provide a set/frozenset but if items are not hashable, then a list would work the same, just slower.
+    .. note:: For performance, `valids` should be a set/frozenset.
 
     :param subcon: Construct instance, subcon to validate
     :param valids: collection implementing __contains__, usually a list or set
@@ -4801,7 +4799,7 @@ def NoneOf(subcon, invalids):
     r"""
     Validates that the object is none of the listed values, both during parsing and building.
 
-    .. note:: For performance, you should provide a set/frozenset but if items are not hashable, then a list would work the same, just slower.
+    .. note:: For performance, `valids` should be a set/frozenset.
 
     :param subcon: Construct instance, subcon to validate
     :param invalids: collection implementing __contains__, usually a list or set

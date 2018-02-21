@@ -32,11 +32,11 @@ if PY3:
 
     INT2BYTE_CACHE = {i:bytes((i,)) for i in range(256)}
     def int2byte(character):
-        """Converts integer (0 through 255) into b'...' character."""
+        """Converts (0 through 255) integer into b'...' character."""
         return INT2BYTE_CACHE[character]
 
     def byte2int(character):
-        """Converts b'...' character into integer (0 through 255)."""
+        """Converts b'...' character into (0 through 255) integer."""
         return ord(character)
 
     def str2bytes(string):
@@ -61,7 +61,7 @@ if PY3:
         return (ITERATEBYTES_CACHE[i] for i in data)
 
     def iterateints(data):
-        """Iterates though b'...' string yielding integers."""
+        """Iterates though b'...' string yielding (0 through 255) integers."""
         return data
 
     def reprbytes(data):
@@ -87,11 +87,11 @@ else:
     bytestringtype = str
 
     def int2byte(character):
-        """Converts integer (0 through 255) into b'...' character."""
+        """Converts (0 through 255) integer into b'...' character."""
         return chr(character)
 
     def byte2int(character):
-        """Converts b'...' character into integer (0 through 255)."""
+        """Converts b'...' character into (0 through 255) integer."""
         return ord(character)
 
     def str2bytes(string):
@@ -115,7 +115,7 @@ else:
         return data
 
     def iterateints(data):
-        """Iterates though b'...' string yielding integers."""
+        """Iterates though b'...' string yielding (0 through 255) integers."""
         return (ord(c) for c in data)
 
     def reprbytes(data):

@@ -4,7 +4,7 @@ import binascii
 
 def integer2bits(number, width):
     r"""
-    Converts an integer into its binary representation in a bit-string. Width is the amount of bits to generate. If width is larger than the actual amount of bits required to represent number in binary, sign-extension is used. If it's smaller, the representation is trimmed to width bits. Each bit is represented as either b'\\x00' or b'\\x01'. The most significant is first, big-endian. This is reverse to `bits2integer`.
+    Converts an integer into its binary representation in a bit-string. Width is the amount of bits to generate. If width is larger than the actual amount of bits required to represent number in binary, sign-extension is used. If it's smaller, the representation is trimmed to width bits. Each bit is represented as either \\x00 or \\x01. The most significant is first, big-endian. This is reverse to `bits2integer`.
 
     Examples:
 
@@ -145,7 +145,7 @@ def swapbytesinbits(data):
 SWAPBITSINBYTES_CACHE = {i:bits2bytes(bytes2bits(int2byte(i))[::-1]) for i in range(256)}
 def swapbitsinbytes(data):
     r"""
-    Performs a bit-reversal within a bytes-string.
+    Performs a bit-reversal within a byte-string.
 
     Example:
 
