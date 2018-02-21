@@ -31,7 +31,7 @@ Enum FlagsEnum can merge labels from IntEnum IntFlag, from enum34 module (`see t
 
 Enum FlagsEnum dropped `default` parameter but returns integer if no mapping found (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
-Enum FlagsEnum can build from integers and labels, and expose labels as attributes as bitwisable strings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
+Enum FlagsEnum can build from integers and labels, and expose labels as attributes, as bitwisable strings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
 Mapping replaced SymmetricMapping, and dropped `default` parameter (`see API page <https://construct.readthedocs.io/en/latest/api/mappings.html#construct.Mapping>`_)
 
@@ -45,7 +45,7 @@ Array reimplemented without Range, does not use stream.tell()
 
 Range removed, GreedyRange remains
 
-Const has reordered parameters, like ``Const(b"\\x00")`` and ``Const(0, Int8ub)``. (`see API page <https://construct.readthedocs.io/en/latest/api/misc.html#construct.Const>`_)
+Const has reordered parameters, `value` before `subcon`. (`see API page <https://construct.readthedocs.io/en/latest/api/misc.html#construct.Const>`_)
 
 Index added, in Miscellaneous (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#index>`_)
 
@@ -67,7 +67,7 @@ TransformData added, in Tunneling (`see tutorial page <https://construct.readthe
 
 ExprAdapter Mapping Restreamed changed parameters order (decoders before encoders)
 
-Adapter changed parameters, added `path` to `_encode _decode _validate`
+Adapter changed parameters, added `path` parameter to `_encode _decode _validate` methods
 
 LazyStruct LazySequence LazyRange LazyField(OnDemand) removed
 
