@@ -3,8 +3,11 @@
 from declarativeunittest import *
 from construct import *
 from construct.lib import *
+import sys
 
-pytestmark = skipif(not supportscompiler, reason="compiler and bytes() require 3.6")
+
+runningplain = "--benchmark-skip" in sys.argv
+pytestmark = skipif(not supportscompiler or runningplain, reason="compiler and bytes() requirements, and also `make plain` mode")
 
 
 embeddedswitch1 = EmbeddedSwitch(
@@ -150,7 +153,6 @@ example = Struct(
     # adapters and validators
 
     # Probe(),
-    # ProbeInto(this.num),
     # Debugger
 
     "items1" / Computed([1,2,3]),
@@ -162,22 +164,16 @@ example = Struct(
 exampledata = bytes(1000)
 
 
-def test_compiles():
-    dc = example.compile()
-    if not ontravis:
-        dc.tofile("tests/compiled.py")
+def test_example_benchmark():
+    d = cached("example-compiled", lambda: example.compile())
+    d.source_tofile("example_compiled.pyx")
+    d.benchmark(exampledata, "example_benchmark.txt")
 
-def test_parsesbuilds():
-    d = example
-    d.testcompiled(exampledata)
-
-def test_benchmark1():
-    du = Struct().compile()
-    print(du.benchmark(b""))
-
-def test_benchmark2():
-    du = Struct(Error).compile()
-    print(du.benchmark(b""))
+def test_benchmark():
+    d = Struct().compile()
+    d.benchmark(b"")
+    d = Struct(Error).compile()
+    d.benchmark(b"")
 
 def test_compiler_recursion():
     raises(Construct().compile) == NotImplementedError

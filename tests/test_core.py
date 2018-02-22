@@ -614,7 +614,7 @@ def test_numpy():
 def test_namedtuple():
     coord = collections.namedtuple("coord", "x y z")
 
-    Coord = NamedTuple("coord", "x y z", Byte[3])
+    Coord = NamedTuple("coord", "x y z", Array(3, Byte))
     assert Coord.parse(b"123") == coord(49,50,51)
     assert Coord.build(coord(49,50,51)) == b"123"
     assert Coord.sizeof() == 3
@@ -624,14 +624,14 @@ def test_namedtuple():
     assert Coord.build(coord(49,50,51)) == b"123"
     assert raises(Coord.sizeof) == SizeofError
 
-    Coord = NamedTuple("coord", "x y z", Byte >> Byte >> Byte)
+    Coord = NamedTuple("coord", "x y z", Sequence(Byte, Byte, Byte))
     assert Coord.parse(b"123") == coord(49,50,51)
     assert Coord.build(coord(49,50,51)) == b"123"
     assert Coord.sizeof() == 3
 
     Coord = NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte))
     assert Coord.parse(b"123") == coord(49,50,51)
-    assert Coord.build(coord(49,50,51)) == b"123"
+    assert Coord.build(coord(x=49,y=50,z=51)) == b"123"
     assert Coord.sizeof() == 3
 
     assert raises(lambda: NamedTuple("coord", "x y z", BitStruct("x"/Byte, "y"/Byte, "z"/Byte))) == NamedTupleError

@@ -3,10 +3,15 @@ test:
 	python2.7 -m pytest --benchmark-disable --showlocals
 	pypy      -m pytest --benchmark-disable --showlocals
 
+plain:
+	python3.6 -m pytest --benchmark-skip --showlocals
+	python2.7 -m pytest --benchmark-skip --showlocals
+	pypy      -m pytest --benchmark-skip --showlocals
+
 verbose:
-	python3.6 -m pytest --benchmark-disable --fulltrace --showlocals --verbose
-	python2.7 -m pytest --benchmark-disable --fulltrace --showlocals --verbose
-	pypy      -m pytest --benchmark-disable --fulltrace --showlocals --verbose
+	python3.6 -m pytest --benchmark-disable --showlocals --verbose
+	python2.7 -m pytest --benchmark-disable --showlocals --verbose
+	pypy      -m pytest --benchmark-disable --showlocals --verbose
 
 cover:
 	python3.6 -m pytest --benchmark-disable --cov construct --cov-report html --cov-report term --verbose
@@ -22,9 +27,9 @@ html:
 
 installdeps:
 	apt-get install python3.6 python2.7 pypy --upgrade
-	python3.6 -m pip install pytest pytest-benchmark pytest-cov enum34 numpy arrow --upgrade
-	python2.7 -m pip install pytest pytest-benchmark            enum34 numpy arrow --upgrade
-	pypy      -m pip install pytest pytest-benchmark            enum34       arrow --upgrade
+	python3.6 -m pip install pytest pytest-benchmark pytest-cov cython enum34 numpy arrow --upgrade
+	python2.7 -m pip install pytest pytest-benchmark pytest-cov cython enum34 numpy arrow --upgrade
+	pypy      -m pip install pytest pytest-benchmark pytest-cov cython enum34       arrow --upgrade
 
 version:
 	./version-increment

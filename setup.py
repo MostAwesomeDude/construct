@@ -25,9 +25,8 @@ setup(
     author_email = "arek.bulski@gmail.com, tomerfiliba@gmail.com, MostAwesomeDude@gmail.com",
     install_requires = [],
     extras_require = {
-        "recommended": [
-        ],
-        "supported": [
+        "extras": [
+            "cython",
             "enum34",
             "numpy",
             "arrow",

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct, io, binascii, itertools, collections, sys, pickle
+import struct, io, binascii, itertools, collections, pickle, sys, os
 
 from construct.lib import *
 from construct.expr import *
@@ -177,8 +177,6 @@ class Construct(object):
     * `build_stream`
     * `sizeof`
     * `compile`
-    * `benchmark`
-    * `testcompiled`
 
     Subclass authors should not override the external methods. Instead, another API is available:
 
@@ -263,9 +261,7 @@ class Construct(object):
         return self._parse(stream, context, "(parsing)")
 
     def _parse(self, stream, context, path):
-        """
-        Override in your subclass.
-        """
+        """Override in your subclass."""
         raise NotImplementedError
 
     def build(self, obj, **contextkw):
@@ -302,9 +298,7 @@ class Construct(object):
         self._build(obj, stream, context, "(building)")
 
     def _build(self, obj, stream, context, path):
-        """
-        Override in your subclass.
-        """
+        """Override in your subclass."""
         raise NotImplementedError
 
     def sizeof(self, **contextkw):
@@ -327,23 +321,24 @@ class Construct(object):
         return self._sizeof(context, "(sizeof)")
 
     def _sizeof(self, context, path):
-        """
-        Override in your subclass.
-        """
+        """Override in your subclass."""
         raise SizeofError
 
     def compile(self):
         """
-        Transforms a construct into another construct that does same thing (has same parsing and building semantics) but is faster (has better performance). Compiled instances compile into itself, obviously. This method returns a Compiled instance.
+        Transforms a construct into another construct that does same thing (has same parsing and building semantics) but is much faster when parsing. Already compiled instances just compile into itself. There are restrictions on what can be compiled (see documentation, Compilation chapter). Some classes do not compile or compile only in certain circumstances.
 
-        There are restrictions on what can be compiled (see documentation site, Compilation chapter). Some classes do not compile or compile only in certain circumstances.
-
-        Returned instance has additional `source` field and `tofile` method, aside of regular `parse` `build` `sizeof`.
+        Returned Compiled instance has additional `source` field and `source_tofile` and `benchmark` methods.
 
         :returns: Compiled instance
 
+        :raises ConstructError: requirements not met, Python 3.6 and Cython
         :raises NotImplementedError: raised for any reason
         """
+
+        if not supportscompiler:
+            raise ConstructError("compiler requires Python 3.6 and Cython")
+
         code = CodeGen()
         code.append("""
             from construct import *
@@ -354,12 +349,14 @@ class Construct(object):
             import itertools
             import builtins
 
-            assert supportscompiler
-            assert version_string == %r
+            if not supportscompiler:
+                raise ConstructError("compiler requires Python 3.6 and Cython")
+            if not version_string == %r:
+                raise ConstructError("compiled scheme requires same Construct version")
 
-            def read_bytes(io, count):
+            cdef bytes read_bytes(io, int count):
                 if not count >= 0: raise StreamError
-                data = io.read(count)
+                cdef bytes data = io.read(count)
                 if not len(data) == count: raise StreamError
                 return data
             def restream(data, func):
@@ -376,19 +373,23 @@ class Construct(object):
         code.append("""
             def parseall(io, this):
                 return %s
-            compiledschema = Compiled(None, None, parseall)
+            compiled = Compiled(None, None, parseall)
         """ % (self._compileparse(code),))
         source = code.toString()
 
-        from types import ModuleType
-        compiled = compile(source, '', 'exec')
-        module = ModuleType("construct_compile_target")
-        exec(compiled, module.__dict__)
+        modulename = "construct_compile_target_"+hexlify(os.urandom(8)).decode()
+        import pyximport
+        pyximport.install()
 
-        compiledschema = module.compiledschema
-        compiledschema.source = source
-        compiledschema.defersubcon = self
-        return compiledschema
+        with open(modulename+".pyx", "wt") as f:
+            f.write(source)
+        module = __import__(modulename)
+        os.remove(modulename+".pyx")
+
+        compiled = module.compiled
+        compiled.source = source
+        compiled.defersubcon = self
+        return compiled
 
     def _decompile(self, code, recursive=False):
         """Used internally."""
@@ -433,74 +434,16 @@ class Construct(object):
         raise NotImplementedError
 
     def _emitdecompiled(self, code):
-        """
-        Override in your subclass.
-        """
+        """Override in your subclass."""
         raise NotImplementedError
 
     def _emitparse(self, code):
-        """
-        Override in your subclass.
-        """
+        """Override in your subclass."""
         raise NotImplementedError
 
     def _emitbuild(self, code):
-        """
-        Override in your subclass.
-        """
+        """Override in your subclass."""
         raise NotImplementedError
-
-    def benchmark(self, sampledata):
-        """
-        Measures performance of your construct (its parsing and building runtime), both for this instance and its compiled equivalent (does not fail if its not compilable). Uses timeit module over 1000 samples.
-
-        You need to provide a sample data for parsing testing. This data gets parsed into an object that gets reused for building testing. Sizeof is not tested.
-
-        :returns: string containing runtimes and descriptions
-        """
-        from timeit import timeit
-
-        try:
-            parsetime = "failed"
-            buildtime = "failed"
-            compiletime = "failed"
-            parsetime2 = "failed"
-            buildtime2 = "failed"
-
-            sampleobj = self.parse(sampledata)
-            parsetime = timeit(lambda: self.parse(sampledata), number=1000)/1000
-            self.build(sampleobj)
-            buildtime = timeit(lambda: self.build(sampleobj), number=1000)/1000
-            compiled = self.compile()
-            compiletime = timeit(lambda: self.compile(), number=100)/100
-            compiled.parse(sampledata)
-            parsetime2 = timeit(lambda: compiled.parse(sampledata), number=1000)/1000
-            compiled.build(sampleobj)
-            buildtime2 = timeit(lambda: compiled.build(sampleobj), number=1000)/1000
-        except Exception:
-            pass
-
-        lines = [
-            "Timeit measurements:",
-            "compiling:         {} sec/call",
-            "parsing:           {} sec/call",
-            "parsing compiled:  {} sec/call",
-            "building:          {} sec/call",
-            "building compiled: {} sec/call",
-            ""
-        ]
-        return "\n".join(lines).format(compiletime, parsetime, parsetime2, buildtime, buildtime2)
-
-    def testcompiled(self, sampledata):
-        """
-        Checks correctness of compiled equivalent class by comparing parse and build results of both this and compiled instances.
-
-        You need to provide a sample data for parsing testing. This data gets parsed into an object that gets reused for building testing. Sizeof is not tested.
-        """
-        sampleobj = self.parse(sampledata)
-        compiled = self.compile()
-        assert self.parse(sampledata) == compiled.parse(sampledata)
-        assert self.build(sampleobj) == compiled.build(sampleobj)
 
     def __rtruediv__(self, name):
         """
@@ -659,47 +602,86 @@ class Tunnel(Subconstruct):
 class Compiled(Construct):
     """Used internally."""
 
-    def __init__(self, source, defersubcon, parsefunc=None, buildfunc=None, sizefunc=None):
+    def __init__(self, source, defersubcon, parsefunc):
         super(Compiled, self).__init__()
         self.source = source
         self.defersubcon = defersubcon
         self.parsefunc = parsefunc
-        self.buildfunc = buildfunc
-        self.sizefunc = sizefunc
 
     def _parse(self, stream, context, path):
-        if self.parsefunc:
-            return self.parsefunc(stream, context)
-        else:
-            return self.defersubcon._parse(stream, context, path)
+        return self.parsefunc(stream, context)
 
     def _build(self, obj, stream, context, path):
-        if self.buildfunc:
-            return self.buildfunc(obj, stream, context)
-        else:
-            return self.defersubcon._build(obj, stream, context, path)
+        return self.defersubcon._build(obj, stream, context, path)
 
     def _sizeof(self, context, path):
-        if self.sizefunc:
-            return self.sizefunc(context)
-        else:
-            return self.defersubcon._sizeof(context, path)
+        return self.defersubcon._sizeof(context, path)
 
     def compile(self):
         return self
 
-    def benchmark(self, sampledata):
-        return self.defersubcon.benchmark(sampledata)
-
-    def testcompiled(self, sampledata):
-        return self.defersubcon.testcompiled(sampledata)
-
-    def tofile(self, filename):
+    def source_tofile(self, filename):
         """
-        Saves the `source` field into a text file (preferably with .py extension).
+        Saves the `source` field into a text file (preferably with .pyx extension).
         """
-        with open(filename, 'wt') as f:
+        with open(filename, "wt") as f:
             f.write(self.source)
+
+    def benchmark(self, sampledata, filename=None):
+        """
+        Measures performance of your construct (its parsing and building runtime), both for this (compiled) instance and the original instance. Uses timeit module over 1000 samples. Optionally, results are saved to a text file.
+
+        Also checks its correctness, by comparing parsing/building results from both instances.
+
+        :param sampledata: bytes, a valid blob parsable by this construct
+        :param filename: optional, string, if provided then source is saved to that file
+
+        :returns: string containing measurements
+        """
+        from timeit import timeit
+
+        try:
+            parsetime = "failed"
+            buildtime = "failed"
+            parsetime2 = "failed"
+            buildtime2 = "failed"
+
+            sampleobj = self.defersubcon.parse(sampledata)
+            parsetime = timeit(lambda: self.defersubcon.parse(sampledata), number=1000)/1000
+            parsetime = "{:.20f} sec/call".format(parsetime)
+
+            self.defersubcon.build(sampleobj)
+            buildtime = timeit(lambda: self.defersubcon.build(sampleobj), number=1000)/1000
+            buildtime = "{:.20f} sec/call".format(buildtime)
+
+            obj = self.parse(sampledata)
+            assert sampleobj == obj
+            parsetime2 = timeit(lambda: self.parse(sampledata), number=1000)/1000
+            parsetime2 = "{:.20f} sec/call".format(parsetime2)
+
+            sampledata = self.defersubcon.build(sampleobj)
+            data = self.build(sampleobj)
+            assert sampledata == data
+            buildtime2 = timeit(lambda: self.build(sampleobj), number=1000)/1000
+            buildtime2 = "{:.20f} sec/call".format(buildtime2)
+
+        except Exception:
+            pass
+
+        lines = [
+            "Timeit measurements:",
+            "parsing:           {}",
+            "parsing compiled:  {}",
+            "building:          {}",
+            "building compiled: {}",
+            ""
+        ]
+        results = "\n".join(lines).format(parsetime, parsetime2, buildtime, buildtime2)
+
+        if filename:
+            with open(filename, "wt") as f:
+                f.write(results)
+        return results
 
 
 class CompilableMacro(Subconstruct):
@@ -1408,11 +1390,11 @@ class StringPaddedTrimmed(Construct):
     def _emitparse(self, code):
         unitsize, finalunit = calculateunits(self.encoding)
         code.append("""
-            def parse_paddedtrimmedstring(io, length, unitsize, finalunit):
+            cdef bytes parse_paddedtrimmedstring(io, int length, int unitsize, bytes finalunit):
                 if length % unitsize:
                     raise StringError
-                obj = read_bytes(io, length)
-                endsat = len(obj)
+                cdef bytes obj = read_bytes(io, length)
+                cdef int endsat = len(obj)
                 while endsat-unitsize >= 0 and obj[endsat-unitsize:endsat] == finalunit:
                     endsat -= unitsize
                 return obj[:endsat]
@@ -1450,8 +1432,9 @@ class StringNullTerminated(Construct):
     def _emitparse(self, code):
         unitsize, finalunit = calculateunits(self.encoding)
         code.append("""
-            def parse_nullterminatedstring(io, unitsize, finalunit):
-                result = []
+            cdef bytes parse_nullterminatedstring(io, int unitsize, bytes finalunit):
+                cdef list result = []
+                cdef bytes unit
                 while True:
                     unit = read_bytes(io, unitsize)
                     if unit == finalunit:
@@ -2164,25 +2147,7 @@ class Array(Subconstruct):
         return count * self.subcon._sizeof(context, path)
 
     def _emitparse(self, code):
-        fname = "parse_array_%s" % code.allocateId()
-        block = """
-            def %s(io, this):
-                count = %s
-                """ % (fname, self.count, )
-        if not isinstance(self.count, int) or not self.count >= 0:
-            block += """
-                if not 0 <= count:
-                    raise RangeError
-                """
-        block += """
-                obj = ListContainer()
-                for i in range(count):
-                    this['_index'] = i
-                    obj.append(%s)
-                return obj
-                """ % (self.subcon._compileparse(code), )
-        code.append(block)
-        return "%s(io, this)" % (fname,)
+        return "ListContainer((%s) for i in range(%s))" % (self.subcon._compileparse(code), self.count, )
 
 
 class GreedyRange(Subconstruct):
@@ -2324,7 +2289,7 @@ class RepeatUntil(Subconstruct):
                     this['_index'] = i
                     obj_ = %s
                     list_.append(obj_)
-                    if %s:
+                    if (%s):
                         return list_
         """ % (fname, self.subcon._compileparse(code), self.predicate, )
         code.append(block)
@@ -2524,9 +2489,11 @@ class Index(Construct):
     r"""
     Indexes a field inside outer :class:`~construct.core.Array` :class:`~construct.core.GreedyRange` :class:`~construct.core.RepeatUntil` context.
 
-    Note that you can use this class, or use `this._index` or `this._._index` expression instead, depending on how its used. See the examples.
+    Note that you can use this class, or use `this._index` or `this._._index` expressions instead, depending on how its used. See the examples.
 
-    Parsing and building pulls _index or _._index key from context, in that order. Size is 0 because stream is unaffected.
+    Parsing and building pulls _index or _._index key from the context, in that order. Size is 0 because stream is unaffected.
+
+    Note that this feature is not supported by compiled Array but is supported by compiled GreedyRange and compiled RepeatUntil. There is no specific exception raised if you use it wrongly with compiled Array.
 
     :raises IndexFieldError: did not find either key in context
 
@@ -2574,13 +2541,13 @@ class Index(Construct):
 
 class Rebuild(Subconstruct):
     r"""
-    Field where building does not require a value, because the value gets recomputed when needed. Comes handy when building a Struct from a dict with missing keys.
+    Field where building does not require a value, because the value gets recomputed when needed. Comes handy when building a Struct from a dict with missing keys. Useful for length and count fields when :class:`~construct.core.Prefixed` and :class:`~construct.core.PrefixedArray` cannot be used.
 
     Parsing defers to subcon. Building is defered to subcon, but it builds from a value provided by the context lambda (or constant). Size is defered to subcon.
 
-    .. seealso:: Useful for length and count fields when :class:`~construct.core.Prefixed` and :class:`~construct.core.PrefixedArray` cannot be used.
+    Difference between Default and Rebuild, is that in first the build value is optional and in second the build value is ignored.
 
-    :param subcon: Construct instance, subcon to defer to
+    :param subcon: Construct instance
     :param func: context lambda or constant value
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
@@ -2616,7 +2583,9 @@ class Default(Subconstruct):
 
     Parsing defers to subcon. Building is defered to subcon, but it builds from a default (if given object is None) or from given object. Building does not require a value, but can accept one. Size is defered to subcon.
 
-    :param subcon: Construct instance, subcon to defer to
+    Difference between Default and Rebuild, is that in first the build value is optional and in second the build value is ignored.
+
+    :param subcon: Construct instance
     :param value: context lambda or constant value
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
@@ -3015,6 +2984,7 @@ def Timestamp(subcon, unit, epoch):
     :param unit: string like unix macosx windows msdos, or float
     :param epoch: string like unix macosx windows msdos, or Arrow instance
 
+    :raises ImportError: arrow could not be imported during ctor
     :raises TimestampError: subcon is not a Construct instance
     :raises TimestampError: unit is a wrong string and not float
     :raises TimestampError: epoch is a wrong string and not Arrow instance
@@ -3520,7 +3490,7 @@ class IfThenElse(Construct):
         return sc._sizeof(context, path)
 
     def _emitparse(self, code):
-        return "(%s) if (%s) else (%s)" % (self.thensubcon._compileparse(code), self.condfunc, self.elsesubcon._compileparse(code), )
+        return "((%s) if (%s) else (%s))" % (self.thensubcon._compileparse(code), self.condfunc, self.elsesubcon._compileparse(code), )
 
 
 class Switch(Construct):
@@ -3794,7 +3764,7 @@ class Padded(Subconstruct):
             raise SizeofError("cannot calculate size, key not found in context")
 
     def _emitparse(self, code):
-        return "(%s, read_bytes(io, %s - %s))[0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
+        return "(%s, read_bytes(io, (%s)-(%s) ))[0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
 
 
 class Aligned(Subconstruct):
@@ -3864,7 +3834,7 @@ class Aligned(Subconstruct):
             raise SizeofError("cannot calculate size, key not found in context")
 
     def _emitparse(self, code):
-        return "(%s, read_bytes(io, -%s %% %s))[0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
+        return "(%s, read_bytes(io, -(%s) %% (%s) ))[0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
 
 
 def AlignedStruct(modulus, *subcons, **subconskw):
@@ -4360,7 +4330,7 @@ class Prefixed(Subconstruct):
 
     def _emitparse(self, code):
         sub = self.lengthfield.sizeof() if self.includelength else 0
-        return "restream(read_bytes(io, %s - %s), lambda io: %s)" % (self.lengthfield._compileparse(code), sub, self.subcon._compileparse(code), )
+        return "restream(read_bytes(io, (%s)-(%s)), lambda io: %s)" % (self.lengthfield._compileparse(code), sub, self.subcon._compileparse(code), )
 
 
 def PrefixedArray(lengthfield, subcon):
@@ -4613,8 +4583,8 @@ class Compressed(Tunnel):
     :param encoding: string, any of module names like zlib/gzip/bzip2/lzma, otherwise any of codecs module bytes<->bytes encodings, each codec usually requires some Python version
     :param level: optional, integer between 0..9, although lzma discards it, some encoders allow different compression levels
 
-    :raises StreamError: stream failed when reading until EOF
     :raises ImportError: needed module could not be imported by ctor
+    :raises StreamError: stream failed when reading until EOF
 
     Example::
 

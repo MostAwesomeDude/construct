@@ -13,6 +13,13 @@ ident = lambda x: x
 devzero = open("/dev/zero", "rb")
 
 
+cached_cache = {}
+def cached(key, factory):
+    if key not in cached_cache:
+        cached_cache[key] = factory()
+    return cached_cache[key]
+
+
 def raises(func, *args, **kw):
     try:
         func(*args, **kw)

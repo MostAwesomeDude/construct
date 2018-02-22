@@ -2,20 +2,20 @@
 Compilation feature
 ======================
 
-.. warning:: This feature is mostly implemented but still lacking Cython, which would make it a lot faster. Consider this a work in progress.
+.. warning:: This feature is fully implemented but may not be fully mature.
 
 Overall
 =========
 
-Construct 2.9 adds an experimental feature: compiling user made constructs into faster (but less feature-rich) code. If you are familiar with Kaitai Struct, an alternative framework to Construct, Kaitai compiles yaml-based schemas into Python modules. Construct on the other hand, defines schemas in Python and compiles them into also Python modules. Once you define a construct, you can use it to parse and build strings without compilation. Compilation has only one purpose: performance. Compiled constructs cannot do anything more than original constructs, in fact, they have restricted capabilities (some classes do not compile, or compile only under certain circumstances).
+Construct 2.9 adds an experimental feature: compiling user made constructs into much faster (but less feature-rich) code. If you are familiar with Kaitai Struct, an alternative framework to Construct, Kaitai compiles yaml-based schemas into pure Python modules. Construct on the other hand, defines schemas in pure Python and compiles them into Cython-powered python modules. Once you define a construct, you can use it to parse and build blobs without compilation. Compilation has only one purpose: performance. Compiled constructs cannot do anything more than original constructs, in fact, they have restricted capabilities (some classes do not compile, or compile only under certain circumstances).
 
-It should be made clear that currently the compiler supports only parsing. Building and sizeof are deferred to original constructs, from which a compiled instance was made. Building support may be added in the future. In that sense, perhaps the documentation should use the term "compiled parser" rather than "compiled construct".
+It should be made clear that currently the compiler supports only parsing. Building and sizeof are deferred to original constructs, from which a compiled instance was made. Building support may be added in the future, depending on popularity of this feature. In that sense, perhaps the documentation should use the term "compiled parser" rather than "compiled construct".
 
 
 Requirements
 ---------------
 
-Compilation feature requires Construct 2.9 and Python 3.6. More importantly, you should manually inspect the generated code for correctness and have a test suite of your own. Construct aims to be reliable, but the compiler makes some undocumented assumptions, and generates a code that "takes shortcuts".
+Compilation feature requires Construct 2.9 and Python 3.6 and Cython module. More importantly, you should have a test suite of your own. Construct aims to be reliable, but the compiler makes some undocumented assumptions, and generates a code that "takes shortcuts". Since few checks are ommited by generated code, you should not use it to parse corrupted data.
 
 
 Restrictions
@@ -25,7 +25,7 @@ Restrictions
 
 Compiled classes only parse faster, building and sizeof defers to core classes
 
-AssertionError and standard hierarchy exceptions can be raised (core classes are resticted to ConstructError-derivatives)
+Standard hierarchy exceptions can be raised (core classes are resticted to ConstructError-derivatives)
 
 Lambdas (unlike `this` expressions) are not compilable
 
@@ -37,6 +37,8 @@ Some classes require constant selectors like FocusedSeq Union (otherwise raise N
 
 Exceptions do not include `path` information
 
+Array does not support indexing feature (unlike GreedyRange and RepeatUntil)
+
 Adapters and validators are in general not compilable
 
 TransformBytes Restreamed are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
@@ -47,8 +49,7 @@ Checksum LazyBound are not compilable, because they use lambdas (not `this` expr
 Compiling schemas
 ===================
 
-Every construct (even those that do not compile) has a parameter-less `compile` method that returns also a construct (instance of Compiled class). Note that compiling takes a substantial amount of time (compared to parsing a single blob) so it may be a good idea to compile something that is used for processing giga-sized data or multiple blobs of data, but should not be overused.
-That compiled instance has `parse` and `build` methods just like the construct that was compiled. You can simply reassign the compiled instance over the original.
+Every construct (even those that do not compile) has a parameter-less `compile` method that returns also a construct (instance of Compiled class). Note that compiling takes a substantial amount of time (up to a minute) so it may be a good idea to compile something that is used for processing giga-sized data or millions of blobs, but should not be overused. That compiled instance has `parse` and `build` methods just like the construct is was compiled from. Therefore, in your code, you can simply reassign the compiled instance over the original one.
 
 >>> st = Struct("num" / Byte)
 >>> st.parse(b"\x01")
@@ -57,32 +58,29 @@ Container(num=1)
 >>> st.parse(b"\x01")
 Container(num=1)
 
-Compiled instance has a unique `source` field that holds the generated code as string and also has a unique method `tofile` that saves the generated source code to a file, for your inspection for example. You can also import such a module from a Python script.
+Compiled instance has a unique `source` field that holds the generated code as a string and also has a unique method `source_tofile` that saves the generated source code to a file, for your inspection for example. You can also then import such a module from a Python script.
 
 >>> st.source
-"... schema code ..."
->>> st.tofile("schema1.py")
+"... schema parsing code ..."
+>>> st.source_tofile("schema1.pyx")
+>>> import pyximport
+>>> pyximport.install()
 >>> import schema1
 
-Performance boost can be easily measured: 
+Performance boost can be easily measured. This method also happens to be testing the correctness of the compiled parser, by making sure that both `parse` and `build` return the same results.
 
 >>> print(st.benchmark(sampledata))
 Timeit measurements:
-compiling:         0.00048725021999416638 sec/call
-parsing:           0.00002787889000046562 sec/call
-parsing compiled:  0.00001943664999998873 sec/call
-building:          0.00003316365799946653 sec/call
-building compiled: 0.00003364123299979837 sec/call
-
-Correctness can be automatically tested. The method checks that the provided (original) construct and its equivalent compiled version, both parse and build into equal data and objects. Object used for testing building is obtained by parsing the sample data.
-
->>> st.testcompiled(sampledata)
+parsing:           0.00004755572500289418 sec/call
+parsing compiled:  0.00001591820199973881 sec/call
+building:          0.00005915266399824759 sec/call
+building compiled: 0.00005127855399769033 sec/call
 
 
 Motivation
 ============
 
-The code generated by compiler and core classes have essentially same functionality, but there is a noticable difference in performance. This chapter explains the difference by comparing `Struct FormatField BytesInteger Bytes` classes, including using a context. Example construct:
+The code generated by compiler and core classes have essentially same functionality, but there is a noticable difference in performance. First half of performance boost is thanks to pre-processing the parsing code, as shown in this chapter. Pre-processing means inserting constants instead of variable lookups, constants are just variables that are known at compile time. The second half is thanks to cython compiler taking advantage of type annotations and type inference. This chapter talks only about the first part, therefore the codes below are pure-python (they were uptodate just before cython was integrated), but they are representative of the topics being discussed. This chapter explains the performance difference by comparing `Struct FormatField BytesInteger Bytes` classes, including using the context. Example construct:
 
 ::
 
@@ -109,7 +107,7 @@ Compiled parsing code:
             this['data'] = read_bytes(io, this.num8)
         except StopIteration:
             pass
-        del this._
+        del this['_']
         return this
     def parseall(io, this):
         return parse_struct_1(io, this)
@@ -153,18 +151,14 @@ Non-compiled parsing code:
 
     class Renamed(Subconstruct):
         def _parse(self, stream, context, path):
-            try:
-                path += " -> %s" % (self.name,)
-                return self.subcon._parse(stream, context, path)
-            except ConstructError as e:
-                if "\n" in str(e):
-                    raise
-                raise e.__class__("%s\n    %s" % (e, path))
+            path += " -> %s" % (self.name,)
+            return self.subcon._parse(stream, context, path)
 
     class Struct(Construct):
         def _parse(self, stream, context, path):
             obj = Container()
             context = Container(_ = context)
+            context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
             for sc in self.subcons:
                 try:
                     subobj = sc._parse(stream, context, path)
@@ -226,7 +220,7 @@ Second example, discussing decompiled instances:
             pass
         except StopIteration:
             pass
-        del this._
+        del this['_']
         return this
     def parseall(io, this):
         return parse_struct_1(io, this)
@@ -278,7 +272,7 @@ Third example, discussing compiler using a cache:
             this['field4'] = decompiled_6._parse(io, this, None)
         except StopIteration:
             pass
-        del this._
+        del this['_']
         return this
     def parseall(io, this):
         return parse_struct_1(io, this)
@@ -292,12 +286,23 @@ Example shows that "inner" struct is used twice, and so is "parse_struct_2", and
 Empirical evidence
 ---------------------
 
-The "shortcuts" that are described above are not much, but amount to quite a large portion of actual run-time. In fact, they amount to about a third (31%) of entire run-time. Results copied from earlier section.
+The "shortcuts" that are described above are not much, but amount to quite a large portion of actual run-time. In fact, they amount to about a third (31%) of entire run-time. Note that this benchmark was done before cython integration, and only inlcudes the pure-python optimisations.
 
 >>> print(st.benchmark(sampledata))
 Timeit measurements:
-compiling:         0.00048725021999416638 sec/call
 parsing:           0.00002787889000046562 sec/call
 parsing compiled:  0.00001943664999998873 sec/call
 building:          0.00003316365799946653 sec/call
 building compiled: 0.00003364123299979837 sec/call
+
+
+Motivation, part 2
+=====================
+
+TBA.
+
+
+Empirical evidence
+---------------------
+
+TBA.
