@@ -265,7 +265,7 @@ icmp_header = Struct(
             "Echo_request" : echo_payload,
             "Destination_unreachable" : dest_unreachable_payload,
         },
-        default = Pass,
+        # default = Pass,
     ),
 )
 
@@ -734,7 +734,7 @@ layer3_payload = Switch(this.header.protocol,
         "UDP" : layer4_udp,
         "ICMP" : icmp_header,
     },
-    default = Pass,
+    # default = Pass,
 )
 
 layer3_ipv4 = Struct(
@@ -754,7 +754,7 @@ layer2_ethernet = Struct(
             "IPv4" : layer3_ipv4,
             "IPv6" : layer3_ipv6,
         },
-        default = Pass,
+        # default = Pass,
     ),
 )
 

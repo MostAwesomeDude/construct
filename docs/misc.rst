@@ -354,12 +354,19 @@ b'\xff'
 Switch
 ------
 
-Branches the construction based on a return value from a function. This is a more general implementation than IfThenElse.
+Branches the construction based on a return value from a context function. This is a more general implementation than IfThenElse. If no cases match the actual, it just passes successfully, although that behavior can be overriden.
 
->>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, n=1)
+>>> d = Switch(this.n, { 1:Int8ub, 2:Int16ub, 4:Int32ub })
+>>> d.build(5, n=1)
 b'\x05'
->>> Switch(this.n, { 1:Byte, 2:Int32ub }).build(5, n=2)
+>>> d.build(5, n=4)
 b'\x00\x00\x00\x05'
+
+>>> d = Switch(this.n, {}, default=Byte)
+>>> d.parse(b"\x01", n=255)
+1
+>>> d.build(1, n=255)
+b"\x01"
 
 
 EmbeddedSwitch

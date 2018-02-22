@@ -3475,14 +3475,13 @@ class Switch(Construct):
     r"""
     A conditional branch.
 
-    Parsing and building evaluate keyfunc and select a subcon based on the value and dictionary entries. Dictionary (cases) maps values into subcons. If no case matches then either uses a default field, or SwitchError is raised. Note that default is a Construct instance, not a dictionary key. Size is evaluated in same way as parsing and building, by evaluating keyfunc and selecting a field accordingly.
+    Parsing and building evaluate keyfunc and select a subcon based on the value and dictionary entries. Dictionary (cases) maps values into subcons. If no case matches then `default` is used (that is Pass by default). Note that `default` is a Construct instance, not a dictionary key. Size is evaluated in same way as parsing and building, by evaluating keyfunc and selecting a field accordingly.
 
     :param keyfunc: context lambda or constant, that matches some key in cases
     :param cases: dict mapping keys to Construct instances
-    :param default: optional, Construct instance, used when keyfunc is not found in cases, Pass is a possible value for this parameter, default is a class that raises SwitchError
+    :param default: optional, Construct instance, used when keyfunc is not found in cases, Pass is default value for this parameter, Error is a possible value for this parameter
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises SwitchError: keyfunc value is not in the dict and no default was given
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -3493,41 +3492,46 @@ class Switch(Construct):
         b'\x05'
         >>> d.build(5, n=4)
         b'\x00\x00\x00\x05'
+
+        >>> d = Switch(this.n, {}, default=Byte)
+        >>> d.parse(b"\x01", n=255)
+        1
+        >>> d.build(1, n=255)
+        b"\x01"
     """
 
-    @singleton
-    class NoDefault(Construct):
-        def _parse(self, stream, context, path):
-            raise SwitchError("no default case defined, parsing failed")
-        def _build(self, obj, stream, context, path):
-            raise SwitchError("no default case defined, building failed")
-        def _sizeof(self, context, path):
-            raise SwitchError("no default case defined, sizeof failed")
-
-    def __init__(self, keyfunc, cases, default=NoDefault):
+    def __init__(self, keyfunc, cases, default=None):
+        if default is None:
+            default = Pass
         super(Switch, self).__init__()
         self.keyfunc = keyfunc
         self.cases = cases
         self.default = default
-        allcases = list(cases.values())
-        if default is not self.NoDefault:
-            allcases.append(default)
+        allcases = list(cases.values()) + [default]
         self.flagbuildnone = all(sc.flagbuildnone for sc in allcases)
 
     def _parse(self, stream, context, path):
-        key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
-        return self.cases.get(key, self.default)._parse(stream, context, path)
+        keyfunc = self.keyfunc
+        if callable(keyfunc):
+            keyfunc = keyfunc(context)
+        sc = self.cases.get(keyfunc, self.default)
+        return sc._parse(stream, context, path)
 
     def _build(self, obj, stream, context, path):
-        key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
-        case = self.cases.get(key, self.default)
-        return case._build(obj, stream, context, path)
+        keyfunc = self.keyfunc
+        if callable(keyfunc):
+            keyfunc = keyfunc(context)
+        sc = self.cases.get(keyfunc, self.default)
+        return sc._build(obj, stream, context, path)
 
     def _sizeof(self, context, path):
         try:
-            key = self.keyfunc(context) if callable(self.keyfunc) else self.keyfunc
-            case = self.cases.get(key, self.default)
-            return case._sizeof(context, path)
+            keyfunc = self.keyfunc
+            if callable(keyfunc):
+                keyfunc = keyfunc(context)
+            sc = self.cases.get(keyfunc, self.default)
+            return sc._sizeof(context, path)
+
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
 
@@ -3535,19 +3539,16 @@ class Switch(Construct):
         fname = "factory_%s" % code.allocateId()
         code.append("%s = {%s}" % (fname, ", ".join("%r : lambda io,this: %s" % (key, sc._compileparse(code)) for key,sc in self.cases.items()), ))
 
-        if self.default is self.NoDefault:
-            return "%s[%s](io, this)" % (fname, self.keyfunc, )
-        else:
-            defaultfname = "compiled_%s" % code.allocateId()
-            code.append("%s = lambda io,this: %s" % (defaultfname, self.default._compileparse(code), ))
-            return "%s.get(%s, %s)(io, this)" % (fname, self.keyfunc, defaultfname)
+        defaultfname = "compiled_%s" % code.allocateId()
+        code.append("%s = lambda io,this: %s" % (defaultfname, self.default._compileparse(code), ))
+        return "%s.get(%s, %s)(io, this)" % (fname, self.keyfunc, defaultfname)
 
 
 def EmbeddedSwitch(merged, selector, mapping):
     r"""
     Macro that simulates embedding Switch, which under new embedding semantics is not possible. This macro does NOT produce a Switch. It generates classes that behave the same way as you would expect from embedded Switch, only that.
 
-    Both `merged` and all values in `mapping` must be Struct instances. Macro re-creates a single struct that contains all fields, where each field is wrapped in `If(selector == key, ...)`. Note that resulting dictionary contains None values for fields that were not be chosen by switch.
+    Both `merged` and all values in `mapping` must be Struct instances. Macro re-creates a single struct that contains all fields, where each field is wrapped in `If(selector == key, ...)`. Note that resulting dictionary contains None values for fields that would not be chosen by switch. Note also that if selector does not match any cases, it passes successfully (default Switch behavior).
 
     Instance created by this macro CAN be embedded.
 

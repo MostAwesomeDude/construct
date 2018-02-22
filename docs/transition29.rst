@@ -59,7 +59,7 @@ Select dropped `includename` parameter (`see API page <https://construct.readthe
 
 If IfThenElse parameter renamed `predicate` to `condfunc`, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.If>`_)
 
-Switch dropped `includekey` parameter, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.Switch>`_)
+Switch updated, `default` parameter is `Pass` instead of `NoDefault`, dropped `includekey` parameter, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.Switch>`_)
 
 EmbeddedSwitch added, in Conditional (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#embeddedswitch>`_)
 

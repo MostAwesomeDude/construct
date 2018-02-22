@@ -782,13 +782,12 @@ def test_switch():
     d = Switch(this.x, {1:Int8ub, 2:Int16ub, 4:Int32ub})
     common(d, b"\x01", 0x01, 1, x=1)
     common(d, b"\x01\x02", 0x0102, 2, x=2)
+    assert d.parse(b"", x=255) == None
+    assert d.build(None, x=255) == b""
     assert raises(d.sizeof) == SizeofError
-    assert raises(d.parse, b"", x=255) == SwitchError
-    assert raises(d.build, 0, x=255) == SwitchError
 
-    d = Switch(this.x, {1:Int8ub, 2:Int16ub, 4:Int32ub}, default=Pass)
-    common(d, b"", None, 0, x=255)
-    common(d, b"", None, 0, x="unknown")
+    d = Switch(this.x, {}, default=Byte)
+    common(d, b"\x01", 1, 1, x=255)
 
 def test_switch_issue_357():
     inner = Struct(
