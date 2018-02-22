@@ -4249,6 +4249,8 @@ class RawCopy(Subconstruct):
         return Container(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
 
     def _build(self, obj, stream, context, path):
+        if obj is None and self.subcon.flagbuildnone:
+            obj = dict(value=None)
         if 'data' in obj:
             data = obj['data']
             offset1 = _tell_stream(stream)
@@ -4431,6 +4433,7 @@ class RestreamData(Subconstruct):
     def __init__(self, datafunc, subcon):
         super(RestreamData, self).__init__(subcon)
         self.datafunc = datafunc
+        self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
         data = self.datafunc

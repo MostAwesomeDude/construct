@@ -931,10 +931,13 @@ def test_terminated():
     assert raises(BitStruct(Terminated).parse, b"x") == TerminatedError
 
 def test_rawcopy():
-    assert RawCopy(Byte).parse(b"\xff") == dict(data=b"\xff", value=255, offset1=0, offset2=1, length=1)
-    assert RawCopy(Byte).build(dict(data=b"\xff")) == b"\xff"
-    assert RawCopy(Byte).build(dict(value=255)) == b"\xff"
-    assert RawCopy(Byte).sizeof() == 1
+    d = RawCopy(Byte)
+    assert d.parse(b"\xff") == dict(data=b"\xff", value=255, offset1=0, offset2=1, length=1)
+    assert d.build(dict(data=b"\xff")) == b"\xff"
+    assert d.build(dict(value=255)) == b"\xff"
+    assert d.sizeof() == 1
+    d = RawCopy(Padding(1))
+    assert d.build(None) == b'\x00'
 
 def test_rawcopy_issue_289():
     # When you build from a full dict that has all the keys, the if data kicks in, and replaces the context entry with a subset of a dict it had to begin with.
@@ -1002,6 +1005,8 @@ def test_prefixedarray():
 def test_restreamdata():
     d = RestreamData(b"\xff", Byte)
     common(d, b"", 255, 0)
+    d = RestreamData(b"", Padding(1))
+    assert d.build(None) == b''
 
 def test_transformdata():
     d = TransformData(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
