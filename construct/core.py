@@ -1671,7 +1671,7 @@ class Enum(Adapter):
             retobj = IntegerString(name)
             retobj.intvalue = self.encmapping[name]
             return retobj
-        return super(Enum, self).__getattr__(name)
+        raise AttributeError
 
     def _decode(self, obj, context, path):
         try:
@@ -1756,7 +1756,7 @@ class FlagsEnum(Adapter):
     def __getattr__(self, name):
         if name in self.flags:
             return BitwisableString(name)
-        return super(FlagsEnum, self).__getattr__(name)
+        raise AttributeError
 
     def _decode(self, obj, context, path):
         obj2 = Container()
@@ -1798,9 +1798,12 @@ class Mapping(Adapter):
 
     Example::
 
-        >>> d = Mapping(Byte, {"zero":0})
+        >>> x = object
+        >>> d = Mapping(Byte, {x:0})
         >>> d.parse(b"\x00")
-        'zero'
+        x
+        >>> d.build(x)
+        b'\x00'
     """
 
     def __init__(self, subcon, mapping):

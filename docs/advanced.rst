@@ -163,6 +163,17 @@ Both Enum and FlagsEnum support merging labels from IntEnum and IntFlag (enum34 
     Enum(Byte,      E, F) <--> Enum(Byte,      one=1, two=2)
     FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
 
+For completeness, there is also Mapping class, but using it is not recommended. Consider it a last resort.
+
+::
+
+    >>> x = object
+    >>> d = Mapping(Byte, {x:0})
+    >>> d.parse(b"\x00")
+    x
+    >>> d.build(x)
+    b'\x00'
+
 
 Processing files
 ===========================
