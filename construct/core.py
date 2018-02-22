@@ -1846,7 +1846,9 @@ class Struct(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
-    This class supports exposing subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) using the context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, which is the parsing result. Note that you need to use a lambda (this expression is not supported). Also note that compiler does not support this feature.
+    This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
+
+    This class exposes subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) within other inlined fields using the context. Note that you need to use a lambda (`this` expression is not supported). Also note that compiler does not support this feature. See examples.
 
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
 
@@ -1873,11 +1875,16 @@ class Struct(Construct):
         4
 
         >>> d = Struct(
+        ...     "animal" / Enum(Byte, giraffe=1),
+        ... )
+        >>> d.animal.giraffe
+        'giraffe'
+        >>> d = Struct(
         ...     "count" / Byte,
         ...     "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
         ... )
-        >>> d.parse(b"\x05four")
-        Container(count=5)(data=b'four')
+        >>> d.build(dict(count=3, data=b"12"))
+        b'\x0312'
 
         Alternative syntax (not recommended):
         >>> ("a"/Byte + "b"/Byte + "c"/Byte + "d"/Byte)
@@ -1891,6 +1898,14 @@ class Struct(Construct):
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
+
+    def __getattr__(self, name):
+        for sc in self.subcons:
+            if sc.name == name:
+                while isinstance(sc, Renamed):
+                    sc = sc.subcon
+                return sc
+        raise AttributeError
 
     def _parse(self, stream, context, path):
         obj = Container()
@@ -1972,7 +1987,9 @@ class Sequence(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
-    This class supports exposing subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) using the context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, which is the parsing result. Note that you need to use a lambda (this expression is not supported). Also note that compiler does not support this feature.
+    This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
+
+    This class exposes subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) within other inlined fields using the context. Note that you need to use a lambda (`this` expression is not supported). Also note that compiler does not support this feature. See examples.
 
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
 
@@ -1990,19 +2007,17 @@ class Sequence(Construct):
         >>> d.parse(_)
         [0, 1.2300000190734863] # a ListContainer
 
-        >>> d = Struct(
-        ...     "count" / Byte,
-        ...     "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
+        >>> d = Sequence(
+        ...     "animal" / Enum(Byte, giraffe=1),
         ... )
-        >>> d.parse(b"\x05four")
-        Container(count=5)(data=b'four')
-
+        >>> d.animal.giraffe
+        'giraffe'
         >>> d = Sequence(
         ...     "count" / Byte,
         ...     "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
         ... )
-        >>> d.parse(b"\x05four")
-        [5, b'four']
+        >>> d.build([3, b"12"])
+        b'\x0312'
 
         Alternative syntax (not recommended):
         >>> (Byte >> "Byte >> "c"/Byte >> "d"/Byte)
@@ -2016,6 +2031,14 @@ class Sequence(Construct):
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
+
+    def __getattr__(self, name):
+        for sc in self.subcons:
+            if sc.name == name:
+                while isinstance(sc, Renamed):
+                    sc = sc.subcon
+                return sc
+        raise AttributeError
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
@@ -2736,7 +2759,9 @@ class FocusedSeq(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
-    This class supports exposing subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) using the context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, which is the parsing result. Note that you need to use a lambda (this expression is not supported). Also note that compiler does not support this feature.
+    This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
+
+    This class exposes subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) within other inlined fields using the context. Note that you need to use a lambda (`this` expression is not supported). Also note that compiler does not support this feature. See examples.
 
     This class is used internally to implement :class:`~construct.core.PrefixedArray`.
 
@@ -2760,6 +2785,18 @@ class FocusedSeq(Construct):
         >>> d.build(255)
         b'SIG\xff'
 
+        >>> d = FocusedSeq(0,
+        ...     "animal" / Enum(Byte, giraffe=1),
+        ... )
+        >>> d.animal.giraffe
+        'giraffe'
+        >>> d = FocusedSeq(0,
+        ...     "count" / Byte,
+        ...     "data" / Padding(lambda this: this.count - this._subcons.count.sizeof()),
+        ... )
+        >>> d.build(4)
+        b'\x04\x00\x00\x00'
+
         PrefixedArray <--> FocusedSeq(1,
             "count" / Rebuild(lengthfield, len_(this.items)),
             "items" / subcon[this.count],
@@ -2771,6 +2808,14 @@ class FocusedSeq(Construct):
         self.parsebuildfrom = parsebuildfrom
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
+
+    def __getattr__(self, name):
+        for sc in self.subcons:
+            if sc.name == name:
+                while isinstance(sc, Renamed):
+                    sc = sc.subcon
+                return sc
+        raise AttributeError
 
     def _parse(self, stream, context, path):
         context = Container(_ = context)
@@ -3171,7 +3216,9 @@ class Union(Construct):
 
     This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
-    This class supports exposing subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) using the context. For example ``this._subcons.bytesfield1`` would be a Construct instance but ``this.bytesfield1`` would be bytes object, which is the parsing result. Note that you need to use a lambda (this expression is not supported). Also note that compiler does not support this feature.
+    This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
+
+    This class exposes subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) within other inlined fields using the context. Note that you need to use a lambda (`this` expression is not supported). Also note that compiler does not support this feature. See examples.
 
     .. warning:: If you skip `parsefrom` parameter then stream will be left back at starting offset, not seeked to any common denominator.
 
@@ -3196,6 +3243,18 @@ class Union(Construct):
         >>> d.build(dict(chars=range(8)))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
+        >>> d = Union(None,
+        ...     "animal" / Enum(Byte, giraffe=1),
+        ... )
+        >>> d.animal.giraffe
+        'giraffe'
+        >>> d = Union(None,
+        ...     "chars" / Byte[4],
+        ...     "data" / Bytes(lambda this: this._subcons.chars.sizeof()),
+        ... )
+        >>> d.parse(b"\x01\x02\x03\x04")
+        Container(chars=[1, 2, 3, 4])(data=b'\x01\x02\x03\x04')
+
         Alternative syntax, but requires Python 3.6:
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     """
@@ -3207,6 +3266,14 @@ class Union(Construct):
         self.parsefrom = parsefrom
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
+
+    def __getattr__(self, name):
+        for sc in self.subcons:
+            if sc.name == name:
+                while isinstance(sc, Renamed):
+                    sc = sc.subcon
+                return sc
+        raise AttributeError
 
     def _parse(self, stream, context, path):
         obj = Container()

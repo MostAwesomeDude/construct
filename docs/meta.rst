@@ -88,7 +88,16 @@ Container(count=4)(data=b'1234')
 Refering to inlined constructs
 ============================
 
-If you need to refer to a size of a field, that was inlined in same struct (and therefore wasnt assigned to any variable in namespace), you can use a special "_subcons" context entry that contains all Struct members. Note that you need to use a lambda (because this expression is not supported).
+If you need to refer to a subcon like Enum, that was inlined in the struct (and therefore wasnt assigned to any variable in the namespace), you can access it as Struct attribute under same name. This feature is particularly handy when using Enums and EnumFlags.
+
+>>> d = Struct(
+...     "animal" / Enum(Byte, giraffe=1),
+... )
+>>> d.animal.giraffe
+'giraffe'
+
+
+If you need to refer to the size of a field, that was inlined in the same struct (and therefore wasnt assigned to any variable in the namespace), you can use a special "_subcons" context entry that contains all Struct members. Note that you need to use a lambda (because `this` expression is not supported).
 
 >>> d = Struct(
 ...     "count" / Byte,
@@ -97,6 +106,14 @@ If you need to refer to a size of a field, that was inlined in same struct (and 
 >>> d.parse(b"\x05four")
 Container(count=5)(data=b'four')
 
+>>> d = Union(None,
+...     "chars" / Byte[4],
+...     "data" / Bytes(lambda this: this._subcons.chars.sizeof()),
+... )
+>>> d.parse(b"\x01\x02\x03\x04")
+Container(chars=[1, 2, 3, 4])(data=b'\x01\x02\x03\x04')
+
+This feature is supported in same constructs as embedding: Struct Sequence FocusedSeq Union.
 
 
 Using `this` expression

@@ -1499,7 +1499,36 @@ def test_pickling_constructs():
     du = pickle.loads(pickle.dumps(d, protocol=-1))
     assert du.parse(data) == d.parse(data)
 
-def test_exposing_members():
+def test_exposing_members_attributes():
+    d = Struct(
+        "count" / Byte,
+        "animal" / Enum(Byte, giraffe=1),
+    )
+    assert isinstance(d.animal, Enum)
+    assert d.animal.giraffe == "giraffe"
+
+    d = Sequence(
+        "count" / Byte,
+        "animal" / Enum(Byte, giraffe=1),
+    )
+    assert isinstance(d.animal, Enum)
+    assert d.animal.giraffe == "giraffe"
+
+    d = FocusedSeq(0,
+        "animal" / Enum(Byte, giraffe=1),
+    )
+    assert isinstance(d.animal, Enum)
+    assert d.animal.giraffe == "giraffe"
+
+    d = Union(None,
+        "count" / Byte,
+        "animal" / Enum(Byte, giraffe=1),
+    )
+    assert d.count is Byte
+    assert isinstance(d.count, FormatField)
+    assert d.animal.giraffe == "giraffe"
+
+def test_exposing_members_context():
     d = Struct(
         "count" / Byte,
         "data" / Bytes(lambda this: this.count - this._subcons.count.sizeof()),
@@ -1514,14 +1543,16 @@ def test_exposing_members():
     )
     common(d, b"\x05four", [5,b"four",None])
 
-    d = Union(None,
-        "count" / Byte,
-        Check(lambda this: this._subcons.count.sizeof() == 1),
-    )
-    common(d, b"\x05", Container(count=5))
-
     d = FocusedSeq(0,
         "count" / Byte,
+        "data" / Padding(lambda this: this.count - this._subcons.count.sizeof()),
         Check(lambda this: this._subcons.count.sizeof() == 1),
     )
-    common(d, b"\x05", 5, 1)
+    common(d, b'\x04\x00\x00\x00', 4, SizeofError)
+
+    d = Union(None,
+        "chars" / Byte[4],
+        "data" / Bytes(lambda this: this._subcons.chars.sizeof()),
+        Check(lambda this: this._subcons.chars.sizeof() == 4),
+    )
+    assert d.parse(b"\x01\x02\x03\x04") == dict(chars=[1,2,3,4],data=b"\x01\x02\x03\x04")

@@ -37,7 +37,7 @@ Mapping replaced SymmetricMapping, and dropped `default` parameter (`see API pag
 
 Struct Sequence Union FocusedSeq have new embedding semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
 
-Struct Sequence Union FocusedSeq are exposing subcons in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
+Struct Sequence Union FocusedSeq are exposing subcons, as attributes and in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
 
 EmbeddedBitStruct removed
 
