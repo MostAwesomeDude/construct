@@ -378,8 +378,8 @@ class Construct(object):
                 return %s
             compiledschema = Compiled(None, None, parseall)
         """ % (self._compileparse(code),))
-
         source = code.toString()
+
         from types import ModuleType
         compiled = compile(source, '', 'exec')
         module = ModuleType("construct_compile_target")
@@ -482,11 +482,11 @@ class Construct(object):
 
         lines = [
             "Timeit measurements:",
-            "compiling:         {:.20f} sec/call",
-            "parsing:           {:.20f} sec/call",
-            "parsing compiled:  {:.20f} sec/call",
-            "building:          {:.20f} sec/call",
-            "building compiled: {:.20f} sec/call",
+            "compiling:         {} sec/call",
+            "parsing:           {} sec/call",
+            "parsing compiled:  {} sec/call",
+            "building:          {} sec/call",
+            "building compiled: {} sec/call",
             ""
         ]
         return "\n".join(lines).format(compiletime, parsetime, parsetime2, buildtime, buildtime2)

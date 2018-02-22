@@ -3,9 +3,9 @@
 from declarativeunittest import *
 from construct import *
 from construct.lib import *
+from test_compiler import example, exampledata
 
 pytestmark = skipif(not supportscompiler, reason="compiler and bytes() require 3.6")
-
 
 
 def test_class_bytes_parse(benchmark):
@@ -554,3 +554,25 @@ def test_class_prefixedarray_build(benchmark):
 # Filter
 # Slicing
 # Indexing
+
+def test_overall_compiling(benchmark):
+    d = example
+    benchmark(d.compile)
+
+def test_overall_parse(benchmark):
+    d = example
+    benchmark(d.parse, exampledata)
+
+def test_overall_parse_compiled(benchmark):
+    dc = example.compile()
+    benchmark(dc.parse, exampledata)
+
+def test_overall_build(benchmark):
+    d = example
+    obj = d.parse(exampledata)
+    benchmark(d.build, obj)
+
+def test_overall_build_compiled(benchmark):
+    dc = example.compile()
+    obj = dc.parse(exampledata)
+    benchmark(dc.build, obj)

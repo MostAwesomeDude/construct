@@ -1440,9 +1440,6 @@ def test_from_issue_362():
     for i in range(5):
         assert BIT_FORMAT.parse(b'\x00').my_tell == 0
 
-def test_compiler_recursion():
-    raises(Construct().compile) == NotImplementedError
-
 def test_this_expresion_compare_container():
     st = Struct(
         "flags" / FlagsEnum(Byte, a=1),
@@ -1454,11 +1451,6 @@ def test_this_expresion_compare_container():
 def test_empty_struct_compiled():
     Struct().compile()
     Sequence().compile()
-
-@xfail(not supportscompiler, reason="compiler requires Python 3.6")
-def test_compiled_benchmark_testcompiled():
-    Struct().compile().benchmark(b"")
-    Struct().compile().testcompiled(b"")
 
 @xfail(reason="unknown causes")
 def test_pickling_constructs():

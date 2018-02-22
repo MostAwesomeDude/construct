@@ -17,7 +17,6 @@ embeddedswitch1 = EmbeddedSwitch(
         1: Struct("value" / Byte),
     }
 )
-
 example = Struct(
     "num" / Byte,
 
@@ -160,7 +159,7 @@ example = Struct(
     # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
     # "repeatuntil3" / RepeatUntil(list_[-1] == 0, Byte),
 )
-data = bytes(1000)
+exampledata = bytes(1000)
 
 
 def test_compiles():
@@ -170,26 +169,15 @@ def test_compiles():
 
 def test_parsesbuilds():
     d = example
-    d.testcompiled(data)
+    d.testcompiled(exampledata)
 
-def test_overall_compiling(benchmark):
-    d = example
-    benchmark(d.compile)
+def test_benchmark1():
+    du = Struct().compile()
+    print(du.benchmark(b""))
 
-def test_overall_parse(benchmark):
-    d = example
-    benchmark(d.parse, data)
+def test_benchmark2():
+    du = Struct(Error).compile()
+    print(du.benchmark(b""))
 
-def test_overall_parse_compiled(benchmark):
-    dc = example.compile()
-    benchmark(dc.parse, data)
-
-def test_overall_build(benchmark):
-    d = example
-    obj = d.parse(data)
-    benchmark(d.build, obj)
-
-def test_overall_build_compiled(benchmark):
-    dc = example.compile()
-    obj = dc.parse(data)
-    benchmark(dc.build, obj)
+def test_compiler_recursion():
+    raises(Construct().compile) == NotImplementedError
