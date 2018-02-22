@@ -72,35 +72,32 @@ Strings
 
     Python 2 known problem:
 
-    Unprefixed string literals like "text" are on Python 2 interpreted as bytes. This casues failures when using fields that operate on unicode objects like String* classes.
+    Unprefixed string literals like "text" are on Python 2 interpreted as bytes. This causes failures when using fields that operate on unicode objects only like String* classes.
 
 .. note::
 
-    Encodings like UTF8 UTF16 UTF32 (including little-endian) work fine with all String* classes. However two of them, String and CString, support only encodings listed exclusively in :class:`~construct.core.possiblestringencodings` .
+    Encodings like UTF8 UTF16 UTF32 (including little-endian) work fine with all String* classes. However two of them, String and CString, support only encodings listed explicitly in :class:`~construct.core.possiblestringencodings` .
 
 String is a fixed-length construct that pads built string with null bytes, and strips those same null bytes when parsing. Strings can also be trimmed when building. If you supply a too long string, the construct will chop it off apart instead of raising a StringError.
 
 To be honest, using this class is not recommended. It is provided only for ancient data formats.
 
->>> String(10, encoding=StringsAsBytes).build(b"hello")
-b'hello\x00\x00\x00\x00\x00'
-
->>> String(10, encoding="utf8").build("Афон")
+>>> String(10, "utf8").build("Афон")
 b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00\x00'
 
 PascalString is a variable length string that is prefixed by a length field. This scheme was invented in Pascal language that put Byte field instead of C convention of appending null \\0 byte at the end. Note that the length field does not need to be Byte, and can also be variable length itself, as shown below. VarInt is recommended when designing new protocols.
 
->>> PascalString(VarInt, encoding="utf8").build("Афон")
+>>> PascalString(VarInt, "utf8").build("Афон")
 b'\x08\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'
 
 CString is another string representation, that always ends with a null \\0 terminating byte at the end. This scheme was invented in C language and is known in the computer science community very well. One of the authors, Kernighan or Ritchie, admitted that it was one of the most regretable design decisions in history.
 
->>> CString(encoding="utf8").build(b"hello")
+>>> CString("utf8").build(b"hello")
 b'hello\x00'
 
 Last would be GreedyString which does the same thing as GreedyBytes, plus encoding. It reads until the end of stream and then decodes data using specified encoding. Greedy* classes are usually used with tunneling constructs, which are discussed in a later chapter.
 
->>> GreedyString(encoding="utf8").parse(b"329817392189")
+>>> GreedyString("utf8").parse(b"329817392189")
 '329817392189'
 
 

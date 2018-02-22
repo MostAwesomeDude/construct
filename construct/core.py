@@ -1481,29 +1481,11 @@ def String(length, encoding):
 
     Example::
 
-        >>> d = String(10, encoding=StringsAsBytes)
-        >>> d.build(b"hello")
-        b'hello\x00\x00\x00\x00\x00'
-        >>> d.parse(_)
-        b'hello'
-        >>> d.sizeof()
-        10
-
-        >>> d = String(10, encoding="utf8")
+        >>> d = String(10, "utf8")
         >>> d.build(u"Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00\x00'
         >>> d.parse(_)
         u'Афон'
-
-        >>> d = String(10, encoding=StringsAsBytes, padchar=b"XYZ", paddir="center")
-        >>> d.build(b"abc")
-        b'XXXabcXXXX'
-        >>> d.parse(b"XYZabcXYZY")
-        b'abc'
-
-        >>> d = String(10, encoding=StringsAsBytes, trimdir="right")
-        >>> d.build(b"12345678901234567890")
-        b'1234567890'
     """
     return StringEncoded(StringPaddedTrimmed(length, encoding), encoding)
 
@@ -1521,7 +1503,7 @@ def PascalString(lengthfield, encoding):
 
     Example::
 
-        >>> d = PascalString(VarInt, encoding="utf8")
+        >>> d = PascalString(VarInt, "utf8")
         >>> d.build(u"Афон")
         b'\x08\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'
         >>> d.parse(_)
@@ -1544,7 +1526,7 @@ def CString(encoding):
 
     Example::
 
-        >>> d = CString(encoding="utf8")
+        >>> d = CString("utf8")
         >>> d.build(u"Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
         >>> d.parse(_)
@@ -1566,7 +1548,7 @@ def GreedyString(encoding):
 
     Example::
 
-        >>> d = GreedyString(encoding="utf8")
+        >>> d = GreedyString("utf8")
         >>> d.build(u"Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'
         >>> d.parse(_)
@@ -1840,7 +1822,7 @@ class Struct(Construct):
 
     Operator + can also be used to make Structs (although not recommended).
 
-    Parses into a Container (dict with attribute and key access) where keys match subcon names. If field has embedded flag, its assuned to parse into a dict which entries get merged with result dict. Builds from a dict (not necessarily a Container) where each member gets a value from the dict matching the subcon name. If field has build-from-none flag, it gets build even when there is no mathing entry in the dict. If field has embedded flag, it gets build from the entire dict itself. Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
+    Parses into a Container (dict with attribute and key access) where keys match subcon names. Builds from a dict (not necessarily a Container) where each member gets a value from the dict matching the subcon name. If field has build-from-none flag, it gets build even when there is no matching entry in the dict. Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
@@ -1981,7 +1963,7 @@ class Sequence(Construct):
 
     Operator >> can also be used to make Sequences (although not recommended).
 
-    Parses into a ListContainer (list with pretty-printing) where values are in same order as subcons. If field has embedded flag, its assumed to parse into a list which elements get merged with result list. Builds from a list (not necessarily a ListContainer) where each subcon is given the element at respective position. If field has embedded flag, it gets build from a following subset of entire list. Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
+    Parses into a ListContainer (list with pretty-printing) where values are in same order as subcons. Builds from a list (not necessarily a ListContainer) where each subcon is given the element at respective position. Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
@@ -3210,7 +3192,7 @@ class Union(Construct):
     r"""
     Treats the same data as multiple constructs (similar to C union) so you can look at the data in multiple views. Fields are usually named (so parsed values are inserted into dictionary under same name). :class:`~construct.core.Embedded` fields do not need to (and should not) be named.
 
-    Parses subcons in sequence, and reverts the stream back to original position after each subcon. Afterwards, advances the stream by selected subcon. Builds from any subcon that has a matching key in given dict. Size is undefined (because parsefrom is not used for building).
+    Parses subcons in sequence, and reverts the stream back to original position after each subcon. Afterwards, advances the stream by selected subcon. Builds from first subcon that has a matching key in given dict. Size is undefined (because parsefrom is not used for building).
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 

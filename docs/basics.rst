@@ -59,7 +59,7 @@ construct.core.SizeofError: cannot calculate size
 Structs
 =======
 
-For those of you familiar with C, Structs are very intuitive, but here's a short explanation for the larger audience. A Struct is a collection of ordered and usually named fields (field means an instance of Construct class), that are parsed/built in that same order. Names are used for two reasons: (1) when parsed, values are returned in a dictionary where keys are matching the names, and when build, each field gets build with a value taken from a dictionary from a matching key (2) parsed and build fields values are inserted into the context dictionary under mathing names. 
+For those of you familiar with C, Structs are very intuitive, but here's a short explanation for the larger audience. A Struct is a collection of ordered and usually named fields (field means an instance of Construct class), that are parsed/built in that same order. Names are used for two reasons: (1) when parsed, values are returned in a dictionary where keys are matching the names, and when build, each field gets build with a value taken from a dictionary from a matching key (2) fields parsed and built values are inserted into the context dictionary under matching names. 
 
 >>> format = Struct(
 ...     "signature" / Const(b"BMP"),
