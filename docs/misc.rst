@@ -300,15 +300,18 @@ Select
 
 Attempts to parse or build each of the subcons, in order they were provided.
 
->>> Select(Int32ub, CString(encoding="utf8")).build(1)
-b'\x00\x00\x00\x01'
->>> Select(Int32ub, CString(encoding="utf8")).build("Афон")
-b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
+::
+
+    >>> d = Select(Int32ub, CString("utf8"))
+    >>> d.build(1)
+    b'\x00\x00\x00\x01'
+    >>> d.build(u"Афон")
+    b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
 ::
 
-    Note that this syntax works ONLY on Python 3.6 due to ordered keyword arguments:
-    >>> Select(num=Int32ub, text=CString(encoding="utf8"))
+    Alternative syntax, but requires Python 3.6:
+    >>> Select(num=Int32ub, text=CString("utf8"))
 
 Optional
 --------

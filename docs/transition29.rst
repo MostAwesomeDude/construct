@@ -55,6 +55,8 @@ Timestamp added, in Miscellaneous (`see tutorial page <https://construct.readthe
 
 Hex HexDump reimplemented (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#hex-and-hexdump>`_)
 
+Select dropped `includename` parameter (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.Select>`_)
+
 If IfThenElse parameter renamed `predicate` to `condfunc`, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.If>`_)
 
 Switch dropped `includekey` parameter, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.Switch>`_)

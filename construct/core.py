@@ -3308,11 +3308,10 @@ class Select(Construct):
     r"""
     Selects the first matching subconstruct.
 
-    Parses and builds by literally trying each subcon in sequence until one of them parses or builds without exception. Stream gets reverted back to original position after each failed attempt. Size is not defined.
+    Parses and builds by literally trying each subcon in sequence until one of them parses or builds without exception. Stream gets reverted back to original position after each failed attempt, but not if parsing succeeds. Size is not defined.
 
     :param \*subcons: Construct instances, list of members, some can be anonymous
     :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
-    :param includename: indicates whether to include name of selected subcon in the return value of parsing, default is False
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
@@ -3320,22 +3319,21 @@ class Select(Construct):
 
     Example::
 
-        >>> d = Select(Int32ub, CString(encoding="utf8"))
+        >>> d = Select(Int32ub, CString("utf8"))
         >>> d.build(1)
         b'\x00\x00\x00\x01'
         >>> d.build(u"Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
         Alternative syntax, but requires Python 3.6:
-        >>> Select(num=Int32ub, text=CString(encoding="utf8"))
+        >>> Select(num=Int32ub, text=CString("utf8"))
     """
 
     def __init__(self, *subcons, **subconskw):
         super(Select, self).__init__()
-        self.subcons = list(subcons) + list(k/v for k,v in subconskw.items() if k != "includename")
+        self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
         self.flagembedded = all(sc.flagembedded for sc in self.subcons)
-        self.includename = subconskw.pop("includename", False)
 
     def _parse(self, stream, context, path):
         for sc in self.subcons:
@@ -3347,26 +3345,20 @@ class Select(Construct):
             except ConstructError:
                 _seek_stream(stream, fallback)
             else:
-                return (sc.name,obj) if self.includename else obj
+                return obj
         raise SelectError("no subconstruct matched")
 
     def _build(self, obj, stream, context, path):
-        if self.includename:
-            name, obj = obj
-            for sc in self.subcons:
-                if sc.name == name:
-                    return sc._build(obj, stream, context, path)
-        else:
-            for sc in self.subcons:
-                try:
-                    data = sc.build(obj, **context)
-                except ExplicitError:
-                    raise
-                except Exception:
-                    pass
-                else:
-                    _write_stream(stream, data)
-                    return obj
+        for sc in self.subcons:
+            try:
+                data = sc.build(obj, **context)
+            except ExplicitError:
+                raise
+            except Exception:
+                pass
+            else:
+                _write_stream(stream, data)
+                return obj
         raise SelectError("no subconstruct matched: %s" % (obj,))
 
     def _emitdecompiled(self, code):

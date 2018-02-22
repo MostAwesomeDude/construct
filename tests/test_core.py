@@ -752,19 +752,16 @@ def test_union_issue_348():
     assert u.build(dict(Int32=[287454020])) == b'\x00\x04\x11\x22\x33\x44'
 
 def test_select():
-    assert raises(Select(Int32ub, Int16ub).parse, b"\x07") == SelectError
-    assert Select(Int32ub, Int16ub, Int8ub).parse(b"\x07") == 7
-    assert Select(Int32ub, Int16ub, Int8ub).build(7) == b"\x00\x00\x00\x07"
-    assert Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).parse(b"\x07") == ("c", 7)
-    assert Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).build((("c", 7))) == b"\x07"
-    assert raises(Select("a"/Int32ub, "b"/Int16ub, "c"/Int8ub, includename=True).build, (("d", 7))) == SelectError
+    d = Select(Int32ub, Int16ub, Int8ub)
+    common(d, b"\x00\x00\x00\x07", 7)
+    assert raises(Select(Int32ub, Int16ub).parse, b"") == SelectError
     assert raises(Select(Byte).sizeof) == SizeofError
 
 @xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_select_kwctor():
-    st = Select(a=Int8ub, b=Int16ub, c=Int32ub)
-    assert st.parse(b"\x01\x02\x03\x04") == 0x01
-    assert st.build(0x01020304) == b"\x01\x02\x03\x04"
+    d = Select(a=Int8ub, b=Int16ub, c=Int32ub)
+    assert d.parse(b"\x01\x02\x03\x04") == 0x01
+    assert d.build(0x01020304) == b"\x01\x02\x03\x04"
 
 def test_optional():
     assert Optional(Int32ul).parse(b"\x01\x00\x00\x00") == 1
