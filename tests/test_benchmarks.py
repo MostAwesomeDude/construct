@@ -457,6 +457,34 @@ def test_class_namedtuple2_build(benchmark):
     d = NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte))
     benchmark(d.build, t(x=1,y=2,z=3))
 
+def test_class_timestamp1_parse(benchmark):
+    d = Timestamp(Int64ub, "unix", "unix")
+    benchmark(d.parse, bytes(8))
+
+def test_class_timestamp1_parse_compiled(benchmark):
+    d = Timestamp(Int64ub, "unix", "unix")
+    d = d.compile()
+    benchmark(d.parse, bytes(8))
+
+def test_class_timestamp1_build(benchmark):
+    import arrow
+    d = Timestamp(Int64ub, "unix", "unix")
+    benchmark(d.build, arrow.Arrow(2000,1,1))
+
+def test_class_timestamp2_parse(benchmark):
+    d = Timestamp(Int32ub, "msdos", "msdos")
+    benchmark(d.parse, b'H9\x8c"')
+
+def test_class_timestamp2_parse_compiled(benchmark):
+    d = Timestamp(Int32ub, "msdos", "msdos")
+    d = d.compile()
+    benchmark(d.parse, b'H9\x8c"')
+
+def test_class_timestamp2_build(benchmark):
+    import arrow
+    d = Timestamp(Int32ub, "msdos", "msdos")
+    benchmark(d.build, arrow.Arrow(2000,1,1))
+
 def test_class_hex_parse(benchmark):
     d = Hex(GreedyBytes)
     benchmark(d.parse, bytes(100))

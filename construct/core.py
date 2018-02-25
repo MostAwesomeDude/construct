@@ -3028,6 +3028,8 @@ def Timestamp(subcon, unit, epoch):
             def _encode(self, obj, context, path):
                 t = obj.timetuple()
                 return Container(year=t.tm_year-1980, month=t.tm_mon, day=t.tm_mday, hour=t.tm_hour, minute=t.tm_min, second=t.tm_sec//2)
+            def _emitdecompiled(self, code):
+                return "Timestamp(%s, %r, %r)" % (subcon._decompile(code), unit, epoch)
         return MsdosTimestampAdapter(st)
 
     if unit == "unix":
@@ -3047,6 +3049,11 @@ def Timestamp(subcon, unit, epoch):
             return epoch.shift(seconds=obj*unit)
         def _encode(self, obj, context, path):
             return int((obj-epoch).total_seconds()/unit)
+        def _emitdecompiled(self, code):
+            code.append("""
+                import arrow
+            """)
+            return "Timestamp(%s, %r, arrow.Arrow.fromtimestamp(%r))" % (subcon._decompile(code), unit, epoch.float_timestamp)
     return TimestampAdapter(subcon)
 
 

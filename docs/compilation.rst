@@ -41,8 +41,6 @@ Array does not support indexing feature (unlike GreedyRange and RepeatUntil)
 
 Adapters and validators are in general not compilable
 
-Timestamp is not compilable, because it uses adapters internally
-
 TransformBytes Restreamed are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
 
 Checksum LazyBound are not compilable, because they use lambdas (not `this` expressions)

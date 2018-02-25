@@ -95,6 +95,8 @@ example = Struct(
     "namedtuple2" / RestreamData(b"\x00\x00\x00", NamedTuple("coord", "x y z", GreedyRange(Byte))),
     "namedtuple3" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
     "namedtuple4" / NamedTuple("coord", "x y z", "x"/Byte + "y"/Byte + "z"/Byte),
+    "timestamp1" / RestreamData(b'\x00\x00\x00\x00ZIz\x00', Timestamp(Int64ub, "unix", "unix")),
+    "timestamp2" / RestreamData(b'H9\x8c"', Timestamp(Int32ub, "msdos", "msdos")),
     "hex1" / Hex(Byte),
     "hex2" / Hex(Bytes(1)),
     "hex3" / Hex(RawCopy(Byte)),
