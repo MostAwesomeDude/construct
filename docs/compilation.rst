@@ -41,6 +41,8 @@ Array does not support indexing feature (unlike GreedyRange and RepeatUntil)
 
 Adapters and validators are in general not compilable
 
+Timestamp is not compilable, because it uses adapters internally
+
 TransformBytes Restreamed are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
 
 Checksum LazyBound are not compilable, because they use lambdas (not `this` expressions)
@@ -74,7 +76,6 @@ Timeit measurements:
 parsing:           0.00004755572500289418 sec/call
 parsing compiled:  0.00001591820199973881 sec/call
 building:          0.00005915266399824759 sec/call
-building compiled: 0.00005127855399769033 sec/call
 
 
 Motivation
@@ -293,16 +294,338 @@ Timeit measurements:
 parsing:           0.00002787889000046562 sec/call
 parsing compiled:  0.00001943664999998873 sec/call
 building:          0.00003316365799946653 sec/call
-building compiled: 0.00003364123299979837 sec/call
 
 
 Motivation, part 2
 =====================
 
-TBA.
+This chapter talks about the second half of optimisation, which is due to Cython type annotations and type inference. I should state for the record, that I am no expert at Cython, and following explanatations are merely "the way I understand it". I may be wrong on any point. Please take that into account when reading it. Fourth example:
+
+::
+
+    Struct(
+        "num1" / Int8ul,
+        "num2" / Int24ul,
+        "fixedarray1" / Array(3, Int8ul),
+        "name1" / CString("utf8"),
+    )
+
+::
+
+    cdef bytes read_bytes(io, int count):
+        if not count >= 0: raise StreamError
+        cdef bytes data = io.read(count)
+        if not len(data) == count: raise StreamError
+        return data
+    cdef bytes parse_nullterminatedstring(io, int unitsize, bytes finalunit):
+        cdef list result = []
+        cdef bytes unit
+        while True:
+            unit = read_bytes(io, unitsize)
+            if unit == finalunit:
+                break
+            result.append(unit)
+        return b"".join(result)
+    def parse_struct_1(io, this):
+        this = Container(_ = this)
+        try:
+            this['num1'] = unpack('<B', read_bytes(io, 1))[0]
+            this['num2'] = int.from_bytes(read_bytes(io, 3), byteorder='little', signed=False)
+            this['fixedarray1'] = ListContainer((unpack('<B', read_bytes(io, 1))[0]) for i in range(3))
+            this['name1'] = (parse_nullterminatedstring(io, 1, b'\x00')).decode('utf8')
+            pass
+        except StopIteration:
+            pass
+        del this['_']
+        del this['_index']
+        return this
+    def parseall(io, this):
+        return parse_struct_1(io, this)
+    compiled = Compiled(None, None, parseall)
+
+
+The primary cause of speedup in cython is this: if a variable is of known type, then operations on that variable can skip certain checks. If a variable is a pure python object, then those checks need to be added. A variable is considered of known type if either (1) its annotated like "cdef bytes data" or (2) its inferred like when using an annotated function call result like in "parse_nullterminatedstring(...).decode(...)" since "cdef bytes parse_nullterminatedstring(...)". If a variable is known to be a list, then calling "append" on it doesnt require checking if that object has such a method or matching signature (parameters). If a variable is known to be a bytes, then "len(data)" can be compiled into bytes-type length function, not a general-purpose length function that works on arbitrary objects, and also "unit == finalunit" can be compiled into bytes-type equality. If a variable is known to be a unicode, then ".decode('utf8')" can be compiled into str-type implementation. If cython knows that "struct.unpack" returns only tuples, then "...[0]" would compile into tuple-type getitem (index access). Examples are many, but the pattern is the same: type-specific code is faster than type-general code.
+
+Second cause of speedup is due to special handling of integers. While most annotations like "cdef bytes" refer to specific albeit Python types, the "cdef int" actually does not refer to any Python type. It represents a C-integer which is allocated on the stack or in registers, unlike the other types which are allocated on the heap. All operations on C-integers are therefore much faster than on Python-integers. In example code, this affects "count >= 0" and "len(data) == count".
+
+Tertiary cause of speedup is honestly, unknown. Cython is able to get better performance even without any type annotations. Maybe this is due to type inference (built-in functions do have type annotations, just not in the code you compile) and cause #1.
 
 
 Empirical evidence
 ---------------------
 
-TBA.
+Below micro-benchmarks show the difference between core classes and compiled core classes. Only those where performance boost was highest are listed (although they also happen to be the most important), some other classes have little speedup, and some have none.
+
+::
+
+    ------------------------------- benchmark: 152 tests -------------------------------
+                                                       Min              StdDev          
+    ------------------------------------------------------------------------------------
+    test_class_array_parse                        286.5460 (73.85)     42.8831 (89.84)  
+    test_class_array_parse_compiled                30.7200 (7.92)       6.9577 (14.58)  
+    test_class_greedyrange_parse                  320.9860 (82.73)     45.9480 (96.26)  
+    test_class_greedyrange_parse_compiled         262.7010 (67.71)     36.4504 (76.36)  
+    test_class_repeatuntil_parse                   10.1850 (2.63)       2.4147 (5.06)   
+    test_class_repeatuntil_parse_compiled           6.8880 (1.78)       1.5471 (3.24)   
+    test_class_string_parse                        20.4400 (5.27)       4.4044 (9.23)   
+    test_class_string_parse_compiled                9.1470 (2.36)       2.2427 (4.70)   
+    test_class_cstring_parse                       11.2290 (2.89)       1.6216 (3.40)   
+    test_class_cstring_parse_compiled               5.6080 (1.45)       1.0321 (2.16)   
+    test_class_pascalstring_parse                   7.8560 (2.02)       1.8567 (3.89)   
+    test_class_pascalstring_parse_compiled          5.8910 (1.52)       0.9466 (1.98)   
+    test_class_struct_parse                        44.1300 (11.37)      6.8434 (14.34)  
+    test_class_struct_parse_compiled               16.9070 (4.36)       3.0500 (6.39)   
+    test_class_sequence_parse                      21.5420 (5.55)       2.6852 (5.63)   
+    test_class_sequence_parse_compiled             10.1530 (2.62)       2.1645 (4.53)   
+    test_class_union_parse                         91.9150 (23.69)     10.7812 (22.59)  
+    test_class_union_parse_compiled                22.5970 (5.82)      15.2649 (31.98)  
+    test_overall_parse                          2,126.2570 (548.01)   255.0154 (534.27) 
+    test_overall_parse_compiled                 1,124.9560 (289.94)   127.4730 (267.06) 
+    ------------------------------------------------------------------------------------
+
+..
+    ------------------------------- benchmark: 152 tests -------------------------------
+    Name (time in us)                                  Min              StdDev          
+    ------------------------------------------------------------------------------------
+    test_class_aligned_build                        7.8110 (2.01)       1.4475 (3.03)   
+    test_class_aligned_parse                        6.7560 (1.74)       2.4557 (5.14)   
+    test_class_aligned_parse_compiled               4.7080 (1.21)       1.0038 (2.10)   
+    test_class_array_build                        331.7150 (85.49)     45.1915 (94.68)  
+    test_class_array_parse                        286.5460 (73.85)     42.8831 (89.84)  
+    test_class_array_parse_compiled                30.7200 (7.92)       6.9577 (14.58)  
+    test_class_bitsinteger_build                   19.4150 (5.00)       6.0416 (12.66)  
+    test_class_bitsinteger_parse                   19.2520 (4.96)       6.7657 (14.17)  
+    test_class_bitsinteger_parse_compiled          17.4700 (4.50)      11.1148 (23.29)  
+    test_class_bitsswapped1_build                  20.0300 (5.16)       3.5605 (7.46)   
+    test_class_bitsswapped1_parse                  18.9740 (4.89)       3.1174 (6.53)   
+    test_class_bitsswapped1_parse_compiled         17.4030 (4.49)       3.2099 (6.72)   
+    test_class_bitsswapped2_build                 866.5650 (223.34)    99.0145 (207.44) 
+    test_class_bitsswapped2_parse                 813.8270 (209.75)   104.6734 (219.29) 
+    test_class_bitwise1_build                      38.7430 (9.99)       4.1560 (8.71)   
+    test_class_bitwise1_parse                      18.8820 (4.87)       3.8922 (8.15)   
+    test_class_bitwise1_parse_compiled             17.5770 (4.53)       2.1345 (4.47)   
+    test_class_bitwise2_build                   5,249.8520 (>1000.0)  247.1093 (517.70) 
+    test_class_bitwise2_parse                   4,650.4640 (>1000.0)  605.3646 (>1000.0)
+    test_class_bytes_build                          5.3900 (1.39)       0.7781 (1.63)   
+    test_class_bytes_parse                          4.4180 (1.14)       0.4773 (1.0)    
+    test_class_bytes_parse_compiled                 4.0220 (1.04)       0.7253 (1.52)   
+    test_class_bytesinteger_build                   7.1450 (1.84)       1.4272 (2.99)   
+    test_class_bytesinteger_parse                   6.2820 (1.62)       1.4176 (2.97)   
+    test_class_bytesinteger_parse_compiled          5.3420 (1.38)       1.8858 (3.95)   
+    test_class_byteswapped1_build                   7.9820 (2.06)       1.5524 (3.25)   
+    test_class_byteswapped1_parse                   6.6840 (1.72)       1.2694 (2.66)   
+    test_class_byteswapped1_parse_compiled          4.9890 (1.29)       1.1038 (2.31)   
+    test_class_bytewise1_build                     53.7710 (13.86)      5.8007 (12.15)  
+    test_class_bytewise1_parse                     49.7540 (12.82)      7.8771 (16.50)  
+    test_class_bytewise1_parse_compiled            48.5480 (12.51)      5.0040 (10.48)  
+    test_class_bytewise2_build                  1,270.0850 (327.34)   116.3612 (243.78) 
+    test_class_bytewise2_parse                  1,225.2780 (315.79)    99.7644 (209.01) 
+    test_class_check_build                          7.9260 (2.04)       1.7875 (3.74)   
+    test_class_check_parse                          7.7250 (1.99)       1.7400 (3.65)   
+    test_class_check_parse_compiled                 5.8770 (1.51)       1.5456 (3.24)   
+    test_class_computed_build                       6.9660 (1.80)       1.0798 (2.26)   
+    test_class_computed_parse                       6.6770 (1.72)       1.6214 (3.40)   
+    test_class_computed_parse_compiled              5.6290 (1.45)       0.9689 (2.03)   
+    test_class_const_build                          5.9990 (1.55)       1.4849 (3.11)   
+    test_class_const_parse                          4.8720 (1.26)       1.1863 (2.49)   
+    test_class_const_parse_compiled                 4.2520 (1.10)       0.9856 (2.06)   
+    test_class_cstring_build                        7.8570 (2.03)       1.2683 (2.66)   
+    test_class_cstring_parse                       11.2290 (2.89)       1.6216 (3.40)   
+    test_class_cstring_parse_compiled               5.6080 (1.45)       1.0321 (2.16)   
+    test_class_default_build                        6.0770 (1.57)       1.2640 (2.65)   
+    test_class_default_parse                        5.1160 (1.32)       1.1421 (2.39)   
+    test_class_default_parse_compiled               4.4890 (1.16)       1.2474 (2.61)   
+    test_class_enum_build                           6.3000 (1.62)       0.9694 (2.03)   
+    test_class_enum_parse                           6.3900 (1.65)       0.9849 (2.06)   
+    test_class_enum_parse_compiled                  4.5520 (1.17)       0.7292 (1.53)   
+    test_class_flag_build                           4.7940 (1.24)       0.6771 (1.42)   
+    test_class_flag_parse                           4.3500 (1.12)       0.6541 (1.37)   
+    test_class_flag_parse_compiled                  4.1380 (1.07)       0.5723 (1.20)   
+    test_class_flagsenum_build                      9.7270 (2.51)       1.1748 (2.46)   
+    test_class_flagsenum_parse                     15.2000 (3.92)       2.1840 (4.58)   
+    test_class_flagsenum_parse_compiled            11.6480 (3.00)       1.5491 (3.25)   
+    test_class_focusedseq_build                    27.1080 (6.99)       6.3815 (13.37)  
+    test_class_focusedseq_parse                    23.6720 (6.10)       3.4153 (7.16)   
+    test_class_focusedseq_parse_compiled           10.7130 (2.76)       2.1026 (4.41)   
+    test_class_formatfield_build                    5.3590 (1.38)       1.1223 (2.35)   
+    test_class_formatfield_parse                    4.7750 (1.23)       0.8140 (1.71)   
+    test_class_formatfield_parse_compiled           4.4370 (1.14)       0.9037 (1.89)   
+    test_class_greedybytes_build                    4.0550 (1.05)       1.1607 (2.43)   
+    test_class_greedybytes_parse                    3.8800 (1.0)        0.5046 (1.06)   
+    test_class_greedybytes_parse_compiled           3.9690 (1.02)       1.1108 (2.33)   
+    test_class_greedyrange_build                  332.8790 (85.79)     43.8336 (91.83)  
+    test_class_greedyrange_parse                  320.9860 (82.73)     45.9480 (96.26)  
+    test_class_greedyrange_parse_compiled         262.7010 (67.71)     36.4504 (76.36)  
+    test_class_greedystring_build                   5.3930 (1.39)       0.7442 (1.56)   
+    test_class_greedystring_parse                   5.0800 (1.31)       1.1375 (2.38)   
+    test_class_greedystring_parse_compiled          4.6150 (1.19)       0.9228 (1.93)   
+    test_class_hex_build                            4.5730 (1.18)       0.8108 (1.70)   
+    test_class_hex_parse                            5.4210 (1.40)       0.9506 (1.99)   
+    test_class_hex_parse_compiled                   4.0000 (1.03)       0.8198 (1.72)   
+    test_class_hexdump_build                        4.5640 (1.18)       0.8572 (1.80)   
+    test_class_hexdump_parse                        5.1660 (1.33)       0.8708 (1.82)   
+    test_class_hexdump_parse_compiled               3.9460 (1.02)       0.8104 (1.70)   
+    test_class_ifthenelse_build                     9.0200 (2.32)       3.1983 (6.70)   
+    test_class_ifthenelse_parse                     8.5450 (2.20)       4.2003 (8.80)   
+    test_class_ifthenelse_parse_compiled            6.4490 (1.66)       3.5984 (7.54)   
+    test_class_mapping_build                        6.1160 (1.58)       0.9536 (2.00)   
+    test_class_mapping_parse                        5.5320 (1.43)       0.9137 (1.91)   
+    test_class_mapping_parse_compiled               4.5650 (1.18)       0.8350 (1.75)   
+    test_class_namedtuple1_build                   18.3450 (4.73)       2.1664 (4.54)   
+    test_class_namedtuple1_parse                   17.1850 (4.43)       2.9482 (6.18)   
+    test_class_namedtuple1_parse_compiled           7.1810 (1.85)       1.0228 (2.14)   
+    test_class_namedtuple2_build                   47.7850 (12.32)      6.1995 (12.99)  
+    test_class_namedtuple2_parse                   34.4330 (8.87)       3.8498 (8.07)   
+    test_class_namedtuple2_parse_compiled          15.4160 (3.97)       2.5158 (5.27)   
+    test_class_numpy_build                        212.5540 (54.78)     27.0343 (56.64)  
+    test_class_numpy_parse                        288.5380 (74.37)     45.4344 (95.19)  
+    test_class_numpy_parse_compiled               290.8960 (74.97)    110.2389 (230.95) 
+    test_class_padded_build                         7.7810 (2.01)       3.6378 (7.62)   
+    test_class_padded_parse                         6.6460 (1.71)       1.2688 (2.66)   
+    test_class_padded_parse_compiled                4.7090 (1.21)       1.2451 (2.61)   
+    test_class_padding_build                        6.1880 (1.59)       1.4536 (3.05)   
+    test_class_padding_parse                        5.4070 (1.39)       1.1753 (2.46)   
+    test_class_padding_parse_compiled               4.1200 (1.06)       1.1916 (2.50)   
+    test_class_pascalstring_build                   9.1680 (2.36)       1.4623 (3.06)   
+    test_class_pascalstring_parse                   7.8560 (2.02)       1.8567 (3.89)   
+    test_class_pascalstring_parse_compiled          5.8910 (1.52)       0.9466 (1.98)   
+    test_class_peek_build                          14.8710 (3.83)       2.6207 (5.49)   
+    test_class_peek_parse                          19.5870 (5.05)       3.6857 (7.72)   
+    test_class_peek_parse_compiled                 10.6000 (2.73)       2.0105 (4.21)   
+    test_class_pickled_build                        5.6150 (1.45)       1.2695 (2.66)   
+    test_class_pickled_parse                        8.3370 (2.15)       1.5174 (3.18)   
+    test_class_pickled_parse_compiled               8.9810 (2.31)       1.7670 (3.70)   
+    test_class_pointer_build                        7.2470 (1.87)       1.3817 (2.89)   
+    test_class_pointer_parse                        6.3760 (1.64)       1.2557 (2.63)   
+    test_class_pointer_parse_compiled               5.0970 (1.31)       0.9715 (2.04)   
+    test_class_prefixed_build                       7.8970 (2.04)       1.8404 (3.86)   
+    test_class_prefixed_parse                       6.7860 (1.75)       1.3916 (2.92)   
+    test_class_prefixed_parse_compiled              5.2350 (1.35)       1.3229 (2.77)   
+    test_class_prefixedarray_build                873.1850 (225.05)    84.7384 (177.53) 
+    test_class_prefixedarray_parse                763.2760 (196.72)    88.0787 (184.53) 
+    test_class_prefixedarray_parse_compiled        79.4790 (20.48)     11.9930 (25.13)  
+    test_class_rawcopy_build1                      13.8040 (3.56)       2.1913 (4.59)   
+    test_class_rawcopy_build2                      16.9810 (4.38)       2.6092 (5.47)   
+    test_class_rawcopy_parse                       15.2890 (3.94)       3.6678 (7.68)   
+    test_class_rawcopy_parse_compiled              14.8570 (3.83)       2.6335 (5.52)   
+    test_class_rebuild_build                        6.0380 (1.56)       1.2981 (2.72)   
+    test_class_rebuild_parse                        5.1540 (1.33)       0.8264 (1.73)   
+    test_class_rebuild_parse_compiled               4.5160 (1.16)       0.7145 (1.50)   
+    test_class_repeatuntil_build                   11.0780 (2.86)       2.4318 (5.09)   
+    test_class_repeatuntil_parse                   10.1850 (2.63)       2.4147 (5.06)   
+    test_class_repeatuntil_parse_compiled           6.8880 (1.78)       1.5471 (3.24)   
+    test_class_select_build                        19.1100 (4.93)       6.5128 (13.64)  
+    test_class_select_parse                         5.6280 (1.45)       3.2641 (6.84)   
+    test_class_select_parse_compiled                5.5660 (1.43)       3.7881 (7.94)   
+    test_class_sequence_build                      24.5060 (6.32)       5.1873 (10.87)  
+    test_class_sequence_parse                      21.5420 (5.55)       2.6852 (5.63)   
+    test_class_sequence_parse_compiled             10.1530 (2.62)       2.1645 (4.53)   
+    test_class_string_build                         8.5320 (2.20)       1.8491 (3.87)   
+    test_class_string_parse                        20.4400 (5.27)       4.4044 (9.23)   
+    test_class_string_parse_compiled                9.1470 (2.36)       2.2427 (4.70)   
+    test_class_struct_build                        49.1730 (12.67)      5.5050 (11.53)  
+    test_class_struct_parse                        44.1300 (11.37)      6.8434 (14.34)  
+    test_class_struct_parse_compiled               16.9070 (4.36)       3.0500 (6.39)   
+    test_class_switch_build                         9.5110 (2.45)       1.7349 (3.63)   
+    test_class_switch_parse                         8.7100 (2.24)       1.9867 (4.16)   
+    test_class_switch_parse_compiled                6.7830 (1.75)       1.1652 (2.44)   
+    test_class_union_build                         57.0540 (14.70)     12.0599 (25.27)  
+    test_class_union_parse                         91.9150 (23.69)     10.7812 (22.59)  
+    test_class_union_parse_compiled                22.5970 (5.82)      15.2649 (31.98)  
+    test_class_varint_build                        15.2000 (3.92)       3.2498 (6.81)   
+    test_class_varint_parse                        18.9080 (4.87)       4.2807 (8.97)   
+    test_class_varint_parse_compiled               19.6070 (5.05)       4.0409 (8.47)   
+    test_overall_build                          1,970.9570 (507.98)   189.2782 (396.54) 
+    test_overall_build_compiled                 1,987.8950 (512.35)   166.3636 (348.54) 
+    test_overall_parse                          2,126.2570 (548.01)   255.0154 (534.27) 
+    test_overall_parse_compiled                 1,124.9560 (289.94)   127.4730 (267.06) 
+    ------------------------------------------------------------------------------------
+
+
+Comparison with Kaitai Struct
+================================
+
+Kaitai Struct is a very respectable competitor, so I believe a benchmark-based comparison should be presented. Construct and Kaitai have very different capabilities: Kaitai supports about a dozen languages, Construct only supports Python, Kaitai offers only basic common features, Construct offers python-only stuff like Numpy and Pickle support. In a sense, those libraries are in two different categories (like sumo and karate). There are multiple scenarios where either library would not be usable.
+
+Example used for comparison:
+
+::
+
+    Struct(
+        "count" / Int32ul,
+        "items" / Array(this.count, Struct(
+            "num1" / Int8ul,
+            "num2" / Int24ul,
+            "flags" / BitStruct(
+                "bool1" / Flag,
+                "num4" / BitsInteger(3),
+                Padding(4),
+            ),
+            "fixedarray1" / Array(3, Int8ul),
+            "name1" / CString("utf8"),
+            "name2" / PascalString(Int8ul, "utf8"),
+        )),
+    )
+
+::
+
+    meta:
+      id: comparison_1_kaitai
+      encoding: utf-8
+      endian: le
+    seq:
+      - id: count
+        type: u4
+      - id: items
+        repeat: expr
+        repeat-expr: count
+        type: item
+    types:
+      item:
+        seq:
+          - id: num1
+            type: u1
+          - id: num2_lo
+            type: u2
+          - id: num2_hi
+            type: u1
+          - id: flags
+            type: flags
+          - id: fixedarray1
+            repeat: expr
+            repeat-expr: 3
+            type: u1
+          - id: name1
+            type: strz
+          - id: len_name2
+            type: u1
+          - id: name2
+            type: str
+            size: len_name2
+        instances:
+          num2:
+            value: 'num2_hi << 16 | num2_lo'
+        types:
+          flags:
+            seq:
+              - id: bool1
+                type: b1
+              - id: num4
+                type: b3
+              - id: padding
+                type: b4
+
+
+Suprisingly, Kaitai won the benchmark! Honestly, I am shocked and dismayed that it did, because it does neither inlining expressions (it generates more human-readable code) nor using Cython (it generates pure-Python code). The only advantage that I can point out, is that Kaitai is parsing structs into class objects while Construct parses into dictionaries. However that one detail seems unlikely explanation for the benchmark results. Perhaps there is a flaw in the methodology. But until that is proven, Kaitai gets its respects. Congrats.
+
+::
+
+    $ python3 comparison_1_construct.py 
+    Timeit measurements:
+    parsing:           0.11128296688201953779 sec/call
+    parsing compiled:  0.03584803763701347595 sec/call
+    building:          0.13664396251898142109 sec/call
+
+    $ python3 comparison_1_kaitai.py 
+    Timeit measurements:
+    parsing:           0.02402530668998952013 sec/call
