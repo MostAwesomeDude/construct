@@ -425,7 +425,7 @@ class Construct(object):
         except NotImplementedError:
             if recursive:
                 raise NotImplementedError
-            emitted = "%s._parse(io, this, None)" % (self._decompile(code, recursive=True), )
+            emitted = "%s._parse(io, this, '(???)')" % (self._decompile(code, recursive=True), )
             code.parsercache[id(self)] = emitted
             return emitted
 
@@ -965,9 +965,9 @@ class BytesInteger(Construct):
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value is not an integer")
+            raise IntegerError("value %r is not an integer" % (obj,))
         if obj < 0 and not self.signed:
-            raise IntegerError("value is negative, but field is not signed", obj)
+            raise IntegerError("value %r is negative, but field is not signed" % (obj,))
         length = self.length
         if callable(length):
             length = length(context)
@@ -1043,9 +1043,9 @@ class BitsInteger(Construct):
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value is not an integer")
+            raise IntegerError("value %r is not an integer" % (obj,))
         if obj < 0 and not self.signed:
-            raise IntegerError("value is negative, but field is not signed", obj)
+            raise IntegerError("value %r is negative, but field is not signed" % (obj,))
         length = self.length
         if callable(length):
             length = length(context)
