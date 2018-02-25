@@ -644,26 +644,38 @@ class Compiled(Construct):
             parsetime = "failed"
             buildtime = "failed"
             parsetime2 = "failed"
-            buildtime2 = "failed"
+            # buildtime2 = "failed"
 
             sampleobj = self.defersubcon.parse(sampledata)
-            parsetime = timeit(lambda: self.defersubcon.parse(sampledata), number=1000)/1000
-            parsetime = "{:.20f} sec/call".format(parsetime)
+            parsetime = timeit(lambda: self.defersubcon.parse(sampledata), number=1)
+            runs = min(1000, max(1, int(1./parsetime)))
+            if runs > 1:
+                parsetime = timeit(lambda: self.defersubcon.parse(sampledata), number=runs)/runs
+            parsetime = "{:.10f} sec/call".format(parsetime)
 
             self.defersubcon.build(sampleobj)
-            buildtime = timeit(lambda: self.defersubcon.build(sampleobj), number=1000)/1000
-            buildtime = "{:.20f} sec/call".format(buildtime)
+            buildtime = timeit(lambda: self.defersubcon.build(sampleobj), number=1)
+            runs = min(1000, max(1, int(1./buildtime)))
+            if runs > 1:
+                buildtime = timeit(lambda: self.defersubcon.build(sampleobj), number=runs)/runs
+            buildtime = "{:.10f} sec/call".format(buildtime)
 
             obj = self.parse(sampledata)
             assert sampleobj == obj
-            parsetime2 = timeit(lambda: self.parse(sampledata), number=1000)/1000
-            parsetime2 = "{:.20f} sec/call".format(parsetime2)
+            parsetime2 = timeit(lambda: self.parse(sampledata), number=1)
+            runs = min(1000, max(1, int(1./parsetime2)))
+            if runs > 1:
+                parsetime2 = timeit(lambda: self.parse(sampledata), number=runs)/runs
+            parsetime2 = "{:.10f} sec/call".format(parsetime2)
 
-            sampledata = self.defersubcon.build(sampleobj)
-            data = self.build(sampleobj)
-            assert sampledata == data
-            buildtime2 = timeit(lambda: self.build(sampleobj), number=1000)/1000
-            buildtime2 = "{:.20f} sec/call".format(buildtime2)
+            # sampledata = self.defersubcon.build(sampleobj)
+            # data = self.build(sampleobj)
+            # assert sampledata == data
+            # buildtime2 = timeit(lambda: self.build(sampleobj), number=1)
+            # runs = min(1000, max(1, int(1./buildtime2)))
+            # if runs > 1:
+            #     buildtime2 = timeit(lambda: self.build(sampleobj), number=runs)/runs
+            # buildtime2 = "{:.10f} sec/call".format(buildtime2)
 
         except Exception:
             pass
@@ -673,10 +685,11 @@ class Compiled(Construct):
             "parsing:           {}",
             "parsing compiled:  {}",
             "building:          {}",
-            "building compiled: {}",
+            # "building compiled: {}",
             ""
         ]
-        results = "\n".join(lines).format(parsetime, parsetime2, buildtime, buildtime2)
+        results = "\n".join(lines).format(parsetime, parsetime2, buildtime)
+        # results = "\n".join(lines).format(parsetime, parsetime2, buildtime, buildtime2)
 
         if filename:
             with open(filename, "wt") as f:
