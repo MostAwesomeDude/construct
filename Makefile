@@ -26,7 +26,7 @@ html:
 	cd docs; make html
 
 installdeps:
-	apt-get install python3.6 python2.7 pypy --upgrade
+	apt-get install python3.6 python2.7 pypy python3-sphinx --upgrade
 	python3.6 -m pip install pytest pytest-benchmark pytest-cov cython enum34 numpy arrow --upgrade
 	python2.7 -m pip install pytest pytest-benchmark pytest-cov cython enum34 numpy arrow --upgrade
 	pypy      -m pip install pytest pytest-benchmark pytest-cov cython enum34       arrow --upgrade
