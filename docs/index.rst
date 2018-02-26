@@ -2,34 +2,32 @@
 
     <div style="float:right; margin:1em; padding: 1em 2em 1em 2em; background-color: #efefef;
         border-radius: 5px; border-width: thin; border-style: dotted; border-color: #0C3762;">
-    <strong>Quick Links</strong><br/>
+    <strong>Chapters</strong><br/>
     <ul>
     <li><a href="#user-guide" title="Jump to user guide">User Guide</a></li>
     <li><a href="#api-reference" title="Jump to API reference">API Reference</a></li>
+    </ul>
+    <strong>External links</strong><br/>
+    <ul>
+    <li><a href="https://github.com/construct/construct">Code repository</a></li>
+    <li><a href="https://travis-ci.org/construct/construct/builds">Travis CI</a></li>
     <li><a href="https://github.com/construct/construct/issues">Questions on Issues</a></li>
     <li><a href="https://gitter.im/construct-construct/Lobby">Questions on Chat</a></li>
-    <li><a href="https://pypi.org/project/construct/">Download</a></li>
+    <li><a href="https://pypi.org/project/construct/">Downloads</a></li>
     </ul>
-    <hr/>
-    <a href="https://github.com/construct/construct" target="_blank">
-    <img style="display: block; margin-left: auto; margin-right: auto"
-    src="_static/logo-sketch-120.png" title="GitHub repository"/></a>
-    <br/>
+    <strong>Personal sites</strong><br/>
     <a href="https://arekbulski.github.io/" target="_blank">
     <img style="display: block; margin-left: auto; margin-right: auto"
-    src="_static/constructocatab120p.png" title="Arkadiusz'es personal site"/></a>
+    src="_static/arkadiusz-120.png" title="Arkadiusz'es personal site"/></a>
     <br/>
     <a href="http://tomerfiliba.com" target="_blank">
     <img style="display: block; margin-left: auto; margin-right: auto"
-    src="_static/fish-text-black.png" title="Tomer's Blog"/></a>
+    src="_static/tomer-57.png" title="Tomer's Blog"/></a>
     <br/>
-    <a href="http://github.com/construct/construct" target="_blank">
-    <img style="display: block; margin-left: auto; margin-right: auto; opacity: 0.7; width: 70px;"
-    src="_static/github-logo.png" title="Github Repo"/></a>
+    <a href="https://corbinsimpson.com/" target="_blank">
+    <img style="display: block; margin-left: auto; margin-right: auto"
+    src="_static/corbin-100.png" title="Corbin's Blog"/></a>
     <br/>
-    <a href="http://travis-ci.org/construct/construct" target="_blank">
-    <img src="https://travis-ci.org/construct/construct.png?branch=master"
-    style="display: block; margin-left: auto; margin-right: auto;" title="Travis CI status"></a>
     </div>
 
 
