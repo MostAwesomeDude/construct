@@ -744,9 +744,14 @@ class Bytes(Construct):
         >>> d.sizeof()
         4
 
-        # inside Struct, preceded by `field1` member
-        >>> d = Bytes(this.field1)
-        ...
+        >>> d = Struct(
+        ...     "length" / Int8ub,
+        ...     "data" / Bytes(this.length),
+        ... )
+        >>> d.parse(b"\x04beef")
+        Container(length=4)(data=b'beef')
+        >>> d.sizeof()
+        construct.core.SizeofError: cannot calculate size, key not found in context
     """
 
     def __init__(self, length):
