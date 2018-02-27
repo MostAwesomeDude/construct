@@ -13,8 +13,8 @@ class Probe(Construct):
     Example::
 
         >>> d = Struct(
-        ...     "count"/Byte,
-        ...     "items"/Byte[this.count],
+        ...     "count" / Byte,
+        ...     "items" / Byte[this.count],
         ...     Probe(lookahead=32),
         ... )
         >>> d.parse(b"\x05abcde\x01\x02\x03")
@@ -35,8 +35,8 @@ class Probe(Construct):
     ::
 
         >>> d = Struct(
-        ...     "count"/Byte,
-        ...     "items"/Byte[this.count],
+        ...     "count" / Byte,
+        ...     "items" / Byte[this.count],
         ...     Probe(this.count),
         ... )
         >>> d.parse(b"\x05abcde\x01\x02\x03")
@@ -54,9 +54,6 @@ class Probe(Construct):
         self.into = into
         self.lookahead = lookahead
 
-    def __repr__(self):
-        return "<%s>" % (self.__class__.__name__, )
-
     def _parse(self, stream, context, path):
         self.printout(stream, context, path)
 
@@ -68,7 +65,7 @@ class Probe(Construct):
         return 0
 
     def _emitparse(self, code):
-        return "print(%r)" % (self.func,) if self.func else "print(this)"
+        return "print(%s)" % (self.into,) if self.into else "print(this)"
 
     def printout(self, stream, context, path):
         print("--------------------------------------------------")
@@ -125,7 +122,7 @@ class Debugger(Subconstruct):
             return self.subcon._parse(stream, context, path)
         except Exception:
             self.retval = NotImplemented
-            self.handle_exc(path, msg="(you can set self.retval, which will be returned)")
+            self.handle_exc(path, msg="(you can set self.retval, which will be returned from method)")
             if self.retval is NotImplemented:
                 raise
             else:
@@ -139,9 +136,12 @@ class Debugger(Subconstruct):
 
     def _sizeof(self, context, path):
         try:
-            self.subcon._sizeof(context, path)
+            return self.subcon._sizeof(context, path)
         except Exception:
             self.handle_exc(path)
+
+    def _emitparse(self, code):
+        return self.subcon._compileparse(code)
 
     def handle_exc(self, path, msg=None):
         print("--------------------------------------------------")

@@ -16,8 +16,8 @@ The Probe simply dumps information to the screen. It will help you inspect the c
 ::
 
     >>> d = Struct(
-    ...     "count"/Byte,
-    ...     "items"/Byte[this.count],
+    ...     "count" / Byte,
+    ...     "items" / Byte[this.count],
     ...     Probe(lookahead=32),
     ... )
     >>> d.parse(b"\x05abcde\x01\x02\x03")
@@ -40,8 +40,8 @@ There is also feature that looks inside the context and extracts a part of it us
 ::
 
     >>> d = Struct(
-    ...     "count"/Byte,
-    ...     "items"/Byte[this.count],
+    ...     "count" / Byte,
+    ...     "items" / Byte[this.count],
     ...     Probe(this.count),
     ... )
     >>> d.parse(b"\x05abcde\x01\x02\x03")

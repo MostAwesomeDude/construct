@@ -1197,18 +1197,15 @@ def test_indexing():
     assert d.sizeof() == 4
 
 def test_probe():
-    Probe().parse(b"")
-    Probe().build(None)
-    Struct(Probe()).parse(b"")
-    Struct(Probe()).build({})
+    common(Probe(), b"", None, 0)
+    common(Probe(lookahead=32), b"", None, 0)
 
-    Probe(lookahead=32).parse(b"")
-    Probe(lookahead=32).build(None)
-    Struct(Probe(lookahead=32)).parse(b"")
-    Struct(Probe(lookahead=32)).build({})
+    common(Struct(Probe()), b"", {}, 0)
+    common(Struct(Probe(lookahead=32)), b"", {}, 0)
+    common(Struct("value"/Computed(7), Probe(this.value)), b"", dict(value=7), 0)
 
-    Struct("value"/Computed(7), Probe(this.value)).parse(b"")
-    Struct("value"/Computed(7), Probe(this.value)).build({})
+def test_debugger():
+    common(Debugger(Byte), b"\xff", 255, 1)
 
 def test_operators():
     common(Struct("new" / ("old" / Byte)), b"\x01", Container(new=1), 1)

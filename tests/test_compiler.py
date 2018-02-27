@@ -84,6 +84,7 @@ example = Struct(
     "rebuild" / Rebuild(Byte, len_(this.array1)),
     "default" / Default(Byte, 0),
     Check(this.num == 0),
+    "check" / Check(this.num == 0),
     "error0" / If(False, Error),
     "focusedseq1" / FocusedSeq(1, Const(bytes(4)), Byte),
     "focusedseq2" / FocusedSeq("num", Const(bytes(4)), "num"/Byte),
@@ -154,8 +155,10 @@ example = Struct(
 
     # adapters and validators
 
-    # Probe(),
-    # Debugger
+    Probe(),
+    # fails due to unknown causes (Expected an identifier or literal)
+    # "probe" / Probe(),
+    "debugger" / Debugger(Byte),
 
     "items1" / Computed([1,2,3]),
     "len_" / Computed(len_(this.items1)),
