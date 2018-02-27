@@ -1,3 +1,6 @@
+help:
+	cat Makefile
+
 test:
 	python3.6 -m pytest --benchmark-disable --showlocals
 	python2.7 -m pytest --benchmark-disable --showlocals
