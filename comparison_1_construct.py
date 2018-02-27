@@ -16,8 +16,16 @@ d = Struct(
     )),
 )
 
-d = d.compile()
+
 data = d.build(dict(count=1000, items=[dict(num1=0, num2=0, flags=dict(bool1=True, num4=0), fixedarray1=[0,0,0], name1=u"...", name2=u"...") for i in range(1000)]))
 with open("blob","wb") as f:
     f.write(data)
+
+# from timeit import timeit
+# d.parse(data)
+# parsetime = timeit(lambda: d.parse(data), number=1000)/1000
+# print("Timeit measurements:")
+# print("parsing:           {:.10f} sec/call".format(parsetime))
+
+d = d.compile()
 print(d.benchmark(data))

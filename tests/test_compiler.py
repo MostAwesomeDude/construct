@@ -3,11 +3,6 @@
 from declarativeunittest import *
 from construct import *
 from construct.lib import *
-import sys
-
-
-runningplain = "--benchmark-skip" in sys.argv
-pytestmark = skipif(not supportscompiler or runningplain, reason="compiler and bytes() requirements, and also `make plain` mode")
 
 
 embeddedswitch1 = EmbeddedSwitch(
@@ -39,6 +34,7 @@ example = Struct(
     "bitsinteger0" / Bitwise(BitsInteger(0)),
     "bitsinteger1" / Bitwise(BitsInteger(8, swapped=False)),
     "bitsinteger2" / Bitwise(BitsInteger(8, swapped=True)),
+    # - unknown cause (SizeofError: cannot calculate size, key not found in context)
     # "bitsinteger3" / Bitwise(BitsInteger(this.num)),
     "varint" / VarInt,
     "byte" / Byte,
@@ -88,10 +84,10 @@ example = Struct(
     "error0" / If(False, Error),
     "focusedseq1" / FocusedSeq(1, Const(bytes(4)), Byte),
     "focusedseq2" / FocusedSeq("num", Const(bytes(4)), "num"/Byte),
-    "pickled_data" / Computed(b'\x80\x03]q\x00()K\x01G@\x02ffffff}q\x01]q\x02C\x01\x00q\x03X\x00\x00\x00\x00q\x04e.'),
+    "pickled_data" / Computed(b"(lp0\n(taI1\naF2.3\na(dp1\na(lp2\naS'1'\np3\naS''\np4\na."),
     "pickled" / RestreamData(this.pickled_data, Pickled),
     "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
-    "numpy1" / RestreamData(this.numpy_data, Numpy),
+    "numpy1" / If(supportsnumpy, RestreamData(this.numpy_data, Numpy)),
     "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
     "namedtuple2" / RestreamData(b"\x00\x00\x00", NamedTuple("coord", "x y z", GreedyRange(Byte))),
     "namedtuple3" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
@@ -156,13 +152,13 @@ example = Struct(
     # adapters and validators
 
     Probe(),
-    # fails due to unknown causes (Expected an identifier or literal)
+    # - fails due to unknown causes (Expected an identifier or literal)
     # "probe" / Probe(),
     "debugger" / Debugger(Byte),
 
     "items1" / Computed([1,2,3]),
     "len_" / Computed(len_(this.items1)),
-    # faulty list_ implementation, compiles into correct code
+    # - faulty list_ implementation, compiles into correct code
     # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
     # "repeatuntil3" / RepeatUntil(list_[-1] == 0, Byte),
 )
@@ -171,10 +167,10 @@ exampledata = bytes(1000)
 
 def test_example_benchmark():
     d = cached("example-compiled", lambda: example.compile())
-    d.source_tofile("example_compiled.pyx")
+    d.source_tofile("example_compiled.py")
     d.benchmark(exampledata, "example_benchmark.txt")
 
-def test_benchmark():
+def test_compiled_benchmark():
     d = Struct().compile()
     d.benchmark(b"")
     d = Struct(Error).compile()

@@ -332,12 +332,9 @@ class Construct(object):
 
         :returns: Compiled instance
 
-        :raises ConstructError: requirements not met, Python 3.6 and Cython
+        :raises ConstructError: mismatched Construct version used
         :raises NotImplementedError: raised for any reason
         """
-
-        if not supportscompiler:
-            raise ConstructError("compiler requires Python 3.6 and Cython")
 
         code = CodeGen()
         code.append("""
@@ -347,16 +344,13 @@ class Construct(object):
             from struct import pack, unpack, calcsize
             import collections
             import itertools
-            import builtins
 
-            if not supportscompiler:
-                raise ConstructError("compiler requires Python 3.6 and Cython")
             if not version_string == %r:
                 raise ConstructError("compiled scheme requires same Construct version")
 
-            cdef bytes read_bytes(io, int count):
+            def read_bytes(io, count):
                 if not count >= 0: raise StreamError
-                cdef bytes data = io.read(count)
+                data = io.read(count)
                 if not len(data) == count: raise StreamError
                 return data
             def restream(data, func):
@@ -364,11 +358,14 @@ class Construct(object):
             def reuse(obj, func):
                 return func(obj)
 
-            len_ = builtins.len
-            sum_ = builtins.sum
-            min_ = builtins.min
-            max_ = builtins.max
-            abs_ = builtins.abs
+            if PY3:
+                import builtins as __builtins__
+            # - above fixes Python 3 but not 2 or pypy
+            # len_ = __builtins__.len
+            # sum_ = __builtins__.sum
+            # min_ = __builtins__.min
+            # max_ = __builtins__.max
+            # abs_ = __builtins__.abs
         """ % (version_string, ))
         code.append("""
             def parseall(io, this):
@@ -378,13 +375,11 @@ class Construct(object):
         source = code.toString()
 
         modulename = "construct_compile_target_"+hexlify(os.urandom(8)).decode()
-        import pyximport
-        pyximport.install()
-
-        with open(modulename+".pyx", "wt") as f:
+        modulefilename = modulename + ".py"
+        with open(modulefilename, "wt") as f:
             f.write(source)
         module = __import__(modulename)
-        os.remove(modulename+".pyx")
+        os.remove(modulefilename)
 
         compiled = module.compiled
         compiled.source = source
@@ -622,7 +617,7 @@ class Compiled(Construct):
 
     def source_tofile(self, filename):
         """
-        Saves the `source` field into a text file (preferably with .pyx extension).
+        Saves the `source` field into a text file (preferably with .py extension).
         """
         with open(filename, "wt") as f:
             f.write(self.source)
@@ -1007,7 +1002,7 @@ class BytesInteger(Construct):
             raise SizeofError("cannot calculate size, key not found in context")
 
     def _emitparse(self, code):
-        return "int.from_bytes(read_bytes(io, %s), byteorder=%r, signed=%s)" % (self.length, 'little' if self.swapped else 'big', self.signed)
+        return "bytes2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed)
 
 
 class BitsInteger(Construct):
@@ -1408,11 +1403,11 @@ class StringPaddedTrimmed(Construct):
     def _emitparse(self, code):
         unitsize, finalunit = calculateunits(self.encoding)
         code.append("""
-            cdef bytes parse_paddedtrimmedstring(io, int length, int unitsize, bytes finalunit):
+            def parse_paddedtrimmedstring(io, length, unitsize, finalunit):
                 if length % unitsize:
                     raise StringError
-                cdef bytes obj = read_bytes(io, length)
-                cdef int endsat = len(obj)
+                obj = read_bytes(io, length)
+                endsat = len(obj)
                 while endsat-unitsize >= 0 and obj[endsat-unitsize:endsat] == finalunit:
                     endsat -= unitsize
                 return obj[:endsat]
@@ -1450,9 +1445,8 @@ class StringNullTerminated(Construct):
     def _emitparse(self, code):
         unitsize, finalunit = calculateunits(self.encoding)
         code.append("""
-            cdef bytes parse_nullterminatedstring(io, int unitsize, bytes finalunit):
-                cdef list result = []
-                cdef bytes unit
+            def parse_nullterminatedstring(io, unitsize, finalunit):
+                result = []
                 while True:
                     unit = read_bytes(io, unitsize)
                     if unit == finalunit:
@@ -2499,7 +2493,7 @@ class Computed(Construct):
         return 0
 
     def _emitparse(self, code):
-        return "%s" % (self.func,)
+        return "%r" % (self.func,)
 
 
 @singleton
@@ -3754,7 +3748,7 @@ class Padded(Subconstruct):
     """
 
     def __init__(self, length, subcon, pattern=b"\x00"):
-        if not isinstance(pattern, bytes) or len(pattern) != 1:
+        if not isinstance(pattern, bytestringtype) or len(pattern) != 1:
             raise PaddingError("pattern expected to be bytes of length 1")
         super(Padded, self).__init__(subcon)
         self.length = length
@@ -3820,7 +3814,7 @@ class Aligned(Subconstruct):
     """
 
     def __init__(self, modulus, subcon, pattern=b"\x00"):
-        if not isinstance(pattern, bytes) or len(pattern) != 1:
+        if not isinstance(pattern, bytestringtype) or len(pattern) != 1:
             raise PaddingError("pattern expected to be bytes character")
         super(Aligned, self).__init__(subcon)
         self.modulus = modulus
@@ -4426,7 +4420,7 @@ class RestreamData(Subconstruct):
         return 0
 
     def _emitparse(self, code):
-        return "restream(%s, lambda io: %s)" % (self.datafunc, self.subcon._compileparse(code), )
+        return "restream(%r, lambda io: %s)" % (self.datafunc, self.subcon._compileparse(code), )
 
 
 class TransformData(Subconstruct):
@@ -4585,8 +4579,8 @@ class Checksum(Construct):
         hash2 = self.hashfunc(self.bytesfunc(context))
         if hash1 != hash2:
             raise ChecksumError("wrong checksum, read %r, computed %r" % (
-                hash1 if not isinstance(hash1,bytes) else binascii.hexlify(hash1),
-                hash2 if not isinstance(hash2,bytes) else binascii.hexlify(hash2), ))
+                hash1 if not isinstance(hash1,bytestringtype) else binascii.hexlify(hash1),
+                hash2 if not isinstance(hash2,bytestringtype) else binascii.hexlify(hash2), ))
         return hash1
 
     def _build(self, obj, stream, context, path):

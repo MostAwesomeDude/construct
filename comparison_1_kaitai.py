@@ -32,6 +32,8 @@ class Comparison1Kaitai(KaitaiStruct):
             self.num1 = self._io.read_u1()
             self.num2_lo = self._io.read_u2le()
             self.num2_hi = self._io.read_u1()
+            # tweaked
+            self.num2
             self.flags = self._root.Item.Flags(self._io, self, self._root)
             self.fixedarray1 = [None] * (3)
             for i in range(3):
@@ -69,4 +71,4 @@ Comparison1Kaitai.from_bytes(data)
 from timeit import timeit
 parsetime = timeit(lambda: Comparison1Kaitai.from_bytes(data), number=1000)/1000
 print("Timeit measurements:")
-print("parsing:           {:.20f} sec/call".format(parsetime))
+print("parsing:           {:.10f} sec/call".format(parsetime))

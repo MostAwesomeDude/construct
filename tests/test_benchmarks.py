@@ -4,11 +4,6 @@ from declarativeunittest import *
 from construct import *
 from construct.lib import *
 from test_compiler import example, exampledata
-import sys
-
-
-runningplain = "--benchmark-skip" in sys.argv
-pytestmark = skipif(not supportscompiler or runningplain, reason="compiler and bytes() requirements, and also `make plain` mode")
 
 
 def test_class_bytes_parse(benchmark):
@@ -401,29 +396,47 @@ def test_class_focusedseq_build(benchmark):
 
 def test_class_pickled_parse(benchmark):
     d = Pickled
-    benchmark(d.parse, b'\x80\x03]q\x00()K\x01G@\x02ffffff}q\x01]q\x02C\x01\x00q\x03X\x00\x00\x00\x00q\x04e.')
+    if PY3:
+        data = b'\x80\x03]q\x00()K\x01G@\x02ffffff}q\x01]q\x02C\x01\x00q\x03X\x00\x00\x00\x00q\x04e.'
+    else:
+        data = b"(lp0\n(taI1\naF2.3\na(dp1\na(lp2\naS'1'\np3\naS''\np4\na."
+    benchmark(d.parse, data)
 
 def test_class_pickled_parse_compiled(benchmark):
     d = Pickled
     d = d.compile()
-    benchmark(d.parse, b'\x80\x03]q\x00()K\x01G@\x02ffffff}q\x01]q\x02C\x01\x00q\x03X\x00\x00\x00\x00q\x04e.')
+    if PY3:
+        data = b'\x80\x03]q\x00()K\x01G@\x02ffffff}q\x01]q\x02C\x01\x00q\x03X\x00\x00\x00\x00q\x04e.'
+    else:
+        data = b"(lp0\n(taI1\naF2.3\na(dp1\na(lp2\naS'1'\np3\naS''\np4\na."
+    benchmark(d.parse, data)
 
 def test_class_pickled_build(benchmark):
     d = Pickled
-    benchmark(d.build, d.parse(b'\x80\x03]q\x00()K\x01G@\x02ffffff}q\x01]q\x02C\x01\x00q\x03X\x00\x00\x00\x00q\x04e.'))
+    if PY3:
+        data = b'\x80\x03]q\x00()K\x01G@\x02ffffff}q\x01]q\x02C\x01\x00q\x03X\x00\x00\x00\x00q\x04e.'
+    else:
+        data = b"(lp0\n(taI1\naF2.3\na(dp1\na(lp2\naS'1'\np3\naS''\np4\na."
+    benchmark(d.build, d.parse(data))
 
+@xfail(not supportsnumpy, reason="requires numpy")
 def test_class_numpy_parse(benchmark):
     d = Numpy
-    benchmark(d.parse, b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00")
+    data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+    benchmark(d.parse, data)
 
+@xfail(not supportsnumpy, reason="requires numpy")
 def test_class_numpy_parse_compiled(benchmark):
     d = Numpy
     d = d.compile()
-    benchmark(d.parse, b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00")
+    data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+    benchmark(d.parse, data)
 
+@xfail(not supportsnumpy, reason="requires numpy")
 def test_class_numpy_build(benchmark):
     d = Numpy
-    benchmark(d.build, d.parse(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"))
+    data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
+    benchmark(d.build, d.parse(data))
 
 def test_class_namedtuple1_parse(benchmark):
     t = collections.namedtuple("coord", "x y z")
@@ -525,17 +538,17 @@ def test_class_union_build(benchmark):
     benchmark(d.build, dict(chars=[0]*8))
 
 def test_class_select_parse(benchmark):
-    d = Select(Int32ub, CString(encoding="utf8"))
+    d = Select(Int32ub, CString("utf8"))
     benchmark(d.parse, bytes(20))
 
 def test_class_select_parse_compiled(benchmark):
-    d = Select(Int32ub, CString(encoding="utf8"))
+    d = Select(Int32ub, CString("utf8"))
     d = d.compile()
     benchmark(d.parse, bytes(20))
 
 def test_class_select_build(benchmark):
-    d = Select(Int32ub, CString(encoding="utf8"))
-    benchmark(d.build, "")
+    d = Select(Int32ub, CString("utf8"))
+    benchmark(d.build, u"...")
 
 # - combines performance of other fields
 # Optional

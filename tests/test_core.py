@@ -1444,11 +1444,6 @@ def test_this_expresion_compare_container():
     )
     common(st, b"\x01", dict(flags=Container(a=True)), 1)
 
-@xfail(not supportscompiler, reason="compiler requires Python 3.6")
-def test_empty_struct_compiled():
-    Struct().compile()
-    Sequence().compile()
-
 @xfail(reason="unknown causes")
 def test_pickling_constructs():
     # it seems there are few problems:

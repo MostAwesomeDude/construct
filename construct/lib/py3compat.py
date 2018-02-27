@@ -10,14 +10,8 @@ try:
     supportsnumpy = True
 except ImportError:
     supportsnumpy = False
-try:
-    import cython
-    supportscython = True
-except ImportError:
-    supportscython = False
 
 supportskwordered = PY >= (3,6) or PYPY
-supportscompiler = PY >= (3,6) and supportscython
 supportsintenum = PY >= (3,4)
 supportsintflag = PY >= (3,6)
 
@@ -77,6 +71,9 @@ if PY3:
         if isinstance(data, str):
             return repr(data)[1:-1]
 
+    import builtins
+    bytes = builtins.bytes
+
 
 else:
     #: PY2: str unicode
@@ -130,3 +127,9 @@ else:
             return repr(data)[1:-1]
         if isinstance(data, unicode):
             return repr(data)[2:-1]
+
+    def bytes(countorseq=0):
+        if isinstance(countorseq, integertypes):
+            return b"\x00" * countorseq
+        else:
+            return b"".join(int2byte(x) for x in countorseq)

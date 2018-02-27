@@ -26,7 +26,6 @@ setup(
     install_requires = [],
     extras_require = {
         "extras": [
-            "cython",
             "enum34",
             "numpy",
             "arrow",
