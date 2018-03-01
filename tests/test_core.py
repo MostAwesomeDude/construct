@@ -1012,6 +1012,20 @@ def test_transformdata():
     d = TransformData(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
     common(d, b"\x00"*2, b"\x00"*16, 2)
 
+def test_transformdata_issue_676():
+    d = Struct(
+         'inner1' / BitStruct(
+             'a' / Default(BitsInteger(8), 0),
+         ),
+         'inner2' / BitStruct(
+             'a' / Default(BitsInteger(lambda this: 8), 0),
+         ),
+         Probe(),
+         Check(this.inner1.a == 0),
+         Check(this.inner2.a == 0),
+    )
+    d.build({})
+
 def test_restreamed():
     assert Restreamed(Int16ub, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
     assert Restreamed(Int16ub, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"

@@ -4382,7 +4382,7 @@ class TransformData(Subconstruct):
         if len(data) != self.encodeamount:
             raise StreamError("encoding transformation produced wrong amount of bytes")
         _write_stream(stream, data)
-        return obj
+        return buildret
 
     def _sizeof(self, context, path):
         return self.encodeamount
