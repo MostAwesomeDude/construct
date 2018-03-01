@@ -8,6 +8,7 @@ from construct import *
 import time
 
 
+# use core Timestamp
 class EpochTimeStampAdapter(Adapter):
     """ Convert epoch timestamp <-> localtime """
     def _decode(self, obj, context, path):

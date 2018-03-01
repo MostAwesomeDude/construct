@@ -9,6 +9,7 @@ from construct import *
 
 
 def elf32_body(ElfInt16, ElfInt32):
+
     elf32_program_header = Struct(
         "type" / Enum(ElfInt32,
             NULL = 0,
@@ -18,7 +19,6 @@ def elf32_body(ElfInt16, ElfInt32):
             NOTE = 4,
             SHLIB = 5,
             PHDR = 6,
-            default = Pass,
         ),
         "offset" / ElfInt32,
         "vaddr" / ElfInt32,
@@ -31,7 +31,8 @@ def elf32_body(ElfInt16, ElfInt32):
     
     elf32_section_header = Struct(
         "name_offset" / ElfInt32,
-        "name" / Pointer(this._.strtab_data_offset + this.name_offset, CString(encoding="utf8")),
+        "name" / Pointer(this._.strtab_data_offset + this.name_offset, 
+            CString("utf8")),
         "type" / Enum(ElfInt32, 
             NULL = 0,
             PROGBITS = 1,
@@ -45,7 +46,6 @@ def elf32_body(ElfInt16, ElfInt32):
             REL = 9,
             SHLIB = 10,
             DYNSYM = 11,
-            default = Pass,
         ),
         "flags" / ElfInt32,
         "addr" / ElfInt32,
@@ -55,7 +55,8 @@ def elf32_body(ElfInt16, ElfInt32):
         "info" / ElfInt32,
         "align" / ElfInt32,
         "entry_size" / ElfInt32,
-        "data" / Pointer(this.offset, Bytes(this.size)),
+        "data" / Pointer(this.offset, 
+            Bytes(this.size)),
     )
     
     return Struct(
@@ -75,7 +76,6 @@ def elf32_body(ElfInt16, ElfInt32):
             Motorolla88K = 5,
             Intel860 = 7,
             MIPS = 8,
-            default = Pass,
         ),
         "version"              / ElfInt32,
         "entry"                / ElfInt32,
@@ -91,11 +91,14 @@ def elf32_body(ElfInt16, ElfInt32):
         
         # calculate the string table data offset (pointer arithmetics)
         # ugh... anyway, we need it in order to read the section names, later on
-        "strtab_data_offset" / Pointer(this.sh_offset + this.strtab_section_index * this.sh_entry_size + 16, ElfInt32),
+        "strtab_data_offset" / Pointer(this.sh_offset + this.strtab_section_index * this.sh_entry_size + 16, 
+            ElfInt32),
         
-        "program_table" / Pointer(this.ph_offset, elf32_program_header[this.ph_count]),
+        "program_table" / Pointer(this.ph_offset, 
+            elf32_program_header[this.ph_count]),
         
-        "sections" / Pointer(this.sh_offset, elf32_section_header[this.sh_count]),
+        "sections" / Pointer(this.sh_offset, 
+            elf32_section_header[this.sh_count]),
     )
 
 elf32_file = Struct(

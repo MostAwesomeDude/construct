@@ -17,7 +17,9 @@ coord = Struct(
     "y" / Int32ub,
 )
 
-compression_method = "compression_method" / Enum(Byte, deflate = 0, default=Pass)
+compression_method = "compression_method" / Enum(Byte, 
+    deflate = 0,
+)
 
 #===============================================================================
 # 11.2.3: PLTE - Palette
@@ -88,7 +90,6 @@ srgb_info = "rendering_intent" / Enum(Byte,
     relative_colorimetric = 1,
     saturation = 2,
     absolute_colorimetric = 3,
-    default = Pass,
 )
 
 #===============================================================================
@@ -147,7 +148,10 @@ hist_info = "frequency" / Array(this._.length / 2, Int16ub)
 phys_info = "phys_info" / Struct(
     "pixels_per_unit_x" / Int32ub,
     "pixels_per_unit_y" / Int32ub,
-    "unit" / Enum(Byte, unknown = 0, meter = 1, default = Pass),
+    "unit" / Enum(Byte, 
+        unknown = 0, 
+        meter = 1,
+    ),
 )
 
 #===============================================================================
@@ -235,12 +239,11 @@ image_header_chunk = Struct(
         indexed = 3,
         greywithalpha = 4,
         truewithalpha = 6,
-        default = Pass,
     ),
     compression_method,
     # "adaptive filtering with five basic filter types"
-    "filter_method" / Enum(Byte, adaptive5 = 0, default = Pass),
-    "interlace_method" / Enum(Byte, none = 0, adam7 = 1, default = Pass),
+    "filter_method" / Enum(Byte, adaptive5 = 0),
+    "interlace_method" / Enum(Byte, none = 0, adam7 = 1),
     "crc" / Int32ub,
 )
 

@@ -13,12 +13,14 @@ from construct import *
 import time
 
 
+# code uses linux epoch in microsoft format?
 class UTCTimeStampAdapter(Adapter):
     def _decode(self, obj, context, path):
         return time.ctime(obj)
     def _encode(self, obj, context, path):
         return int(time.mktime(time.strptime(obj)))
 
+# use core Timestamp
 UTCTimeStamp = UTCTimeStampAdapter(Int32ul)
 
 
@@ -37,6 +39,16 @@ class NamedSequence(Adapter):
         self.mapping = mapping
         self.rev_mapping = dict((v, k) for k, v in mapping.items())
 
+    def _decode(self, obj, context, path):
+        obj2 = Container()
+        for i, item in enumerate(obj):
+            if i in self.mapping:
+                name = self.mapping[i]
+            else:
+                name = "%s%d" % (self.prefix, i)
+            setattr(obj2, name, item)
+        return obj2
+
     def _encode(self, obj, context, path):
         obj2 = [None] * len(obj)
         for name, value in obj.items():
@@ -50,16 +62,6 @@ class NamedSequence(Adapter):
             else:
                 raise ValueError("no mapping defined for %r" % (name,))
             obj2[index] = value
-        return obj2
-
-    def _decode(self, obj, context, path):
-        obj2 = Container()
-        for i, item in enumerate(obj):
-            if i in self.mapping:
-                name = self.mapping[i]
-            else:
-                name = "%s%d" % (self.prefix, i)
-            setattr(obj2, name, item)
         return obj2
 
 
@@ -88,17 +90,13 @@ msdos_header = Struct(
 )
 
 symbol_table = "symbol_table" / Struct(
-    "name" / String(8, encoding="utf8"),
+    "name" / String(8, "utf8"),
     "value" / Int32ul,
     "section_number" / Enum(
-        ExprAdapter(Int16sl,
-            encoder = lambda obj,ctx: obj + 1,
-            decoder = lambda obj,ctx: obj - 1,
-        ),
+        ExprAdapter(Int16sl, obj_-1, obj_+1),
         UNDEFINED = -1,
         ABSOLUTE = -2,
         DEBUG = -3,
-        default = Pass,
     ),
     "complex_type" / Enum(Int8ul,
         NULL = 0,
@@ -125,7 +123,6 @@ symbol_table = "symbol_table" / Struct(
         DWORD = 15,
     ),
     "storage_class" / Enum(Int8ul,
-        END_OF_FUNCTION = 255,
         NULL = 0,
         AUTOMATIC = 1,
         EXTERNAL = 2,
@@ -151,6 +148,7 @@ symbol_table = "symbol_table" / Struct(
         FILE = 103,
         SECTION = 104,
         WEAK_EXTERNAL = 105,
+        END_OF_FUNCTION = 255,
     ),
     "number_of_aux_symbols" / Int8ul,
     "aux_symbols" / Array(this.number_of_aux_symbols, Bytes(18))
@@ -179,7 +177,6 @@ coff_header = Struct(
         SH5= 0x1a8,
         THUMB = 0x1c2,
         WCEMIPSV2 = 0x169,
-        default = Pass,
     ),
     "number_of_sections" / Int16ul,
     "time_stamp" / UTCTimeStamp,
@@ -203,7 +200,8 @@ coff_header = Struct(
         UNIPROCESSOR_ONLY = 0x4000,
         BIG_ENDIAN_MACHINE = 0x8000,
     ),
-    "symbol_table" / Pointer(this.symbol_table_pointer, Array(this.number_of_symbols, symbol_table))
+    "symbol_table" / Pointer(this.symbol_table_pointer, 
+        Array(this.number_of_symbols, symbol_table))
 )
 
 PEPlusField = IfThenElse(this.pe_type == "PE32_plus", Int64ul, Int32ul)
@@ -251,7 +249,6 @@ optional_header = Struct(
         EFI_RUNTIME_DRIVER = 12,
         EFI_ROM = 13,
         XBOX = 14,
-        default = Pass
     ),
     "dll_characteristics" / FlagsEnum(Int16ul,
         NO_BIND = 0x0800,
@@ -265,9 +262,9 @@ optional_header = Struct(
     "loader_flags" / Int32ul,
     "number_of_data_directories" / Int32ul,
 
-    NamedSequence(
+    "data_directories" / NamedSequence(
         Array(this.number_of_data_directories,
-            "data_directories" / Struct(
+            Struct(
                 "address" / Int32ul,
                 "size" / Int32ul,
             )
@@ -293,7 +290,7 @@ optional_header = Struct(
 )
 
 section = "section" / Struct(
-    "name" / String(8, encoding="utf8"),
+    "name" / String(8, "utf8"),
     "virtual_size" / Int32ul,
     "virtual_address" / Int32ul,
     "raw_data_size" / Int32ul,
@@ -375,6 +372,8 @@ pe32_file = "pe32_file" / Struct(
     "_start_of_optional_header" / Tell,
     "optional_header" / optional_header,
     "_end_of_optional_header" / Tell,
-    Padding(lambda ctx: min(0, ctx.coff_header.optional_header_size - ctx._end_of_optional_header + ctx._start_of_optional_header)),
-    "sections" / Array(this.coff_header.number_of_sections, section)
+    # this code is just weird
+    Padding(lambda this: min(0, this.coff_header.optional_header_size - this._end_of_optional_header + this._start_of_optional_header)),
+    "sections" / Array(this.coff_header.number_of_sections, 
+        section),
 )

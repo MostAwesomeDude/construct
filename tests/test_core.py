@@ -605,7 +605,7 @@ def test_pickled():
     data = pickle.dumps(obj)
     common(Pickled, data, obj)
 
-@xfail(not supportsnumpy, reason="numpy is not installed?")
+@xfail(not supportsnumpy, reason="numpy not installed?")
 def test_numpy():
     import numpy
     obj = numpy.array([1,2,3], dtype=numpy.int64)

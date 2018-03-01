@@ -29,7 +29,7 @@ gif_logical_screen = Struct(
     "bgcolor_index" / Int8ul,
     "pixel_aspect_ratio" / Int8ul,
     "palette" / If(this.flags.global_color_table,
-        Array(lambda ctx: 2**(ctx.flags.global_color_table_bpp + 1),
+        Array(lambda this: 2**(this.flags.global_color_table_bpp + 1),
             Struct(
                 "R" / Int8ul,
                 "G" / Int8ul,
@@ -100,7 +100,7 @@ image_descriptor = Struct(
         "local_color_table_bpp" / BitsInteger(3),
     ),
     "palette" / If(this.flags.local_color_table,
-        Array(lambda ctx: 2**(ctx.flags.local_color_table_bpp + 1),
+        Array(lambda this: 2**(this.flags.local_color_table_bpp + 1),
             Struct(
                 "R" / Int8ul,
                 "G" / Int8ul,

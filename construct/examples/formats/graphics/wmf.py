@@ -92,7 +92,6 @@ wmf_record = Struct(
         StretchBlt = 0x0B23,
         StretchDIB = 0x0F43,
         TextOut = 0x0521,
-        default = Pass,
     ),
     "params" / Array(this.size - 3, Int16ul),
 )

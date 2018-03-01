@@ -101,7 +101,6 @@ record_type = Enum(Int32ul,
     STROKEANDFILLPATH = 63,
     STROKEPATH = 64,
     WIDENPATH = 66,
-    default = Pass,
 )
 
 generic_record = Struct(
@@ -144,5 +143,6 @@ header_record = Struct(
 
 emf_file = Struct(
     "header_record" / header_record,
-    "records" / Array(this.header_record.num_of_records - 1, generic_record),
+    "records" / Array(this.header_record.num_of_records - 1, 
+        generic_record),
 )

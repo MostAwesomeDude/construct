@@ -28,11 +28,11 @@ uncompressed_pixels = Switch(this.bpp,
 # pixels: Run Length Encoding (RLE) 8 bit
 #===============================================================================
 class RunLengthAdapter(Adapter):
-    def _encode(self, obj, context, path):
-        return len(obj), obj[0]
     def _decode(self, obj, context, path):
         length,value = obj
         return [value] * length
+    def _encode(self, obj, context, path):
+        return len(obj), obj[0]
 
 # WARNING: not used anywhere
 rle8pixel = "rle8pixel" / RunLengthAdapter(Byte >> Byte)
@@ -50,7 +50,6 @@ bitmap_file = Struct(
         v2 = 12,
         v3 = 40,
         v4 = 108,
-        default = Pass,
     ),
     "width" / Int32ul,
     "height" / Int32ul,
@@ -73,7 +72,8 @@ bitmap_file = Struct(
 
     # palette (24 bit has no palette)
     # NOTE: was called "rgb" inside of it
-    "palette" / Array(lambda ctx: 2**ctx.bpp if ctx.bpp <= 8 else 0, Padded(4, Byte[3])),
+    "palette" / Array(lambda ctx: 2**ctx.bpp if ctx.bpp <= 8 else 0, 
+        Padded(4, Byte[3])),
 
     "pixels" / Pointer(this.data_offset,
         Switch(this.compression, {"Uncompressed" : uncompressed_pixels}),
