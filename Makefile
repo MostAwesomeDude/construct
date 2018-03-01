@@ -6,11 +6,6 @@ test:
 	python2.7 -m pytest --benchmark-disable --showlocals
 	pypy      -m pytest --benchmark-disable --showlocals
 
-plain:
-	python3.6 -m pytest --benchmark-skip --showlocals
-	python2.7 -m pytest --benchmark-skip --showlocals
-	pypy      -m pytest --benchmark-skip --showlocals
-
 verbose:
 	python3.6 -m pytest --benchmark-disable --showlocals --verbose
 	python2.7 -m pytest --benchmark-disable --showlocals --verbose
