@@ -49,7 +49,6 @@ def test_class_bitwise2_parse(benchmark):
     d = Bitwise(RepeatUntil(obj_ == 1, Byte))
     benchmark(d.parse, bytes(99)+b"\x01")
 
-@xfail
 def test_class_bitwise2_parse_compiled(benchmark):
     d = Bitwise(RepeatUntil(obj_ == 1, Byte))
     d = d.compile()
@@ -76,7 +75,6 @@ def test_class_bytewise2_parse(benchmark):
     d = Bitwise(Bytewise(RepeatUntil(obj_ == 1, Byte)))
     benchmark(d.parse, bytes(99)+b"\x01")
 
-@xfail
 def test_class_bytewise2_parse_compiled(benchmark):
     d = Bitwise(Bytewise(RepeatUntil(obj_ == 1, Byte)))
     d = d.compile()
@@ -708,7 +706,6 @@ def test_class_bitsswapped2_parse(benchmark):
     d = BitsSwapped(RepeatUntil(obj_ == 1, Byte))
     benchmark(d.parse, bytes(99)+b"\x80")
 
-@xfail
 def test_class_bitsswapped2_parse_compiled(benchmark):
     d = BitsSwapped(RepeatUntil(obj_ == 1, Byte))
     d = d.compile()
@@ -773,7 +770,7 @@ def test_overall_parse(benchmark):
     benchmark(d.parse, exampledata)
 
 def test_overall_parse_compiled(benchmark):
-    d = cached("example-compiled", lambda: example.compile())
+    d = cached("example-compiled", lambda: example.compile("example_compiled.py"))
     benchmark(d.parse, exampledata)
 
 def test_overall_build(benchmark):
@@ -782,6 +779,6 @@ def test_overall_build(benchmark):
     benchmark(d.build, obj)
 
 def test_overall_build_compiled(benchmark):
-    d = cached("example-compiled", lambda: example.compile())
+    d = cached("example-compiled", lambda: example.compile("example_compiled.py"))
     obj = example.parse(exampledata)
     benchmark(d.build, obj)

@@ -8,7 +8,7 @@ Compilation feature
 Overall
 =========
 
-Construct 2.9 adds an experimental feature: compiling user made constructs into much faster (but less feature-rich) code. If you are familiar with Kaitai Struct, an alternative framework to Construct, Kaitai compiles yaml-based schemas into pure Python modules. Construct on the other hand, defines schemas in pure Python and compiles them into pure Python modules. Once you define a construct, you can use it to parse and build blobs without compilation. Compilation has only one purpose: performance. Compiled constructs cannot do anything more than original constructs, in fact, they have restricted capabilities (some classes do not compile, or compile only under certain circumstances).
+Construct 2.9 adds an experimental feature: compiling user made constructs into much faster (but less feature-rich) code. If you are familiar with Kaitai Struct, an alternative framework to Construct, Kaitai compiles yaml-based schemas into pure Python modules. Construct on the other hand, defines schemas in pure Python and compiles them into pure Python modules. Once you define a construct, you can use it to parse and build blobs without compilation. Compilation has only one purpose: performance.
 
 It should be made clear that currently the compiler supports only parsing. Building and sizeof are deferred to original constructs, from which a compiled instance was made. Building support may be added in the future, depending on popularity of this feature. In that sense, perhaps the documentation should use the term "compiled parser" rather than "compiled construct".
 
@@ -22,29 +22,13 @@ Compilation feature requires Construct 2.9, preferrably the newest versio to dat
 Restrictions
 ---------------
 
-.. warning:: These items are (probably) permanent, but feel free to request changes.
-
 Compiled classes only parse faster, building and sizeof defers to core classes
-
-Standard hierarchy exceptions can be raised (core classes are resticted to ConstructError-derivatives)
-
-Lambdas (unlike `this` expressions) are not compilable
 
 Sizeof is applied during compilation (not during parsing and building)
 
-Some classes require fixed-sized subcons (otherwise raise NotImplementedError if compiled)
-
-Some classes require constant selectors like FocusedSeq Union (otherwise raise NotImplementedError if compiled)
-
 Exceptions do not include `path` information
 
-Array does not support indexing feature (unlike GreedyRange and RepeatUntil)
-
-Adapters and validators are in general not compilable
-
-TransformBytes Restreamed are in general not compilable (except Bitwise Bytewise BytesSwapped BitsSwapped)
-
-Checksum LazyBound are not compilable, because they use lambdas (not `this` expressions)
+Struct Sequence FocusedSeq Union do not support `_subcons` in the context
 
 
 Compiling schemas
@@ -55,18 +39,11 @@ Every construct (even those that do not compile) has a parameter-less `compile` 
 >>> st = Struct("num" / Byte)
 >>> st.parse(b"\x01")
 Container(num=1)
->>> st = st.compile()
+>>> st = st.compile(filename="copyforinspection.py")
 >>> st.parse(b"\x01")
 Container(num=1)
 
-Compiled instance has a unique `source` field that holds the generated code as a string and also has a unique method `source_tofile` that saves the generated source code to a file, for your inspection for example. You can also then import such a module from a Python script.
-
->>> st.source
-"... schema parsing code ..."
->>> st.source_tofile("schema1.py")
->>> import schema1
-
-Performance boost can be easily measured. This method also happens to be testing the correctness of the compiled parser, by making sure that both `parse` and `build` return the same results.
+Performance boost can be easily measured. This method also happens to be testing the correctness of the compiled parser, by making sure that both original and compiled instance parse into same results.
 
 >>> print(st.benchmark(sampledata))
 Timeit measurements:
@@ -187,98 +164,6 @@ Building two identical dictionaries is slower than building just one. Struct mai
 This expressions (not lambdas) are expensive to compute in regular code but something like "this.field" in a compiled code is merely one object field lookup. Same applies to `len_ obj_ list_` expressions since they share the implementation with `this` expression.
 
 Container is an implementation of so called AttrDict. It captures access to its attributes (field in this.field) and treats it as dictionary key access (this.field becomes this["field"]). However, due to internal CPython drawbacks, capturing attribute access involves some red tape, unlike accessing keys, which is done directly. Therefore compiled Struct emits lines that assign to Container keys, not attributes.
-
-Second example, discussing decompiled instances:
-
-::
-
-    Struct(
-        "field1" / Int8ub,
-        "field2" / If(this.field1 == 0, Int8ub),
-        "field3" / If(this.field1 == 0, RawCopy(Int8ub)),
-        "field4" / RawCopy(Int8ub),
-        "field5" / RawCopy(GreedyRange(Int8ub)),
-    )
-
-::
-
-    decompiled_4 = Decompiled(lambda io,this: unpack('>B', read_bytes(io, 1))[0])
-    decompiled_2 = RawCopy(decompiled_4)
-    decompiled_5 = RawCopy(decompiled_4)
-    decompiled_7 = GreedyRange(decompiled_4)
-    decompiled_6 = RawCopy(decompiled_7)
-    def parse_struct_1(io, this):
-        this = Container(_ = this)
-        try:
-            this['field1'] = unpack('>B', read_bytes(io, 1))[0]
-            this['field2'] = (unpack('>B', read_bytes(io, 1))[0]) if ((this.field1 == 0)) else (None)
-            this['field3'] = (decompiled_2._parse(io, this, None)) if ((this.field1 == 0)) else (None)
-            this['field4'] = decompiled_5._parse(io, this, None)
-            this['field5'] = decompiled_6._parse(io, this, None)
-            pass
-        except StopIteration:
-            pass
-        del this['_']
-        return this
-    def parseall(io, this):
-        return parse_struct_1(io, this)
-    compiledschema = Compiled(None, None, parseall)
-
-Regular constructs use a different model than generated code. In regular code, every subcon is an instance of Construct class, so to sub-parse, outer construct calls subcon._parse(), that is a method on another instance. In genereted code, subcon parser is a Python expression (one-liner), that gets embedded in outer construct's parser, which usually is also a Python expression. This eliminates an overhead of a function call. For example, IfThenElse and FormatField both compile into expressions, one embedded into the other.
-
-Not all constructs have compilable parsers. Those instances that can be represented by a Python expression are called "compilable", like FormatField and Bytes. Those that can be represented by a re-created core class are called "decompilable", like GreedyRange and RawCopy. Almost all classes are either of the two. Few classes are neither, like Compressed and Restreamed, and therefore cannot exist in compiled code. The reason for those "decompilable" classes is that they either have too much code or do too heavy work, to justify writing compiled parsers for them.
-
-If a compilable instance gets compiled (eg. FormatField inside IfThenElse) it tries to obtain a Python expression of its subcon and embeds one expression inside another, and if that fails (eg. RawCopy inside IfThenElse), it tries to obtain a decompiled version, and embeds its _parse method inside outer expression.
-
-If a decompilable instance gets compiled (eg. GreedyRange inside RawCopy) it tries to obtain a decompiled version of subcon, and embeds one ctor inside another, and if that fails (eg. FormatField inside GreedyRange), it tries to obtain a compiled parser (an expression) and builds a Decompiled instance that is a lightweight wrapper, and embeds that instance inside a ctor.
-
-In summary, compilable instances prefer compilable subcons, and decompilable instances prefer decompilable subcons. Bridging is possible both ways, but involves some wrappers. Even tho the wrappers are lightweight, compiler attemps to maximize efficiency. This also solves the mystery of last line creating a Compiled instance. Module must expose a Construct instance, not an expression or a function.
-
-Third example, discussing compiler using a cache:
-
-::
-
-    inner = Struct(
-        "innerfield1" / Int8ub,
-    )
-    Struct(
-        "field1" / inner,
-        "field2" / inner,
-        "field3" / RawCopy(Int8ub),
-        "field4" / RawCopy(Int8ub),
-    )
-
-::
-
-    def parse_struct_2(io, this):
-        this = Container(_ = this)
-        try:
-            this['innerfield1'] = unpack('>B', read_bytes(io, 1))[0]
-        except StopIteration:
-            pass
-        del this._
-        return this
-    decompiled_5 = Decompiled(lambda io,this: unpack('>B', read_bytes(io, 1))[0])
-    decompiled_3 = RawCopy(decompiled_5)
-    decompiled_6 = RawCopy(decompiled_5)
-    def parse_struct_1(io, this):
-        this = Container(_ = this)
-        try:
-            this['field1'] = parse_struct_2(io, this)
-            this['field2'] = parse_struct_2(io, this)
-            this['field3'] = decompiled_3._parse(io, this, None)
-            this['field4'] = decompiled_6._parse(io, this, None)
-        except StopIteration:
-            pass
-        del this['_']
-        return this
-    def parseall(io, this):
-        return parse_struct_1(io, this)
-    compiledschema = Compiled(None, None, parseall)
-
-Compiler caches compilation results of both compilable and decompilable instances. This has the benefit of generating less code (where same function or same Construct instance can be used more than once), thus increasing efficiency of CPU cache. Compilable instance (like Struct) sometimes appends to generated code an entire function and results/caches that function name. Decompilable instance appends one line to generated code, assigning a Construct instance to some random name, and results/caches that name. Simple instances like FormatField simply result/cache an expression.
-
-Example shows that "inner" struct is used twice, and so is "parse_struct_2", and since Byte is a singleton, so is "decompiled_5".
 
 
 Empirical evidence

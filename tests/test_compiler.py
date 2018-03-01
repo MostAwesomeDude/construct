@@ -166,8 +166,7 @@ exampledata = bytes(1000)
 
 
 def test_example_benchmark():
-    d = cached("example-compiled", lambda: example.compile())
-    d.source_tofile("example_compiled.py")
+    d = cached("example-compiled", lambda: example.compile("example_compiled.py"))
     d.benchmark(exampledata, "example_benchmark.txt")
 
 def test_compiled_benchmark():

@@ -10,4 +10,3 @@ Core API: Abstract classes
 .. autoclass:: construct.Tunnel
 .. autoclass:: construct.Compiled
 .. autoclass:: construct.CompilableMacro
-.. autoclass:: construct.Decompiled

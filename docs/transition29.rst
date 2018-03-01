@@ -2,7 +2,7 @@
 Transition to 2.9
 =================
 
-.. warning:: Construct is undergoing heavy changes at the moment, expect unstable API for about a month.
+.. warning:: Construct is undergoing heavy changes at the moment, expect unstable API until further notice.
 
 Overall
 =======
@@ -19,9 +19,9 @@ All constructs: `parse build sizeof` methods take context entries ONLY as keywor
 
 All constructs: operator * can be used for docstrings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
 
-All constructs added `compile` method, and `Compiled` class added `benchmark` method (`see tutorial page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
+All constructs added `compile` and `benchmark` methods (`see tutorial page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
 
-Compiled CompilableMacro Decompiled added (used internally)
+Compiled CompilableMacro added (used internally)
 
 String* require explicit encodings, all of them support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
