@@ -284,6 +284,23 @@ def test_enum_issue_298():
     )
     common(st, b"\x01", dict(flag=True), 1)
 
+def test_enum_issue_677():
+    d = Enum(Byte, one=1)
+    common(d, b"\xff", 255, 1)
+    common(d, b"\x01", EnumIntegerString.new(1, "one"), 1)
+    assert isinstance(d.parse(b"\x01"), EnumIntegerString)
+    d = Enum(Byte, one=1).compile()
+    common(d, b"\xff", 255, 1)
+    common(d, b"\x01", EnumIntegerString.new(1, "one"), 1)
+    assert isinstance(d.parse(b"\x01"), EnumIntegerString)
+
+    d = Struct("e" / Enum(Byte, one=1))
+    assert str(d.parse(b"\x01")) == 'Container: \n    e = (enum) one 1'
+    assert str(d.parse(b"\xff")) == 'Container: \n    e = (enum) (unknown) 255'
+    d = Struct("e" / Enum(Byte, one=1)).compile()
+    assert str(d.parse(b"\x01")) == 'Container: \n    e = (enum) one 1'
+    assert str(d.parse(b"\xff")) == 'Container: \n    e = (enum) (unknown) 255'
+
 def test_flagsenum():
     d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
     common(d, b"\x03", Container(one=True)(two=True)(four=False)(eight=False), 1)

@@ -195,13 +195,18 @@ class Container(dict):
         return "".join(parts)
 
     @recursion_lock()
-    def __str__(self, indentation="\n    "):
+    def __str__(self):
         printingcap = 64
+        indentation = "\n    "
         text = ["Container: "]
         for k,v in self.items():
             if not isinstance(k,str) or not k.startswith("_"):
                 text.extend([indentation, str(k), " = "])
-                if isinstance(v, stringtypes):
+                if v.__class__.__name__ == "EnumInteger":
+                    text.append("(enum) (unknown) %s" % (v, ))
+                elif v.__class__.__name__ == "EnumIntegerString":
+                    text.append("(enum) %s %s" % (v, v.intvalue, ))
+                elif isinstance(v, stringtypes):
                     if len(v) <= printingcap or globalfullprinting:
                         text.append("%s (total %d)" % (reprbytes(v), len(v)))
                     else:

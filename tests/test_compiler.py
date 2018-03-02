@@ -55,8 +55,10 @@ example = Struct(
     "greedystring2" / Prefixed(Byte, GreedyString(encoding="utf8")),
 
     "flag" / Flag,
-    "enum" / Enum(Byte, zero=0),
-    "flagsenum" / FlagsEnum(Byte, zero=0, one=1),
+    "enum1" / Enum(Byte, zero=0),
+    "enum2" / Enum(Byte),
+    "flagsenum1" / FlagsEnum(Byte, zero=0, one=1),
+    "flagsenum2" / FlagsEnum(Byte),
     "mapping" / Mapping(Byte, {"zero":0}),
 
     "struct" / Struct("field" / Byte),

@@ -1541,10 +1541,25 @@ class Flag(Construct):
         return "(read_bytes(io, 1) != b'\\x00')"
 
 
-class IntegerString(str):
+class EnumInteger(int):
     """Used internally."""
+    pass
+
+
+class EnumIntegerString(str):
+    """Used internally."""
+
+    def __repr__(self):
+        return "EnumIntegerString.new(%s, %s)" % (self.intvalue, str.__repr__(self), )
+
     def __int__(self):
         return self.intvalue
+
+    @staticmethod
+    def new(intvalue, stringvalue):
+        ret = EnumIntegerString(stringvalue)
+        ret.intvalue = intvalue
+        return ret
 
 
 class Enum(Adapter):
@@ -1597,23 +1612,19 @@ class Enum(Adapter):
         for enum in merge:
             for enumentry in enum:
                 mapping[enumentry.name] = enumentry.value
-        self.encmapping = {k:v for k,v in mapping.items()}
-        self.decmapping = {v:k for k,v in mapping.items()}
+        self.encmapping = {EnumIntegerString.new(v,k):v for k,v in mapping.items()}
+        self.decmapping = {v:EnumIntegerString.new(v,k) for k,v in mapping.items()}
 
     def __getattr__(self, name):
         if name in self.encmapping:
-            retobj = IntegerString(name)
-            retobj.intvalue = self.encmapping[name]
-            return retobj
+            return self.decmapping[self.encmapping[name]]
         raise AttributeError
 
     def _decode(self, obj, context, path):
         try:
-            retobj = IntegerString(self.decmapping[obj])
-            retobj.intvalue = obj
-            return retobj
+            return self.decmapping[obj]
         except KeyError:
-            return obj
+            return EnumInteger(obj)
 
     def _encode(self, obj, context, path):
         try:
@@ -1626,11 +1637,15 @@ class Enum(Adapter):
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
         code.append("%s = %r" % (fname, self.decmapping, ))
-        return "%s[%s]" % (fname, self.subcon._compileparse(code), )
+        return "reuse(%s, lambda x: %s.get(x, EnumInteger(x)))" % (self.subcon._compileparse(code), fname, )
 
 
 class BitwisableString(str):
     """Used internally."""
+
+    # def __repr__(self):
+    #     return "BitwisableString(%s)" % (str.__repr__(self), )
+
     def __or__(self, other):
         return BitwisableString("{}|{}".format(self, other))
 
