@@ -1829,20 +1829,21 @@ class Struct(Construct):
         super(Struct, self).__init__()
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
+        self._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
 
     def __getattr__(self, name):
-        for sc in self.subcons:
-            if sc.name == name:
-                while isinstance(sc, Renamed):
-                    sc = sc.subcon
-                return sc
+        if name in self._subcons:
+            sc = self._subcons[name]
+            while isinstance(sc, Renamed):
+                sc = sc.subcon
+            return sc
         raise AttributeError
 
     def _parse(self, stream, context, path):
         obj = Container()
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         for sc in self.subcons:
             try:
                 subobj = sc._parse(stream, context, path)
@@ -1857,7 +1858,7 @@ class Struct(Construct):
         if obj is None:
             obj = Container()
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -1878,7 +1879,7 @@ class Struct(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -1962,20 +1963,21 @@ class Sequence(Construct):
         super(Sequence, self).__init__()
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
+        self._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
 
     def __getattr__(self, name):
-        for sc in self.subcons:
-            if sc.name == name:
-                while isinstance(sc, Renamed):
-                    sc = sc.subcon
-                return sc
+        if name in self._subcons:
+            sc = self._subcons[name]
+            while isinstance(sc, Renamed):
+                sc = sc.subcon
+            return sc
         raise AttributeError
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         for i,sc in enumerate(self.subcons):
             try:
                 subobj = sc._parse(stream, context, path)
@@ -1990,7 +1992,7 @@ class Sequence(Construct):
         if obj is None:
             obj = ListContainer([None for sc in self.subcons])
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         retlist = ListContainer()
         for i,(sc,subobj) in enumerate(zip(self.subcons, obj)):
             try:
@@ -2007,7 +2009,7 @@ class Sequence(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -2710,18 +2712,19 @@ class FocusedSeq(Construct):
         self.parsebuildfrom = parsebuildfrom
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
+        self._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
 
     def __getattr__(self, name):
-        for sc in self.subcons:
-            if sc.name == name:
-                while isinstance(sc, Renamed):
-                    sc = sc.subcon
-                return sc
+        if name in self._subcons:
+            sc = self._subcons[name]
+            while isinstance(sc, Renamed):
+                sc = sc.subcon
+            return sc
         raise AttributeError
 
     def _parse(self, stream, context, path):
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         parsebuildfrom = self.parsebuildfrom
         if callable(parsebuildfrom):
             parsebuildfrom = parsebuildfrom(context)
@@ -2740,7 +2743,7 @@ class FocusedSeq(Construct):
 
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         parsebuildfrom = self.parsebuildfrom
         if callable(parsebuildfrom):
             parsebuildfrom = parsebuildfrom(context)
@@ -2763,7 +2766,7 @@ class FocusedSeq(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -3156,19 +3159,20 @@ class Union(Construct):
         self.parsefrom = parsefrom
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
+        self._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
 
     def __getattr__(self, name):
-        for sc in self.subcons:
-            if sc.name == name:
-                while isinstance(sc, Renamed):
-                    sc = sc.subcon
-                return sc
+        if name in self._subcons:
+            sc = self._subcons[name]
+            while isinstance(sc, Renamed):
+                sc = sc.subcon
+            return sc
         raise AttributeError
 
     def _parse(self, stream, context, path):
         obj = Container()
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         fallback = _tell_stream(stream)
         forwards = {}
         for i,sc in enumerate(self.subcons):
@@ -3189,7 +3193,7 @@ class Union(Construct):
 
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
-        context._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        context._subcons = self._subcons
         context.update(obj)
         for sc in self.subcons:
             if sc.flagbuildnone:
