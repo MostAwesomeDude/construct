@@ -203,14 +203,14 @@ def test_str_repr_recursive():
     assert repr(c) == "Container(a=1)(b=2)(c=<recursion detected>)"
 
 def test_str_fullprinting():
-    c = Container(data=b"\x01\x02\x034567890")
-    assert str(c) == "Container: \n    data = \\x01\\x02\\x034567890 (total 10)"
-    c = Container(data=u"\x01\x02\x034567890")
-    assert str(c) == "Container: \n    data = \\x01\\x02\\x034567890 (total 10)"
-    c = Container(data=b"\x01"*1024)
-    assert str(c) == "Container: \n    data = \\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01... (truncated, total 1024)"
-    c = Container(data=u"\x01"*1024)
-    assert str(c) == "Container: \n    data = \\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01... (truncated, total 1024)"
+    c = Container(data=b"1234567890")
+    assert str(c) == "Container: \n    data = b'1234567890' (total 10)"
+    c = Container(data=u"1234567890")
+    assert str(c) == "Container: \n    data = u'1234567890' (total 10)"
+    c = Container(data=b"12345678901234567890")
+    assert str(c) == "Container: \n    data = b'1234567890123456'... (truncated, total 20)"
+    c = Container(data=u"12345678901234567890")
+    assert str(c) == "Container: \n    data = u'1234567890123456'... (truncated, total 20)"
 
 def test_len_bool():
     c = Container(a=1)(b=2)(c=3)(d=4)

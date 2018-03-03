@@ -64,12 +64,19 @@ if PY3:
         """Iterates though b'...' string yielding (0 through 255) integers."""
         return data
 
-    def reprbytes(data):
-        """Trims b- prefix and both apostrophies."""
+    def reprstring(data):
+        """Ensures there is b- u- prefix before the string."""
         if isinstance(data, bytes):
-            return repr(data)[2:-1]
+            return repr(data)
         if isinstance(data, str):
-            return repr(data)[1:-1]
+            return 'u' + repr(data)
+
+    def trimstring(data):
+        """Trims b- u- prefix"""
+        if isinstance(data, bytes):
+            return repr(data)[1:]
+        if isinstance(data, str):
+            return repr(data)
 
     import builtins
     bytes = builtins.bytes
@@ -121,12 +128,19 @@ else:
         """Iterates though b'...' string yielding (0 through 255) integers."""
         return (ord(c) for c in data)
 
-    def reprbytes(data):
-        """Trims b- prefix and both apostrophies."""
+    def reprstring(data):
+        """Ensures there is b- u- prefix before the string."""
         if isinstance(data, str):
-            return repr(data)[1:-1]
+            return 'b' + repr(data)
         if isinstance(data, unicode):
-            return repr(data)[2:-1]
+            return repr(data)
+
+    def trimstring(data):
+        """Trims b- u- prefix"""
+        if isinstance(data, str):
+            return repr(data)
+        if isinstance(data, unicode):
+            return repr(data)[1:]
 
     def bytes(countorseq=0):
         if isinstance(countorseq, integertypes):

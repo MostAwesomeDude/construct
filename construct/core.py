@@ -3052,9 +3052,7 @@ class Hex(Adapter):
     """
     def _decode(self, obj, context, path):
         if isinstance(obj, integertypes):
-            obj = HexDisplayedInteger(obj)
-            obj.fmtstr = "0%sX" % (2 * self.subcon._sizeof(context, path))
-            return obj
+            return HexDisplayedInteger.new(obj, "0%sX" % (2 * self.subcon._sizeof(context, path)))
         if isinstance(obj, bytestringtype):
             return HexDisplayedBytes(obj)
         if isinstance(obj, dict):

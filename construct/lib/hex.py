@@ -7,18 +7,24 @@ class HexDisplayedInteger(integertypes[0]):
     def __str__(self):
         return "0x" + format(self, self.fmtstr).upper()
 
+    @staticmethod
+    def new(intvalue, fmtstr):
+        obj = HexDisplayedInteger(intvalue)
+        obj.fmtstr = fmtstr
+        return obj
+
 class HexDisplayedBytes(bytestringtype):
     """Used internally."""
     def __str__(self):
         if not hasattr(self, "render"):
-            self.render = "unhexlify('{}')".format(reprbytes(binascii.hexlify(self)))
+            self.render = "unhexlify(%s)" % (trimstring(binascii.hexlify(self)), )
         return self.render
 
 class HexDisplayedDict(dict):
     """Used internally."""
     def __str__(self):
         if not hasattr(self, "render"):
-            self.render = "unhexlify('{}')".format(reprbytes(binascii.hexlify(self["data"])))
+            self.render = "unhexlify(%s)" % (trimstring(binascii.hexlify(self["data"])), )
         return self.render
 
 class HexDumpDisplayedBytes(bytestringtype):

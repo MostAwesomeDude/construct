@@ -196,7 +196,7 @@ class Container(dict):
 
     @recursion_lock()
     def __str__(self):
-        printingcap = 64
+        printingcap = 16
         indentation = "\n    "
         text = ["Container: "]
         for k,v in self.items():
@@ -208,9 +208,9 @@ class Container(dict):
                     text.append("(enum) %s %s" % (v, v.intvalue, ))
                 elif isinstance(v, stringtypes):
                     if len(v) <= printingcap or globalfullprinting:
-                        text.append("%s (total %d)" % (reprbytes(v), len(v)))
+                        text.append("%s (total %d)" % (reprstring(v), len(v)))
                     else:
-                        text.append("%s... (truncated, total %d)" % (reprbytes(v[:printingcap]), len(v)))
+                        text.append("%s... (truncated, total %d)" % (reprstring(v[:printingcap]), len(v)))
                 else:
                     text.append(indentation.join(str(v).split("\n")))
         return "".join(text)
