@@ -21,7 +21,7 @@ benchsave:
 	python3.6 -m pytest --benchmark-enable --benchmark-columns=min,stddev --benchmark-sort=name --benchmark-compare --benchmark-autosave
 
 clean:
-	rm construct_compile_target_*
+	rm -R -f /tmp/construct_compile_targets_*
 
 html:
 	cd docs; make html

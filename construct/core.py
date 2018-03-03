@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct, io, binascii, itertools, collections, pickle, sys, os
+import struct, io, binascii, itertools, collections, pickle, sys, os, tempfile
 
 from construct.lib import *
 from construct.expr import *
@@ -171,6 +171,12 @@ def extractfield(sc):
 #===============================================================================
 # abstract constructs
 #===============================================================================
+
+targets_folder = tempfile.mkdtemp(prefix="construct_compile_targets_")
+sys.path.append(targets_folder)
+sys.dont_write_bytecode = True
+
+
 class Construct(object):
     r"""
     The mother of all constructs.
@@ -380,22 +386,19 @@ class Construct(object):
         """ % (self._compileparse(code),))
         source = code.toString()
 
-        modulename = "construct_compile_target_"+hexlify(os.urandom(8)).decode()
-        modulefilename = modulename + ".py"
+        modulename = hexlify(os.urandom(8)).decode()
+        modulefilename = os.path.join(targets_folder, modulename + ".py")
         with open(modulefilename, "wt") as f:
             f.write(source)
-        if PY3:
-            os.sync()
-        module = __import__(modulename)
-        # os.remove(modulefilename)
-
         if filename:
             with open(filename, "wt") as f:
                 f.write(source)
+        if PY3:
+            os.sync()
 
+        module = __import__(modulename)
         module.linkedinstances = code.linkedinstances
         module.linkedparsers = code.linkedparsers
-
         compiled = module.compiled
         compiled.source = source
         compiled.defersubcon = self
