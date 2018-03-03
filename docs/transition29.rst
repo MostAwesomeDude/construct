@@ -19,7 +19,7 @@ All constructs: `parse build sizeof` methods take context entries ONLY as keywor
 
 All constructs: operator * can be used for docstrings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
 
-All constructs added `compile` and `benchmark` methods (`see tutorial page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
+All constructs: added `compile` and `benchmark` methods (`see tutorial page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
 
 Compiled CompilableMacro added (used internally)
 

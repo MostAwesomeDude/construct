@@ -1578,7 +1578,7 @@ class Enum(Adapter):
     :param \*merge: optional, list of enum.IntEnum and enum.IntFlag instances, to merge labels and values from
     :param \*\*mapping: dict, mapping string names to values
 
-    :raises MappingError: label (during building) or value (during parsing) cannot be translated, and no default was provided
+    :raises MappingError: building from string but no mapping found
 
     Example::
 
@@ -1665,6 +1665,7 @@ class FlagsEnum(Adapter):
     :param \*\*flags: dict, mapping string names to integer values
 
     :raises MappingError: building from object not like: integer string dict
+    :raises MappingError: building from string but no mapping found
 
     Can raise arbitrary exceptions when computing | and & and value is non-integer.
 
@@ -1722,17 +1723,17 @@ class FlagsEnum(Adapter):
                 for name in obj.split("|"):
                     name = name.strip()
                     if name:
-                        flags |= self.flags[name]
+                        flags |= self.flags[name] # KeyError
                 return flags
             if isinstance(obj, dict):
                 flags = 0
                 for name,value in obj.items():
                     if value:
-                        flags |= self.flags[name]
+                        flags |= self.flags[name] # KeyError
                 return flags
             raise MappingError("building failed, unknown object: %r" % (obj,))
         except KeyError:
-            raise MappingError("building failed, unknown object: %r" % (obj,))
+            raise MappingError("building failed, unknown label: %r" % (obj,))
 
     def _emitparse(self, code):
         return "reuse(%s, lambda x: Container(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %s)" % (k,v) for k,v in self.flags.items()), )
@@ -1740,10 +1741,12 @@ class FlagsEnum(Adapter):
 
 class Mapping(Adapter):
     r"""
-    Adapter that maps objects to other objects. Translates objects after parsing parsing and before building. Can for example, be used to translate between enum34 objects and strings, but Enum class supports enum34 already and is recommended.
+    Adapter that maps objects to other objects. Translates objects after parsing and before building. Can for example, be used to translate between enum34 objects and strings, but Enum class supports enum34 already and is recommended.
 
     :param subcon: Construct instance
-    :param mapping: dict, for encoding (building) mapping
+    :param mapping: dict, for encoding (building) mapping, the reversed is used for parsing mapping
+
+    :raises MappingError: parsing or building but no mapping found
 
     Example::
 
@@ -1757,18 +1760,18 @@ class Mapping(Adapter):
 
     def __init__(self, subcon, mapping):
         super(Mapping, self).__init__(subcon)
-        self.decmapping = dict((v,k) for k,v in mapping.items())
+        self.decmapping = {v:k for k,v in mapping.items()}
         self.encmapping = mapping
 
     def _decode(self, obj, context, path):
         try:
-            return self.decmapping[obj]
+            return self.decmapping[obj] # KeyError
         except (KeyError, TypeError):
             raise MappingError("parsing failed, no decoding mapping for %r" % (obj,))
 
     def _encode(self, obj, context, path):
         try:
-            return self.encmapping[obj]
+            return self.encmapping[obj] # KeyError
         except (KeyError, TypeError):
             raise MappingError("building failed, no encoding mapping for %r" % (obj,))
 
