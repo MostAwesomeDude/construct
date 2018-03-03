@@ -191,6 +191,7 @@ class Construct(object):
     * `build_stream`
     * `sizeof`
     * `compile`
+    * `benchmark`
 
     Subclass authors should not override the external methods. Instead, another API is available:
 
@@ -404,10 +405,19 @@ class Construct(object):
         compiled.defersubcon = self
         return compiled
 
-    def _decompile(self, code):
+    def _compileinstance(self, code):
         """Used internally."""
-        code.linkedinstances[id(self)] = extractfield(self)
-        return "linkedinstances[%r]" % id(self)
+        if id(self) in code.linkedinstances:
+            return code.linkedinstances[id(self)]
+
+        code.append("""
+            # linkedinstances[%s] is %r
+        """ % (id(self), self, ))
+
+        field = extractfield(self)
+        code.linkedinstances[id(self)] = field
+        code.linkedparsers[id(self)] = field._parse
+        return "linkedinstances[%s]" % id(self)
 
     def _compileparse(self, code):
         """Used internally."""
@@ -418,8 +428,8 @@ class Construct(object):
             code.parsercache[id(self)] = emitted
             return emitted
         except NotImplementedError:
-            code.linkedparsers[id(self)] = extractfield(self)._parse
-            return "linkedparsers[%r](io, this, '(???)')" % id(self)
+            self._compileinstance(code)
+            return "linkedparsers[%s](io, this, '(???)')" % id(self)
 
     def _compilebuild(self, code):
         """Used internally."""
