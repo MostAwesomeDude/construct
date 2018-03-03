@@ -646,7 +646,7 @@ dns_record_type = Enum(Int16ub,
 )
 
 query_record = Struct(
-    "name" / DnsStringAdapter(RepeatUntil(len_(obj_)==0, PascalString(Byte, encoding="ascii"))),
+    "name" / DnsStringAdapter(RepeatUntil(len_(obj_)==0, PascalString(Byte, "ascii"))),
     "type" / dns_record_type,
     "class" / dns_record_class,
 )
@@ -656,7 +656,7 @@ labelpointer = Struct(
     "islabel" / Computed(this.firstbyte & 0b11000000 == 0),
     "ispointer" / Computed(this.firstbyte & 0b11000000 == 0b11000000),
     Check(this.islabel | this.ispointer),
-    "label" / If(this.islabel, PascalString(Byte, encoding="ascii")),
+    "label" / If(this.islabel, PascalString(Byte, "ascii")),
     "pointer" / If(this.ispointer, Int16ub),
 )
 

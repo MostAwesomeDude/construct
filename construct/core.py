@@ -1375,7 +1375,7 @@ class StringPaddedTrimmed(Construct):
 class StringNullTerminated(Construct):
     """Used internally."""
 
-    def __init__(self, encoding=None):
+    def __init__(self, encoding):
         super(StringNullTerminated, self).__init__()
         self.encoding = selectencoding(encoding)
 

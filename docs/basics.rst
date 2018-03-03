@@ -164,7 +164,7 @@ Operator `>>` can be used to make Sequences, or to merge them.
 Building and parsing
 --------------------
 
->>> seq = Int16ub >> CString(encoding="utf8") >> GreedyBytes
+>>> seq = Int16ub >> CString("utf8") >> GreedyBytes
 >>> seq.parse(b"\x00\x80lalalaland\x00\x00\x00\x00\x00")
 [128, 'lalalaland', b'\x00\x00\x00\x00']
 
