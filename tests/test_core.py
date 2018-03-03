@@ -1238,6 +1238,12 @@ def test_probe():
 def test_debugger():
     common(Debugger(Byte), b"\xff", 255, 1)
 
+def test_repr():
+    assert repr(Byte) == '<FormatField>'
+    assert repr("num"/Byte) == '<Renamed num <FormatField>>'
+    assert repr(Default(Byte, 0)) == '<Default +nonbuild <FormatField>>'
+    assert repr(Struct()) == '<Struct +nonbuild>'
+
 def test_operators():
     common(Struct("new" / ("old" / Byte)), b"\x01", Container(new=1), 1)
     common(Struct(Renamed(Renamed(Byte, newname="old"), newname="new")), b"\x01", Container(new=1), 1)

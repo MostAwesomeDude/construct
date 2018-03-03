@@ -208,7 +208,7 @@ class Construct(object):
         self.flagembedded = False
 
     def __repr__(self):
-        return "<%s: %s%s%s%s>" % (self.__class__.__name__, self.name, " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "", " +docs" if self.docs else "", )
+        return "<%s%s%s%s%s>" % (self.__class__.__name__, " "+self.name if self.name else "", " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "", " +docs" if self.docs else "", )
 
     def __getstate__(self):
         attrs = {}
@@ -554,6 +554,9 @@ class Subconstruct(Construct):
         self.subcon = subcon
         self.flagbuildnone = subcon.flagbuildnone
         self.flagembedded = subcon.flagembedded
+
+    def __repr__(self):
+        return "<%s%s%s%s%s %s>" % (self.__class__.__name__, " "+self.name if self.name else "", " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "", " +docs" if self.docs else "", repr(self.subcon), )
 
     def _parse(self, stream, context, path):
         return self.subcon._parse(stream, context, path)
