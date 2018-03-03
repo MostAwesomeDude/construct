@@ -384,8 +384,10 @@ class Construct(object):
         modulefilename = modulename + ".py"
         with open(modulefilename, "wt") as f:
             f.write(source)
+        if PY3:
+            os.sync()
         module = __import__(modulename)
-        os.remove(modulefilename)
+        # os.remove(modulefilename)
 
         if filename:
             with open(filename, "wt") as f:
