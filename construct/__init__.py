@@ -55,6 +55,7 @@ __all__ = [
     'BytesInteger',
     'ByteSwapped',
     'Bytewise',
+    'CancelParsing',
     'Check',
     'CheckError',
     'Checksum',

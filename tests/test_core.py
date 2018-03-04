@@ -1482,31 +1482,31 @@ def test_pickling_constructs():
 
 def test_exposing_members_attributes():
     d = Struct(
-        "count" / Byte,
         "animal" / Enum(Byte, giraffe=1),
     )
-    assert isinstance(d.animal, Enum)
+    assert isinstance(d.animal, Renamed)
+    assert isinstance(d.animal.subcon, Enum)
     assert d.animal.giraffe == "giraffe"
 
     d = Sequence(
-        "count" / Byte,
         "animal" / Enum(Byte, giraffe=1),
     )
-    assert isinstance(d.animal, Enum)
+    assert isinstance(d.animal, Renamed)
+    assert isinstance(d.animal.subcon, Enum)
     assert d.animal.giraffe == "giraffe"
 
     d = FocusedSeq(0,
         "animal" / Enum(Byte, giraffe=1),
     )
-    assert isinstance(d.animal, Enum)
+    assert isinstance(d.animal, Renamed)
+    assert isinstance(d.animal.subcon, Enum)
     assert d.animal.giraffe == "giraffe"
 
     d = Union(None,
-        "count" / Byte,
         "animal" / Enum(Byte, giraffe=1),
     )
-    assert d.count is Byte
-    assert isinstance(d.count, FormatField)
+    assert isinstance(d.animal, Renamed)
+    assert isinstance(d.animal.subcon, Enum)
     assert d.animal.giraffe == "giraffe"
 
 def test_exposing_members_context():
@@ -1537,3 +1537,16 @@ def test_exposing_members_context():
         Check(lambda this: this._subcons.chars.sizeof() == 4),
     )
     assert d.parse(b"\x01\x02\x03\x04") == dict(chars=[1,2,3,4],data=b"\x01\x02\x03\x04")
+
+def test_parsed_hook():
+    outputs = []
+    def printobj(obj, ctx):
+        outputs.append(obj)
+        if ctx._._index+1 >= 3:
+            raise CancelParsing
+    d = GreedyRange(Struct(
+        "first" / Byte * "docstring" * printobj,
+        "second" / Byte,
+    ))
+    d.parse(b"\x01\xff\x02\xff\x03\xff\x04\xff")
+    assert outputs == [1,2,3]

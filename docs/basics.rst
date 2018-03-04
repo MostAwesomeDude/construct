@@ -161,12 +161,14 @@ Sequences are very similar to Structs, but operate with lists rather than contai
 
 Operator `>>` can be used to make Sequences, or to merge them.
 
+
 Building and parsing
 --------------------
 
 >>> seq = Int16ub >> CString("utf8") >> GreedyBytes
 >>> seq.parse(b"\x00\x80lalalaland\x00\x00\x00\x00\x00")
 [128, 'lalalaland', b'\x00\x00\x00\x00']
+
 
 Nesting and embedding
 ---------------------
@@ -185,7 +187,7 @@ Like Structs, Sequences are compatible with the Embedded wrapper. Embedding one 
 
 
 Repeaters
-=========
+==============
 
 Repeaters, as their name suggests, repeat a given unit for a specified number of times. At this point, we'll only cover static repeaters where count is a constant integer. Meta-repeaters take values at parse/build time from the context and they will be covered in the meta-constructs tutorial. Arrays and GreedyRanges differ from Sequences in that they are homogenous, they process elements of same kind. We have three kinds of repeaters.
 
@@ -212,3 +214,45 @@ b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b'
 
 >>> RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).parse(b"\x01\x00\x00\xff")
 [1, 0, 0]
+
+
+Processing on-the-fly
+==========================
+
+Data can be parsed and processed, that is each item being processed before further items were parsed. Hooks can be attached by either using * operator (safe and recommended) or by overriding `parsed` class attribute.
+
+Repeater classes like GreedyRange support indexing feature, which inserts incremental numbers into the context under `_index` key. If you dont want to process further data, just raise CancelParsing in the processing function.
+
+::
+
+    def printobj(obj, ctx):
+        print(obj)
+        if ctx._._index+1 >= 3:
+            raise CancelParsing
+    st = Struct(
+        "first" / Byte * printobj, # recommended usage
+        "second" / Byte,
+    )
+    # recommended usage
+    d = GreedyRange(st * printobj)
+    # alternative usage
+    d.subcon.first.parsed = printobj
+
+Be careful about attaching hooks to singletons (like Int* Float* VarInt) because singletons are shared, therefore the hooks would effectively be attached to every field that uses them, not just the field where you declare it. Example below shows the UNSAFE code.
+
+The code above is safe, because `d.subcon.first` actually refers to `Renamed` instance, not the singleton that is within it.
+
+::
+
+    # UNSAFE
+    def printobj(obj, ctx):
+        print(obj)
+    d = GreedyRange(Struct(
+        "first" / Byte,  # hooked
+        "second" / Byte, # hooked
+    ))
+    # d.subcon.first is a Renamed instance
+    # d.subcon.first.subcon is the Int8ub singleton
+    d.subcon.first.subcon.parsed = printobj
+    # also hooks the Int8ub singleton
+    Byte.parsed = printobj

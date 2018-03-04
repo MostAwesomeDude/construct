@@ -58,6 +58,8 @@ class RawCopyError(ConstructError):
     pass
 class ChecksumError(ConstructError):
     pass
+class CancelParsing(ConstructError):
+    pass
 
 
 #===============================================================================
@@ -213,6 +215,7 @@ class Construct(object):
         self.docs = ""
         self.flagbuildnone = False
         self.flagembedded = False
+        self.parsed = None
 
     def __repr__(self):
         return "<%s%s%s%s%s>" % (self.__class__.__name__, " "+self.name if self.name else "", " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "", " +docs" if self.docs else "", )
@@ -272,7 +275,16 @@ class Construct(object):
         :raises ConstructError: raised for any reason
         """
         context = Container(**contextkw)
-        return self._parse(stream, context, "(parsing)")
+        try:
+            return self._parsereport(stream, context, "(parsing)")
+        except CancelParsing:
+            pass
+
+    def _parsereport(self, stream, context, path):
+        obj = self._parse(stream, context, path)
+        if self.parsed is not None:
+            self.parsed(obj, context)
+        return obj
 
     def _parse(self, stream, context, path):
         """Override in your subclass."""
@@ -512,17 +524,25 @@ class Construct(object):
 
     __rdiv__ = __rtruediv__
 
-    def __mul__(self, docs):
+    def __mul__(self, other):
         """
-        Used for adding docs (docstrings) to subcons, like "field" / Byte * "see chapter 13".
+        Used for adding docstrings and parsed hooks to subcons, like "field" / Byte * "docstring" * processfunc.
         """
-        return Renamed(self, newdocs=docs)
+        if isinstance(other, stringtypes):
+            return Renamed(self, newdocs=other)
+        if callable(other):
+            return Renamed(self, newparsed=other)
+        raise ConstructError("operator * can only be used with string or lambda")
 
-    def __rmul__(self, docs):
+    def __rmul__(self, other):
         """
-        Used for adding docs (docstrings) to subcons, like "field" / Byte * "see chapter 13".
+        Used for adding docstrings and parsed hooks to subcons, like "field" / Byte * "docstring" * processfunc.
         """
-        return Renamed(self, newdocs=docs)
+        if isinstance(other, stringtypes):
+            return Renamed(self, newdocs=other)
+        if callable(other):
+            return Renamed(self, newparsed=other)
+        raise ConstructError("operator * can only be used with string or lambda")
 
     def __add__(self, other):
         """
@@ -572,7 +592,7 @@ class Subconstruct(Construct):
         return "<%s%s%s%s%s %s>" % (self.__class__.__name__, " "+self.name if self.name else "", " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "", " +docs" if self.docs else "", repr(self.subcon), )
 
     def _parse(self, stream, context, path):
-        return self.subcon._parse(stream, context, path)
+        return self.subcon._parsereport(stream, context, path)
 
     def _build(self, obj, stream, context, path):
         return self.subcon._build(obj, stream, context, path)
@@ -590,7 +610,7 @@ class Adapter(Subconstruct):
     :param subcon: Construct instance
     """
     def _parse(self, stream, context, path):
-        obj = self.subcon._parse(stream, context, path)
+        obj = self.subcon._parsereport(stream, context, path)
         return self._decode(obj, context, path)
 
     def _build(self, obj, stream, context, path):
@@ -1870,10 +1890,7 @@ class Struct(Construct):
 
     def __getattr__(self, name):
         if name in self._subcons:
-            sc = self._subcons[name]
-            while isinstance(sc, Renamed):
-                sc = sc.subcon
-            return sc
+            return self._subcons[name]
         raise AttributeError
 
     def _parse(self, stream, context, path):
@@ -1882,7 +1899,7 @@ class Struct(Construct):
         context._subcons = self._subcons
         for sc in self.subcons:
             try:
-                subobj = sc._parse(stream, context, path)
+                subobj = sc._parsereport(stream, context, path)
                 if sc.name:
                     obj[sc.name] = subobj
                     context[sc.name] = subobj
@@ -2004,10 +2021,7 @@ class Sequence(Construct):
 
     def __getattr__(self, name):
         if name in self._subcons:
-            sc = self._subcons[name]
-            while isinstance(sc, Renamed):
-                sc = sc.subcon
-            return sc
+            return self._subcons[name]
         raise AttributeError
 
     def _parse(self, stream, context, path):
@@ -2016,7 +2030,7 @@ class Sequence(Construct):
         context._subcons = self._subcons
         for i,sc in enumerate(self.subcons):
             try:
-                subobj = sc._parse(stream, context, path)
+                subobj = sc._parsereport(stream, context, path)
                 obj.append(subobj)
                 if sc.name:
                     context[sc.name] = subobj
@@ -2124,7 +2138,7 @@ class Array(Subconstruct):
         obj = ListContainer()
         for i in range(count):
             context._index = i
-            obj.append(self.subcon._parse(stream, context, path))
+            obj.append(self.subcon._parsereport(stream, context, path))
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -2195,7 +2209,7 @@ class GreedyRange(Subconstruct):
             for i in itertools.count():
                 context._index = i
                 fallback = _tell_stream(stream)
-                obj.append(self.subcon._parse(stream, context, path))
+                obj.append(self.subcon._parsereport(stream, context, path))
         except StopIteration:
             pass
         except ExplicitError:
@@ -2257,7 +2271,7 @@ class RepeatUntil(Subconstruct):
         obj = ListContainer()
         for i in itertools.count():
             context._index = i
-            subobj = self.subcon._parse(stream, context, path)
+            subobj = self.subcon._parsereport(stream, context, path)
             obj.append(subobj)
             if predicate(subobj, obj, context):
                 return obj
@@ -2331,15 +2345,16 @@ class Embedded(Subconstruct):
 
 class Renamed(Subconstruct):
     r"""
-    Special wrapper that allows outer Struct or Sequence to see a field as having a name (or a different name). Library classes do not have names (its None). Renamed does not change a field, only wraps it like a candy with a label. Used internally by / and * operators.
+    Special wrapper that allows outer Struct or Sequence to see a field as having a name (or a different name) or having a parsed hook. Library classes do not have names (its None). Renamed does not change a field, only wraps it like a candy with a label. Used internally by / and * operators.
 
     Also this wrapper is responsible for building a path info (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. Fields that are not named do not appear in the path string.
 
     Parsing building and size are deferred to subcon.
 
+    :param subcon: Construct instance
     :param newname: optional, string
     :param newdocs: optional, string
-    :param subcon: Construct instance, field to rename or docstring
+    :param newparsed: optional, lambda
 
     Example::
 
@@ -2347,14 +2362,18 @@ class Renamed(Subconstruct):
         <Renamed: number>
     """
 
-    def __init__(self, subcon, newname=None, newdocs=None):
+    def __init__(self, subcon, newname=None, newdocs=None, newparsed=None):
         super(Renamed, self).__init__(subcon)
         self.name = newname if newname else subcon.name
         self.docs = newdocs if newdocs else subcon.docs
+        self.parsed = newparsed if newparsed else subcon.parsed
+
+    def __getattr__(self, name):
+        return getattr(self.subcon, name)
 
     def _parse(self, stream, context, path):
         path += " -> %s" % (self.name,)
-        return self.subcon._parse(stream, context, path)
+        return self.subcon._parsereport(stream, context, path)
 
     def _build(self, obj, stream, context, path):
         path += " -> %s" % (self.name,)
@@ -2409,7 +2428,7 @@ class Const(Subconstruct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        obj = self.subcon._parse(stream, context, path)
+        obj = self.subcon._parsereport(stream, context, path)
         if obj != self.value:
             raise ConstError("parsing expected %r but parsed %r" % (self.value, obj))
         return obj
@@ -2752,10 +2771,7 @@ class FocusedSeq(Construct):
 
     def __getattr__(self, name):
         if name in self._subcons:
-            sc = self._subcons[name]
-            while isinstance(sc, Renamed):
-                sc = sc.subcon
-            return sc
+            return self._subcons[name]
         raise AttributeError
 
     def _parse(self, stream, context, path):
@@ -2770,7 +2786,7 @@ class FocusedSeq(Construct):
         if isinstance(parsebuildfrom, str):
             index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[parsebuildfrom] # raises KeyError
         for i,sc in enumerate(self.subcons):
-            parseret = sc._parse(stream, context, path)
+            parseret = sc._parsereport(stream, context, path)
             if sc.name:
                 context[sc.name] = parseret
             if i == index:
@@ -3197,10 +3213,7 @@ class Union(Construct):
 
     def __getattr__(self, name):
         if name in self._subcons:
-            sc = self._subcons[name]
-            while isinstance(sc, Renamed):
-                sc = sc.subcon
-            return sc
+            return self._subcons[name]
         raise AttributeError
 
     def _parse(self, stream, context, path):
@@ -3210,7 +3223,7 @@ class Union(Construct):
         fallback = _tell_stream(stream)
         forwards = {}
         for i,sc in enumerate(self.subcons):
-            subobj = sc._parse(stream, context, path)
+            subobj = sc._parsereport(stream, context, path)
             if sc.name:
                 obj[sc.name] = subobj
                 context[sc.name] = subobj
@@ -3337,7 +3350,7 @@ class Select(Construct):
         for sc in self.subcons:
             fallback = _tell_stream(stream)
             try:
-                obj = sc._parse(stream, context, path)
+                obj = sc._parsereport(stream, context, path)
             except ExplicitError:
                 raise
             except ConstructError:
@@ -3446,7 +3459,7 @@ class IfThenElse(Construct):
         if callable(condfunc):
             condfunc = condfunc(context)
         sc = self.thensubcon if condfunc else self.elsesubcon
-        return sc._parse(stream, context, path)
+        return sc._parsereport(stream, context, path)
 
     def _build(self, obj, stream, context, path):
         condfunc = self.condfunc
@@ -3510,7 +3523,7 @@ class Switch(Construct):
         if callable(keyfunc):
             keyfunc = keyfunc(context)
         sc = self.cases.get(keyfunc, self.default)
-        return sc._parse(stream, context, path)
+        return sc._parsereport(stream, context, path)
 
     def _build(self, obj, stream, context, path):
         keyfunc = self.keyfunc
@@ -3711,7 +3724,7 @@ class Padded(Subconstruct):
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
         position1 = _tell_stream(stream)
-        obj = self.subcon._parse(stream, context, path)
+        obj = self.subcon._parsereport(stream, context, path)
         position2 = _tell_stream(stream)
         pad = length - (position2 - position1)
         if pad < 0:
@@ -3779,7 +3792,7 @@ class Aligned(Subconstruct):
         if modulus < 2:
             raise PaddingError("expected modulo 2 or greater")
         position1 = _tell_stream(stream)
-        obj = self.subcon._parse(stream, context, path)
+        obj = self.subcon._parsereport(stream, context, path)
         position2 = _tell_stream(stream)
         pad = -(position2 - position1) % modulus
         _read_stream(stream, pad)
@@ -3893,7 +3906,7 @@ class Pointer(Subconstruct):
         offset = self.offset(context) if callable(self.offset) else self.offset
         fallback = _tell_stream(stream)
         _seek_stream(stream, offset, 2 if offset < 0 else 0)
-        obj = self.subcon._parse(stream, context, path)
+        obj = self.subcon._parsereport(stream, context, path)
         _seek_stream(stream, fallback)
         return obj
 
@@ -3949,7 +3962,7 @@ class Peek(Subconstruct):
     def _parse(self, stream, context, path):
         fallback = _tell_stream(stream)
         try:
-            return self.subcon._parse(stream, context, path)
+            return self.subcon._parsereport(stream, context, path)
         except ExplicitError:
             raise
         except ConstructError:
@@ -4161,7 +4174,7 @@ class RawCopy(Subconstruct):
 
     def _parse(self, stream, context, path):
         offset1 = _tell_stream(stream)
-        obj = self.subcon._parse(stream, context, path)
+        obj = self.subcon._parsereport(stream, context, path)
         offset2 = _tell_stream(stream)
         _seek_stream(stream, offset1)
         data = _read_stream(stream, offset2-offset1)
@@ -4264,11 +4277,11 @@ class Prefixed(Subconstruct):
         self.includelength = includelength
 
     def _parse(self, stream, context, path):
-        length = self.lengthfield._parse(stream, context, path)
+        length = self.lengthfield._parsereport(stream, context, path)
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
         stream2 = io.BytesIO(_read_stream(stream, length))
-        return self.subcon._parse(stream2, context, path)
+        return self.subcon._parsereport(stream2, context, path)
 
     def _build(self, obj, stream, context, path):
         stream2 = io.BytesIO()
@@ -4348,7 +4361,7 @@ class RestreamData(Subconstruct):
         if callable(data):
             data = data(context)
         stream2 = io.BytesIO(data)
-        return self.subcon._parse(stream2, context, path)
+        return self.subcon._parsereport(stream2, context, path)
 
     def _build(self, obj, stream, context, path):
         return obj
@@ -4404,7 +4417,7 @@ class TransformData(Subconstruct):
     def _parse(self, stream, context, path):
         data = self.decodefunc(_read_stream(stream, self.decodeamount))
         stream2 = io.BytesIO(data)
-        obj = self.subcon._parse(stream2, context, path)
+        obj = self.subcon._parsereport(stream2, context, path)
         if stream2.read(1):
             raise StreamError("decoding transformation did not consume all bytes")
         return obj
@@ -4459,7 +4472,7 @@ class Restreamed(Subconstruct):
 
     def _parse(self, stream, context, path):
         stream2 = RestreamedBytesIO(stream, self.decoder, self.decoderunit, self.encoder, self.encoderunit)
-        obj = self.subcon._parse(stream2, context, path)
+        obj = self.subcon._parsereport(stream2, context, path)
         stream2.close()
         return obj
 
@@ -4512,7 +4525,7 @@ class Checksum(Construct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        hash1 = self.checksumfield._parse(stream, context, path)
+        hash1 = self.checksumfield._parsereport(stream, context, path)
         hash2 = self.hashfunc(self.bytesfunc(context))
         if hash1 != hash2:
             raise ChecksumError("wrong checksum, read %r, computed %r" % (
@@ -4606,7 +4619,7 @@ class Rebuffered(Subconstruct):
 
     def _parse(self, stream, context, path):
         self.stream2.substream = stream
-        return self.subcon._parse(self.stream2, context, path)
+        return self.subcon._parsereport(self.stream2, context, path)
 
     def _build(self, obj, stream, context, path):
         self.stream2.substream = stream
@@ -4670,7 +4683,7 @@ class LazyBound(Construct):
 
     def _parse(self, stream, context, path):
         sc = self.subconfunc()
-        return sc._parse(stream, context, path)
+        return sc._parsereport(stream, context, path)
 
     def _build(self, obj, stream, context, path):
         sc = self.subconfunc()

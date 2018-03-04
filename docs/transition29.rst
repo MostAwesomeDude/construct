@@ -17,9 +17,11 @@ General classes
 
 All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*contextkw (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html>`_)
 
-All constructs: operator * can be used for docstrings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
+All constructs: operator * can be used for docstrings and parsed hooks (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
 
 All constructs: added `compile` and `benchmark` methods (`see tutorial page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
+
+All constructs: added `parsed` hook/callback (`see tutorial page <https://construct.readthedocs.io/en/latest/basics.html#processing-on-the-fly>`_)
 
 Compiled CompilableMacro added (used internally)
 
