@@ -6,21 +6,22 @@ from construct.lib import *
 
 
 def test_bytes():
-    common(Bytes(4), b"1234", b"1234", 4)
-    assert Bytes(4).parse(b"12345678") == b"1234"
-    assert raises(Bytes(4).parse, b"") == StreamError
-    assert raises(Bytes(4).build, b"toolong") == StreamError
-    assert Bytes(4).build(1) == b"\x00\x00\x00\x01"
-    assert Bytes(4).build(0x01020304) == b"\x01\x02\x03\x04"
-    assert Bytes(4).sizeof() == 4
+    d = Bytes(4)
+    common(d, b"1234", b"1234", 4)
+    assert d.parse(b"1234567890") == b"1234"
+    assert raises(d.parse, b"") == StreamError
+    assert raises(d.build, b"looooooooooooooong") == StreamError
+    assert d.build(1) == b"\x00\x00\x00\x01"
+    assert d.build(0x01020304) == b"\x01\x02\x03\x04"
 
-    assert Bytes(this.n).parse(b"12345678",n=4) == b"1234"
-    assert Bytes(this.n).build(b"1234",n=4) == b"1234"
-    assert Bytes(this.n).sizeof(n=4) == 4
-    assert Bytes(this.n).build(1, n=4) == b"\x00\x00\x00\x01"
-    assert raises(Bytes(this.n).build, b"", n=4) == StreamError
-    assert raises(Bytes(this.n).build, b"toolong", n=4) == StreamError
-    assert raises(Bytes(this.n).sizeof) == SizeofError
+    d = Bytes(this.n)
+    common(d, b"1234", b"1234", 4, n=4)
+    assert d.parse(b"1234567890",n=4) == b"1234"
+    assert d.build(1, n=4) == b"\x00\x00\x00\x01"
+    assert raises(d.build, b"", n=4) == StreamError
+    assert raises(d.build, b"toolong", n=4) == StreamError
+    assert raises(d.sizeof) == SizeofError
+    assert raises(d.sizeof, n=4) == 4
 
 def test_greedybytes():
     common(GreedyBytes, b"1234", b"1234", SizeofError)
@@ -41,54 +42,34 @@ def test_ints():
     common(Short, b"\x00\xff", 255, 2)
     common(Int, b"\x00\x00\x00\xff", 255, 4)
     common(Long, b"\x00\x00\x00\x00\x00\x00\x00\xff", 255, 8)
-    assert Int8ub.parse(b"\x01") == 0x01
-    assert Int8ub.build(0x01) == b"\x01"
-    assert Int8ub.sizeof() == 1
-    assert Int16ub.parse(b"\x01\x02") == 0x0102
-    assert Int16ub.build(0x0102) == b"\x01\x02"
-    assert Int16ub.sizeof() == 2
-    assert Int32ub.parse(b"\x01\x02\x03\x04") == 0x01020304
-    assert Int32ub.build(0x01020304) == b"\x01\x02\x03\x04"
-    assert Int32ub.sizeof() == 4
-    assert Int64ub.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0102030405060708
-    assert Int64ub.build(0x0102030405060708) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    assert Int64ub.sizeof() == 8
-    assert Int8sb.parse(b"\x01") == 0x01
-    assert Int8sb.build(0x01) == b"\x01"
-    assert Int8sb.sizeof() == 1
-    assert Int16sb.parse(b"\x01\x02") == 0x0102
-    assert Int16sb.build(0x0102) == b"\x01\x02"
-    assert Int16sb.sizeof() == 2
-    assert Int32sb.parse(b"\x01\x02\x03\x04") == 0x01020304
-    assert Int32sb.build(0x01020304) == b"\x01\x02\x03\x04"
-    assert Int32sb.sizeof() == 4
-    assert Int64sb.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0102030405060708
-    assert Int64sb.build(0x0102030405060708) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    assert Int64sb.sizeof() == 8
-    assert Int8ul.parse(b"\x01") == 0x01
-    assert Int8ul.build(0x01) == b"\x01"
-    assert Int8ul.sizeof() == 1
-    assert Int16ul.parse(b"\x01\x02") == 0x0201
-    assert Int16ul.build(0x0201) == b"\x01\x02"
-    assert Int16ul.sizeof() == 2
-    assert Int32ul.parse(b"\x01\x02\x03\x04") == 0x04030201
-    assert Int32ul.build(0x04030201) == b"\x01\x02\x03\x04"
-    assert Int32ul.sizeof() == 4
-    assert Int64ul.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0807060504030201
-    assert Int64ul.build(0x0807060504030201) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    assert Int64ul.sizeof() == 8
-    assert Int8sl.parse(b"\x01") == 0x01
-    assert Int8sl.build(0x01) == b"\x01"
-    assert Int8sl.sizeof() == 1
-    assert Int16sl.parse(b"\x01\x02") == 0x0201
-    assert Int16sl.build(0x0201) == b"\x01\x02"
-    assert Int16sl.sizeof() == 2
-    assert Int32sl.parse(b"\x01\x02\x03\x04") == 0x04030201
-    assert Int32sl.build(0x04030201) == b"\x01\x02\x03\x04"
-    assert Int32sl.sizeof() == 4
-    assert Int64sl.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08") == 0x0807060504030201
-    assert Int64sl.build(0x0807060504030201) == b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    assert Int64sl.sizeof() == 8
+
+    common(Int8ub, b"\x01", 0x01, 1)
+    common(Int16ub, b"\x01\x02", 0x0102, 2)
+    common(Int32ub, b"\x01\x02\x03\x04", 0x01020304, 4)
+    common(Int64ub, b"\x01\x02\x03\x04\x05\x06\x07\x08", 0x0102030405060708, 8)
+
+    common(Int8sb, b"\x01", 0x01, 1)
+    common(Int16sb, b"\x01\x02", 0x0102, 2)
+    common(Int32sb, b"\x01\x02\x03\x04", 0x01020304, 4)
+    common(Int64sb, b"\x01\x02\x03\x04\x05\x06\x07\x08", 0x0102030405060708, 8)
+    common(Int8sb, b"\xff", -1, 1)
+    common(Int16sb, b"\xff\xff", -1, 2)
+    common(Int32sb, b"\xff\xff\xff\xff", -1, 4)
+    common(Int64sb, b"\xff\xff\xff\xff\xff\xff\xff\xff", -1, 8)
+
+    common(Int8ul, b"\x01", 0x01, 1)
+    common(Int16ul, b"\x01\x02", 0x0201, 2)
+    common(Int32ul, b"\x01\x02\x03\x04", 0x04030201, 4)
+    common(Int64ul, b"\x01\x02\x03\x04\x05\x06\x07\x08", 0x0807060504030201, 8)
+
+    common(Int8sl, b"\x01", 0x01, 1)
+    common(Int16sl, b"\x01\x02", 0x0201, 2)
+    common(Int32sl, b"\x01\x02\x03\x04", 0x04030201, 4)
+    common(Int64sl, b"\x01\x02\x03\x04\x05\x06\x07\x08", 0x0807060504030201, 8)
+    common(Int8sl, b"\xff", -1, 1)
+    common(Int16sl, b"\xff\xff", -1, 2)
+    common(Int32sl, b"\xff\xff\xff\xff", -1, 4)
+    common(Int64sl, b"\xff\xff\xff\xff\xff\xff\xff\xff", -1, 8)
 
 def test_ints24():
     common(Int24ub, b"\x01\x02\x03", 0x010203, 3)
@@ -97,16 +78,19 @@ def test_ints24():
     common(Int24sl, b"\xff\xff\xff", -1, 3)
 
 def test_floats():
-    assert Single.build(1.2) == b"?\x99\x99\x9a"
-    assert Double.build(1.2) == b"?\xf3333333"
+    common(Single, b"\x00\x00\x00\x00", 0., 4)
+    common(Single, b"?\x99\x99\x9a", 1.2000000476837158, 4)
+    common(Double, b"\x00\x00\x00\x00\x00\x00\x00\x00", 0., 8)
+    common(Double, b"?\xf3333333", 1.2, 8)
 
 def test_formatfield():
-    common(FormatField("<","L"), b"\x12\x34\x56\x78", 0x78563412, 4)
-    assert raises(FormatField("<","L").parse, b"") == StreamError
-    assert raises(FormatField("<","L").parse, b"\x12\x34\x56") == StreamError
-    assert raises(FormatField("<","L").build, "string not int") == FormatFieldError
-    assert raises(FormatField("<","L").build, 2**100) == FormatFieldError
-    assert raises(FormatField("<","L").build, 9e9999) == FormatFieldError
+    d = FormatField("<","L")
+    common(d, b"\x01\x02\x03\x04", 0x04030201, 4)
+    assert raises(d.parse, b"") == StreamError
+    assert raises(d.parse, b"\x01\x02") == StreamError
+    assert raises(d.build, 2**100) == FormatFieldError
+    assert raises(d.build, 1e9999) == FormatFieldError
+    assert raises(d.build, "string not int") == FormatFieldError
 
 def test_formatfield_ints_randomized():
     for endianess,dtype in itertools.product("<>=","bhlqBHLQ"):
@@ -118,7 +102,7 @@ def test_formatfield_ints_randomized():
             assert d.build(d.parse(data)) == data
 
 def test_formatfield_floats_randomized():
-    # there is a roundoff eror because Python float is a C double
+    # there is a roundoff error because Python float is a C double
     # http://stackoverflow.com/questions/39619636/struct-unpackstruct-packfloat-has-roundoff-error
     # and analog although that was misplaced
     # http://stackoverflow.com/questions/39676482/struct-packstruct-unpackfloat-is-inconsistent-on-py3
@@ -136,18 +120,20 @@ def test_formatfield_floats_randomized():
                 assert d.build(d.parse(b)) == b
 
 def test_bytesinteger():
-    common(BytesInteger(4), b"\x00\x00\x00\xff", 255, 4)
-    common(BytesInteger(4, signed=True), b"\xff\xff\xff\xff", -1, 4)
+    d = BytesInteger(4, signed=True, swapped=False)
+    common(d, b"\x01\x02\x03\x04", 0x01020304, 4)
+    common(d, b"\xff\xff\xff\xff", -1, 4)
     assert raises(BytesInteger(this.missing).sizeof) == SizeofError
     assert raises(BytesInteger(4, signed=False).build, -1) == IntegerError
     common(BytesInteger(0), b"", 0, 0)
 
 def test_bitsinteger():
-    assert BitsInteger(8).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == 255
-    assert BitsInteger(8).build(255) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
-    assert BitsInteger(8).sizeof() == 8
-    assert BitsInteger(8, signed=True).parse(b"\x01\x01\x01\x01\x01\x01\x01\x01") == -1
-    assert BitsInteger(8, signed=True).build(-1) == b"\x01\x01\x01\x01\x01\x01\x01\x01"
+    d = BitsInteger(8)
+    common(d, b"\x01\x01\x01\x01\x01\x01\x01\x01", 255, 8)
+    d = BitsInteger(8, signed=True)
+    common(d, b"\x01\x01\x01\x01\x01\x01\x01\x01", -1, 8)
+    d = BitsInteger(16, swapped=True)
+    common(d, b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01", 0xff00, 16)
     assert raises(BitsInteger(this.missing).sizeof) == SizeofError
     assert raises(BitsInteger(8, signed=False).build, -1) == IntegerError
     common(BitsInteger(0), b"", 0, 0)
@@ -156,7 +142,6 @@ def test_varint():
     common(VarInt, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10", 2**123, SizeofError)
     for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
         assert VarInt.parse(VarInt.build(n)) == n
-        assert len(VarInt.build(n)) >= len("%x" % n)//2
     for n in range(0, 127):
         common(VarInt, int2byte(n), n, SizeofError)
 
@@ -220,6 +205,7 @@ def test_string_encodings():
 def test_flag():
     common(Flag, b"\x00", False, 1)
     common(Flag, b"\x01", True, 1)
+    Flag.parse(b"\xff") == True
 
 def test_enum():
     d = Enum(Byte, one=1, two=2, four=4, eight=8)
@@ -346,21 +332,24 @@ def test_mapping():
 
 def test_struct():
     common(Struct(), b"", Container(), 0)
-    common(Struct("a"/Int16ul, "b"/Byte), b"\x01\x00\x02", Container(a=1,b=2), 3)
+    common(Struct("a"/Int16ub, "b"/Int8ub), b"\x00\x01\x02", Container(a=1,b=2), 3)
     common(Struct("a"/Struct("b"/Byte)), b"\x01", Container(a=Container(b=1)), 1)
-    assert raises(Struct("missingkey"/Byte).build, dict()) == KeyError
-    assert Struct("a"/Byte, "a"/VarInt, "a"/Pass).build(dict(a=1)) == b"\x01\x01"
-    common(Struct(), b"", Container(), 0)
-    common(Struct(Padding(2)), b"\x00\x00", Container(), 2)
+    common(Struct(Const(b"\x00"), Padding(1), Pass, Terminated), bytes(2), {}, 2)
+    assert raises(Struct("missingkey"/Byte).build, {}) == KeyError
     assert raises(Struct(Bytes(this.missing)).sizeof) == SizeofError
+    d = Struct(Computed(7), Const(b"JPEG"), Pass, Terminated)
+    assert d.build(None) == d.build({})
 
 def test_struct_nested_embedded():
-    common(Struct("a"/Byte, "b"/Int16ub, "inner"/Struct("c"/Byte, "d"/Byte)), b"\x01\x00\x02\x03\x04", Container(a=1,b=2,inner=Container(c=3,d=4)), 5)
-    common(Struct("a"/Byte, "b"/Int16ub, Embedded("inner"/Struct("c"/Byte, "d"/Byte))), b"\x01\x00\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 5)
+    d = Struct("a"/Byte, "b"/Int16ub, "inner"/Struct("c"/Byte, "d"/Byte))
+    common(d, b"\x01\x00\x02\x03\x04", Container(a=1,b=2,inner=Container(c=3,d=4)), 5)
+    d = Struct("a"/Byte, "b"/Int16ub, Embedded("inner"/Struct("c"/Byte, "d"/Byte)))
+    common(d, b"\x01\x00\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 5)
 
 @xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_struct_kwctor():
-    common(Struct(a=Byte, b=Byte, c=Byte, d=Byte), b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 4)
+    d = Struct(a=Byte, b=Byte, c=Byte, d=Byte)
+    common(d, b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 4)
 
 def test_struct_proper_context():
     # adjusted to support new embedding semantics
@@ -385,7 +374,6 @@ def test_struct_proper_context():
         "d"/Computed(this.y+4),
     )
     assert d1.parse(b"\x01\x0f") == Container(x=1)(inner=Container(y=15)(a=2)(b=17))(c=4)(d=19)
-    # a-field computed on nested context, merged only after entire inner-struct returns
     assert d2.parse(b"\x01\x0f") == Container(x=1)(y=15)(a=2)(b=17)(c=4)(d=19)
 
 def test_struct_sizeof_context_nesting():
@@ -399,7 +387,7 @@ def test_struct_sizeof_context_nesting():
         Check(this.a == 1),
         Check(this.inner.b == 2),
     )
-    assert st.sizeof() == 0
+    st.sizeof()
 
 def test_struct_issue_566():
     inner = Struct(
@@ -415,46 +403,37 @@ def test_struct_issue_566():
     outer.parse(b'\x01\x02\x03') == Container(a=1)(inner=Container(b=2)(c=3))
     outer.build(Container(a=1)(inner=Container(b=2)(c=3))) == b'\x01\x02\x80\x03\x04'
 
-def test_struct_buildfromnone():
-    d = Struct(Computed(7), Const(b"JPEG"), Pass, Terminated)
-    assert d.build(None) == d.build({})
-
 def test_sequence():
     common(Sequence(), b"", [], 0)
     common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
     common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
+    d = Sequence(Computed(7), Const(b"JPEG"), Pass, Terminated)
+    assert d.build(None) == d.build([None,None,None,None])
 
 def test_sequence_nested_embedded():
     common(Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)), b"\x01\x00\x02\x03\x04", [1,2,[3,4]], 5)
     common(Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))), b"\x01\x00\x02\x03\x04", [1,2,3,4], 5)
 
-def test_sequence_buildfromnone():
-    d = Sequence(Computed(7), Const(b"JPEG"), Pass, Terminated)
-    assert d.build(None) == d.build([None,None,None,None])
-
 def test_array():
     common(Byte[0], b"", [], 0)
+    common(Byte[4], b"1234", [49,50,51,52], 4)
 
-    assert Byte[4].parse(b"1234") == [49,50,51,52]
-    assert Byte[4].build([49,50,51,52]) == b"1234"
+    d = Array(3, Byte)
+    common(d, b"\x01\x02\x03", [1,2,3], 3)
+    assert d.parse(b"\x01\x02\x03additionalgarbage") == [1,2,3]
+    assert raises(d.parse, b"") == StreamError
+    assert raises(d.build, [1,2]) == RangeError
+    assert raises(d.build, [1,2,3,4,5,6,7,8]) == RangeError
 
-    assert Array(3,Byte).parse(b"\x01\x02\x03") == [1,2,3]
-    assert Array(3,Byte).build([1,2,3]) == b"\x01\x02\x03"
-    assert Array(3,Byte).parse(b"\x01\x02\x03additionalgarbage") == [1,2,3]
-    assert raises(Array(3,Byte).parse, b"") == StreamError
-    assert raises(Array(3,Byte).build, [1,2]) == RangeError
-    assert raises(Array(3,Byte).build, [1,2,3,4,5,6,7,8]) == RangeError
-    assert Array(3,Byte).sizeof() == 3
-
-    assert Array(3, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
-    assert Array(3, Byte).parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
-    assert raises(Array(3, Byte).parse, b"", n=3) == StreamError
-    assert Array(3, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
-    assert raises(Array(3, Byte).build, [1,2], n=3) == RangeError
-    assert Array(this.n, Byte).parse(b"\x01\x02\x03", n=3) == [1,2,3]
-    assert Array(this.n, Byte).build([1,2,3], n=3) == b"\x01\x02\x03"
-    assert raises(Array(this.n, Byte).sizeof) == SizeofError
-    assert Array(this.n, Byte).sizeof(n=4) == 4
+    d = Array(this.n, Byte)
+    common(d, b"\x01\x02\x03", [1,2,3], 3, n=3)
+    assert d.parse(b"\x01\x02\x03", n=3) == [1,2,3]
+    assert d.parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
+    assert raises(d.parse, b"", n=3) == StreamError
+    assert raises(d.build, [1,2], n=3) == RangeError
+    assert raises(d.build, [1,2,3,4,5,6,7,8], n=3) == RangeError
+    assert raises(d.sizeof) == SizeofError
+    assert raises(d.sizeof, n=3) == 3
 
 def test_array_nontellable():
     assert Array(5, Byte).parse_stream(devzero) == [0,0,0,0,0]
@@ -466,45 +445,38 @@ def test_greedyrange():
     common(Byte[:], b"\x01\x02", [1,2], SizeofError)
 
 def test_repeatuntil():
-    assert RepeatUntil(obj_ == 9, Byte).parse(b"\x02\x03\x09garbage") == [2,3,9]
-    assert RepeatUntil(obj_ == 9, Byte).build([2,3,9,1,1,1]) == b"\x02\x03\x09"
-    assert raises(RepeatUntil(obj_ == 9, Byte).parse, b"\x02\x03\x08") == StreamError
-    assert raises(RepeatUntil(obj_ == 9, Byte).build, [2,3,8]) == RepeatError
-    assert raises(RepeatUntil(obj_ == 9, Byte).sizeof) == SizeofError
-    assert RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).parse(b"\x01\x00\x00\xff") == [1,0,0]
-    assert RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).build([1,0,0,4]) == b"\x01\x00\x00"
-    assert RepeatUntil(True, Byte).parse(b"\x00") == [0]
-    assert RepeatUntil(True, Byte).build([0]) == b"\x00"
+    d = RepeatUntil(obj_ == 9, Byte)
+    common(d, b"\x02\x03\x09", [2,3,9], SizeofError)
+    assert d.parse(b"\x02\x03\x09additionalgarbage") == [2,3,9]
+    assert raises(d.parse, b"\x02\x03\x08") == StreamError
+    assert raises(d.build, [2,3,8]) == RepeatError
+
+    d = RepeatUntil(lambda x,lst,ctx: lst[-2:] == [0,0], Byte)
+    # d = RepeatUntil(lst_[-2:] == [0,0], Byte)
+    assert d.parse(b"\x01\x00\x00\xff") == [1,0,0]
+    assert d.build([1,0,0,4]) == b"\x01\x00\x00"
+    d = RepeatUntil(True, Byte)
+    assert d.parse(b"\x00") == [0]
+    assert d.build([0]) == b"\x00"
 
 def test_const():
     common(Const(b"MZ"), b"MZ", b"MZ", 2)
-    common(Const(b"****", Bytes(4)), b"****", b"****", 4)
+    common(Const(b"MZ", Bytes(2)), b"MZ", b"MZ", 2)
     common(Const(255, Int32ul), b"\xff\x00\x00\x00", 255, 4)
-    assert raises(Const(b"MZ").parse, b"ELF") == ConstError
+    assert raises(Const(b"MZ").parse, b"???") == ConstError
     assert raises(Const(b"MZ").build, b"???") == ConstError
     assert raises(Const(255, Int32ul).parse, b"\x00\x00\x00\x00") == ConstError
-    common(Struct(sig=Const(b"MZ")), b"MZ", Container(sig=b"MZ"), 2)
-    assert Struct(sig=Const(b"MZ")).build({}) == b"MZ"
-
-def test_const_nonbytes():
+    assert Struct(Const(b"MZ")).build({}) == b"MZ"
     # non-prefixed string literals are unicode on Python 3
     assert raises(lambda: Const(u"no prefix string")) == StringError
 
 def test_computed():
-    assert Computed("moo").parse(b"") == "moo"
-    assert Computed("moo").build(None) == b""
-    assert Computed("moo").sizeof() == 0
-    assert Struct("c" / Computed("moo")).parse(b"") == Container(c="moo")
-    assert Struct("c" / Computed("moo")).build({}) == b""
-    assert Struct("c" / Computed("moo")).build(dict()) == b""
-    assert Struct("c" / Computed("moo")).build(Container()) == b""
-    assert raises(Computed(lambda ctx: ctx.missing).parse, b"") == AttributeError
-    assert raises(Computed(lambda ctx: ctx["missing"]).parse, b"") == KeyError
-
-    assert Computed(255).parse(b"") == 255
+    common(Computed(255), b"", 255, 0)
+    common(Computed(lambda ctx: 255), b"", 255, 0)
     assert Computed(255).build(None) == b""
-    assert Struct(c=Computed(255)).parse(b"") == dict(c=255)
-    assert Struct(c=Computed(255)).build({}) == b""
+    assert Struct(Computed(255)).build({}) == b""
+    assert raises(Computed(this.missing).parse, b"") == KeyError
+    assert raises(Computed(this["missing"]).parse, b"") == KeyError
 
 def test_index():
     d = Array(3, Bytes(this._index+1))
@@ -528,6 +500,7 @@ def test_rebuild():
     )
     assert d.parse(b"\x02ab") == Container(count=2)(items=[97,98])
     assert d.build(dict(count=None,items=[255])) == b"\x01\xff"
+    assert d.build(dict(count=-1,items=[255])) == b"\x01\xff"
     assert d.build(dict(items=[255])) == b"\x01\xff"
 
 def test_rebuild_issue_664():
@@ -577,8 +550,9 @@ def test_rebuild_issue_664():
     d.build(obj)
 
 def test_default():
-    common(Struct("a"/Default(Byte,0), "b"/Default(Byte,0)), b"\x01\x02", Container(a=1)(b=2), 2)
-    assert Struct("a"/Default(Byte,0), "b"/Default(Byte,0)).build(dict(a=1)) == b"\x01\x00"
+    d = Default(Byte, 0)
+    common(d, b"\xff", 255, 1)
+    d.build(None) == b"\x00"
 
 def test_check():
     common(Check(True), b"", None, 0)
@@ -595,26 +569,20 @@ def test_error():
     assert raises(("x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)).parse, b"\xff\x05") == ExplicitError
 
 def test_focusedseq():
-    assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff") == 255
-    assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated).build(255) == b"MZ\xff"
-    assert FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated).sizeof() == 3
-    assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff") == 255
-    assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).build(255) == b"MZ\xff"
-    assert FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated).sizeof() == 3
-    assert FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff", s=1) == 255
-    assert FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated).sizeof(s=1) == 3
-    assert FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated).parse(b"MZ\xff", s="num") == 255
-    assert FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated).sizeof(s="num") == 3
+    common(FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3)
+    common(FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3)
+    common(FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3, s=1)
+    common(FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3, s="num")
 
     assert raises(FocusedSeq(123, Pass).parse, b"") == IndexError
     assert raises(FocusedSeq(123, Pass).build, {}) == IndexError
-    # assert raises(FocusedSeq(123, Pass).sizeof) == IndexError
+    assert raises(FocusedSeq(123, Pass).sizeof) == 0
     assert raises(FocusedSeq("missing", Pass).parse, b"") == KeyError
     assert raises(FocusedSeq("missing", Pass).build, {}) == KeyError
-    # assert raises(FocusedSeq("missing", Pass).sizeof) == KeyError
+    assert raises(FocusedSeq("missing", Pass).sizeof) == 0
     assert raises(FocusedSeq(this.missing, Pass).parse, b"") == KeyError
     assert raises(FocusedSeq(this.missing, Pass).build, {}) == KeyError
-    # assert raises(FocusedSeq(this.missing, Pass).sizeof) == SizeofError
+    assert raises(FocusedSeq(this.missing, Pass).sizeof) == 0
 
 def test_pickled():
     import pickle
@@ -622,7 +590,7 @@ def test_pickled():
     data = pickle.dumps(obj)
     common(Pickled, data, obj)
 
-@xfail(not supportsnumpy, reason="numpy not installed?")
+@xfail(not supportsnumpy, raises=ImportError, reason="numpy not installed?")
 def test_numpy():
     import numpy
     obj = numpy.array([1,2,3], dtype=numpy.int64)
@@ -630,26 +598,14 @@ def test_numpy():
 
 def test_namedtuple():
     coord = collections.namedtuple("coord", "x y z")
-
-    Coord = NamedTuple("coord", "x y z", Array(3, Byte))
-    assert Coord.parse(b"123") == coord(49,50,51)
-    assert Coord.build(coord(49,50,51)) == b"123"
-    assert Coord.sizeof() == 3
-
-    Coord = NamedTuple("coord", "x y z", GreedyRange(Byte))
-    assert Coord.parse(b"123") == coord(49,50,51)
-    assert Coord.build(coord(49,50,51)) == b"123"
-    assert raises(Coord.sizeof) == SizeofError
-
-    Coord = NamedTuple("coord", "x y z", Sequence(Byte, Byte, Byte))
-    assert Coord.parse(b"123") == coord(49,50,51)
-    assert Coord.build(coord(49,50,51)) == b"123"
-    assert Coord.sizeof() == 3
-
-    Coord = NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte))
-    assert Coord.parse(b"123") == coord(49,50,51)
-    assert Coord.build(coord(x=49,y=50,z=51)) == b"123"
-    assert Coord.sizeof() == 3
+    d = NamedTuple("coord", "x y z", Array(3, Byte))
+    common(d, b"123", coord(49,50,51), 3)
+    d = NamedTuple("coord", "x y z", GreedyRange(Byte))
+    common(d, b"123", coord(49,50,51), SizeofError)
+    d = NamedTuple("coord", "x y z", Struct("x"/Byte, "y"/Byte, "z"/Byte))
+    common(d, b"123", coord(49,50,51), 3)
+    d = NamedTuple("coord", "x y z", Sequence(Byte, Byte, Byte))
+    common(d, b"123", coord(49,50,51), 3)
 
     assert raises(lambda: NamedTuple("coord", "x y z", BitStruct("x"/Byte, "y"/Byte, "z"/Byte))) == NamedTupleError
 
@@ -719,17 +675,20 @@ def test_regression_188():
     assert d.build(dict()) == b"MZ"
 
 def test_union():
-    assert Union(None, "a"/Bytes(2), "b"/Int16ub).parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
+    d = Union(None, "a"/Bytes(2), "b"/Int16ub)
+    assert d.parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
     assert raises(Union(123, Pass).parse, b"") == KeyError
     assert raises(Union("missing", Pass).parse, b"") == KeyError
+    assert d.build(dict(a=b"zz"))  == b"zz"
+    assert d.build(dict(b=0x0102)) == b"\x01\x02"
+    assert raises(d.build, {}) == UnionError
 
-    assert Union(None, "a"/Bytes(2), "b"/Int16ub).build(dict(a=b"zz"))  == b"zz"
-    assert Union(None, "a"/Bytes(2), "b"/Int16ub).build(dict(b=0x0102)) == b"\x01\x02"
-    assert Union(None, "a"/Bytes(2), "b"/Int16ub, Pass).build(dict()) == b""
-    assert raises(Union(None, "a"/Bytes(2), "b"/Int16ub).build, dict()) == UnionError
+    d = Union(None, "a"/Bytes(2), "b"/Int16ub, Pass)
+    assert d.build({}) == b""
+
     # build skips parsefrom, invalid or not
-    # assert raises(Union(123, Pass).build, None) == None
-    # assert raises(Union("missing", Pass).build, None) == None
+    assert raises(Union(123, Pass).build, {}) == b""
+    assert raises(Union("missing", Pass).build, {}) == b""
 
     assert raises(Union(None, Byte).sizeof) == SizeofError
     assert raises(Union(None, VarInt).sizeof) == SizeofError
@@ -755,19 +714,19 @@ def test_union_embedded():
 
 @xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_union_kwctor():
-    st = Union(None, a=Int8ub, b=Int16ub, c=Int32ub)
-    assert st.parse(b"\x01\x02\x03\x04") == Container(a=0x01,b=0x0102,c=0x01020304)
-    assert st.build(Container(c=0x01020304)) == b"\x01\x02\x03\x04"
+    d = Union(None, a=Int8ub, b=Int16ub, c=Int32ub)
+    assert d.parse(b"\x01\x02\x03\x04") == Container(a=0x01,b=0x0102,c=0x01020304)
+    assert d.build(Container(c=0x01020304)) == b"\x01\x02\x03\x04"
 
 def test_union_issue_348():
-    u = Union(None,
+    d = Union(None,
         Int8=Prefixed(Int16ub, Int8ub[:]),
         Int16=Prefixed(Int16ub, Int16ub[:]),
         Int32=Prefixed(Int16ub, Int32ub[:]),
     )
-    assert u.parse(b'\x00\x04\x11\x22\x33\x44') == {'Int16': [4386, 13124], 'Int32': [287454020], 'Int8': [17, 34, 51, 68]}
-    assert u.build(dict(Int16=[4386, 13124])) == b'\x00\x04\x11\x22\x33\x44'
-    assert u.build(dict(Int32=[287454020])) == b'\x00\x04\x11\x22\x33\x44'
+    assert d.parse(b'\x00\x04\x11\x22\x33\x44') == {'Int16': [4386, 13124], 'Int32': [287454020], 'Int8': [17, 34, 51, 68]}
+    assert d.build(dict(Int16=[4386, 13124])) == b'\x00\x04\x11\x22\x33\x44'
+    assert d.build(dict(Int32=[287454020])) == b'\x00\x04\x11\x22\x33\x44'
 
 def test_select():
     d = Select(Int32ub, Int16ub, Int8ub)
@@ -782,11 +741,12 @@ def test_select_kwctor():
     assert d.build(0x01020304) == b"\x01\x02\x03\x04"
 
 def test_optional():
-    assert Optional(Int32ul).parse(b"\x01\x00\x00\x00") == 1
-    assert Optional(Int32ul).build(1) == b"\x01\x00\x00\x00"
-    assert Optional(Int32ul).parse(b"???") == None
-    assert Optional(Int32ul).build(None) == b""
-    assert raises(Optional(Int32ul).sizeof) == SizeofError
+    d = Optional(Int32ul)
+    assert d.parse(b"\x01\x00\x00\x00") == 1
+    assert d.build(1) == b"\x01\x00\x00\x00"
+    assert d.parse(b"???") == None
+    assert d.build(None) == b""
+    assert raises(d.sizeof) == SizeofError
 
 def test_if():
     common(If(True,  Byte), b"\x01", 1, 1)
@@ -803,6 +763,7 @@ def test_switch():
     assert d.parse(b"", x=255) == None
     assert d.build(None, x=255) == b""
     assert raises(d.sizeof) == SizeofError
+    assert raises(d.sizeof, x=1) == 1
 
     d = Switch(this.x, {}, default=Byte)
     common(d, b"\x01", 1, 1, x=255)
@@ -869,62 +830,61 @@ def test_padded():
     assert Padded(4, Byte[this.missing]).sizeof() == 4
 
 def test_aligned():
-    assert Aligned(4, Byte).parse(b"\x01\x00\x00\x00") == 1
-    assert Aligned(4, Byte).build(1) == b"\x01\x00\x00\x00"
-    assert Aligned(4, Byte).sizeof() == 4
-    assert Struct(Aligned(4, "a"/Byte), "b"/Byte).parse(b"\x01\x00\x00\x00\x02") == Container(a=1)(b=2)
-    assert Struct(Aligned(4, "a"/Byte), "b"/Byte).build(Container(a=1)(b=2)) == b"\x01\x00\x00\x00\x02"
-    assert Struct(Aligned(4, "a"/Byte), "b"/Byte).sizeof() == 5
+    common(Aligned(4, Byte), b"\x01\x00\x00\x00", 1, 4)
+    common(Struct(Aligned(4, "a"/Byte), "b"/Byte), b"\x01\x00\x00\x00\x02", Container(a=1)(b=2), 5)
     assert Aligned(4, Int8ub).build(1) == b"\x01\x00\x00\x00"
     assert Aligned(4, Int16ub).build(1) == b"\x00\x01\x00\x00"
     assert Aligned(4, Int32ub).build(1) == b"\x00\x00\x00\x01"
     assert Aligned(4, Int64ub).build(1) == b"\x00\x00\x00\x00\x00\x00\x00\x01"
-    assert Aligned(this.m, Byte).parse(b"\xff\x00", m=2) == 255
-    assert Aligned(this.m, Byte).build(255, m=2) == b"\xff\x00"
-    assert Aligned(this.m, Byte).sizeof(m=2) == 2
-    assert raises(Aligned(this.m, Byte).sizeof) == SizeofError
+    d = Aligned(this.m, Byte)
+    common(d, b"\xff\x00", 255, 2, m=2)
+    assert raises(d.sizeof) == SizeofError
+    assert raises(d.sizeof, m=2) == 2
 
 def test_alignedstruct():
-    assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).parse(b"\x01\x00\x00\x00\x00\x05\x00\x00") == Container(a=1)(b=5)
-    assert AlignedStruct(4, "a"/Int8ub, "b"/Int16ub).build(dict(a=1,b=5)) == b"\x01\x00\x00\x00\x00\x05\x00\x00"
+    d = AlignedStruct(4, "a"/Int8ub, "b"/Int16ub)
+    common(d, b"\x01\x00\x00\x00\x00\x05\x00\x00", Container(a=1)(b=5), 8)
 
 def test_bitstruct():
-    assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).parse(b"\xe1\x1f") == Container(a=7)(b=False)(c=8)(d=31)
-    assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).build(Container(a=7)(b=False)(c=8)(d=31)) == b"\xe1\x1f"
-    assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5)).sizeof() == 2
-    assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).parse(b"\xe1\x1f") == Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))
-    assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).sizeof() == 2
-    assert BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit)).build(Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1))) == b"\xe1\x1f"
+    d = BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5))
+    common(d, b"\xe1\x1f", Container(a=7)(b=False)(c=8)(d=31), 2)
+    d = BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit))
+    common(d, b"\xe1\x1f", Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1)), 2)
 
 def test_pointer():
     common(Pointer(2,             Byte), b"\x00\x00\x07", 7, SizeofError)
     common(Pointer(lambda ctx: 2, Byte), b"\x00\x00\x07", 7, SizeofError)
 
 def test_peek():
-    assert Peek(Int8ub).parse(b"\x01") == 1
-    assert Peek(Int8ub).parse(b"") == None
-    assert Peek(Int8ub).build(1) == b""
-    assert Peek(Int8ub).build(None) == b""
-    assert Peek(Int8ub).sizeof() == 0
-    assert Peek(VarInt).sizeof() == 0
-    assert Struct(Peek("a"/Int8ub), "b"/Int16ub).parse(b"\x01\x02") == Container(a=1)(b=0x0102)
-    assert Struct(Peek("a"/Int8ub), "b"/Int16ub).build(dict(a=1,b=0x0102)) == b"\x01\x02"
-    assert Struct(Peek("a"/Byte), Peek("b"/Int16ub)).parse(b"\x01\x02") == Container(a=1)(b=0x0102)
-    assert Struct(Peek("a"/Byte), Peek("b"/Int16ub)).build(dict(a=0,b=0x0102)) == b""
-    assert Struct(Peek("a"/Byte), Peek("b"/Int16ub)).sizeof() == 0
+    d = Peek(Int8ub)
+    assert d.parse(b"\x01") == 1
+    assert d.parse(b"") == None
+    assert d.build(1) == b""
+    assert d.build(None) == b""
+    assert d.sizeof() == 0
+    d = Peek(VarInt)
+    assert d.sizeof() == 0
+    
+    d = Struct(Peek("a"/Int8ub), "b"/Int16ub)
+    common(d, b"\x01\x02", Container(a=0x01)(b=0x0102), 2)
+    d = Struct(Peek("a"/Byte), Peek("b"/Int16ub))
+    d.parse(b"\x01\x02") == Container(a=0x01)(b=0x0102)
+    d.build(Container(a=0x01)(b=0x0102)) == b"\x01\x02"
+    d.sizeof() == 0
 
 def test_seek():
-    assert Seek(5).parse(b"") == 5
-    assert Seek(5).build(None) == b""
-    assert (Seek(5) >> Byte).parse(b"01234x") == [5,120]
-    assert (Seek(5) >> Byte).build([5,255]) == b"\x00\x00\x00\x00\x00\xff"
-    assert (Bytes(10) >> Seek(5) >> Byte).parse(b"0123456789") == [b"0123456789",5,ord('5')]
-    assert (Bytes(10) >> Seek(5) >> Byte).build([b"0123456789",None,255]) == b"01234\xff6789"
-    assert Struct("data"/Bytes(10), Seek(5), "addin"/Byte).parse(b"0123456789") == Container(data=b"0123456789")(addin=53)
-    assert Struct("data"/Bytes(10), Seek(5), "addin"/Byte).build(dict(data=b"0123456789",addin=53)) == b"01234\x356789"
+    d = Seek(5)
+    assert d.parse(b"") == 5
+    assert d.build(None) == b""
+    assert (d >> Byte).parse(b"01234x") == [5,120]
+    assert (d >> Byte).build([5,255]) == b"\x00\x00\x00\x00\x00\xff"
+    assert (Bytes(10) >> d >> Byte).parse(b"0123456789") == [b"0123456789",5,ord('5')]
+    assert (Bytes(10) >> d >> Byte).build([b"0123456789",None,255]) == b"01234\xff6789"
+    assert Struct("data"/Bytes(10), d, "addin"/Byte).parse(b"0123456789") == Container(data=b"0123456789")(addin=53)
+    assert Struct("data"/Bytes(10), d, "addin"/Byte).build(dict(data=b"0123456789",addin=53)) == b"01234\x356789"
     assert (Seek(10,1) >> Seek(-5,1) >> Bytes(1)).parse(b"0123456789") == [10,5,b"5"]
     assert (Seek(10,1) >> Seek(-5,1) >> Bytes(1)).build([None,None,255]) == b"\x00\x00\x00\x00\x00\xff"
-    assert raises(Seek(5).sizeof) == SizeofError
+    assert raises(d.sizeof) == SizeofError
 
 def test_tell():
     assert Tell.parse(b"") == 0
@@ -980,8 +940,10 @@ def test_byteswapped():
     common(d, b"\x01\x02", Container(a=2)(b=1), 2)
 
 def test_byteswapped_from_issue_70():
-    assert ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitsInteger(16), Padding(4))).parse(b'\xd0\xbc\xfa') == Container(flag1=1)(flag2=1)(number=0xabcd)
-    assert BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitsInteger(16), Padding(4)).parse(b'\xfa\xbc\xd1') == Container(flag1=1)(flag2=1)(number=0xabcd)
+    d = ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitsInteger(16), Padding(4)))
+    assert d.parse(b'\xd0\xbc\xfa') == Container(flag1=1)(flag2=1)(number=0xabcd)
+    d = BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitsInteger(16), Padding(4))
+    assert d.parse(b'\xfa\xbc\xd1') == Container(flag1=1)(flag2=1)(number=0xabcd)
 
 def test_bitsswapped():
     d = BitsSwapped(Bytes(2))
@@ -994,11 +956,6 @@ def test_bitsswapped():
     common(d, b"\xf1", Container(a=15)(b=1), 1)
     d = BitsSwapped(BitStruct("a"/Nibble, "b"/Nibble))
     common(d, b"\xf1", Container(a=8)(b=15), 1)
-
-def test_bitsswapped_from_issue_145():
-    def LBitStruct(*subcons):
-        return BitsSwapped(BitStruct(*subcons))
-    assert LBitStruct("num"/Octet).parse(b"\x01") == Container(num=0x80)
 
 def test_prefixed():
     assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xff??????") == 65535
@@ -1136,7 +1093,7 @@ def test_rebuffered():
     assert Rebuffered(Array(1000,Byte)).parse_stream(io.BytesIO(data)) == [48]*1000
     assert Rebuffered(Array(1000,Byte), tailcutoff=50).parse_stream(io.BytesIO(data)) == [48]*1000
     assert Rebuffered(Byte).sizeof() == 1
-    assert raises(Rebuffered(Byte).sizeof) == None
+    assert raises(Rebuffered(Byte).sizeof) == 1
     assert raises(Rebuffered(VarInt).sizeof) == SizeofError
 
 def test_lazybound():
@@ -1282,8 +1239,8 @@ def test_operators_issue_87():
     assert (None / Byte).parse(b"\x01") == 1
 
 def test_from_issue_76():
-    assert Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).parse(b"\x02\xab\xcd\x00") == Container(a=2)(f=b"\xab\xcd")
-    assert Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a))).build(Container(a=2)(f=b"\xab\xcd")) == b"\x02\xab\xcd\x00"
+    d = Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)))
+    common(d, b"\x02\xab\xcd\x00", Container(a=2)(f=b"\xab\xcd"))
 
 def test_from_issue_60():
     Header = Struct(
@@ -1406,8 +1363,6 @@ def test_from_issue_246():
 
 def test_from_issue_244():
     class AddIndexes(Adapter):
-        def __init__(self, subcon):
-            super(AddIndexes, self).__init__(subcon)
         def _decode(self, obj, context, path):
             for i,con in enumerate(obj):
                 con.index = i

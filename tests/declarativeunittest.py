@@ -22,8 +22,7 @@ def cached(key, factory):
 
 def raises(func, *args, **kw):
     try:
-        func(*args, **kw)
-        return None
+        return func(*args, **kw)
     except Exception as e:
         return e.__class__
 
