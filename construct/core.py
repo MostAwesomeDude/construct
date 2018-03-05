@@ -4514,13 +4514,28 @@ class Checksum(Construct):
         import hashlib
         d = Struct(
             "fields" / RawCopy(Struct(
-                "a" / Byte,
-                "b" / Byte,
+                Padding(1000),
             )),
-            "checksum" / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), this.fields.data),
+            "checksum" / Checksum(Bytes(64),
+                lambda data: hashlib.sha512(data).digest(),
+                this.fields.data),
         )
-        d.build(dict(fields=dict(value=dict(a=1,b=2))))
-        -> b'\x01\x02\xbd\xd8\x1a\xb23\xbc\xebj\xd23\xcd'...
+        d.build(dict(fields=dict(value={})))
+
+    ::
+
+        import hashlib
+        d = Struct(
+            "offset" / Tell,
+            "checksum" / Padding(64),
+            "fields" / RawCopy(Struct(
+                Padding(1000),
+            )),
+            "checksum" / Pointer(this.offset, Checksum(Bytes(64),
+                lambda data: hashlib.sha512(data).digest(),
+                this.fields.data)),
+        )
+        d.build(dict(fields=dict(value={})))
     """
 
     def __init__(self, checksumfield, hashfunc, bytesfunc):
@@ -4652,11 +4667,11 @@ class LazyBound(Construct):
             "next" / If(this.value > 0, LazyBound(lambda: d)),
         )
         >>> print(d.parse(b"\x05\x09\x00"))
-        Container: 
+        Container:
             value = 5
-            next = Container: 
+            next = Container:
                 value = 9
-                next = Container: 
+                next = Container:
                     value = 0
                     next = None
 
@@ -4670,15 +4685,15 @@ class LazyBound(Construct):
             data = x.next
             print(x)
         # print outputs
-        Container: 
+        Container:
             value = 5
             next = \t\x00 (total 2)
         # print outputs
-        Container: 
+        Container:
             value = 9
             next = \x00 (total 1)
         # print outputs
-        Container: 
+        Container:
             value = 0
             next =  (total 0)
     """

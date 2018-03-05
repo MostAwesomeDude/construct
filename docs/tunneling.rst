@@ -102,13 +102,29 @@ Data can be easily checksummed. Note that checksum field does not need to be Byt
     import hashlib
     d = Struct(
         "fields" / RawCopy(Struct(
-            "a" / Byte,
-            "b" / Byte,
+            Padding(1000),
         )),
-        "checksum" / Checksum(Bytes(64), lambda data: hashlib.sha512(data).digest(), this.fields.data),
+        "checksum" / Checksum(Bytes(64),
+            lambda data: hashlib.sha512(data).digest(),
+            this.fields.data),
     )
-    data = d.build(dict(fields=dict(value=dict(a=1,b=2))))
-    # returned b'\x01\x02\xbd\xd8\x1a\xb23\xbc\xebj\xd23\xcd\x18qP\x93 \xa1\x8d\x035\xa8\x91\xcf\x98s\t\x90\xe8\x92>\x1d\xda\x04\xf35\x8e\x9c~\x1c=\x16\xb1o@\x8c\xfa\xfbj\xf52T\xef0#\xed$6S8\x08\xb6\xca\x993'
+    d.build(dict(fields=dict(value={})))
+
+::
+
+    import hashlib
+    d = Struct(
+        "offset" / Tell,
+        "checksum" / Padding(64),
+        "fields" / RawCopy(Struct(
+            Padding(1000),
+        )),
+        "checksum" / Pointer(this.offset, Checksum(Bytes(64),
+            lambda data: hashlib.sha512(data).digest(),
+            this.fields.data)),
+    )
+    d.build(dict(fields=dict(value={})))
+
 
 Data can also be easily compressed. Supported encodings include zlib/gzip/bzip2/lzma and entire codecs module. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :class:`~construct.core.Prefixed` or entire stream.
 
