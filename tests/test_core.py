@@ -151,12 +151,16 @@ def test_varint():
 def test_string():
     common(String(10, "utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
 
+    d = String(100, "ascii")
+    assert d.parse(b"X"*100) == u"X"*100
+    assert d.build(u"X"*100) == b"X"*99+b"\x00"
+
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
         s = u"Афон"
-        data = (s.encode(e)+b"\x00"*100)[:100]
+        data = (s.encode(e)+bytes(100))[:100]
         common(String(100, e), data, s, 100)
         s = u""
-        data = b"\x00"*100
+        data = bytes(100)
         common(String(100, e), data, s, 100)
 
     for e in ["ascii","utf8","utf16","utf-16-le","utf32","utf-32-le"]:
@@ -178,8 +182,8 @@ def test_pascalstring():
 def test_cstring():
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
         s = u"Афон"
-        common(CString(e), s.encode(e)+b"\x00"*us, s)
-        common(CString(e), b"\x00"*us, u"")
+        common(CString(e), s.encode(e)+bytes(us), s)
+        common(CString(e), bytes(us), u"")
 
     CString("utf8").build(s) == b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'+b"\x00"
     CString("utf16").build(s) == b'\xff\xfe\x10\x04D\x04>\x04=\x04'+b"\x00\x00"

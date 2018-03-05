@@ -1369,9 +1369,10 @@ class StringPaddedTrimmed(Construct):
         if length % unitsize:
             raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
         obj = _read_stream(stream, length)
-        endsat = len(obj)
-        while endsat-unitsize >= 0 and obj[endsat-unitsize:endsat] == finalunit:
-            endsat -= unitsize
+        endsat = 0
+        endsatmax = len(obj)
+        while endsat+unitsize <= endsatmax and obj[endsat:endsat+unitsize] != finalunit:
+            endsat += unitsize
         return obj[:endsat]
 
     def _build(self, obj, stream, context, path):
