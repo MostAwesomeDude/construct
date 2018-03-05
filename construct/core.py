@@ -2100,7 +2100,7 @@ class Array(Subconstruct):
 
     Parses into a ListContainer (a list). Parsing and building processes an exact amount of elements. If given list has more or less than count elements, raises RangeError. Size is defined as count multiplied by subcon size, but only if subcon is fixed size.
 
-    Operator [] can be used to make Array and GreedyRange instances (recommended).
+    Operator [] can be used to make Array (recommended) and GreedyRange instances.
 
     :param count: integer or context lambda, strict amount of elements
     :param subcon: Construct instance, subcon to process individual elements
@@ -2177,9 +2177,12 @@ class GreedyRange(Subconstruct):
 
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
 
-    Operator [] can be used to make Array and GreedyRange instances (recommended).
+    Operator [] can be used to make Array (recommended) and GreedyRange instances.
+
+    To process gigabyte-sized data, you can set `discard` option and attach `parsed` hook.
 
     :param subcon: Construct instance, subcon to process individual elements
+    :param discard: optional, bool, if set then returns empty list
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
@@ -2200,8 +2203,9 @@ class GreedyRange(Subconstruct):
         >>> Byte[:] creates GreedyRange
     """
 
-    def __init__(self, subcon):
+    def __init__(self, subcon, discard=False):
         super(GreedyRange, self).__init__(subcon)
+        self.discard = discard
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
@@ -2209,7 +2213,9 @@ class GreedyRange(Subconstruct):
             for i in itertools.count():
                 context._index = i
                 fallback = _tell_stream(stream)
-                obj.append(self.subcon._parsereport(stream, context, path))
+                e = self.subcon._parsereport(stream, context, path)
+                if not self.discard:
+                    obj.append(e)
         except StopIteration:
             pass
         except ExplicitError:

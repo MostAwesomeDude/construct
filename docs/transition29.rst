@@ -45,7 +45,7 @@ EmbeddedBitStruct removed
 
 Array reimplemented without Range, does not use stream.tell()
 
-Range removed, GreedyRange remains
+Range removed, GreedyRange added `discard` parameter
 
 Const has reordered parameters, `value` before `subcon`. (`see API page <https://construct.readthedocs.io/en/latest/api/misc.html#construct.Const>`_)
 

@@ -443,6 +443,8 @@ def test_greedyrange():
     common(GreedyRange(Byte), b"\x01\x02", [1,2], SizeofError)
     common(Byte[:], b"", [], SizeofError)
     common(Byte[:], b"\x01\x02", [1,2], SizeofError)
+    assert GreedyRange(Byte, discard=False).parse(b"\x01\x02") == [1,2]
+    assert GreedyRange(Byte, discard=True).parse(b"\x01\x02") == []
 
 def test_repeatuntil():
     d = RepeatUntil(obj_ == 9, Byte)
@@ -1547,6 +1549,6 @@ def test_parsed_hook():
     d = GreedyRange(Struct(
         "first" / Byte * "docstring" * printobj,
         "second" / Byte,
-    ))
-    d.parse(b"\x01\xff\x02\xff\x03\xff\x04\xff")
+    ), discard=True)
+    assert d.parse(b"\x01\xff\x02\xff\x03\xff\x04\xff") == []
     assert outputs == [1,2,3]

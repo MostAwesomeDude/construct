@@ -256,3 +256,9 @@ The code above is safe, because `d.subcon.first` actually refers to `Renamed` in
     d.subcon.first.subcon.parsed = printobj
     # also hooks the Int8ub singleton
     Byte.parsed = printobj
+
+If you want to process gigabyte-sized data, then GreedyRange has an option to discard each element after it was parsed (and processed by the hook). Otherwise you would end up consuming gigabytes of RAM, because GreedyRange normally accumulates all parsed objects and returns them in a list.
+
+::
+
+    d = GreedyRange(Struct(...) * printobj, discard=True)
