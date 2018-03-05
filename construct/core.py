@@ -383,14 +383,11 @@ class Construct(object):
             linkedinstances = {}
             linkedparsers = {}
 
-            # if PY3:
-            #     import builtins as __builtins__
-            # - above fixes Python 3 but not 2 or pypy
-            # len_ = __builtins__.len
-            # sum_ = __builtins__.sum
-            # min_ = __builtins__.min
-            # max_ = __builtins__.max
-            # abs_ = __builtins__.abs
+            len_ = len
+            sum_ = sum
+            min_ = min
+            max_ = max
+            abs_ = abs
         """)
         code.append("""
             def parseall(io, this):
