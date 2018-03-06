@@ -5,7 +5,7 @@ Transition to 2.9
 .. warning:: Construct is undergoing heavy changes at the moment, expect unstable API until further notice.
 
 Overall
-=======
+==========
 
 **Compilation feature for faster performance!** Read `this tutorial chapter <https://construct.readthedocs.io/en/latest/compilation.html>`_, particularly its restrictions section.
 
@@ -13,7 +13,7 @@ Overall
 
 
 General classes
------------------
+-------------------
 
 All constructs: `parse build sizeof` methods take context entries ONLY as keyword parameters \*\*contextkw (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html>`_)
 
@@ -37,9 +37,9 @@ Enum FlagsEnum can build from integers and labels, and expose labels as attribut
 
 Mapping replaced SymmetricMapping, and dropped `default` parameter (`see API page <https://construct.readthedocs.io/en/latest/api/mappings.html#construct.Mapping>`_)
 
-Struct Sequence Union FocusedSeq have new embedding semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
+Struct Sequence FocusedSeq Union have new embedding semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
 
-Struct Sequence Union FocusedSeq are exposing subcons, as attributes and in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
+Struct Sequence FocusedSeq Union are exposing subcons, as attributes and in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
 
 EmbeddedBitStruct removed
 
@@ -47,7 +47,7 @@ Array reimplemented without Range, does not use stream.tell()
 
 Range removed, GreedyRange added `discard` parameter
 
-Const has reordered parameters, `value` before `subcon`. (`see API page <https://construct.readthedocs.io/en/latest/api/misc.html#construct.Const>`_)
+Const has reordered parameters, `value` before `subcon` (`see API page <https://construct.readthedocs.io/en/latest/api/misc.html#construct.Const>`_)
 
 Index added, in Miscellaneous (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#index>`_)
 
@@ -81,6 +81,10 @@ LazyBound remains, but changed to parameter-less lambda (`see tutorial page <htt
 
 Probe Debugger updated, ProbeInto removed
 
+
+Support classes
+--------------------
+
 FlagsContainer removed
 
 HexString removed
@@ -93,9 +97,9 @@ FieldError was replaced with StreamError (raised when stream returns less than r
 
 StreamError can be raised by most classes, when the stream is not seekable or tellable
 
-StringError can be raised by most classes, when expected bytes but given unicode value
+StringError can be raised classes like Bytes Const, when expected bytes but given unicode string as build value
 
-BitIntegerError was replaced with IntegerError
+BitIntegerError was replaced by IntegerError
 
 Struct Sequence can raise IndexError KeyError when dictionaries are missing entries
 

@@ -2389,7 +2389,7 @@ class Const(Subconstruct):
 
     Note that a variable sized subcon may still provide positive verification. Const does not consume a precomputed amount of bytes, but depends on the subcon to read the appropriate amount (eg. VarInt is acceptable). Whatever subcon parses into, gets compared against the specified value.
 
-    Parses using subcon and return its value (after checking). Builds using subcon from nothing (or given object, if not None). Size is deferred to subcon.
+    Parses using subcon and return its value (after checking). Builds using subcon from nothing (or given object, if not None). Size is the same as subcon, unless it raises SizeofError.
 
     :param value: expected value, usually a bytes literal
     :param subcon: optional, Construct instance, subcon used to build value from, assumed to be Bytes if value parameter was a bytes literal
@@ -2549,7 +2549,7 @@ class Rebuild(Subconstruct):
     r"""
     Field where building does not require a value, because the value gets recomputed when needed. Comes handy when building a Struct from a dict with missing keys. Useful for length and count fields when :class:`~construct.core.Prefixed` and :class:`~construct.core.PrefixedArray` cannot be used.
 
-    Parsing defers to subcon. Building is defered to subcon, but it builds from a value provided by the context lambda (or constant). Size is defered to subcon.
+    Parsing defers to subcon. Building is defered to subcon, but it builds from a value provided by the context lambda (or constant). Size is the same as subcon, unless it raises SizeofError.
 
     Difference between Default and Rebuild, is that in first the build value is optional and in second the build value is ignored.
 
@@ -2587,7 +2587,7 @@ class Default(Subconstruct):
     r"""
     Field where building does not require a value, because the value gets taken from default. Comes handy when building a Struct from a dict with missing keys.
 
-    Parsing defers to subcon. Building is defered to subcon, but it builds from a default (if given object is None) or from given object. Building does not require a value, but can accept one. Size is defered to subcon.
+    Parsing defers to subcon. Building is defered to subcon, but it builds from a default (if given object is None) or from given object. Building does not require a value, but can accept one. Size is the same as subcon, unless it raises SizeofError.
 
     Difference between Default and Rebuild, is that in first the build value is optional and in second the build value is ignored.
 
@@ -2626,7 +2626,7 @@ class Check(Construct):
     r"""
     Checks for a condition, and raises CheckError if the check fails.
 
-    Parsing and building return nothing (but check the condition). Size is defined as 0. Stream is not affected by either operation.
+    Parsing and building return nothing (but check the condition). Size is 0 because stream is unaffected.
 
     :param func: bool or context lambda, that gets run on parsing and building
 
@@ -2973,7 +2973,7 @@ def Timestamp(subcon, unit, epoch):
 
     To use a different epoch, provide an Arrow object that would be the base epoch like Arrow(1900,1,1). To use a different unit, provide a float as fraction of seconds (1. on Unix and MacOSX, 10**-7 on Windows). MSDOS format doesnt support custom epoch or unit.
 
-    :param subcon: Construct instance like Int* Float*, Int32ub with msdos format
+    :param subcon: Construct instance like Int* Float*, or Int32ub with msdos format
     :param unit: string like unix macosx windows msdos, or float
     :param epoch: string like unix macosx windows msdos, or Arrow instance
 
