@@ -163,7 +163,7 @@ def mergefields(*subcons):
 
 
 def extractfield(sc):
-    if isinstance(sc, (Renamed, CompilableMacro)):
+    if isinstance(sc, Renamed):
         return extractfield(sc.subcon)
     if isinstance(sc, Embedded):
         raise ConstructError("Embedded itself is not parsable")
@@ -701,17 +701,6 @@ class Compiled(Construct):
 
     def benchmark(self, sampledata, filename=None):
         return self.defersubcon.benchmark(sampledata, filename)
-
-
-class CompilableMacro(Subconstruct):
-    """Used internally."""
-
-    def __init__(self, subcon, emitparsefunc):
-        super(CompilableMacro, self).__init__(subcon)
-        self.emitparsefunc = emitparsefunc
-
-    def _emitparse(self, code):
-        return self.emitparsefunc(self, code)
 
 
 #===============================================================================
@@ -4330,9 +4319,10 @@ def PrefixedArray(lengthfield, subcon):
         "count" / Rebuild(lengthfield, len_(this.items)),
         "items" / subcon[this.count],
     )
-    def _emitparse(self, code):
+    def _emitparse(code):
         return "ListContainer((%s) for i in range(%s))" % (subcon._compileparse(code), lengthfield._compileparse(code), )
-    return CompilableMacro(macro, _emitparse)
+    macro._emitparse = _emitparse
+    return macro
 
 
 class RestreamData(Subconstruct):

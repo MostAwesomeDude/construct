@@ -60,7 +60,6 @@ __all__ = [
     'CheckError',
     'Checksum',
     'ChecksumError',
-    'CompilableMacro',
     'Compiled',
     'Compressed',
     'Computed',

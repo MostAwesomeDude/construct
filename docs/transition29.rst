@@ -23,7 +23,7 @@ All constructs: added `compile` and `benchmark` methods (`see tutorial page <htt
 
 All constructs: added `parsed` hook/callback (`see tutorial page <https://construct.readthedocs.io/en/latest/basics.html#processing-on-the-fly>`_)
 
-Compiled CompilableMacro added (used internally)
+Compiled added (used internally)
 
 String* require explicit encodings, all of them support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
