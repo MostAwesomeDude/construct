@@ -103,6 +103,8 @@ __all__ = [
     'Int',
     'IntegerError',
     'LazyBound',
+    'LazyContainer',
+    'LazyStruct',
     'len_',
     'lib',
     'list_',

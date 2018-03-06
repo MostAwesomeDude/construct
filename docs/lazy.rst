@@ -2,11 +2,32 @@
 Lazy parsing
 ============
 
-.. note:: There is incoming effort to add truly lazy parsing (like Struct). Stay tuned. Feature request at `Issue #549 <https://github.com/construct/construct/issues/549>`_ .
+.. warning:: This chapter is work in progress.
+
+
+LazyStruct
+---------------
+
+Equivalent to :class:`~construct.core.Struct`, but when this class is parsed, most fields are not parsed (they are skipped if their size can be measured by _actualsize or _sizeof method). See its docstring for details.
+
+Fields are parsed depending on some factors:
+
+* Some fields like FormatField Bytes(5) Array(5,Byte) are fixed-size and are therefore skipped. Stream is not read.
+* Some fields like Bytes(this.field) are variable-size but their size is known during parsing when there is a corresponding context entry. Those fields are also skipped. Stream is not read.
+* Some fields like Prefixed PrefixedArray PascalString are variable-size but their size can be computed by partially reading the stream. Only first few bytes are read (the lengthfield).
+* Other fields like VarInt need to be parsed. Stream position that is left after the field was parsed is used.
+* Some fields may not work properly, due to the fact that this class attempts to skip fields, and parses them only out of necessity. Miscellaneous fields often have size defined as 0, and fixed sized fields are skippable.
+
+Note there are restrictions:
+
+* If a field like Bytes(this.field) references another field in the same struct, you need to access the referenced field first (to trigger its parsing) and then you can access the Bytes field. Otherwise it would fail due to missing context entry.
+* If a field references another field within inner (nested) or outer (super) struct, things may break. Context is nested, but this class was not rigorously tested in that manner.
+
+Building and sizeof are greedy, like in Struct.
 
 
 LazyBound
----------
+---------------
 
 Field that binds to the subcon only at runtime (during parsing and building, not ctor). Useful for recursive data structures, like linked-lists and trees, where a construct needs to refer to itself (while it does not exist yet in the namespace).
 

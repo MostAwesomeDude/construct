@@ -37,9 +37,9 @@ Enum FlagsEnum can build from integers and labels, and expose labels as attribut
 
 Mapping replaced SymmetricMapping, and dropped `default` parameter (`see API page <https://construct.readthedocs.io/en/latest/api/mappings.html#construct.Mapping>`_)
 
-Struct Sequence FocusedSeq Union have new embedding semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
+Struct Sequence FocusedSeq Union LazyStruct have new embedding semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
 
-Struct Sequence FocusedSeq Union are exposing subcons, as attributes and in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
+Struct Sequence FocusedSeq Union LazyStruct are exposing subcons, as attributes and in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
 
 EmbeddedBitStruct removed
 
@@ -75,7 +75,9 @@ ExprAdapter Mapping Restreamed changed parameters order (decoders before encoder
 
 Adapter changed parameters, added `path` parameter to `_encode _decode _validate` methods
 
-LazyStruct LazySequence LazyRange LazyField(OnDemand) removed
+LazyStruct reimplemented with new true parsing semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/lazy.html#lazystruct>`_)
+
+LazySequence LazyRange LazyField(OnDemand) removed
 
 LazyBound remains, but changed to parameter-less lambda (`see tutorial page <https://construct.readthedocs.io/en/latest/lazy.html#lazybound>`_)
 

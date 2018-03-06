@@ -350,6 +350,9 @@ class Construct(object):
         """Override in your subclass."""
         raise SizeofError
 
+    def _actualsize(self, stream, context, path):
+        return self._sizeof(context, path)
+
     def compile(self, filename=None):
         """
         Transforms a construct into another construct that does same thing (has same parsing and building semantics) but is much faster when parsing. Already compiled instances just compile into itself.
@@ -1819,7 +1822,7 @@ class Struct(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
+    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcon members are merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union LazyStruct, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
 
@@ -1958,7 +1961,7 @@ class Sequence(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
+    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcon members are merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union LazyStruct, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
 
@@ -2711,7 +2714,7 @@ class FocusedSeq(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
+    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcon members are merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union LazyStruct, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
 
@@ -3151,7 +3154,7 @@ class Union(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcons members merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
+    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcon members are merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union LazyStruct, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
 
@@ -4290,6 +4293,14 @@ class Prefixed(Subconstruct):
     def _sizeof(self, context, path):
         return self.lengthfield._sizeof(context, path) + self.subcon._sizeof(context, path)
 
+    def _actualsize(self, stream, context, path):
+        position1 = _tell_stream(stream)
+        length = self.lengthfield._parse(stream, context, path)
+        if self.includelength:
+            length -= self.lengthfield._sizeof(context, path)
+        position2 = _tell_stream(stream)
+        return (position2-position1) + length
+
     def _emitparse(self, code):
         sub = self.lengthfield.sizeof() if self.includelength else 0
         return "restream(read_bytes(io, (%s)-(%s)), lambda io: %s)" % (self.lengthfield._compileparse(code), sub, self.subcon._compileparse(code), )
@@ -4322,6 +4333,12 @@ def PrefixedArray(countfield, subcon):
     def _emitparse(code):
         return "ListContainer((%s) for i in range(%s))" % (subcon._compileparse(code), countfield._compileparse(code), )
     macro._emitparse = _emitparse
+    def _actualsize(self, stream, context, path):
+        position1 = _tell_stream(stream)
+        count = countfield._parse(stream, context, path)
+        position2 = _tell_stream(stream)
+        return (position2-position1) + count * subcon._sizeof(context, path)
+    macro._actualsize = _actualsize
     return macro
 
 
@@ -4638,6 +4655,142 @@ class Rebuffered(Subconstruct):
 #===============================================================================
 # lazy equivalents
 #===============================================================================
+class LazyContainer(dict):
+    """Used internally."""
+
+    def __init__(self, struct, stream, offsets, values, context, path):
+        self._struct = struct
+        self._stream = stream
+        self._offsets = offsets
+        self._values = values
+        self._context = context
+        self._path = path
+
+    def __getattr__(self, name):
+        if name in self._struct._subconsindexes:
+            return self[name]
+        raise AttributeError
+
+    def __getitem__(self, index):
+        if isinstance(index, stringtypes):
+            index = self._struct._subconsindexes[index] # KeyError
+        if index in self._values:
+            return self._values[index]
+        _seek_stream(self._stream, self._offsets[index]) # KeyError
+        parseret = self._struct.subcons[index]._parsereport(self._stream, self._context, self._path)
+        self._values[index] = parseret
+        return parseret
+
+    def __len__(self):
+        return len(self._struct.subcons)
+
+    def keys(self):
+        return iter(self._struct._subcons)
+
+    def values(self):
+        return (self[k] for k in self._struct._subcons)
+
+    def items(self):
+        return ((k, self[k]) for k in self._struct._subcons)
+
+    __iter__ = keys
+
+    def __eq__(self, other):
+        return Container.__eq__(self, other)
+
+    def __repr__(self):
+        return "<LazyContainer: %s items cached, %s subcons>" % (len(self._values), len(self._struct.subcons), )
+
+
+class LazyStruct(Construct):
+    r"""
+    Equivalent to :class:`~construct.core.Struct`, but when this class is parsed, most fields are not parsed (they are skipped if their size can be measured by _actualsize or _sizeof method). See its docstring for details.
+
+    Fields are parsed depending on some factors:
+
+    * Some fields like FormatField Bytes(5) Array(5,Byte) are fixed-size and are therefore skipped. Stream is not read.
+    * Some fields like Bytes(this.field) are variable-size but their size is known during parsing when there is a corresponding context entry. Those fields are also skipped. Stream is not read.
+    * Some fields like Prefixed PrefixedArray PascalString are variable-size but their size can be computed by partially reading the stream. Only first few bytes are read (the lengthfield).
+    * Other fields like VarInt need to be parsed. Stream position that is left after the field was parsed is used.
+    * Some fields may not work properly, due to the fact that this class attempts to skip fields, and parses them only out of necessity. Miscellaneous fields often have size defined as 0, and fixed sized fields are skippable.
+
+    Note there are restrictions:
+
+    * If a field like Bytes(this.field) references another field in the same struct, you need to access the referenced field first (to trigger its parsing) and then you can access the Bytes field. Otherwise it would fail due to missing context entry.
+    * If a field references another field within inner (nested) or outer (super) struct, things may break. Context is nested, but this class was not rigorously tested in that manner.
+
+    Building and sizeof are greedy, like in Struct.
+
+    :param \*subcons: Construct instances, list of members, some can be anonymous
+    :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
+    """
+
+    def __init__(self, *subcons, **subconskw):
+        super(LazyStruct, self).__init__()
+        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
+        self.subcons = mergefields(*subcons)
+        self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
+        self._subconsindexes = Container((sc.name,i) for i,sc in enumerate(self.subcons) if sc.name)
+        self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
+
+    def __getattr__(self, name):
+        if name in self._subcons:
+            return self._subcons[name]
+        raise AttributeError
+
+    def _parse(self, stream, context, path):
+        context = Container(_ = context)
+        context._subcons = self._subcons
+        offset = _tell_stream(stream)
+        offsets = {0: offset}
+        values = {}
+        for i,sc in enumerate(self.subcons):
+            try:
+                offset += sc._actualsize(stream, context, path)
+                _seek_stream(stream, offset)
+            except SizeofError:
+                parseret = sc._parsereport(stream, context, path)
+                values[i] = parseret
+                if sc.name:
+                    context[sc.name] = parseret
+                offset = _tell_stream(stream)
+            offsets[i+1] = offset
+        return LazyContainer(self, stream, offsets, values, context, path)
+
+    def _build(self, obj, stream, context, path):
+        # exact copy from Struct class
+        if obj is None:
+            obj = Container()
+        context = Container(_ = context)
+        context._subcons = self._subcons
+        context.update(obj)
+        for sc in self.subcons:
+            try:
+                if sc.flagbuildnone:
+                    subobj = obj.get(sc.name, None)
+                else:
+                    subobj = obj[sc.name] # raises KeyError
+
+                if sc.name:
+                    context[sc.name] = subobj
+
+                buildret = sc._build(subobj, stream, context, path)
+                if sc.name:
+                    context[sc.name] = buildret
+            except StopIteration:
+                break
+        return context
+
+    def _sizeof(self, context, path):
+        # exact copy from Struct class
+        context = Container(_ = context)
+        context._subcons = self._subcons
+        try:
+            return sum(sc._sizeof(context, path) for sc in self.subcons)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
+
+
 class LazyBound(Construct):
     r"""
     Field that binds to the subcon only at runtime (during parsing and building, not ctor). Useful for recursive data structures, like linked-lists and trees, where a construct needs to refer to itself (while it does not exist yet in the namespace).
@@ -4662,6 +4815,8 @@ class LazyBound(Construct):
                 next = Container:
                     value = 0
                     next = None
+
+    ::
 
         d = Struct(
             "value" / Byte,
