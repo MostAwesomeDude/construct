@@ -4295,13 +4295,13 @@ class Prefixed(Subconstruct):
         return "restream(read_bytes(io, (%s)-(%s)), lambda io: %s)" % (self.lengthfield._compileparse(code), sub, self.subcon._compileparse(code), )
 
 
-def PrefixedArray(lengthfield, subcon):
+def PrefixedArray(countfield, subcon):
     r"""
     Prefixes an array with item count (as opposed to prefixed by byte count, see :class:`~construct.core.Prefixed`).
 
     :class:`~construct.core.VarInt` is recommended for new protocols, as it is more compact and never overflows.
 
-    :param lengthfield: Construct instance, field used for storing the element count
+    :param countfield: Construct instance, field used for storing the element count
     :param subcon: Construct instance, subcon used for storing each element
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
@@ -4316,11 +4316,11 @@ def PrefixedArray(lengthfield, subcon):
         [1684234849, 1751606885]
     """
     macro = FocusedSeq("items",
-        "count" / Rebuild(lengthfield, len_(this.items)),
+        "count" / Rebuild(countfield, len_(this.items)),
         "items" / subcon[this.count],
     )
     def _emitparse(code):
-        return "ListContainer((%s) for i in range(%s))" % (subcon._compileparse(code), lengthfield._compileparse(code), )
+        return "ListContainer((%s) for i in range(%s))" % (subcon._compileparse(code), countfield._compileparse(code), )
     macro._emitparse = _emitparse
     return macro
 
