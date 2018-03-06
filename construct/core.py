@@ -1872,7 +1872,7 @@ class Struct(Construct):
         super(Struct, self).__init__()
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
-        self._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
 
     def __getattr__(self, name):
@@ -2003,7 +2003,7 @@ class Sequence(Construct):
         super(Sequence, self).__init__()
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
-        self._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
 
     def __getattr__(self, name):
@@ -2760,7 +2760,7 @@ class FocusedSeq(Construct):
         self.parsebuildfrom = parsebuildfrom
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
-        self._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
 
     def __getattr__(self, name):
         if name in self._subcons:
@@ -3202,7 +3202,7 @@ class Union(Construct):
         self.parsefrom = parsefrom
         subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.subcons = mergefields(*subcons)
-        self._subcons = Container({sc.name:sc for sc in self.subcons if sc.name})
+        self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
 
     def __getattr__(self, name):
         if name in self._subcons:
