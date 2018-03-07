@@ -22,7 +22,7 @@ So as of Construct 2.XX, all constructs work with bytes:
 * Can rely on python's built in struct module for numeric packing/unpacking (faster and tested)
 * Can directly parse from and build to file-like objects (without in-memory buffering)
 
-But how are we supposed to work with raw bits? The only difference is that we must explicitly declare that: certain fields like Bit Octet BitsInteger handle parsing and building bit strings. There are also few fields like Struct and Flag that work with both byte-strings and bit-strings.
+But how are we supposed to work with raw bits? The only difference is that we must explicitly declare that: certain fields like BitsInteger (Bit Nibble Octet are instances of BitsInteger) handle parsing and building of bit strings. There are also few fields like Struct and Flag that work with both byte-strings and bit-strings.
 
 
 BitStruct
@@ -56,10 +56,6 @@ Important notes
 Integers out of bits
 ====================
 
-
-Convenience aliases for BitsInteger
-------------------------------------
-
 ::
 
     Bit    <--> BitsInteger(1)
@@ -70,9 +66,9 @@ Convenience aliases for BitsInteger
 Fields that do both
 ===================
 
-Most simple fields (such as Flag, Padding, Terminated, etc.) are ignorant to the granularity of the data they operate on. The actual granularity depends on the enclosing layers.
+Some simple fields (such as Flag Padding Pass Terminated) are ignorant to the granularity of the data they operate on. The actual granularity depends on the enclosing layers. Same applies to classes that are wrappers or adapters like Enum EnumFlags. Those classes do not care about granularity because they dont interact with the stream, its their subcons.
 
-Here's a snippet of code that operates on bytes:
+Here's a snippet of a code that operates on bytes:
 
 >>> format = Struct(
 ...     Padding(2),
@@ -82,7 +78,7 @@ Here's a snippet of code that operates on bytes:
 >>> format.build(dict(x=5))
 b'\x00\x00\x01\x00\x00\x00\x00\x00'
 
-And here's a snippet of code that operates on bits. The only difference is BitStruct in place of a normal Struct:
+And here's a snippet of a code that operates on bits. The only difference is BitStruct in place of a normal Struct:
 
 >>> format = BitStruct(
 ...     Padding(2),

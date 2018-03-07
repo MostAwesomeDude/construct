@@ -113,6 +113,8 @@ Container(float=1.401298464324817e-45)
 Container:
     float = 1.401298464324817e-45
 
+As you can see, Containers provide human-readable representation of the data when printed, which is very important.
+
 Thanks to blapid, containers can also be searched. Structs nested within Structs return containers within containers on parsing. One can search the entire "tree" of dicts for a particular name. Regular expressions are supported.
 
 >>> con = Container(Container(a=1,d=Container(a=2)))
@@ -149,9 +151,7 @@ A Struct can be embedded into an enclosing Struct. This means that all fields of
 >>> outer.parse(b"1234")
 Container(data=b'1234')
 
-As you can see, Containers provide human-readable representations of the data, which is very important for large data structures.
-
-.. note:: Embedded structs should not be named, see :class:`~construct.core.Embedded` .
+Embedded structs should not be named, see :class:`~construct.core.Embedded` .
 
 
 Sequences
@@ -159,31 +159,17 @@ Sequences
 
 Sequences are very similar to Structs, but operate with lists rather than containers. Sequences are less commonly used than Structs, but are very handy in certain situations. Since a list is returned in place of an attribute container, the names of the sub-constructs are not important. Two constructs with the same name will not override or replace each other. Names are used for the purposes of context dict.
 
-Operator `>>` can be used to make Sequences, or to merge them.
+>>> seq = Sequence(
+...     Int16ub,
+...     CString("utf8"),
+...     GreedyBytes,
+... )
 
-
-Building and parsing
---------------------
+Operator `>>` can also be used to make Sequences, or to merge them (but this syntax is not recommended).
 
 >>> seq = Int16ub >> CString("utf8") >> GreedyBytes
 >>> seq.parse(b"\x00\x80lalalaland\x00\x00\x00\x00\x00")
 [128, 'lalalaland', b'\x00\x00\x00\x00']
-
-
-Nesting and embedding
----------------------
-
-Like Structs, Sequences are compatible with the Embedded wrapper. Embedding one Sequence into another causes a merge of the parsed lists of the two Sequences.
-
->>> nseq = Sequence(Byte, Byte, Sequence(Byte, Byte))
->>> nseq.parse(b"abcd")
-[97, 98, [99, 100]]
-
->>> nseq = Sequence(Byte, Byte, Embedded(Sequence(Byte, Byte)))
->>> nseq.parse(b"abcd")
-[97, 98, 99, 100]
-
-.. seealso:: The :class:`~construct.core.Embedded` macro.
 
 
 Repeaters

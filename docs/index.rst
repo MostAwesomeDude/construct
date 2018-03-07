@@ -96,8 +96,8 @@ API Reference
    api/streaming
    api/tunneling
    api/lazy
-   api/adapters
    api/debugging
+   api/adapters
 
    api/core
    api/lib

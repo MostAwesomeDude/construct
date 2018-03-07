@@ -27,7 +27,7 @@ Container(a=1)(b=2)
 
 As you can see, the context looks different at different points of the construction.
 
-You may wonder what does the little underscore ('_') that is found in the context means. It basically represents the parent node, like the .. in unix pathnames ("../foo.txt"). We'll use it only when we refer to the context of upper layers.
+You may wonder what does the little underscore ('_') that is found in the context means. It basically represents the parent node, like the '..' in unix pathnames ('../foo.txt'). We'll use it only when we refer to the context of upper layers.
 
 Using the context is easy. All meta constructs take a function as a parameter, which is usually passed as a lambda function, although "big" named functions are just as good. This function, unless otherwise stated, takes a single parameter called ctx (short for context), and returns a result calculated from that context.
 
@@ -60,7 +60,7 @@ And here's how we use the special "_" name to get to the upper container in a ne
 >>> st.parse(b"12")
 Container(length1=49)(inner=Container(length2=50)(sum=99))
 
-Context entries can also be passed directly through `parse` and `build` methods. However, one should take into account that some classes are nesting context (like Struct Sequence Union FocusedSeq), so entries passed to these end up on upper level. Compare these two examples:
+Context entries can also be passed directly through `parse` and `build` methods. However, one should take into account that some classes are nesting context (like Struct Sequence Union FocusedSeq LazyStruct), so entries passed to these end up on upper level. Compare examples:
 
 >>> d = Bytes(this.n)
 >>> d.parse(bytes(100), n=4)
@@ -113,7 +113,7 @@ Container(count=5)(data=b'four')
 >>> d.parse(b"\x01\x02\x03\x04")
 Container(chars=[1, 2, 3, 4])(data=b'\x01\x02\x03\x04')
 
-This feature is supported in same constructs as embedding: Struct Sequence FocusedSeq Union.
+This feature is supported in same constructs as embedding: Struct Sequence FocusedSeq Union LazyStruct.
 
 
 Using `this` expression
@@ -123,11 +123,11 @@ Certain classes take a number of elements, or something similar, and allow a cal
 
 >>> this._.field
 ...
->>> lambda ctx: ctx._.field
+>>> lambda this: this._.field
 ...
 >>> this["_"]["field"]
 ...
->>> lambda ctx: ctx["_"]["field"]
+>>> lambda this: this["_"]["field"]
 
 Of course, `this` expression can be mixed with other calculations. When evaluating, each instance of `this` is replaced by context Container which supports attribute access to keys.
 
@@ -168,7 +168,7 @@ There used to be a bit of a hassle when you used built-in functions like `len su
 
 >>> len_(this.items)
 ...
->>> lambda ctx: len(ctx.items)
+>>> lambda this: len(this.items)
 
 These can be used in newly added Rebuild wrappers that compute count/length fields from another list-alike field:
 
@@ -226,10 +226,10 @@ Logical ``and`` ``or`` ``not`` operators cannot be used in this expressions. You
 
 >>> ~this.flag1 | this.flag2 & this.flag3
 ...
->>> lambda ctx: not ctx.flag1 or ctx.flag2 and ctx.flag3
+>>> lambda this: not this.flag1 or this.flag2 and this.flag3
 
 Contains operator ``in`` cannot be used in this expressions, you have to use a lambda:
 
->>> lambda ctx: ctx.value in (1, 2, 3)
+>>> lambda this: this.value in (1, 2, 3)
 
 Lambdas (unlike this expressions) are not compilable.
