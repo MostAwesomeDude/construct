@@ -72,8 +72,8 @@ User Guide
    lazy
    adapters
    extending
-   compilation
    debugging
+   compilation
 
 API Reference
 =============

@@ -9,4 +9,3 @@ Core API: Abstract classes
 .. autoclass:: construct.Validator
 .. autoclass:: construct.Tunnel
 .. autoclass:: construct.Compiled
-.. autoclass:: construct.CompilableMacro
