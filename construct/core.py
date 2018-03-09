@@ -50,6 +50,8 @@ class SelectError(ConstructError):
     pass
 class SwitchError(ConstructError):
     pass
+class StopFieldError(ConstructError):
+    pass
 class PaddingError(ConstructError):
     pass
 class TerminatedError(ConstructError):
@@ -1893,7 +1895,7 @@ class Struct(Construct):
                 if sc.name:
                     obj[sc.name] = subobj
                     context[sc.name] = subobj
-            except StopIteration:
+            except StopFieldError:
                 break
         return obj
 
@@ -1916,7 +1918,7 @@ class Struct(Construct):
                 buildret = sc._build(subobj, stream, context, path)
                 if sc.name:
                     context[sc.name] = buildret
-            except StopIteration:
+            except StopFieldError:
                 break
         return context
 
@@ -1941,7 +1943,7 @@ class Struct(Construct):
             """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
         block += """
                     pass
-                except StopIteration:
+                except StopFieldError:
                     pass
                 del this['_']
                 del this['_index']
@@ -2024,7 +2026,7 @@ class Sequence(Construct):
                 obj.append(subobj)
                 if sc.name:
                     context[sc.name] = subobj
-            except StopIteration:
+            except StopFieldError:
                 break
         return obj
 
@@ -2043,7 +2045,7 @@ class Sequence(Construct):
                 retlist.append(buildret)
                 if sc.name:
                     context[sc.name] = buildret
-            except StopIteration:
+            except StopFieldError:
                 break
         return retlist
 
@@ -2073,7 +2075,7 @@ class Sequence(Construct):
                 """ % (sc.name, )
         block += """
                     pass
-                except StopIteration:
+                except StopFieldError:
                     pass
                 return result
         """
@@ -2206,7 +2208,7 @@ class GreedyRange(Subconstruct):
                 e = self.subcon._parsereport(stream, context, path)
                 if not self.discard:
                     obj.append(e)
-        except StopIteration:
+        except StopFieldError:
             pass
         except ExplicitError:
             raise
@@ -2222,7 +2224,7 @@ class GreedyRange(Subconstruct):
                 buildret = self.subcon._build(e, stream, context, path)
                 retlist.append(buildret)
             return retlist
-        except StopIteration:
+        except StopFieldError:
             pass
 
     def _sizeof(self, context, path):
@@ -3598,11 +3600,11 @@ class StopIf(Construct):
     r"""
     Checks for a condition, and stops certain classes (:class:`~construct.core.Struct` :class:`~construct.core.Sequence` :class:`~construct.core.GreedyRange`) from parsing or building further.
 
-    Parsing and building check the condition, and raise StopIteration if indicated. Size is not defined.
+    Parsing and building check the condition, and raise StopFieldError if indicated. Size is undefined.
 
     :param condfunc: bool or context lambda (or truthy value)
 
-    :raises StopIteration: used internally
+    :raises StopFieldError: used internally
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -3623,14 +3625,14 @@ class StopIf(Construct):
         if callable(condfunc):
             condfunc = condfunc(context)
         if condfunc:
-            raise StopIteration
+            raise StopFieldError
 
     def _build(self, obj, stream, context, path):
         condfunc = self.condfunc
         if callable(condfunc):
             condfunc = condfunc(context)
         if condfunc:
-            raise StopIteration
+            raise StopFieldError
 
     def _sizeof(self, context, path):
         raise SizeofError("StopIf cannot determine size because it depends on actual context which then depends on actual data and outer constructs")
@@ -3639,7 +3641,7 @@ class StopIf(Construct):
         code.append("""
             def parse_stopif(condition):
                 if condition:
-                    raise StopIteration
+                    raise StopFieldError
         """)
         return "parse_stopif(%s)" % (self.condfunc,)
 
@@ -4777,7 +4779,7 @@ class LazyStruct(Construct):
                 buildret = sc._build(subobj, stream, context, path)
                 if sc.name:
                     context[sc.name] = buildret
-            except StopIteration:
+            except StopFieldError:
                 break
         return context
 

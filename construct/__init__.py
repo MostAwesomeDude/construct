@@ -158,6 +158,7 @@ __all__ = [
     'Single',
     'SizeofError',
     'Slicing',
+    'StopFieldError',
     'StopIf',
     'StreamError',
     'String',

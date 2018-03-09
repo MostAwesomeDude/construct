@@ -65,6 +65,8 @@ Switch updated, `default` parameter is `Pass` instead of `NoDefault`, dropped `i
 
 EmbeddedSwitch added, in Conditional (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#embeddedswitch>`_)
 
+StopIf raises `StopFieldError` instead of `StopIteration`
+
 PrefixedArray parameter `lengthfield` renamed to `countfield`
 
 RestreamData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
