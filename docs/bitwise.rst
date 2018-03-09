@@ -50,11 +50,12 @@ Important notes
 * BitStructs are non-nestable (because Bitwise are not nestable) so writing something like ``BitStruct(BitStruct(Octet))`` will not work. You can use regular Structs inside BitStructs.
 * Byte aligned - The total size of the elements of a BitStruct must be a multiple of 8 (due to alignment issues). RestreamedBytesIO will raise an error if the amount of bits and bytes does not align properly.
 * Pointers and Lazy* - Do not place fields that do seeking/telling or lazy parsing inside bitwise because it uses an internal stream, so external stream offsets will turn out wrong, have unknown side-effects or raise exceptions.
+* Normal (byte-oriented) classes like Int* Float* can be used by wrapping in Bytewise. If you need to mix byte- and bit-oriented fields, you should use a BitStruct and Bytewise.
 * Advanced classes like tunneling may not work in bitwise context. Only basic fields like integers were throughly tested.
 
 
-Integers out of bits
-====================
+Fields that work with bits
+=============================
 
 ::
 
@@ -63,8 +64,26 @@ Integers out of bits
     Octet  <--> BitsInteger(8)
 
 
+Fields that work with bytes
+=============================
+
+Normal classes, that is those working with byte-streams, can be used on bit-streams by wrapping them with Bytewise. Its a wrapper that does the opposite of Bitwise, it transforms each 8 bits into 1 byte. The enclosing stream is a bit-stream but the subcon is provided a byte-stream.
+
+::
+
+    >>> d = Bitwise(Struct(
+    ...     'a' / Nibble,
+    ...     'b' / Bytewise(Float32b),
+    ...     'c' / Padding(4),
+    ... ))
+    >>> d.parse(bytes(5))
+    Container(a=0)(b=0.0)(c=None)
+    >>> d.sizeof()
+    5
+
+
 Fields that do both
-===================
+=============================
 
 Some simple fields (such as Flag Padding Pass Terminated) are ignorant to the granularity of the data they operate on. The actual granularity depends on the enclosing layers. Same applies to classes that are wrappers or adapters like Enum EnumFlags. Those classes do not care about granularity because they dont interact with the stream, its their subcons.
 

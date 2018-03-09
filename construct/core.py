@@ -799,11 +799,9 @@ class GreedyBytes(Construct):
 
 def Bitwise(subcon):
     r"""
-    Converts the stream from bytes to bits, and passes the bitstream to underlying subcon. Bitstream is a stream that contains 8 times as many bytes, and each byte is either \\x00 or \\x01.
+    Converts the stream from bytes to bits, and passes the bitstream to underlying subcon. Bitstream is a stream that contains 8 times as many bytes, and each byte is either \\x00 or \\x01 (in documentation those bytes are called bits).
 
     Parsing building and size are deferred to subcon, although size gets divided by 8.
-
-    Analog to :class:`~construct.core.Bytewise` that transforms bits back to bytes.
 
     :param subcon: Construct instance, any field that works with bits (like BitsInteger) or is bit-byte agnostic (like Struct or Flag)
 
@@ -811,13 +809,15 @@ def Bitwise(subcon):
 
     Example::
 
-        >>> d = Bitwise(Octet)
-        >>> d.parse(b"\xff")
-        255
-        >>> d.build(1)
-        b'\x01'
+        >>> d = Bitwise(Struct(
+        ...     'a' / Nibble,
+        ...     'b' / Bytewise(Float32b),
+        ...     'c' / Padding(4),
+        ... ))
+        >>> d.parse(bytes(5))
+        Container(a=0)(b=0.0)(c=None)
         >>> d.sizeof()
-        1
+        5
     """
 
     try:
@@ -829,11 +829,9 @@ def Bitwise(subcon):
 
 def Bytewise(subcon):
     r"""
-    Converts the bitstream back to normal byte stream. Must be used within Bitwise.
+    Converts the bitstream back to normal byte stream. Must be used within :class:`~construct.core.Bitwise`.
 
     Parsing building and size are deferred to subcon, although size gets multiplied by 8.
-
-    Analog to :class:`~construct.core.Bitwise` that transforms bytes to bits.
 
     :param subcon: Construct instance, any field that works with bytes or is bit-byte agnostic
 
@@ -841,13 +839,15 @@ def Bytewise(subcon):
 
     Example::
 
-        >>> d = Bitwise(Bytewise(Byte))
-        >>> d.parse(b"\xff")
-        255
-        >>> d.build(255)
-        b'\xff'
+        >>> d = Bitwise(Struct(
+        ...     'a' / Nibble,
+        ...     'b' / Bytewise(Float32b),
+        ...     'c' / Padding(4),
+        ... ))
+        >>> d.parse(bytes(5))
+        Container(a=0)(b=0.0)(c=None)
         >>> d.sizeof()
-        1
+        5
     """
 
     try:

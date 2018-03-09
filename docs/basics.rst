@@ -179,35 +179,39 @@ Repeaters, as their name suggests, repeat a given unit for a specified number of
 
 Arrays have a fixed constant count of elements. Operator `[]` is used instead of calling the `Array` class (and is recommended syntax).
 
->>> Byte[10].parse(b"1234567890")
+>>> d = Byte[10] or Array(10, Byte)
+>>> d.parse(b"1234567890")
 [49, 50, 51, 52, 53, 54, 55, 56, 57, 48]
->>> Byte[10].build([1,2,3,4,5,6,7,8,9,0])
+>>> d.build([1,2,3,4,5,6,7,8,9,0])
 b'\x01\x02\x03\x04\x05\x06\x07\x08\t\x00'
 
 GreedyRange attempts to parse until EOF or subcon fails to parse correctly.
 
->>> Byte[:].parse(b"dsadhsaui")
+>>> d = GreedyRange(Byte) or Byte[:]
+>>> d.parse(b"dsadhsaui")
 [100, 115, 97, 100, 104, 115, 97, 117, 105]
 
 RepeatUntil is different than the others. Each element is tested by a lambda predicate. The predicate signals when a given element is the terminal element. The repeater inserts all previous items along with the terminal one, and returns just the same.
 
 Note that all elements accumulated during parsing are provided as additional lambda parameter (second in order).
 
->>> RepeatUntil(lambda obj,lst,ctx: obj > 10, Byte).parse(b"\x01\x05\x08\xff\x01\x02\x03")
+>>> d = RepeatUntil(lambda obj,lst,ctx: obj > 10, Byte)
+>>> d.parse(b"\x01\x05\x08\xff\x01\x02\x03")
 [1, 5, 8, 255]
->>> RepeatUntil(lambda obj,lst,ctx: obj > 10, Byte).build(range(20))
+>>> d.build(range(20))
 b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b'
 
->>> RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte).parse(b"\x01\x00\x00\xff")
+>>> d = RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte)
+>>> d.parse(b"\x01\x00\x00\xff")
 [1, 0, 0]
 
 
 Processing on-the-fly
 ==========================
 
-Data can be parsed and processed, that is each item being processed before further items were parsed. Hooks can be attached by either using * operator (safe and recommended) or by overriding `parsed` class attribute.
+Data can be parsed and processed before further items get parsed. Hooks can be attached by using * operator.
 
-Repeater classes like GreedyRange support indexing feature, which inserts incremental numbers into the context under `_index` key. If you dont want to process further data, just raise CancelParsing in the processing function.
+Repeater classes like GreedyRange support indexing feature, which inserts incremental numbers into the context under `_index` key, in case you want to enumerate the objects. If you dont want to process further data, just raise CancelParsing from within the hook, and the parse method will exit clean.
 
 ::
 
@@ -216,32 +220,10 @@ Repeater classes like GreedyRange support indexing feature, which inserts increm
         if ctx._._index+1 >= 3:
             raise CancelParsing
     st = Struct(
-        "first" / Byte * printobj, # recommended usage
+        "first" / Byte * printobj,
         "second" / Byte,
     )
-    # recommended usage
     d = GreedyRange(st * printobj)
-    # alternative usage
-    d.subcon.first.parsed = printobj
-
-Be careful about attaching hooks to singletons (like Int* Float* VarInt) because singletons are shared, therefore the hooks would effectively be attached to every field that uses them, not just the field where you declare it. Example below shows the UNSAFE code.
-
-The code above is safe, because `d.subcon.first` actually refers to `Renamed` instance, not the singleton that is within it.
-
-::
-
-    # UNSAFE
-    def printobj(obj, ctx):
-        print(obj)
-    d = GreedyRange(Struct(
-        "first" / Byte,  # hooked
-        "second" / Byte, # hooked
-    ))
-    # d.subcon.first is a Renamed instance
-    # d.subcon.first.subcon is the Int8ub singleton
-    d.subcon.first.subcon.parsed = printobj
-    # also hooks the Int8ub singleton
-    Byte.parsed = printobj
 
 If you want to process gigabyte-sized data, then GreedyRange has an option to discard each element after it was parsed (and processed by the hook). Otherwise you would end up consuming gigabytes of RAM, because GreedyRange normally accumulates all parsed objects and returns them in a list.
 
