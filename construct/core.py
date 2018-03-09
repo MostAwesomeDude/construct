@@ -151,9 +151,9 @@ def mergefields(*subcons):
     def select(sc):
         if isinstance(sc, (Renamed, Embedded)):
             return select(sc.subcon)
-        if isinstance(sc, (Struct, Sequence, FocusedSeq, Union)):
+        if isinstance(sc, (Struct, Sequence, FocusedSeq, Union, LazyStruct)):
             return sc.subcons
-        raise ConstructError("Embedding only works with: Struct, Sequence, FocusedSeq, Union")
+        raise ConstructError("Embedding only works with: Struct Sequence FocusedSeq Union LazyStruct")
 
     result = []
     for sc in subcons:
@@ -2315,11 +2315,11 @@ class RepeatUntil(Subconstruct):
 #===============================================================================
 class Embedded(Subconstruct):
     r"""
-    Special wrapper that allows outer many-subcons construct to merge fields from another many-subcons construct. Embedded does not change a field, only wraps it like a candy with a flag.
+    Special wrapper that allows outer multiple-subcons construct to merge fields from another multiple-subcons construct. Embedded does not change a field, only wraps it like a candy with a flag.
 
     .. warning::
 
-        Can only be used between Struct Sequence FocusedSeq Union, although they can be used interchangably, for example Struct can embed fields from a Sequence. There is also :func:`~construct.core.EmbeddedSwitch` macro.
+        Can only be used between Struct Sequence FocusedSeq Union LazyStruct, although they can be used interchangably, for example Struct can embed fields from a Sequence. There is also :class:`~construct.core.EmbeddedSwitch` macro.
 
     Parsing building and size are deferred to subcon.
 
@@ -2343,7 +2343,7 @@ class Embedded(Subconstruct):
 
 class Renamed(Subconstruct):
     r"""
-    Special wrapper that allows outer Struct or Sequence to see a field as having a name (or a different name) or having a parsed hook. Library classes do not have names (its None). Renamed does not change a field, only wraps it like a candy with a label. Used internally by / and * operators.
+    Special wrapper that allows a Struct (or other similar class) to see a field as having a name (or a different name) or having a parsed hook. Library classes do not have names (its None). Renamed does not change a field, only wraps it like a candy with a label. Used internally by / and * operators.
 
     Also this wrapper is responsible for building a path info (a chain of names) that gets attached to error message when parsing, building, or sizeof fails. Fields that are not named do not appear in the path string.
 
