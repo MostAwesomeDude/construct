@@ -2,17 +2,28 @@ from construct.lib.py3compat import *
 import re
 
 
-globalfullprinting = None
+globalPrintFullStrings = False
+globalPrintFalseFlags = False
 
 
-def setglobalfullprinting(enabled):
+def setGlobalPrintFullStrings(enabled=False):
     r"""
-    Sets full printing for all Container instances. When enabled, Container __str__ produces full content of bytes and strings, otherwise and by default, it produces truncated output.
+    When enabled, Container __str__ produces full content of bytes and unicode strings, otherwise and by default, it produces truncated output (16 bytes and 32 characters).
 
-    :param enabled: bool to enable or disable full printing, or None to default
+    :param enabled: bool
     """
-    global globalfullprinting
-    globalfullprinting = enabled
+    global globalPrintFullStrings
+    globalPrintFullStrings = enabled
+
+
+def setGlobalPrintFalseFlags(enabled=False):
+    r"""
+    When enabled, Container __str__ that was produced by FlagsEnum parsing prints all values, otherwise and by default, it prints only the values that are True.
+
+    :param enabled: bool
+    """
+    global globalPrintFalseFlags
+    globalPrintFalseFlags = enabled
 
 
 def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"):
@@ -37,8 +48,6 @@ class Container(dict):
     r"""
     Generic ordered dictionary that allows both key and attribute access, and preserves key order by insertion. Adding keys is preferred using \*\*entrieskw (requires Python 3.6). Equality does NOT check item order. Also provides regex searching.
 
-    This container is mostly used by Struct construct, since its members have order, so do the values parsed.
-
     Example::
 
         # empty dict
@@ -52,6 +61,15 @@ class Container(dict):
         # copies another dict
         >>> Container(dict2)
         >>> Container(container2)
+
+    ::
+
+        >>> print(repr(obj))
+        Container(text='utf8 decoded string...')(value=123)
+        >>> print(obj)
+        Container
+            text = u'utf8 decoded string...' (total 22)
+            value = 123
     """
     __slots__ = ["__keys_order__", "__recursion_lock__"]
 
@@ -131,6 +149,7 @@ class Container(dict):
     __iter__ = keys
 
     def clear(self):
+        """Removes all items."""
         dict.clear(self)
         self.__keys_order__ = []
 
@@ -147,6 +166,7 @@ class Container(dict):
         return k, v
 
     def update(self, seqordict):
+        """Appends items from another dict/Container or list-of-tuples."""
         if isinstance(seqordict, dict):
             seqordict = seqordict.items()
         for k,v in seqordict:
@@ -188,7 +208,11 @@ class Container(dict):
     def __repr__(self):
         parts = ["Container"]
         for k,v in self.items():
-            if not isinstance(k,str) or not k.startswith("_"):
+            if isinstance(k, str) and k.startswith("_"):
+                continue
+            if isinstance(v, stringtypes):
+                parts.extend(["(", str(k), "=", reprstring(v), ")"])
+            else:
                 parts.extend(["(", str(k), "=", repr(v), ")"])
         if len(parts) == 1:
             parts.append("()")
@@ -196,23 +220,33 @@ class Container(dict):
 
     @recursion_lock()
     def __str__(self):
-        printingcap = 16
         indentation = "\n    "
         text = ["Container: "]
+        isflags = getattr(self, "_flagsenum", False)
         for k,v in self.items():
-            if not isinstance(k,str) or not k.startswith("_"):
-                text.extend([indentation, str(k), " = "])
-                if v.__class__.__name__ == "EnumInteger":
-                    text.append("(enum) (unknown) %s" % (v, ))
-                elif v.__class__.__name__ == "EnumIntegerString":
-                    text.append("(enum) %s %s" % (v, v.intvalue, ))
-                elif isinstance(v, stringtypes):
-                    if len(v) <= printingcap or globalfullprinting:
-                        text.append("%s (total %d)" % (reprstring(v), len(v)))
-                    else:
-                        text.append("%s... (truncated, total %d)" % (reprstring(v[:printingcap]), len(v)))
+            if isinstance(k, str) and k.startswith("_"):
+                continue
+            if isflags and not v and not globalPrintFalseFlags:
+                continue
+            text.extend([indentation, str(k), " = "])
+            if v.__class__.__name__ == "EnumInteger":
+                text.append("(enum) (unknown) %s" % (v, ))
+            elif v.__class__.__name__ == "EnumIntegerString":
+                text.append("(enum) %s %s" % (v, v.intvalue, ))
+            elif isinstance(v, bytestringtype):
+                printingcap = 16
+                if len(v) <= printingcap or globalPrintFullStrings:
+                    text.append("%s (total %d)" % (reprstring(v), len(v)))
                 else:
-                    text.append(indentation.join(str(v).split("\n")))
+                    text.append("%s... (truncated, total %d)" % (reprstring(v[:printingcap]), len(v)))
+            elif isinstance(v, unicodestringtype):
+                printingcap = 32
+                if len(v) <= printingcap or globalPrintFullStrings:
+                    text.append("%s (total %d)" % (reprstring(v), len(v)))
+                else:
+                    text.append("%s... (truncated, total %d)" % (reprstring(v[:printingcap]), len(v)))
+            else:
+                text.append(indentation.join(str(v).split("\n")))
         return "".join(text)
 
     def _search(self, compiled_pattern, search_all):
@@ -240,14 +274,14 @@ class Container(dict):
 
     def search(self, pattern):
         """
-        Searches a container (optionally recursively) using regex.
+        Searches a container (non-recursively) using regex.
         """
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, False)
 
     def search_all(self, pattern):
         """
-        Searches a container (optionally recursively) using regex.
+        Searches a container (recursively) using regex.
         """
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, True)
@@ -256,10 +290,30 @@ class Container(dict):
 class ListContainer(list):
     r"""
     Generic container like list. Provides pretty-printing. Also provides regex searching.
+
+    Example::
+
+        >>> ListContainer()
+        >>> ListContainer([1, 2, 3])
+
+    ::
+
+        >>> print(repr(obj))
+        [1, 2, 3]
+        >>> print(obj)
+        ListContainer
+            1
+            2
+            3
     """
 
     @recursion_lock()
-    def __str__(self, indentation="\n    "):
+    def __repr__(self):
+        return "ListContainer(%s)" % (list.__repr__(self), )
+
+    @recursion_lock()
+    def __str__(self):
+        indentation = "\n    "
         text = ["ListContainer: "]
         for k in self:
             text.append(indentation)
@@ -286,14 +340,14 @@ class ListContainer(list):
 
     def search(self, pattern):
         """
-        Searches a container (optionally recursively) using regex.
+        Searches a container (non-recursively) using regex.
         """
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, False)
 
     def search_all(self, pattern):
         """
-        Searches a container (optionally recursively) using regex.
+        Searches a container (recursively) using regex.
         """
         compiled_pattern = re.compile(pattern)
         return self._search(compiled_pattern, True)

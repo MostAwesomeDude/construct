@@ -7,3 +7,4 @@ Core API: Strings
 .. autofunction:: construct.PascalString
 .. autofunction:: construct.CString
 .. autofunction:: construct.GreedyString
+.. autofunction:: construct.setGlobalPrintFullStrings

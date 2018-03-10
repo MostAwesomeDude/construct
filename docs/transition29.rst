@@ -89,6 +89,8 @@ Probe Debugger updated, ProbeInto removed
 Support classes
 --------------------
 
+Container updated, uses `globalPrintFullStrings` and `globalPrintFalseFlags`
+
 FlagsContainer removed
 
 HexString removed

@@ -263,9 +263,9 @@ def test_enum_issue_298():
     # FlagsEnum is not affected by same bug
     st = Struct(
         "flags" / FlagsEnum(Byte, a=1),
-        Check(lambda ctx: ctx.flags == Container(a=1)),
+        Check(lambda ctx: ctx.flags == Container(_flagsenum=True)(a=1)),
     )
-    common(st, b"\x01", dict(flags=Container(a=True)), 1)
+    common(st, b"\x01", dict(flags=Container(_flagsenum=True)(a=True)), 1)
 
     # Flag is not affected by same bug
     st = Struct(
@@ -293,7 +293,7 @@ def test_enum_issue_677():
 
 def test_flagsenum():
     d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
-    common(d, b"\x03", Container(one=True)(two=True)(four=False)(eight=False), 1)
+    common(d, b"\x03", Container(_flagsenum=True)(one=True)(two=True)(four=False)(eight=False), 1)
     assert d.build({}) == b'\x00'
     assert d.build(dict(one=True,two=True)) == b'\x03'
     assert d.build(8) == b'\x08'
@@ -314,9 +314,9 @@ def test_flagsenum_enum34():
         a = 1
     class F(enum.IntEnum):
         b = 2
-    common(FlagsEnum(Byte, E, F), b"\x01", Container(a=True,b=False), 1)
-    common(FlagsEnum(Byte, E, F), b"\x02", Container(a=False,b=True), 1)
-    common(FlagsEnum(Byte, E, F), b"\x03", Container(a=True,b=True), 1)
+    common(FlagsEnum(Byte, E, F), b"\x01", Container(_flagsenum=True)(a=True,b=False), 1)
+    common(FlagsEnum(Byte, E, F), b"\x02", Container(_flagsenum=True)(a=False,b=True), 1)
+    common(FlagsEnum(Byte, E, F), b"\x03", Container(_flagsenum=True)(a=True,b=True), 1)
 
 @xfail(not supportsintflag, raises=AttributeError, reason="IntEnum introduced in 3.4, IntFlag introduced in 3.6")
 def test_flagsenum_enum36():
@@ -325,9 +325,9 @@ def test_flagsenum_enum36():
         a = 1
     class F(enum.IntFlag):
         b = 2
-    common(FlagsEnum(Byte, E, F), b"\x01", Container(a=True,b=False), 1)
-    common(FlagsEnum(Byte, E, F), b"\x02", Container(a=False,b=True), 1)
-    common(FlagsEnum(Byte, E, F), b"\x03", Container(a=True,b=True), 1)
+    common(FlagsEnum(Byte, E, F), b"\x01", Container(_flagsenum=True)(a=True,b=False), 1)
+    common(FlagsEnum(Byte, E, F), b"\x02", Container(_flagsenum=True)(a=False,b=True), 1)
+    common(FlagsEnum(Byte, E, F), b"\x03", Container(_flagsenum=True)(a=True,b=True), 1)
 
 def test_mapping():
     x = object
@@ -1463,9 +1463,9 @@ def test_from_issue_362():
 def test_this_expresion_compare_container():
     st = Struct(
         "flags" / FlagsEnum(Byte, a=1),
-        Check(lambda this: this.flags == Container(a=1)),
+        Check(lambda this: this.flags == Container(_flagsenum=True)(a=1)),
     )
-    common(st, b"\x01", dict(flags=Container(a=True)), 1)
+    common(st, b"\x01", dict(flags=Container(_flagsenum=True)(a=True)), 1)
 
 @xfail(reason="unknown causes")
 def test_pickling_constructs():

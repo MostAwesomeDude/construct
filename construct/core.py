@@ -1738,6 +1738,7 @@ class FlagsEnum(Adapter):
 
     def _decode(self, obj, context, path):
         obj2 = Container()
+        obj2._flagsenum = True
         for name,value in self.flags.items():
             obj2[BitwisableString(name)] = bool(obj & value)
         return obj2
@@ -1756,8 +1757,9 @@ class FlagsEnum(Adapter):
             if isinstance(obj, dict):
                 flags = 0
                 for name,value in obj.items():
-                    if value:
-                        flags |= self.flags[name] # KeyError
+                    if not name.startswith("_"): # assumes key is a string
+                        if value:
+                            flags |= self.flags[name] # KeyError
                 return flags
             raise MappingError("building failed, unknown object: %r" % (obj,))
         except KeyError:

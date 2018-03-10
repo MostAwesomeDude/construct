@@ -202,15 +202,51 @@ def test_str_repr_recursive():
     assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = <recursion detected>"
     assert repr(c) == "Container(a=1)(b=2)(c=<recursion detected>)"
 
-def test_str_fullprinting():
+def test_fullstrings():
+    setGlobalPrintFullStrings(True)
     c = Container(data=b"1234567890")
     assert str(c) == "Container: \n    data = b'1234567890' (total 10)"
+    assert repr(c) == "Container(data=b'1234567890')"
     c = Container(data=u"1234567890")
     assert str(c) == "Container: \n    data = u'1234567890' (total 10)"
-    c = Container(data=b"12345678901234567890")
-    assert str(c) == "Container: \n    data = b'1234567890123456'... (truncated, total 20)"
-    c = Container(data=u"12345678901234567890")
-    assert str(c) == "Container: \n    data = u'1234567890123456'... (truncated, total 20)"
+    assert repr(c) == "Container(data=u'1234567890')"
+    c = Container(data=b"1234567890123456789012345678901234567890")
+    assert str(c) == "Container: \n    data = b'1234567890123456789012345678901234567890' (total 40)"
+    assert repr(c) == "Container(data=b'1234567890123456789012345678901234567890')"
+    c = Container(data=u"1234567890123456789012345678901234567890")
+    assert str(c) == "Container: \n    data = u'1234567890123456789012345678901234567890' (total 40)"
+    assert repr(c) == "Container(data=u'1234567890123456789012345678901234567890')"
+
+    setGlobalPrintFullStrings(False)
+    c = Container(data=b"1234567890")
+    assert str(c) == "Container: \n    data = b'1234567890' (total 10)"
+    assert repr(c) == "Container(data=b'1234567890')"
+    c = Container(data=u"1234567890")
+    assert str(c) == "Container: \n    data = u'1234567890' (total 10)"
+    assert repr(c) == "Container(data=u'1234567890')"
+    c = Container(data=b"1234567890123456789012345678901234567890")
+    assert str(c) == "Container: \n    data = b'1234567890123456'... (truncated, total 40)"
+    assert repr(c) == "Container(data=b'1234567890123456789012345678901234567890')"
+    c = Container(data=u"1234567890123456789012345678901234567890")
+    assert str(c) == "Container: \n    data = u'12345678901234567890123456789012'... (truncated, total 40)"
+    assert repr(c) == "Container(data=u'1234567890123456789012345678901234567890')"
+
+    setGlobalPrintFullStrings()
+
+@xfail(not supportskwordered, reason="FlagsEnum members order must be identical to string representation")
+def test_falseflags():
+    d = FlagsEnum(Byte, set=1, unset=2)
+    c = d.parse(b"\x01")
+
+    setGlobalPrintFalseFlags(True)
+    assert str(c) == "Container: \n    set = True\n    unset = False"
+    assert repr(c) == "Container(set=True)(unset=False)"
+
+    setGlobalPrintFalseFlags(False)
+    assert str(c) == "Container: \n    set = True"
+    assert repr(c) == "Container(set=True)(unset=False)"
+
+    setGlobalPrintFalseFlags()
 
 def test_len_bool():
     c = Container(a=1)(b=2)(c=3)(d=4)
