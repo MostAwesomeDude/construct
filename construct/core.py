@@ -2978,20 +2978,19 @@ def Timestamp(subcon, unit, epoch):
 
     Note that accuracy is not guaranteed, because building rounds the value to integer (even when Float subcon is used), due to floating-point errors in general, and because MSDOS scheme has only 5-bit (32 values) seconds field (seconds are rounded to multiple of 2).
 
-    To use a different epoch, provide an Arrow object that would be the base epoch like Arrow(1900,1,1). To use a different unit, provide a float as fraction of seconds (1. on Unix and MacOSX, 10**-7 on Windows). MSDOS format doesnt support custom epoch or unit.
+    Unit is a fraction of a second. 1 is second resolution, 10**-3 is milliseconds resolution, 10**-6 is microseconds resolution, etc. Usually its 1 on Unix and MacOSX, 10**-7 on Windows. Epoch is a year (if integer) or a specific day (if Arrow object). Usually its 1970 on Unix, 1904 on MacOSX, 1600 on Windows. MSDOS format doesnt support custom unit or epoch, it uses 2-seconds resolution and 1980 epoch.
 
     :param subcon: Construct instance like Int* Float*, or Int32ub with msdos format
-    :param unit: string like unix macosx windows msdos, or float
-    :param epoch: string like unix macosx windows msdos, or Arrow instance
+    :param unit: integer or float, or msdos string
+    :param epoch: integer, or Arrow instance, or msdos string
 
     :raises ImportError: arrow could not be imported during ctor
     :raises TimestampError: subcon is not a Construct instance
-    :raises TimestampError: unit is a wrong string and not float
-    :raises TimestampError: epoch is a wrong string and not Arrow instance
+    :raises TimestampError: unit or epoch is a wrong type
 
     Example::
 
-        >>> d = Timestamp(Int64ub, "unix", "unix")
+        >>> d = Timestamp(Int64ub, 1., 1970)
         >>> d.parse(b'\x00\x00\x00\x00ZIz\x00')
         <Arrow [2018-01-01T00:00:00+00:00]>
         >>> d = Timestamp(Int32ub, "msdos", "msdos")
@@ -3002,16 +3001,10 @@ def Timestamp(subcon, unit, epoch):
 
     if not isinstance(subcon, Construct):
         raise TimestampError("subcon should be Int*, experimentally Float*, or Int32ub when using msdos format")
-    if not isinstance(unit, (stringtypes, float)):
-        raise TimestampError("unit must be a float or string constant")
-    if not isinstance(epoch, (stringtypes, arrow.Arrow)):
-        raise TimestampError("epoch must be an Arrow or string constant")
-    if isinstance(unit, stringtypes):
-        if unit not in ["unix","macosx","windows","msdos"]:
-            raise TimestampError("unit string constant must be like: unix macosx windows msdos")
-    if isinstance(epoch, stringtypes):
-        if epoch not in ["unix","macosx","windows","msdos"]:
-            raise TimestampError("epoch string constant must be like: unix macosx windows msdos")
+    if not isinstance(unit, (integertypes, float, stringtypes)):
+        raise TimestampError("unit must be one of: int float string")
+    if not isinstance(epoch, (integertypes, arrow.Arrow, stringtypes)):
+        raise TimestampError("epoch must be one of: int Arrow string")
 
     if unit == "msdos" or epoch == "msdos":
         st = BitStruct(
@@ -3030,18 +3023,8 @@ def Timestamp(subcon, unit, epoch):
                 return Container(year=t.tm_year-1980, month=t.tm_mon, day=t.tm_mday, hour=t.tm_hour, minute=t.tm_min, second=t.tm_sec//2)
         return MsdosTimestampAdapter(st)
 
-    if unit == "unix":
-        unit = 1.
-    if unit == "macosx":
-        unit = 1.
-    if unit == "windows":
-        unit = 10**-7
-    if epoch == "unix":
-        epoch = arrow.Arrow(1970, 1, 1)
-    if epoch == "macosx":
-        epoch = arrow.Arrow(1904, 1, 1)
-    if epoch == "windows":
-        epoch = arrow.Arrow(1600, 1, 1)
+    if isinstance(epoch, integertypes):
+        epoch = arrow.Arrow(epoch, 1, 1)
     class TimestampAdapter(Adapter):
         def _decode(self, obj, context, path):
             return epoch.shift(seconds=obj*unit)

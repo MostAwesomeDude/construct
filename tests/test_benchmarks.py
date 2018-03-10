@@ -469,17 +469,17 @@ def test_class_namedtuple2_build(benchmark):
     benchmark(d.build, t(x=1,y=2,z=3))
 
 def test_class_timestamp1_parse(benchmark):
-    d = Timestamp(Int64ub, "unix", "unix")
+    d = Timestamp(Int64ub, 1, 1970)
     benchmark(d.parse, bytes(8))
 
 def test_class_timestamp1_parse_compiled(benchmark):
-    d = Timestamp(Int64ub, "unix", "unix")
+    d = Timestamp(Int64ub, 1, 1970)
     d = d.compile()
     benchmark(d.parse, bytes(8))
 
 def test_class_timestamp1_build(benchmark):
     import arrow
-    d = Timestamp(Int64ub, "unix", "unix")
+    d = Timestamp(Int64ub, 1, 1970)
     benchmark(d.build, arrow.Arrow(2000,1,1))
 
 def test_class_timestamp2_parse(benchmark):
