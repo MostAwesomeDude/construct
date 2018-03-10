@@ -1,7 +1,7 @@
 from declarativeunittest import *
 from construct import *
 from construct.lib import *
-from construct.examples.protocols import *
+from deprecated_examples import  *
 
 
 def test_ethernet():

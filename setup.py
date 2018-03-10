@@ -8,13 +8,6 @@ setup(
     packages = [
         'construct',
         'construct.lib',
-        'construct.examples',
-        'construct.examples.formats',
-        'construct.examples.formats.data',
-        'construct.examples.formats.executable',
-        'construct.examples.formats.filesystem',
-        'construct.examples.formats.graphics',
-        'construct.examples.protocols',
     ],
     license = "MIT",
     description = "A powerful declarative symmetric parser/builder for binary data",

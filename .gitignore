@@ -10,3 +10,4 @@ build/
 .pypi*
 .cache
 .tox
+.pytest_cache
