@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import struct, io, binascii, itertools, collections, pickle, sys, os, tempfile
+import struct, io, binascii, itertools, collections, pickle, sys, os, tempfile, importlib
 
 from construct.lib import *
 from construct.expr import *
@@ -408,10 +408,11 @@ class Construct(object):
         if filename:
             with open(filename, "wt") as f:
                 f.write(source)
-        if PY3:
-            os.sync()
 
+        if hasattr(importlib, "invalidate_caches"):
+            importlib.invalidate_caches()
         module = __import__(modulename)
+
         module.linkedinstances = code.linkedinstances
         module.linkedparsers = code.linkedparsers
         compiled = module.compiled
