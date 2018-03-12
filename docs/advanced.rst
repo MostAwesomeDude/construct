@@ -189,6 +189,8 @@ Constructs can parse both in-memory data (bytes) and binary files:
 >>> with open('/dev/zero', 'rb') as f:
 ...     d.parse_stream(f)
 
+>>> d.parse_file('/dev/zero')
+
 
 Documenting fields
 ========================

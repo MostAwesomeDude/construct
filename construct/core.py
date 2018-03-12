@@ -264,23 +264,20 @@ class Construct(object):
 
     def parse_stream(self, stream, **contextkw):
         r"""
-        Parse a stream. Files, pipes, sockets, and other streaming sources of data are handled by this method.
-
-        Whenever data cannot be read, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
-
-        Context entries are passed only as keyword parameters \*\*contextkw.
-
-        :param \*\*contextkw: context entries, usually empty
-
-        :returns: some value, usually based on bytes read from the stream but sometimes it is computed from nothing or from the context dictionary, sometimes its non-deterministic
-
-        :raises ConstructError: raised for any reason
+        Parse a stream. Files, pipes, sockets, and other streaming sources of data are handled by this method. See parse().
         """
         context = Container(**contextkw)
         try:
             return self._parsereport(stream, context, "(parsing)")
         except CancelParsing:
             pass
+
+    def parse_file(self, filename, **contextkw):
+        r"""
+        Parse a closed binary file. See parse().
+        """
+        with open(filename, 'rb') as f:
+            return self.parse_stream(f, **contextkw)
 
     def _parsereport(self, stream, context, path):
         obj = self._parse(stream, context, path)
@@ -312,18 +309,17 @@ class Construct(object):
 
     def build_stream(self, obj, stream, **contextkw):
         r"""
-        Build an object directly into a stream.
-
-        Whenever data cannot be written, ConstructError or its derivative is raised. This method is NOT ALLOWED to raise any other exceptions although (1) user-defined lambdas can raise arbitrary exceptions which are propagated (2) external libraries like numpy can raise arbitrary exceptions which are propagated (3) some list and dict lookups can raise IndexError and KeyError which are propagated.
-
-        Context entries are passed only as keyword parameters \*\*contextkw.
-
-        :param \*\*contextkw: context entries, usually empty
-
-        :raises ConstructError: raised for any reason
+        Build an object directly into a stream. See build().
         """
         context = Container(**contextkw)
         self._build(obj, stream, context, "(building)")
+
+    def build_file(self, obj, filename, **contextkw):
+        r"""
+        Build an object into a closed binary file. See build().
+        """
+        with open(filename, 'wb') as f:
+            self.build_stream(obj, f, **contextkw)
 
     def _build(self, obj, stream, context, path):
         """Override in your subclass."""
