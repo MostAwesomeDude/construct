@@ -374,6 +374,8 @@ EmbeddedSwitch
 
 Macro that simulates embedding Switch, which under new embedding semantics is not possible. This macro does NOT produce a Switch. It generates classes that behave the same way as you would expect from embedded Switch, only that. Instance created by this macro CAN be embedded.
 
+All fields should have unique names. Otherwise fields that were not selected during parsing may return None and override other fields context entries that have same name. This is because `If` field returns None value if condition is not met, but the Struct inserts that None value into the context entry regardless.
+
 ::
 
     d = EmbeddedSwitch(
