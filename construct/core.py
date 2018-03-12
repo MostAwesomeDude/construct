@@ -371,7 +371,7 @@ class Construct(object):
             from construct import *
             from construct.lib import *
             from io import BytesIO
-            from struct import pack, unpack, calcsize
+            import struct
             import collections
             import itertools
 
@@ -917,7 +917,9 @@ class FormatField(Construct):
         return self.length
 
     def _emitparse(self, code):
-        return "unpack(%r, read_bytes(io, %s))[0]" % (self.fmtstr, self.length)
+        fname = "formatfield_%s" % code.allocateId()
+        code.append("%s = struct.Struct(%r)" % (fname, self.fmtstr, ))
+        return "%s.unpack(read_bytes(io, %s))[0]" % (fname, self.length)
 
 
 class BytesInteger(Construct):
