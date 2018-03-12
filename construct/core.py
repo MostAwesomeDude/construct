@@ -895,17 +895,18 @@ class FormatField(Construct):
         super(FormatField, self).__init__()
         self.fmtstr = endianity+format
         self.length = struct.calcsize(endianity+format)
+        self.packer = struct.Struct(endianity+format)
 
     def _parse(self, stream, context, path):
         data = _read_stream(stream, self.length)
         try:
-            return struct.unpack(self.fmtstr, data)[0]
+            return self.packer.unpack(data)[0]
         except Exception:
             raise FormatFieldError("struct %r error during parsing" % self.fmtstr)
 
     def _build(self, obj, stream, context, path):
         try:
-            data = struct.pack(self.fmtstr, obj)
+            data = self.packer.pack(obj)
         except Exception:
             raise FormatFieldError("struct %r error during building, given value %r" % (self.fmtstr, obj))
         _write_stream(stream, data, self.length)

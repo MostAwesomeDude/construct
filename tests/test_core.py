@@ -1485,7 +1485,7 @@ def test_pickling_constructs():
     # it seems there are few problems:
     # - singletons still dont pickle (_pickle.PicklingError: Can't pickle <class 'construct.core.GreedyBytes'>: it's not the same object as construct.core.GreedyBytes)
     # - this expressions, ExprMixin added __get(set)state__
-    # - CompilableMacro not pickle, eg. IfThenElse
+    # - FormatField uses a packer that needs to be re-created
     # what was fixed so far:
     # - singleton decorator adds __reduce__ to instance
 
