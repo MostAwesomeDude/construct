@@ -10,16 +10,16 @@ d = Struct(
         "abb" / Int8ub,
         "abc" / Struct(
             "abca" / Int8ub,
-            "abcb" / Switch(lambda ctx: ctx.abca, {
-                1 : "abcb1" / Struct("abcb1a" / Int8ub),
-                2 : "abcb2" / Struct("abcb2a" / Int8ub),
-                3 : "abcb3" / Struct("abcb3a" / Int8ub),
-                4 : "abcb4" / Struct("abcb4a" / Int8ub),
+            "abcb" / Switch(this.abca, {
+                1 : Struct("abcb1a" / Int8ub),
+                2 : Struct("abcb2a" / Int8ub),
+                3 : Struct("abcb3a" / Int8ub),
+                4 : Struct("abcb4a" / Int8ub),
             }),
         ),
     ),
     "ac" / Int8ub,
-    GreedyRange("ad" / Struct("ada" / Int8ub)),
+    "ad" / GreedyRange(Struct("ada" / Int8ub)),
 )
 
 def test_search_sanity():

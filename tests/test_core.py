@@ -850,7 +850,7 @@ def test_padded():
 
 def test_aligned():
     common(Aligned(4, Byte), b"\x01\x00\x00\x00", 1, 4)
-    common(Struct(Aligned(4, "a"/Byte), "b"/Byte), b"\x01\x00\x00\x00\x02", Container(a=1)(b=2), 5)
+    common(Struct("a"/Aligned(4, Byte), "b"/Byte), b"\x01\x00\x00\x00\x02", Container(a=1)(b=2), 5)
     assert Aligned(4, Int8ub).build(1) == b"\x01\x00\x00\x00"
     assert Aligned(4, Int16ub).build(1) == b"\x00\x01\x00\x00"
     assert Aligned(4, Int32ub).build(1) == b"\x00\x00\x00\x01"
@@ -884,7 +884,7 @@ def test_peek():
     d = Peek(VarInt)
     assert d.sizeof() == 0
     
-    d = Struct(Peek("a"/Int8ub), "b"/Int16ub)
+    d = Struct("a"/Peek(Int8ub), "b"/Int16ub)
     common(d, b"\x01\x02", Container(a=0x01)(b=0x0102), 2)
     d = Struct(Peek("a"/Byte), Peek("b"/Int16ub))
     d.parse(b"\x01\x02") == Container(a=0x01)(b=0x0102)

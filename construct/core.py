@@ -582,7 +582,6 @@ class Subconstruct(Construct):
         if not isinstance(subcon, Construct):
             raise TypeError("subcon should be a Construct field")
         super(Subconstruct, self).__init__()
-        self.name = subcon.name
         self.subcon = subcon
         self.flagbuildnone = subcon.flagbuildnone
         self.flagembedded = subcon.flagembedded
@@ -3823,7 +3822,7 @@ def AlignedStruct(modulus, *subcons, **subconskw):
         b'\xff\x00\x00\x00\xff\xff\x00\x00'
     """
     subcons = list(subcons) + list(k/v for k,v in subconskw.items())
-    return Struct(*[Aligned(modulus, sc) for sc in subcons])
+    return Struct(*[sc.name / Aligned(modulus, sc) for sc in subcons])
 
 
 def BitStruct(*subcons, **subconskw):
