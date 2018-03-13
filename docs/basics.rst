@@ -99,21 +99,24 @@ Container(count=3)(items=[1, 2, 3])
 Containers
 ----------
 
-What is that Container object, anyway? Well, a Container is a regular Python dictionary. It provides pretty-printing and accessing items as attributes as well as keys, and preserves insertion order in addition to the normal facilities of dictionaries. Let's see more of those:
+What is that Container object, anyway? Well, a Container is a regular Python dictionary. It provides pretty-printing and allows accessing items as attributes as well as keys, and also preserves insertion order. Let's see more of those:
 
 >>> st = Struct("float"/Single)
 >>> x = st.parse(b"\x00\x00\x00\x01")
->>> x
-Container(float=1.401298464324817e-45)
 >>> x.float
 1.401298464324817e-45
 >>> x["float"]
 1.401298464324817e-45
+>>> repr(x)
+Container(float=1.401298464324817e-45)
 >>> print(x)
 Container:
     float = 1.401298464324817e-45
 
-As you can see, Containers provide human-readable representation of the data when printed, which is very important.
+As you can see, Containers provide human-readable representation of the data when printed, which is very important. By default, it truncates byte-strings and unicode-strings and hides EnumFlags unset flags (false values). If you would like a full print, you can use these functions:
+
+>>> setGlobalPrintFalseFlags(True)
+>>> setGlobalPrintFullStrings(True)
 
 Thanks to blapid, containers can also be searched. Structs nested within Structs return containers within containers on parsing. One can search the entire "tree" of dicts for a particular name. Regular expressions are supported.
 
