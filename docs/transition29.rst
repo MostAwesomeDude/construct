@@ -43,11 +43,11 @@ Struct Sequence FocusedSeq Union LazyStruct have new embedding semantics (`see t
 
 Struct Sequence FocusedSeq Union LazyStruct are exposing subcons, as attributes and in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
 
-EmbeddedBitStruct removed
+EmbeddedBitStruct removed, instead use BitStruct with Bytewise-wrapped fields (`see tutorial page <https://construct.readthedocs.io/en/latest/bitwise.html#fields-that-work-with-bytes>`_)
 
 Array reimplemented without Range, does not use stream.tell()
 
-Range removed, GreedyRange added `discard` parameter
+Range removed, GreedyRange added `discard` parameter (`see tutorial page <https://construct.readthedocs.io/en/latest/basics.html#processing-on-the-fly>`_)
 
 Const has reordered parameters, `value` before `subcon` (`see API page <https://construct.readthedocs.io/en/latest/api/misc.html#construct.Const>`_)
 
@@ -57,7 +57,7 @@ Pickled added, in Miscellaneous (`see tutorial page <https://construct.readthedo
 
 Timestamp added, in Miscellaneous (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#timestamp>`_)
 
-Hex HexDump reimplemented (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#hex-and-hexdump>`_)
+Hex HexDump reimplemented, return bytes and not hexlified strings (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#hex-and-hexdump>`_)
 
 Select dropped `includename` parameter (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.Select>`_)
 
@@ -67,9 +67,9 @@ Switch updated, `default` parameter is `Pass` instead of `NoDefault`, dropped `i
 
 EmbeddedSwitch added, in Conditional (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#embeddedswitch>`_)
 
-StopIf raises `StopFieldError` instead of `StopIteration`
+StopIf raises `StopFieldError` instead of `StopIteration` (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.StopIf>`_)
 
-PrefixedArray parameter `lengthfield` renamed to `countfield`
+PrefixedArray parameter `lengthfield` renamed to `countfield` (`see API page <https://construct.readthedocs.io/en/latest/api/tunneling.html#construct.PrefixedArray>`_)
 
 RestreamData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
 
@@ -77,7 +77,7 @@ TransformData added, in Tunneling (`see tutorial page <https://construct.readthe
 
 ExprAdapter Mapping Restreamed changed parameters order (decoders before encoders)
 
-Adapter changed parameters, added `path` parameter to `_encode _decode _validate` methods
+Adapter changed parameters, added `path` parameter to `_encode _decode _validate` methods (`see tutorial page <https://construct.readthedocs.io/en/latest/adapters.html>`_)
 
 LazyStruct reimplemented with new true parsing semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/lazy.html#lazystruct>`_)
 
@@ -85,7 +85,7 @@ LazySequence LazyRange LazyField(OnDemand) removed
 
 LazyBound remains, but changed to parameter-less lambda (`see tutorial page <https://construct.readthedocs.io/en/latest/lazy.html#lazybound>`_)
 
-Probe Debugger updated, ProbeInto removed
+Probe Debugger updated, ProbeInto removed (`see tutorial page <https://construct.readthedocs.io/en/latest/debugging.html>`_)
 
 
 Support classes
@@ -105,7 +105,7 @@ FieldError was replaced with StreamError (raised when stream returns less than r
 
 StreamError can be raised by most classes, when the stream is not seekable or tellable
 
-StringError can be raised classes like Bytes Const, when expected bytes but given unicode string as build value
+StringError can be raised by classes like Bytes Const, when expected bytes but given unicode string as build value
 
 BitIntegerError was replaced by IntegerError
 

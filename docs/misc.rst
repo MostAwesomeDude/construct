@@ -207,9 +207,9 @@ coord(x=49, y=50, z=51)
 Timestamp
 ----------
 
-Datetimes can be represented using Timestamp class. It supports modern formats and even MSDOS one. Note however that this class is not guaranteed to provide "exact" accurate values, due to several reasons explained in docstring.
+Datetimes can be represented using Timestamp class. It supports modern formats and even MSDOS one. Note however that this class is not guaranteed to provide "exact" accurate values, due to several reasons explained in the docstring.
 
->>> d = Timestamp(Int64ub, "unix", "unix")
+>>> d = Timestamp(Int64ub, 1., 1970)
 >>> d.parse(b'\x00\x00\x00\x00ZIz\x00')
 <Arrow [2018-01-01T00:00:00+00:00]>
 >>> d = Timestamp(Int32ub, "msdos", "msdos")
