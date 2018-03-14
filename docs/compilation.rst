@@ -16,7 +16,7 @@ It should be made clear that currently the compiler supports only parsing. Build
 Requirements
 ---------------
 
-Compilation feature requires Construct 2.9, preferrably the newest versio to date. More importantly, you should have a test suite of your own. Construct aims to be reliable, but the compiler makes some undocumented assumptions, and generates a code that "takes shortcuts". Since few checks are ommited by generated code, you should not use it to parse corrupted data.
+Compilation feature requires Construct 2.9, preferrably the newest version to date. More importantly, you should have a test suite of your own. Construct aims to be reliable, but the compiler makes some undocumented assumptions, and generates a code that "takes shortcuts". Since few checks are ommited by generated code, you should not use it to parse corrupted data.
 
 
 Restrictions
@@ -34,7 +34,7 @@ Struct Sequence FocusedSeq Union do not support `_subcons` in the context
 Compiling schemas
 ===================
 
-Every construct (even those that do not compile) has a parameter-less `compile` method that returns also a construct (instance of Compiled class). It may be a good idea to compile something that is used for processing giga-sized data or millions of blobs. That compiled instance has `parse` and `build` methods just like the construct is was compiled from. Therefore, in your code, you can simply reassign the compiled instance over the original one.
+Every construct (even those that do not compile) has a parameter-less `compile` method that returns also a construct (instance of Compiled class). It may be a good idea to compile something that is used for processing megabyte-sized data or millions of blobs. That compiled instance has `parse` and `build` methods just like the construct is was compiled from. Therefore, in your code, you can simply reassign the compiled instance over the original one.
 
 >>> st = Struct("num" / Byte)
 >>> st.parse(b"\x01")
