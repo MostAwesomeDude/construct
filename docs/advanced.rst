@@ -76,13 +76,13 @@ Strings
 
 .. note::
 
-    Encodings like UTF8 UTF16 UTF32 (including little-endian) work fine with all String* classes. However two of them, String and CString, support only encodings listed explicitly in :class:`~construct.core.possiblestringencodings` .
+    Encodings like UTF8 UTF16 UTF32 (including little-endian) work fine with all String* classes. However two of them, PaddedString and CString, support only encodings listed explicitly in :class:`~construct.core.possiblestringencodings` .
 
-String is a fixed-length construct that pads built string with null bytes, and strips those same null bytes when parsing. Strings can also be trimmed when building. If you supply a too long string, the construct will chop it off apart instead of raising a StringError.
+PaddedString is a fixed-length construct that pads built string with null bytes, and strips those same null bytes when parsing. Strings can also be trimmed when building. If you supply a too long string, the construct will chop it off apart instead of raising a StringError.
 
 To be honest, using this class is not recommended. It is provided only for ancient data formats.
 
->>> String(10, "utf8").build("Афон")
+>>> PaddedString(10, "utf8").build("Афон")
 b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00\x00'
 
 PascalString is a variable length string that is prefixed by a length field. This scheme was invented in Pascal language that put Byte field instead of C convention of appending null \\0 byte at the end. Note that the length field does not need to be Byte, and can also be variable length itself, as shown below. VarInt is recommended when designing new protocols.

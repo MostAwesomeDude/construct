@@ -148,24 +148,24 @@ def test_varint():
     assert raises(VarInt.parse, b"") == StreamError
     assert raises(VarInt.build, -1) == IntegerError
 
-def test_string():
-    common(String(10, "utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
+def test_paddedstring():
+    common(PaddedString(10, "utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
 
-    d = String(100, "ascii")
+    d = PaddedString(100, "ascii")
     assert d.parse(b"X"*100) == u"X"*100
     assert d.build(u"X"*100) == b"X"*99+b"\x00"
 
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
         s = u"Афон"
         data = (s.encode(e)+bytes(100))[:100]
-        common(String(100, e), data, s, 100)
+        common(PaddedString(100, e), data, s, 100)
         s = u""
         data = bytes(100)
-        common(String(100, e), data, s, 100)
+        common(PaddedString(100, e), data, s, 100)
 
     for e in ["ascii","utf8","utf16","utf-16-le","utf32","utf-32-le"]:
-        String(10, e).sizeof() == 10
-        String(this.n, e).sizeof(n=10) == 10
+        PaddedString(10, e).sizeof() == 10
+        PaddedString(this.n, e).sizeof(n=10) == 10
 
 def test_pascalstring():
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:

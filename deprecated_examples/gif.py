@@ -39,8 +39,8 @@ gif_logical_screen = Struct(
 
 application_extension = Struct(
     "block_size" / Const(11, Int8ul),
-    "application_identifier" / String(8, "utf8"),
-    "application_auth_code" / String(3, "utf8"),
+    "application_identifier" / PaddedString(8, "utf8"),
+    "application_auth_code" / PaddedString(3, "utf8"),
     "data_sub_block" / data_sub_block,
     "block_terminator" / Int8ul,
 )

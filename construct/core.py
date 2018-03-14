@@ -1441,13 +1441,13 @@ class StringNullTerminated(Construct):
         return "parse_nullterminatedstring(io, %s, %r)" % (unitsize, finalunit, )
 
 
-def String(length, encoding):
+def PaddedString(length, encoding):
     r"""
     Configurable, fixed-length or variable-length string field.
 
     When parsing, the byte string is stripped of null bytes (per encoding unit), then decoded. Length is an integer or context lambda. When building, the string is encoded, then trimmed to specified length minus encoding unit, then padded to specified length. Size is same as length parameter.
 
-    .. warning:: String and CString only support encodings explicitly listed in :class:`~construct.core.possiblestringencodings` .
+    .. warning:: PaddedString and CString only support encodings explicitly listed in :class:`~construct.core.possiblestringencodings` .
 
     :param length: integer or context lambda, length in bytes (not unicode characters)
     :param encoding: string like: utf8 utf16 utf32 ascii
@@ -1460,7 +1460,7 @@ def String(length, encoding):
 
     Example::
 
-        >>> d = String(10, "utf8")
+        >>> d = PaddedString(10, "utf8")
         >>> d.build(u"Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00\x00'
         >>> d.parse(_)

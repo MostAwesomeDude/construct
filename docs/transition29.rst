@@ -27,9 +27,11 @@ All constructs: added `parsed` hook/callback (`see tutorial page <https://constr
 
 Compiled added (used internally)
 
-String* require explicit encodings, all of them support UTF16 UTF32 encodings, but String CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
+String* require explicit encodings, all of them support UTF16 UTF32 encodings, but PaddedString CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
 String* build empty strings into empty bytes (despite for example UTF16 encoding empty string into 2 bytes marker)
+
+String class renamed to PaddedString
 
 Enum FlagsEnum can merge labels from IntEnum IntFlag, from enum34 module (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
