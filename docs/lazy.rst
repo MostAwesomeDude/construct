@@ -26,6 +26,12 @@ Note there are restrictions:
 Building and sizeof are greedy, like in Struct.
 
 
+LazyArray
+---------------
+
+Equivalent to :class:`~construct.core.Array`, but the subcon is not parsed when possible (it gets skipped if the size can be measured by _actualsize or _sizeof method). See its docstring for details. The restrictions are identical as in LazyStruct.
+
+
 LazyBound
 ---------------
 

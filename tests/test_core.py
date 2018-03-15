@@ -1137,7 +1137,41 @@ def test_lazystruct():
     assert str(obj) == "<LazyContainer: 5 items cached, 5 subcons>"
     assert d.build(obj) == b"\x00\x00\x01\x00\x02\x00\x01\x00"
     assert d.build(Container(obj)) == b"\x00\x00\x01\x00\x02\x00\x01\x00"
-    # assert d.build(dict(obj)) == b"\x00\x00\x01\x00\x02\x00\x01\x00"
+    assert raises(d.sizeof) == SizeofError
+
+def test_lazyarray():
+    d = LazyArray(5, Int8ub)
+    obj = d.parse(b"\x00\x01\x02\x03\x04")
+    assert repr(obj) == "<LazyListContainer: 0 of 5 items cached>"
+    for i in range(5):
+        assert obj[i] == i
+    assert obj[:] == [0,1,2,3,4]
+    assert obj == [0,1,2,3,4]
+    assert list(obj) == [0,1,2,3,4]
+    assert len(obj) == 5
+    assert repr(obj) == "<LazyListContainer: 5 of 5 items cached>"
+    assert str(obj) == "<LazyListContainer: 5 of 5 items cached>"
+    assert d.build([0,1,2,3,4]) == b"\x00\x01\x02\x03\x04"
+    assert d.build(ListContainer([0,1,2,3,4])) == b"\x00\x01\x02\x03\x04"
+    assert d.build(obj) == b"\x00\x01\x02\x03\x04"
+    assert d.build(obj[:]) == b"\x00\x01\x02\x03\x04"
+    assert d.sizeof() == 5
+
+    d = LazyArray(5, VarInt)
+    obj = d.parse(b"\x00\x01\x02\x03\x04")
+    assert repr(obj) == "<LazyListContainer: 5 of 5 items cached>"
+    for i in range(5):
+        assert obj[i] == i
+    assert obj[:] == [0,1,2,3,4]
+    assert obj == [0,1,2,3,4]
+    assert list(obj) == [0,1,2,3,4]
+    assert len(obj) == 5
+    assert repr(obj) == "<LazyListContainer: 5 of 5 items cached>"
+    assert str(obj) == "<LazyListContainer: 5 of 5 items cached>"
+    assert d.build([0,1,2,3,4]) == b"\x00\x01\x02\x03\x04"
+    assert d.build(ListContainer([0,1,2,3,4])) == b"\x00\x01\x02\x03\x04"
+    assert d.build(obj) == b"\x00\x01\x02\x03\x04"
+    assert d.build(obj[:]) == b"\x00\x01\x02\x03\x04"
     assert raises(d.sizeof) == SizeofError
 
 def test_lazybound():

@@ -4770,6 +4770,120 @@ class LazyStruct(Construct):
             raise SizeofError("cannot calculate size, key not found in context")
 
 
+class LazyListContainer(list):
+    """Used internally."""
+
+    def __init__(self, subcon, stream, count, offsets, values, context, path):
+        self._subcon = subcon
+        self._stream = stream
+        self._count = count
+        self._offsets = offsets
+        self._values = values
+        self._context = context
+        self._path = path
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return [self[i] for i in range(*index.indices(self._count))]
+        if index in self._values:
+            return self._values[index]
+        _seek_stream(self._stream, self._offsets[index]) # KeyError
+        parseret = self._subcon._parsereport(self._stream, self._context, self._path)
+        self._values[index] = parseret
+        return parseret
+
+    def __getslice__(self, start, stop):
+        if stop == sys.maxsize:
+            stop = self._count
+        return self.__getitem__(slice(start, stop))
+
+    def __len__(self):
+        return self._count
+
+    def __iter__(self):
+        return (self[i] for i in range(self._count))
+
+    def __eq__(self, other):
+        return len(self) == len(other) and all(self[i] == other[i] for i in range(self._count))
+
+    def __repr__(self):
+        return "<LazyListContainer: %s of %s items cached>" % (len(self._values), self._count, )
+
+
+class LazyArray(Subconstruct):
+    r"""
+    Equivalent to :class:`~construct.core.Array`, but the subcon is not parsed when possible (it gets skipped if the size can be measured by _actualsize or _sizeof method). See its docstring for details.
+
+    Fields are parsed depending on some factors:
+
+    * Some fields like FormatField Bytes(5) Array(5,Byte) are fixed-size and are therefore skipped. Stream is not read.
+    * Some fields like Bytes(this.field) are variable-size but their size is known during parsing when there is a corresponding context entry. Those fields are also skipped. Stream is not read.
+    * Some fields like Prefixed PrefixedArray PascalString are variable-size but their size can be computed by partially reading the stream. Only first few bytes are read (the lengthfield).
+    * Other fields like VarInt need to be parsed. Stream position that is left after the field was parsed is used.
+    * Some fields may not work properly, due to the fact that this class attempts to skip fields, and parses them only out of necessity. Miscellaneous fields often have size defined as 0, and fixed sized fields are skippable.
+
+    Note there are restrictions:
+
+    * If a field references another field within inner (nested) or outer (super) struct, things may break. Context is nested, but this class was not rigorously tested in that manner.
+
+    Building and sizeof are greedy, like in Array.
+
+    :param count: integer or context lambda, strict amount of elements
+    :param subcon: Construct instance, subcon to process individual elements
+    """
+
+    def __init__(self, count, subcon):
+        super(LazyArray, self).__init__(subcon)
+        self.count = count
+
+    def _parse(self, stream, context, path):
+        sc = self.subcon
+        count = self.count
+        if callable(count):
+            count = count(context)
+        if not 0 <= count:
+            raise RangeError("invalid count %s" % (count,))
+        offset = _tell_stream(stream)
+        offsets = {0: offset}
+        values = {}
+        for i in range(count):
+            try:
+                offset += sc._actualsize(stream, context, path)
+                _seek_stream(stream, offset)
+            except SizeofError:
+                parseret = sc._parsereport(stream, context, path)
+                values[i] = parseret
+                offset = _tell_stream(stream)
+            offsets[i+1] = offset
+        return LazyListContainer(sc, stream, count, offsets, values, context, path)
+
+    def _build(self, obj, stream, context, path):
+        # exact copy from Array class
+        count = self.count
+        if callable(count):
+            count = count(context)
+        if not 0 <= count:
+            raise RangeError("invalid count %s" % (count,))
+        if not len(obj) == count:
+            raise RangeError("expected %d elements, found %d" % (count, len(obj)))
+        retlist = ListContainer()
+        for i,e in enumerate(obj):
+            context._index = i
+            buildret = self.subcon._build(e, stream, context, path)
+            retlist.append(buildret)
+        return retlist
+
+    def _sizeof(self, context, path):
+        # exact copy from Array class
+        try:
+            count = self.count
+            if callable(count):
+                count = count(context)
+        except (KeyError, AttributeError):
+            raise SizeofError("cannot calculate size, key not found in context")
+        return count * self.subcon._sizeof(context, path)
+
+
 class LazyBound(Construct):
     r"""
     Field that binds to the subcon only at runtime (during parsing and building, not ctor). Useful for recursive data structures, like linked-lists and trees, where a construct needs to refer to itself (while it does not exist yet in the namespace).
