@@ -49,7 +49,9 @@ EmbeddedBitStruct removed, instead use BitStruct with Bytewise-wrapped fields (`
 
 Array reimplemented without Range, does not use stream.tell()
 
-Range removed, GreedyRange added `discard` parameter (`see tutorial page <https://construct.readthedocs.io/en/latest/basics.html#processing-on-the-fly>`_)
+Range removed, GreedyRange remains
+
+Array GreedyRange RepeatUntil added `discard` parameter (`see tutorial page <https://construct.readthedocs.io/en/latest/basics.html#processing-on-the-fly>`_)
 
 Const has reordered parameters, `value` before `subcon` (`see API page <https://construct.readthedocs.io/en/latest/api/misc.html#construct.Const>`_)
 

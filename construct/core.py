@@ -2090,6 +2090,7 @@ class Array(Subconstruct):
 
     :param count: integer or context lambda, strict amount of elements
     :param subcon: Construct instance, subcon to process individual elements
+    :param discard: optional, bool, if set then parsing returns empty list
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises RangeError: specified count is not valid
@@ -2111,9 +2112,10 @@ class Array(Subconstruct):
         >>> Byte[:] creates GreedyRange
     """
 
-    def __init__(self, count, subcon):
+    def __init__(self, count, subcon, discard=False):
         super(Array, self).__init__(subcon)
         self.count = count
+        self.discard = discard
 
     def _parse(self, stream, context, path):
         count = self.count
@@ -2124,7 +2126,9 @@ class Array(Subconstruct):
         obj = ListContainer()
         for i in range(count):
             context._index = i
-            obj.append(self.subcon._parsereport(stream, context, path))
+            e = self.subcon._parsereport(stream, context, path)
+            if not self.discard:
+                obj.append(e)
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -2165,10 +2169,8 @@ class GreedyRange(Subconstruct):
 
     Operator [] can be used to make Array (recommended) and GreedyRange instances.
 
-    To process gigabyte-sized data, you can set `discard` option and attach `parsed` hook.
-
     :param subcon: Construct instance, subcon to process individual elements
-    :param discard: optional, bool, if set then returns empty list
+    :param discard: optional, bool, if set then parsing returns empty list
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
@@ -2233,6 +2235,7 @@ class RepeatUntil(Subconstruct):
 
     :param predicate: lambda that takes (obj, list, context) and returns True to break or False to continue (or a truthy value)
     :param subcon: Construct instance, subcon used to parse and build each element
+    :param discard: optional, bool, if set then parsing returns empty list
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises RepeatError: consumed all elements in the stream but neither passed the predicate
@@ -2252,9 +2255,10 @@ class RepeatUntil(Subconstruct):
         [1, 0, 0]
     """
 
-    def __init__(self, predicate, subcon):
+    def __init__(self, predicate, subcon, discard=False):
         super(RepeatUntil, self).__init__(subcon)
         self.predicate = predicate
+        self.discard = discard
 
     def _parse(self, stream, context, path):
         predicate = self.predicate
@@ -2263,9 +2267,10 @@ class RepeatUntil(Subconstruct):
         obj = ListContainer()
         for i in itertools.count():
             context._index = i
-            subobj = self.subcon._parsereport(stream, context, path)
-            obj.append(subobj)
-            if predicate(subobj, obj, context):
+            e = self.subcon._parsereport(stream, context, path)
+            if not self.discard:
+                obj.append(e)
+            if predicate(e, obj, context):
                 return obj
 
     def _build(self, obj, stream, context, path):

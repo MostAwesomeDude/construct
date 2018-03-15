@@ -1616,15 +1616,24 @@ def test_exposing_members_context():
     )
     assert d.parse(b"\x01\x02\x03\x04") == dict(chars=[1,2,3,4],data=b"\x01\x02\x03\x04")
 
-def test_parsed_hook():
+def test_parsedhook_repeatersdiscard():
     outputs = []
     def printobj(obj, ctx):
         outputs.append(obj)
-        if ctx._._index+1 >= 3:
-            raise CancelParsing
-    d = GreedyRange(Struct(
-        "first" / Byte * "docstring" * printobj,
-        "second" / Byte,
-    ), discard=True)
-    assert d.parse(b"\x01\xff\x02\xff\x03\xff\x04\xff") == []
+    d = GreedyRange(Byte * printobj, discard=True)
+    assert d.parse(b"\x01\x02\x03") == []
+    assert outputs == [1,2,3]
+
+    outputs = []
+    def printobj(obj, ctx):
+        outputs.append(obj)
+    d = Array(3, Byte * printobj, discard=True)
+    assert d.parse(b"\x01\x02\x03") == []
+    assert outputs == [1,2,3]
+
+    outputs = []
+    def printobj(obj, ctx):
+        outputs.append(obj)
+    d = RepeatUntil(lambda obj,lst,ctx: ctx._index == 2, Byte * printobj, discard=True)
+    assert d.parse(b"\x01\x02\x03") == []
     assert outputs == [1,2,3]
