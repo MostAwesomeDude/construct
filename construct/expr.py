@@ -187,6 +187,9 @@ class Path(ExprMixin):
         else:
             return self.__parent(obj)[self.__field]
 
+    def __getfield__(self):
+        return self.__field
+
     def __getattr__(self, name):
         return Path(self.__name, name, self)
 

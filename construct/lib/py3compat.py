@@ -10,6 +10,12 @@ try:
     supportsnumpy = True
 except ImportError:
     supportsnumpy = False
+try:
+    import ruamel.yaml
+    assert PY3
+    supportsksyexport = True
+except (ImportError, AssertionError):
+    supportsksyexport = False
 
 supportskwordered = PY >= (3,6) or PYPY
 supportsintenum = PY >= (3,4)

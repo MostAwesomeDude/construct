@@ -22,6 +22,7 @@ setup(
             "enum34",
             "numpy",
             "arrow",
+            "ruamel.yaml",
         ],
     },
     requires = [],

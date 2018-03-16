@@ -147,6 +147,26 @@ class CodeGen:
         return "\n".join(self.blocks + [""])
 
 
+class KsyGen:
+    def __init__(self):
+        self.instances = {}
+        self.enums = {}
+        self.types = {}
+        self.nextid = 0
+
+    def allocateId(self):
+        self.nextid += 1
+        return self.nextid
+
+
+def hyphenatedict(d):
+    return {k.replace("_","-").rstrip("-"):v for k,v in d.items()}
+
+
+def hyphenatelist(l):
+    return [hyphenatedict(d) for d in l]
+
+
 def mergefields(*subcons):
     def select(sc):
         if isinstance(sc, (Renamed, Embedded)):
@@ -511,6 +531,59 @@ class Construct(object):
                 f.write(results)
         return results
 
+    def export_ksy(self, schemaname="unnamed_schema", filename=None):
+        from ruamel.yaml import YAML
+        yaml = YAML()
+        yaml.default_flow_style = False
+        output = io.StringIO()
+        gen = KsyGen()
+        main = dict(meta=dict(id=schemaname), seq=self._compileseq(gen), instances=gen.instances, enums=gen.enums, types=gen.types)
+        yaml.dump(main, output)
+        source = output.getvalue()
+
+        if filename:
+            with open(filename, "wt") as f:
+                f.write(source)
+        return source
+
+    def _compileseq(self, ksy, bitwise=False, recursion=0):
+        if recursion >= 3:
+            raise ConstructError("construct does not implement KSY export")
+        try:
+            return hyphenatelist(self._emitseq(ksy, bitwise))
+        except NotImplementedError:
+            return [dict(id="x", **self._compilefulltype(ksy, bitwise, recursion+1))]
+
+    def _compileprimitivetype(self, ksy, bitwise=False, recursion=0):
+        if recursion >= 3:
+            raise ConstructError("construct does not implement KSY export")
+        try:
+            return self._emitprimitivetype(ksy, bitwise)
+        except NotImplementedError:
+            name = "type_%s" % ksy.allocateId()
+            ksy.types[name] = dict(seq=self._compileseq(ksy, bitwise, recursion+1))
+            return name
+
+    def _compilefulltype(self, ksy, bitwise=False, recursion=0):
+        if recursion >= 3:
+            raise ConstructError("construct does not implement KSY export")
+        try:
+            return hyphenatedict(self._emitfulltype(ksy, bitwise))
+        except NotImplementedError:
+            return dict(type=self._compileprimitivetype(ksy, bitwise, recursion+1))
+
+    def _emitseq(self, ksy, bitwise):
+        """Override in your subclass."""
+        raise NotImplementedError
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        """Override in your subclass."""
+        raise NotImplementedError
+
+    def _emitfulltype(self, ksy, bitwise):
+        """Override in your subclass."""
+        raise NotImplementedError
+
     def __rtruediv__(self, name):
         """
         Used for renaming subcons, usually part of a Struct, like Struct("index" / Byte).
@@ -761,6 +834,9 @@ class Bytes(Construct):
     def _emitparse(self, code):
         return "read_bytes(io, %s)" % (self.length,)
 
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(size=self.length)
+
 
 @singleton
 class GreedyBytes(Construct):
@@ -790,6 +866,9 @@ class GreedyBytes(Construct):
     def _emitparse(self, code):
         return "io.read()"
 
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(size_eos=True)
+
 
 def Bitwise(subcon):
     r"""
@@ -816,9 +895,19 @@ def Bitwise(subcon):
 
     try:
         size = subcon.sizeof()
-        return TransformData(subcon, bytes2bits, size//8, bits2bytes, size//8)
+        macro = TransformData(subcon, bytes2bits, size//8, bits2bytes, size//8)
     except SizeofError:
-        return Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
+        macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
+    def _emitseq(ksy, bitwise):
+        return subcon._compileseq(ksy, bitwise=True)
+    def _emitprimitivetype(ksy, bitwise):
+        return subcon._compileprimitivetype(ksy, bitwise=True)
+    def _emitfulltype(ksy, bitwise):
+        return subcon._compilefulltype(ksy, bitwise=True)
+    macro._emitseq = _emitseq
+    macro._emitprimitivetype = _emitprimitivetype
+    macro._emitfulltype = _emitfulltype
+    return macro
 
 
 def Bytewise(subcon):
@@ -846,9 +935,19 @@ def Bytewise(subcon):
 
     try:
         size = subcon.sizeof()
-        return TransformData(subcon, bits2bytes, size*8, bytes2bits, size*8)
+        macro = TransformData(subcon, bits2bytes, size*8, bytes2bits, size*8)
     except SizeofError:
-        return Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n*8)
+        macro = Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n*8)
+    def _emitseq(ksy, bitwise):
+        return subcon._compileseq(ksy, bitwise=False)
+    def _emitprimitivetype(ksy, bitwise):
+        return subcon._compileprimitivetype(ksy, bitwise=False)
+    def _emitfulltype(ksy, bitwise):
+        return subcon._compilefulltype(ksy, bitwise=False)
+    macro._emitseq = _emitseq
+    macro._emitprimitivetype = _emitprimitivetype
+    macro._emitfulltype = _emitfulltype
+    return macro
 
 
 #===============================================================================
@@ -911,6 +1010,21 @@ class FormatField(Construct):
         fname = "formatfield_%s" % code.allocateId()
         code.append("%s = struct.Struct(%r)" % (fname, self.fmtstr, ))
         return "%s.unpack(read_bytes(io, %s))[0]" % (fname, self.length)
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        endianity,format = self.fmtstr
+        signed = format.islower()
+        swapped = (endianity == "<") or (endianity == "=" and sys.byteorder == "little")
+        if format in "bhlqBHLQ":
+            if bitwise:
+                assert not signed
+                assert not swapped
+                return "b%s" % (8*self.length, )
+            else:
+                return "%s%s%s" % ("s" if signed else "u", self.length, "le" if swapped else "be", )
+        if format in "fd":
+            assert not bitwise
+            return "f%s%s" % (self.length, "le" if swapped else "be", )
 
 
 class BytesInteger(Construct):
@@ -985,6 +1099,14 @@ class BytesInteger(Construct):
 
     def _emitparse(self, code):
         return "bytes2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed)
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        if bitwise:
+            assert not self.signed
+            assert not self.swapped
+            return "b%s" % (8*self.length, )
+        else:
+            return "%s%s%s" % ("s" if self.signed else "u", self.length, "le" if self.swapped else "be", )
 
 
 class BitsInteger(Construct):
@@ -1065,6 +1187,11 @@ class BitsInteger(Construct):
 
     def _emitparse(self, code):
         return "bits2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed, )
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        assert not self.signed
+        assert not self.swapped
+        return "b%s" % (self.length, )
 
 
 @singleton
@@ -1287,6 +1414,9 @@ class VarInt(Construct):
         _write_stream(stream, int2byte(obj), 1)
         return obj
 
+    def _emitprimitivetype(self, ksy, bitwise):
+        return "vlq_base128_le"
+
 
 #===============================================================================
 # strings
@@ -1462,7 +1592,11 @@ def PaddedString(length, encoding):
         >>> d.parse(_)
         u'Афон'
     """
-    return StringEncoded(StringPaddedTrimmed(length, encoding), encoding)
+    macro = StringEncoded(StringPaddedTrimmed(length, encoding), encoding)
+    def _emitfulltype(ksy, bitwise):
+        return dict(size=length, type="strz", encoding=encoding)
+    macro._emitfulltype = _emitfulltype
+    return macro
 
 
 def PascalString(lengthfield, encoding):
@@ -1484,7 +1618,14 @@ def PascalString(lengthfield, encoding):
         >>> d.parse(_)
         u'Афон'
     """
-    return StringEncoded(Prefixed(lengthfield, GreedyBytes), encoding)
+    macro = StringEncoded(Prefixed(lengthfield, GreedyBytes), encoding)
+    def _emitseq(ksy, bitwise):
+        return [
+            dict(id="lengthfield", type=lengthfield._compileprimitivetype(ksy, bitwise)), 
+            dict(id="data", size="lengthfield", type="str", encoding=encoding),
+        ]
+    macro._emitseq = _emitseq
+    return macro
 
 
 def CString(encoding):
@@ -1507,7 +1648,11 @@ def CString(encoding):
         >>> d.parse(_)
         u'Афон'
     """
-    return StringEncoded(StringNullTerminated(encoding), encoding)
+    macro = StringEncoded(StringNullTerminated(encoding), encoding)
+    def _emitfulltype(ksy, bitwise):
+        return dict(type="strz", encoding=encoding)
+    macro._emitfulltype = _emitfulltype
+    return macro
 
 
 def GreedyString(encoding):
@@ -1529,7 +1674,11 @@ def GreedyString(encoding):
         >>> d.parse(_)
         u'Афон'
     """
-    return StringEncoded(GreedyBytes, encoding)
+    macro = StringEncoded(GreedyBytes, encoding)
+    def _emitfulltype(ksy, bitwise):
+        return dict(size_eos=True, type="str", encoding=encoding)
+    macro._emitfulltype = _emitfulltype
+    return macro
 
 
 #===============================================================================
@@ -1562,6 +1711,9 @@ class Flag(Construct):
 
     def _emitparse(self, code):
         return "(read_bytes(io, 1) != b'\\x00')"
+
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(type=("b1" if bitwise else "u1"), _construct_render="Flag")
 
 
 class EnumInteger(int):
@@ -1637,6 +1789,7 @@ class Enum(Adapter):
                 mapping[enumentry.name] = enumentry.value
         self.encmapping = {EnumIntegerString.new(v,k):v for k,v in mapping.items()}
         self.decmapping = {v:EnumIntegerString.new(v,k) for k,v in mapping.items()}
+        self.ksymapping = {v:k for k,v in mapping.items()}
 
     def __getattr__(self, name):
         if name in self.encmapping:
@@ -1661,6 +1814,11 @@ class Enum(Adapter):
         fname = "factory_%s" % code.allocateId()
         code.append("%s = %r" % (fname, self.decmapping, ))
         return "reuse(%s, lambda x: %s.get(x, EnumInteger(x)))" % (self.subcon._compileparse(code), fname, )
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        name = "enum_%s" % ksy.allocateId()
+        ksy.enums[name] = self.ksymapping
+        return name
 
 
 class BitwisableString(str):
@@ -1725,6 +1883,7 @@ class FlagsEnum(Adapter):
             for enumentry in enum:
                 flags[enumentry.name] = enumentry.value
         self.flags = flags
+        self.reverseflags = {v:k for k,v in flags.items()}
 
     def __getattr__(self, name):
         if name in self.flags:
@@ -1762,6 +1921,15 @@ class FlagsEnum(Adapter):
 
     def _emitparse(self, code):
         return "reuse(%s, lambda x: Container(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %s)" % (k,v) for k,v in self.flags.items()), )
+
+    def _emitseq(self, ksy, bitwise):
+        bitstotal = self.subcon.sizeof() * 8
+        seq = []
+        for i in range(bitstotal):
+            value = 1<<i
+            name = self.reverseflags.get(value, "unknown_%s" % i)
+            seq.append(dict(id=name, type="b1", doc=hex(value), _construct_render="Flag"))
+        return seq
 
 
 class Mapping(Adapter):
@@ -1949,6 +2117,9 @@ class Struct(Construct):
         code.append(block)
         return "%s(io, this)" % (fname,)
 
+    def _emitseq(self, ksy, bitwise):
+        return [sc._compilefulltype(ksy, bitwise) for sc in self.subcons]
+
 
 class Sequence(Construct):
     r"""
@@ -2079,6 +2250,9 @@ class Sequence(Construct):
         code.append(block)
         return "%s(io, this)" % (fname,)
 
+    def _emitseq(self, ksy, bitwise):
+        return [sc._compilefulltype(ksy, bitwise) for sc in self.subcons]
+
 
 #===============================================================================
 # arrays ranges and repeaters
@@ -2161,6 +2335,9 @@ class Array(Subconstruct):
     def _emitparse(self, code):
         return "ListContainer((this.__setitem__('_index',i),(%s))[1] for i in range(%s))" % (self.subcon._compileparse(code), self.count, )
 
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(type=self.subcon._compileprimitivetype(ksy, bitwise), repeat="expr", repeat_expr=self.count)
+
 
 class GreedyRange(Subconstruct):
     r"""
@@ -2228,6 +2405,9 @@ class GreedyRange(Subconstruct):
 
     def _sizeof(self, context, path):
         raise SizeofError
+
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(type=self.subcon._compileprimitivetype(ksy, bitwise), repeat="eos")
 
 
 class RepeatUntil(Subconstruct):
@@ -2311,6 +2491,9 @@ class RepeatUntil(Subconstruct):
         code.append(block)
         return "%s(io, this)" % (fname,)
 
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(type=self.subcon._compileprimitivetype(ksy, bitwise), repeat="until", repeat_until=repr(self.predicate).replace("obj_","_"))
+
 
 #===============================================================================
 # specials
@@ -2386,6 +2569,21 @@ class Renamed(Subconstruct):
     def _emitparse(self, code):
         return self.subcon._compileparse(code)
 
+    def _emitseq(self, ksy, bitwise):
+        return self.subcon._compileseq(ksy, bitwise)
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        return self.subcon._compileprimitivetype(ksy, bitwise)
+
+    def _emitfulltype(self, ksy, bitwise):
+        r = dict()
+        if self.name:
+            r.update(id=self.name)
+        r.update(self.subcon._compilefulltype(ksy, bitwise))
+        if self.docs:
+            r.update(doc=self.docs)
+        return r
+
 
 #===============================================================================
 # miscellaneous
@@ -2448,6 +2646,10 @@ class Const(Subconstruct):
                 return value
         """)
         return "parse_const(%s, %r)" % (self.subcon._compileparse(code), self.value,)
+
+    def _emitfulltype(self, ksy, bitwise):
+        data = self.subcon.build(self.value)
+        return dict(contents=list(iterateints(data)))
 
 
 class Computed(Construct):
@@ -2589,6 +2791,15 @@ class Rebuild(Subconstruct):
     def _emitparse(self, code):
         return self.subcon._compileparse(code)
 
+    def _emitseq(self, ksy, bitwise):
+        return self.subcon._compileseq(ksy, bitwise)
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        return self.subcon._compileprimitivetype(ksy, bitwise)
+
+    def _emitfulltype(self, ksy, bitwise):
+        return self.subcon._compilefulltype(ksy, bitwise)
+
 
 class Default(Subconstruct):
     r"""
@@ -2627,6 +2838,15 @@ class Default(Subconstruct):
 
     def _emitparse(self, code):
         return self.subcon._compileparse(code)
+
+    def _emitseq(self, ksy, bitwise):
+        return self.subcon._compileseq(ksy, bitwise)
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        return self.subcon._compileprimitivetype(ksy, bitwise)
+
+    def _emitfulltype(self, ksy, bitwise):
+        return self.subcon._compilefulltype(ksy, bitwise)
 
 
 class Check(Construct):
@@ -2853,6 +3073,9 @@ class FocusedSeq(Construct):
         code.append(block)
         return "%s(io, this)" % (fname,)
 
+    def _emitseq(self, ksy, bitwise):
+        return [sc._compilefulltype(ksy, bitwise) for sc in self.subcons]
+
 
 @singleton
 class Pickled(Construct):
@@ -2971,6 +3194,15 @@ class NamedTuple(Adapter):
             return "%s(*(%s))" % (fname, self.subcon._compileparse(code), )
         raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRange")
 
+    def _emitseq(self, ksy, bitwise):
+        return self.subcon._compileseq(ksy, bitwise)
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        return self.subcon._compileprimitivetype(ksy, bitwise)
+
+    def _emitfulltype(self, ksy, bitwise):
+        return self.subcon._compilefulltype(ksy, bitwise)
+
 
 def Timestamp(subcon, unit, epoch):
     r"""
@@ -3021,16 +3253,25 @@ def Timestamp(subcon, unit, epoch):
             def _encode(self, obj, context, path):
                 t = obj.timetuple()
                 return Container(year=t.tm_year-1980, month=t.tm_mon, day=t.tm_mday, hour=t.tm_hour, minute=t.tm_min, second=t.tm_sec//2)
-        return MsdosTimestampAdapter(st)
+        macro = MsdosTimestampAdapter(st)
 
-    if isinstance(epoch, integertypes):
-        epoch = arrow.Arrow(epoch, 1, 1)
-    class TimestampAdapter(Adapter):
-        def _decode(self, obj, context, path):
-            return epoch.shift(seconds=obj*unit)
-        def _encode(self, obj, context, path):
-            return int((obj-epoch).total_seconds()/unit)
-    return TimestampAdapter(subcon)
+    else:
+        if isinstance(epoch, integertypes):
+            epoch = arrow.Arrow(epoch, 1, 1)
+        class TimestampAdapter(Adapter):
+            def _decode(self, obj, context, path):
+                return epoch.shift(seconds=obj*unit)
+            def _encode(self, obj, context, path):
+                return int((obj-epoch).total_seconds()/unit)
+        macro = TimestampAdapter(subcon)
+
+    def _emitfulltype(ksy, bitwise):
+        return subcon._compilefulltype(ksy, bitwise)
+    def _emitprimitivetype(ksy, bitwise):
+        return subcon._compileprimitivetype(ksy, bitwise)
+    macro._emitfulltype = _emitfulltype
+    macro._emitprimitivetype = _emitprimitivetype
+    return macro
 
 
 class Hex(Adapter):
@@ -3083,6 +3324,15 @@ class Hex(Adapter):
     def _emitparse(self, code):
         return self.subcon._compileparse(code)
 
+    def _emitseq(self, ksy, bitwise):
+        return self.subcon._compileseq(ksy, bitwise)
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        return self.subcon._compileprimitivetype(ksy, bitwise)
+
+    def _emitfulltype(self, ksy, bitwise):
+        return self.subcon._compilefulltype(ksy, bitwise)
+
 
 class HexDump(Adapter):
     r"""
@@ -3128,6 +3378,15 @@ class HexDump(Adapter):
 
     def _emitparse(self, code):
         return self.subcon._compileparse(code)
+
+    def _emitseq(self, ksy, bitwise):
+        return self.subcon._compileseq(ksy, bitwise)
+
+    def _emitprimitivetype(self, ksy, bitwise):
+        return self.subcon._compileprimitivetype(ksy, bitwise)
+
+    def _emitfulltype(self, ksy, bitwise):
+        return self.subcon._compilefulltype(ksy, bitwise)
 
 
 #===============================================================================
@@ -3404,7 +3663,11 @@ def If(condfunc, subcon):
         >>> d.build(255, x=0)
         b''
     """
-    return IfThenElse(condfunc, subcon, Pass)
+    macro = IfThenElse(condfunc, subcon, Pass)
+    def _emitfulltype(ksy, bitwise):
+        return dict(type=subcon._compileprimitivetype(ksy, bitwise), if_=repr(condfunc).replace("this.",""))
+    macro._emitfulltype = _emitfulltype
+    return macro
 
 
 class IfThenElse(Construct):
@@ -3460,6 +3723,12 @@ class IfThenElse(Construct):
 
     def _emitparse(self, code):
         return "((%s) if (%s) else (%s))" % (self.thensubcon._compileparse(code), self.condfunc, self.elsesubcon._compileparse(code), )
+
+    def _emitseq(self, ksy, bitwise):
+        return [
+        dict(id="thenvalue", type=self.thensubcon._compileprimitivetype(ksy, bitwise), if_=repr(self.condfunc).replace("this.","")),
+        dict(id="elsesubcon", type=self.elsesubcon._compileprimitivetype(ksy, bitwise), if_=repr(~self.condfunc).replace("this.","")),
+        ]
 
 
 class Switch(Construct):
@@ -3659,7 +3928,18 @@ def Padding(length, pattern=b"\x00"):
         >>> d.sizeof()
         4
     """
-    return Padded(length, Pass, pattern=pattern)
+    macro = Padded(length, Pass, pattern=pattern)
+    def _emitprimitivetype(ksy, bitwise):
+        if not bitwise:
+            raise NotImplementedError
+        return "b%s" % (length, )
+    def _emitfulltype(ksy, bitwise):
+        if bitwise:
+            raise NotImplementedError
+        return dict(size=length)
+    macro._emitprimitivetype = _emitprimitivetype
+    macro._emitfulltype = _emitfulltype
+    return macro
 
 
 class Padded(Subconstruct):
@@ -3734,6 +4014,9 @@ class Padded(Subconstruct):
 
     def _emitparse(self, code):
         return "(%s, read_bytes(io, (%s)-(%s) ))[0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
+
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(size=self.length, type=self.subcon._compileprimitivetype(ksy, bitwise))
 
 
 class Aligned(Subconstruct):
@@ -3915,6 +4198,12 @@ class Pointer(Subconstruct):
         """)
         return "parse_pointer(io, %s, lambda: %s)" % (self.offset, self.subcon._compileparse(code),)
 
+    def _emitprimitivetype(self, ksy, bitwise):
+        offset = self.offset.__getfield__() if callable(self.offset) else self.offset
+        name = "instance_%s" % ksy.allocateId()
+        ksy.instances[name] = dict(pos=offset, **self.subcon._compilefulltype(ksy, bitwise))
+        return name
+
 
 class Peek(Subconstruct):
     r"""
@@ -4093,6 +4382,9 @@ class Pass(Construct):
 
     def _emitparse(self, code):
         return "None"
+
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(size=0)
 
 
 @singleton
@@ -4292,6 +4584,12 @@ class Prefixed(Subconstruct):
         sub = self.lengthfield.sizeof() if self.includelength else 0
         return "restream(read_bytes(io, (%s)-(%s)), lambda io: %s)" % (self.lengthfield._compileparse(code), sub, self.subcon._compileparse(code), )
 
+    def _emitseq(self, ksy, bitwise):
+        return [
+            dict(id="lengthfield", type=self.lengthfield._compileprimitivetype(ksy, bitwise)), 
+            dict(id="data", size="lengthfield", type=self.subcon._compileprimitivetype(ksy, bitwise)),
+        ]
+
 
 def PrefixedArray(countfield, subcon):
     r"""
@@ -4326,6 +4624,12 @@ def PrefixedArray(countfield, subcon):
         position2 = _tell_stream(stream)
         return (position2-position1) + count * subcon._sizeof(context, path)
     macro._actualsize = _actualsize
+    def _emitseq(ksy, bitwise):
+        return [
+            dict(id="countfield", type=countfield._compileprimitivetype(ksy, bitwise)), 
+            dict(id="data", type=subcon._compileprimitivetype(ksy, bitwise), repeat="expr", repeat_expr="countfield"),
+        ]
+    macro._emitseq = _emitseq
     return macro
 
 

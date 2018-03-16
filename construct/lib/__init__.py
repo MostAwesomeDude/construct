@@ -45,6 +45,7 @@ __all__ = [
     'stringtypes',
     'supportsintenum',
     'supportsintflag',
+    'supportsksyexport',
     'supportskwordered',
     'supportsnumpy',
     'swapbitsinbytes',
