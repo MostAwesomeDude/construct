@@ -185,8 +185,10 @@ class Construct(object):
 
     * `parse`
     * `parse_stream`
+    * `parse_file`
     * `build`
     * `build_stream`
+    * `build_file`
     * `sizeof`
     * `compile`
     * `benchmark`
@@ -196,6 +198,7 @@ class Construct(object):
     * `_parse`
     * `_build`
     * `_sizeof`
+    * `_actualsize`
     * `_emitparse`
     * `_emitbuild`
     * `__getstate__`
@@ -349,7 +352,7 @@ class Construct(object):
         """
         Transforms a construct into another construct that does same thing (has same parsing and building semantics) but is much faster when parsing. Already compiled instances just compile into itself.
 
-        Optionally, (partial) source code can be saved to a text file. This is meant only to inspect the generated code, not to import it from external scripts.
+        Optionally, partial source code can be saved to a text file. This is meant only to inspect the generated code, not to import it from external scripts.
 
         :returns: Compiled instance
         """
@@ -451,7 +454,7 @@ class Construct(object):
         """
         Measures performance of your construct (its parsing and building runtime), both for the original instance and the compiled instance. Uses timeit module, over at min 1 sample, and at max over 1 second time.
 
-        Optionally, results are saved to a text file.
+        Optionally, results are saved to a text file for later inspection. Otherwise you can print the result string to terminal.
 
         Also this method checks correctness, by comparing parsing/building results from both instances.
 
@@ -1289,7 +1292,7 @@ class VarInt(Construct):
 # strings
 #===============================================================================
 
-#: Explicitly supported encodings (by String and CString classes).
+#: Explicitly supported encodings (by PaddedString and CString classes).
 #:
 possiblestringencodings = dict(
     ascii=1,
