@@ -81,7 +81,7 @@ def _read_stream(stream, length):
     except Exception:
         raise StreamError("stream.read() failed, requested %s bytes" % (length,))
     if len(data) != length:
-        raise StreamError("could not read enough bytes, expected %d, found %d" % (length, len(data)))
+        raise StreamError("stream read less then specified amount, expected %d, found %d" % (length, len(data)))
     return data
 
 
@@ -89,7 +89,7 @@ def _read_stream_entire(stream):
     try:
         return stream.read()
     except Exception:
-        raise StreamError("stream.read() failed when reading entire stream until EOF")
+        raise StreamError("stream.read() failed when reading until EOF")
 
 
 def _write_stream(stream, data, length=None):
@@ -97,30 +97,30 @@ def _write_stream(stream, data, length=None):
         raise StringError("given non-bytes value, perhaps unicode? %r" % (data,))
     if length is None:
         length = len(data)
-    if length < 0:
+    elif length < 0:
         raise StreamError("length must be non-negative, found %s" % length)
-    if len(data) != length:
-        raise StreamError("could not write bytes, expected %d, found %d" % (length, len(data)))
+    elif len(data) != length:
+        raise StreamError("bytes object of wrong length, expected %d, found %d" % (length, len(data)))
     try:
         written = stream.write(data)
     except Exception:
         raise StreamError("stream.write() failed, given %r" % (data,))
-    if written is not None and written != length:
-        raise StreamError("could not write bytes, expected %d, written %d" % (length, written))
+    if written != length:
+        raise StreamError("stream written less then specified, expected %d, written %d" % (length, written))
 
 
 def _seek_stream(stream, offset, whence=0):
     try:
         return stream.seek(offset, whence)
     except Exception:
-        raise StreamError("stream.seek failed: offset %s whence %s" % (offset, whence,))
+        raise StreamError("stream.seek() failed, offset %s, whence %s" % (offset, whence,))
 
 
 def _tell_stream(stream):
     try:
         return stream.tell()
     except Exception:
-        raise StreamError("stream.tell failed")
+        raise StreamError("stream.tell() failed")
 
 
 class CodeGen:
