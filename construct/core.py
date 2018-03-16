@@ -3857,7 +3857,7 @@ class Pointer(Subconstruct):
     r"""
     Jumps in the stream forth and back for one field.
 
-    Parsing and building seeks the stream to new location, processes subcon, and seeks back to original location. Size is not defined.
+    Parsing and building seeks the stream to new location, processes subcon, and seeks back to original location. Size is defined as 0 but that does not mean no bytes are written into the stream.
 
     Offset can be positive, indicating a position from stream beginning forward, or negative, indicating a position from EOF backwards.
 
@@ -3899,7 +3899,7 @@ class Pointer(Subconstruct):
         return buildret
 
     def _sizeof(self, context, path):
-        raise SizeofError
+        return 0
 
     def _emitparse(self, code):
         code.append("""
@@ -4692,7 +4692,7 @@ class LazyStruct(Construct):
 
     Fields are parsed depending on some factors:
 
-    * Some fields like FormatField Bytes(5) Array(5,Byte) are fixed-size and are therefore skipped. Stream is not read.
+    * Some fields like Int* Float* Bytes(5) Array(5,Byte) Pointer are fixed-size and are therefore skipped. Stream is not read.
     * Some fields like Bytes(this.field) are variable-size but their size is known during parsing when there is a corresponding context entry. Those fields are also skipped. Stream is not read.
     * Some fields like Prefixed PrefixedArray PascalString are variable-size but their size can be computed by partially reading the stream. Only first few bytes are read (the lengthfield).
     * Other fields like VarInt need to be parsed. Stream position that is left after the field was parsed is used.
@@ -4821,7 +4821,7 @@ class LazyArray(Subconstruct):
 
     Fields are parsed depending on some factors:
 
-    * Some fields like FormatField Bytes(5) Array(5,Byte) are fixed-size and are therefore skipped. Stream is not read.
+    * Some fields like Int* Float* Bytes(5) Array(5,Byte) Pointer are fixed-size and are therefore skipped. Stream is not read.
     * Some fields like Bytes(this.field) are variable-size but their size is known during parsing when there is a corresponding context entry. Those fields are also skipped. Stream is not read.
     * Some fields like Prefixed PrefixedArray PascalString are variable-size but their size can be computed by partially reading the stream. Only first few bytes are read (the lengthfield).
     * Other fields like VarInt need to be parsed. Stream position that is left after the field was parsed is used.

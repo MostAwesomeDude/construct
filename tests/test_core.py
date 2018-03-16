@@ -871,8 +871,8 @@ def test_bitstruct():
     common(d, b"\xe1\x1f", Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1)), 2)
 
 def test_pointer():
-    common(Pointer(2,             Byte), b"\x00\x00\x07", 7, SizeofError)
-    common(Pointer(lambda ctx: 2, Byte), b"\x00\x00\x07", 7, SizeofError)
+    common(Pointer(2,             Byte), b"\x00\x00\x07", 7, 0)
+    common(Pointer(lambda ctx: 2, Byte), b"\x00\x00\x07", 7, 0)
 
 def test_peek():
     d = Peek(Int8ub)

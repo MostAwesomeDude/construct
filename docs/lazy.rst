@@ -2,8 +2,6 @@
 Lazy parsing
 ============
 
-.. warning:: This chapter is work in progress.
-
 
 LazyStruct
 ---------------

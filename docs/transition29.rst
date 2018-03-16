@@ -73,6 +73,8 @@ EmbeddedSwitch added, in Conditional (`see tutorial page <https://construct.read
 
 StopIf raises `StopFieldError` instead of `StopIteration` (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.StopIf>`_)
 
+Pointer changed size to 0, can be parsed lazily
+
 PrefixedArray parameter `lengthfield` renamed to `countfield` (`see API page <https://construct.readthedocs.io/en/latest/api/tunneling.html#construct.PrefixedArray>`_)
 
 RestreamData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
