@@ -3575,9 +3575,9 @@ def EmbeddedSwitch(merged, selector, mapping):
     """
 
     merged2 = list(merged.subcons)
-    for key,sc in mapping.items():
-        for sc2 in sc.subcons:
-            merged2.append(sc2.name / If(selector == key, sc2))
+    for key,st in mapping.items():
+        for sc in st.subcons:
+            merged2.append(sc.name / If(selector == key, sc))
     return Struct(*merged2)
 
 
