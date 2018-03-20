@@ -770,7 +770,7 @@ def test_overall_parse(benchmark):
     benchmark(d.parse, exampledata)
 
 def test_overall_parse_compiled(benchmark):
-    d = cached("example-compiled", lambda: example.compile("example_compiled.py"))
+    d = example.compile()
     benchmark(d.parse, exampledata)
 
 def test_overall_build(benchmark):
@@ -779,6 +779,6 @@ def test_overall_build(benchmark):
     benchmark(d.build, obj)
 
 def test_overall_build_compiled(benchmark):
-    d = cached("example-compiled", lambda: example.compile("example_compiled.py"))
+    d = example.compile()
     obj = example.parse(exampledata)
     benchmark(d.build, obj)

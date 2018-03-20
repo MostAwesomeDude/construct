@@ -168,8 +168,8 @@ exampledata = bytes(1000)
 
 
 def test_example_benchmark():
-    d = cached("example-compiled", lambda: example.compile("example_compiled.py"))
-    d.benchmark(exampledata, "example_benchmark.txt")
+    d = example.compile(filename="example_compiled.py")
+    d.benchmark(exampledata, filename="example_benchmark.txt")
 
 def test_compiled_benchmark():
     d = Struct().compile()
