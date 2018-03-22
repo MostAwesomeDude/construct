@@ -1738,3 +1738,17 @@ def test_from_issue_692():
     assert AttReadByTypeResponse.parse(b"\x04\x01\x02\x03\x04\x01\x02\x03\x04") == Container(length=4,datalist=[dict(handle=0x0201,value=b'\x03\x04'),dict(handle=0x0201,value=b'\x03\x04')])
     # fails
     assert AttReadByTypeResponse.sizeof(length=4) == 1+2*(2+4-2)
+
+@xfail(reason="GreedyRange seeking inside Restreamed")
+def test_greedyrange_issue_697():
+    d = BitStruct(
+        "rest" / Bytewise(GreedyRange(Byte)),
+    )
+    d.parse(bytes(5))
+
+@xfail(reason="GreedyBytes reading entire stream but RestreamedBytesIO.read() does not support that")
+def test_greedybytes_issue_697():
+    d = BitStruct(
+        "rest" / Bytewise(GreedyBytes),
+    )
+    d.parse(bytes(5))
