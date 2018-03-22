@@ -1710,3 +1710,31 @@ def test_exportksy():
     ) * \
     "struct docstring"
     print(d.export_ksy(filename="example_ksy.ksy"))
+
+@xfail(reason="FixedSized not implemented, and other due to unknown cause")
+def test_from_issue_692():
+    # https://stackoverflow.com/questions/44747202/pythons-construct-sizeof-for-construct-depending-on-its-parent
+
+    AttributeHandleValuePair = Struct(
+        "handle" / Int16ul,
+        "value" / GreedyBytes,
+    )
+    AttReadByTypeResponse = Struct(
+        "length" / Int8ul,  # The size in bytes of each handle/value pair
+        "datalist" / Array(2, FixedSized(this.length, AttributeHandleValuePair)),
+    )
+    assert AttReadByTypeResponse.parse(b"\x04\x01\x02\x03\x04\x01\x02\x03\x04") == Container(length=4,datalist=[dict(handle=0x0201,value=b'\x03\x04'),dict(handle=0x0201,value=b'\x03\x04')])
+    assert AttReadByTypeResponse.sizeof(length=4) == 1+2*4
+
+    AttributeHandleValuePair = Struct(
+        "handle" / Int16ul,
+        "value" / Bytes(this._.length - 2),
+    )
+    AttReadByTypeResponse = Struct(
+        "length" / Int8ul,  # The size in bytes of each handle/value pair
+        "datalist" / AttributeHandleValuePair[2],
+    )
+    # OK
+    assert AttReadByTypeResponse.parse(b"\x04\x01\x02\x03\x04\x01\x02\x03\x04") == Container(length=4,datalist=[dict(handle=0x0201,value=b'\x03\x04'),dict(handle=0x0201,value=b'\x03\x04')])
+    # fails
+    assert AttReadByTypeResponse.sizeof(length=4) == 1+2*(2+4-2)
