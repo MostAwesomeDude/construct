@@ -7,6 +7,9 @@ Core API: Tunneling
 .. autofunction:: construct.BitsSwapped
 .. autofunction:: construct.Prefixed
 .. autofunction:: construct.PrefixedArray
+.. autofunction:: construct.FixedSized
+.. autofunction:: construct.NullTerminated
+.. autofunction:: construct.NullStripped
 .. autofunction:: construct.RestreamData
 .. autofunction:: construct.TransformData
 .. autofunction:: construct.Restreamed

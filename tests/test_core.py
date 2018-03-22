@@ -995,6 +995,40 @@ def test_prefixedarray():
     assert raises(PrefixedArray(Byte, Byte).parse, b"\x03\x01") == StreamError
     assert raises(PrefixedArray(Byte, Byte).sizeof) == SizeofError
 
+def test_fixedsized():
+    d = FixedSized(10, Byte)
+    common(d, b'\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00', 255, 10)
+    d = FixedSized(-255, Byte)
+    assert raises(d.parse, bytes(10)) == PaddingError
+    assert raises(d.build, 0) == PaddingError
+    assert raises(d.sizeof) == PaddingError
+
+def test_nullterminated():
+    d = NullTerminated(Byte)
+    common(d, b'\xff\x00', 255, SizeofError)
+    d = NullTerminated(GreedyBytes, include=True)
+    assert d.parse(b'\xff\x00') == b'\xff\x00'
+    d = NullTerminated(GreedyBytes, include=False)
+    assert d.parse(b'\xff\x00') == b'\xff'
+    d = NullTerminated(GreedyBytes, consume=True) >> GreedyBytes
+    assert d.parse(b'\xff\x00') == [b'\xff', b'']
+    d = NullTerminated(GreedyBytes, consume=False) >> GreedyBytes
+    assert d.parse(b'\xff\x00') == [b'\xff', b'\x00']
+    d = NullTerminated(GreedyBytes, require=True)
+    assert raises(d.parse, b'\xff') == StreamError
+    d = NullTerminated(GreedyBytes, require=False)
+    assert d.parse(b'\xff') == b'\xff'
+
+def test_nullstripped():
+    d = NullStripped(GreedyBytes)
+    common(d, b'\xff', b'\xff', SizeofError)
+    assert d.parse(b'\xff\x00\x00') == b'\xff'
+    assert d.build(b'\xff') == b'\xff'
+    d = NullStripped(GreedyBytes, pad=b'\x05')
+    common(d, b'\xff', b'\xff', SizeofError)
+    assert d.parse(b'\xff\x05\x05') == b'\xff'
+    assert d.build(b'\xff') == b'\xff'
+
 def test_restreamdata():
     d = RestreamData(b"\xff", Byte)
     common(d, b"", 255, 0)

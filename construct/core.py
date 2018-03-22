@@ -192,6 +192,14 @@ def extractfield(sc):
     return sc
 
 
+def evaluate(param, context):
+    return param(context) if callable(param) else param
+
+
+def disableif(condition):
+    return "# " if condition else "pass; "
+
+
 #===============================================================================
 # abstract constructs
 #===============================================================================
@@ -4539,10 +4547,12 @@ class Prefixed(Subconstruct):
 
     Example::
 
-        >>> Prefixed(VarInt, GreedyRange(Int32ul)).parse(b"\x08abcdefgh")
+        >>> d = Prefixed(VarInt, GreedyRange(Int32ul))
+        >>> d.parse(b"\x08abcdefgh")
         [1684234849, 1751606885]
 
-        >>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
+        >>> d = PrefixedArray(VarInt, Int32ul)
+        >>> d.parse(b"\x02abcdefgh")
         [1684234849, 1751606885]
     """
 
@@ -4605,10 +4615,12 @@ def PrefixedArray(countfield, subcon):
 
     Example::
 
-        >>> Prefixed(VarInt, GreedyRange(Int32ul)).parse(b"\x08abcdefgh")
+        >>> d = Prefixed(VarInt, GreedyRange(Int32ul))
+        >>> d.parse(b"\x08abcdefgh")
         [1684234849, 1751606885]
 
-        >>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
+        >>> d = PrefixedArray(VarInt, Int32ul)
+        >>> d.parse(b"\x02abcdefgh")
         [1684234849, 1751606885]
     """
     macro = FocusedSeq("items",
@@ -4631,6 +4643,178 @@ def PrefixedArray(countfield, subcon):
         ]
     macro._emitseq = _emitseq
     return macro
+
+
+class FixedSized(Subconstruct):
+    r"""
+    Restricts parsing to specified amount of bytes.
+
+    Parsing reads `length` bytes, then defers to subcon using new BytesIO with said bytes. Building defers to subcon, then measures how many bytes were written using stream tell(), computes the difference, and then writes additional null bytes accordingly. Size is same as `length`, although negative amount raises an error as well.
+
+    :param length: integer or context lambda, total amount of bytes (both data and padding)
+    :param subcon: Construct instance
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises PaddingError: length is negative
+    :raises PaddingError: subcon build produced more bytes than entire length (negative padding)
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
+
+    Example::
+
+        >>> d = FixedSized(10, Byte)
+        >>> d.parse(b'\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        255
+        >>> d.build(255)
+        b'\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        >>> d.sizeof()
+        10
+    """
+
+    def __init__(self, length, subcon):
+        super(FixedSized, self).__init__(subcon)
+        self.length = length
+
+    def _parse(self, stream, context, path):
+        length = evaluate(self.length, context)
+        if length < 0:
+            raise PaddingError("length cannot be negative")
+        data = _read_stream(stream, length)
+        return self.subcon._parse(io.BytesIO(data), context, path)
+
+    def _build(self, obj, stream, context, path):
+        length = evaluate(self.length, context)
+        if length < 0:
+            raise PaddingError("length cannot be negative")
+        offset1 = _tell_stream(stream)
+        buildret = self.subcon._build(obj, stream, context, path)
+        offset2 = _tell_stream(stream)
+        pad = length - (offset2-offset1)
+        if pad < 0:
+            raise PaddingError("subcon build %d bytes but was allowed only %d" % (offset2-offset1, length, ))
+        _write_stream(stream, bytes(pad))
+        return buildret
+
+    def _sizeof(self, context, path):
+        length = evaluate(self.length, context)
+        if length < 0:
+            raise PaddingError("length cannot be negative")
+        return length
+
+    def _emitparse(self, code):
+        return "restream(read_bytes(io, %s), lambda io: %s)" % (self.length, self.subcon._compileparse(code), )
+
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(size=repr(self.length).replace("this.",""), **self.subcon._compilefulltype(ksy, bitwise))
+
+
+class NullTerminated(Subconstruct):
+    r"""
+    Restricts parsing to bytes preceding a null byte.
+
+    Parsing reads one byte at a time and accumulates it with previous bytes. When term was found, (by default) consumes but discards the term. When EOF was found, (by default) raises same StreamError exception. Size is undefined.
+
+    :param subcon: Construct instance
+    :param term: optional, b-character, terminator byte as byte-string, default is \x00 null byte
+    :param include: optional, bool, if to include terminator in resulting data, default is False
+    :param consume: optional, bool, if to consume terminator or leave it in the stream, default is True
+    :param require: optional, bool, if EOF results in failure or not, default is True
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises StreamError: encountered EOF but require is not disabled
+
+    Example::
+
+        >>> d = NullTerminated(Byte)
+        >>> d.parse(b'\xff\x00')
+        255
+        >>> d.build(255)
+        b'\xff\x00'
+    """
+
+    def __init__(self, subcon, term=b"\x00", include=False, consume=True, require=True):
+        super(NullTerminated, self).__init__(subcon)
+        self.term = term
+        self.include = include
+        self.consume = consume
+        self.require = require
+
+    def _parse(self, stream, context, path):
+        term = self.term
+        data = b''
+        while True:
+            try:
+                b = _read_stream(stream, 1)
+            except StreamError:
+                if self.require:
+                    raise
+                else:
+                    break
+            if b == term:
+                if self.include:
+                    data += b
+                if not self.consume:
+                    _seek_stream(stream, -1, 1)
+                break
+            data += b
+        return self.subcon._parse(io.BytesIO(data), context, path)
+
+    def _build(self, obj, stream, context, path):
+        buildret = self.subcon._build(obj, stream, context, path)
+        _write_stream(stream, self.term)
+        return buildret
+
+    def _sizeof(self, context, path):
+        raise SizeofError
+
+    def _actualsize(self, stream, context, path):
+        raise NotImplementedError
+
+    def _emitparse(self, code):
+        raise NotImplementedError
+
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(terminator=byte2int(self.term), include=self.include, consume=self.consume, eos_error=self.require, **self.subcon._compilefulltype(ksy, bitwise))
+
+
+class NullStripped(Subconstruct):
+    r"""
+    Restricts parsing to bytes except padding left of EOF.
+
+    Parsing reads entire stream, then strips from right to left null bytes. Building defers to subcon. Size is undefined.
+
+    :param subcon: Construct instance
+    :param pad: optional, b-character, padding byte as byte-string, default is \x00 null byte
+
+    Example::
+
+        >>> d = NullStripped(Byte)
+        >>> d.parse(b'\xff\x00\x00')
+        255
+        >>> d.build(255)
+        b'\xff'
+    """
+
+    def __init__(self, subcon, pad=b"\x00"):
+        super(NullStripped, self).__init__(subcon)
+        self.pad = pad
+
+    def _parse(self, stream, context, path):
+        data = _read_stream_entire(stream)
+        data = data.rstrip(self.pad)
+        return self.subcon._parse(io.BytesIO(data), context, path)
+
+    def _build(self, obj, stream, context, path):
+        return self.subcon._build(obj, stream, context, path)
+
+    def _sizeof(self, context, path):
+        raise SizeofError
+
+    def _emitparse(self, code):
+        raise NotImplementedError
+
+    def _emitfulltype(self, ksy, bitwise):
+        return dict(pad_right=byte2int(self.pad), **self.subcon._compilefulltype(ksy, bitwise))
 
 
 class RestreamData(Subconstruct):

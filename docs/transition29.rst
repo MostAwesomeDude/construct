@@ -77,6 +77,8 @@ Pointer changed size to 0, can be parsed lazily
 
 PrefixedArray parameter `lengthfield` renamed to `countfield` (`see API page <https://construct.readthedocs.io/en/latest/api/tunneling.html#construct.PrefixedArray>`_)
 
+FixedSized NullTerminated NullStripped added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-bytes-subsets>`_)
+
 RestreamData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
 
 TransformData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)

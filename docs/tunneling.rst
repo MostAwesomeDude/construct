@@ -39,15 +39,37 @@ b'\x01\x00\x00\x00\x00\x00\x00\x00'
 Working with bytes subsets
 --------------------------------------------
 
-Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending an element count (see PrefixedArray) or by prepending a byte count (see Prefixed):
-
->>> Prefixed(VarInt, GreedyRange(Int32ul)).parse(b"\x08abcdefgh")
-[1684234849, 1751606885]
-
->>> PrefixedArray(VarInt, Int32ul).parse(b"\x02abcdefgh")
-[1684234849, 1751606885]
+Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending a byte count (see Prefixed) or by prepending an element count (see PrefixedArray):
 
 VarInt encoding is recommended because it is both compact and never overflows. Also and optionally, the length field can include its own size. If so, length field must be of fixed size.
+
+>>> d = Prefixed(VarInt, GreedyRange(Int32ul))
+>>> d.parse(b"\x08abcdefgh")
+[1684234849, 1751606885]
+
+>>> d = PrefixedArray(VarInt, Int32ul)
+>>> d.parse(b"\x02abcdefgh")
+[1684234849, 1751606885]
+
+There are also other means of restricting constructs to substreamed data. 
+
+FixedSized consumes a specified amount and then exposes inner construct to a new stream build out of those bytes. When building, it appends a padding to make a specified total.
+
+>>> d = FixedSized(10, Byte)
+>>> d.parse(b'\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+255
+
+NullTerminated consumes bytes up to first occurance of the term. When building, it just writes the subcon followed by the term.
+
+>>> d = NullTerminated(Byte)
+>>> d.parse(b'\xff\x00')
+255
+
+NullStripped consumes bytes till EOF, and for that matter should be restricted by Prefixed FixedSized etc, and then strips paddings. Subcon is parsed using a new stream build using those stripped bytes. When building, it just builds the subcon as-is.
+
+>>> d = NullStripped(Byte)
+>>> d.parse(b'\xff\x00\x00')
+255
 
 
 Working with different bytes
