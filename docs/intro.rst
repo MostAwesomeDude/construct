@@ -66,10 +66,19 @@ Requirements
 --------------
 Construct should run on CPython 2.7 3.3 3.4 3.5 3.6 3.7 and PyPy 2.7 3.5 implementations. Recommended is CPython 3.6 and PyPy (any version) because they support ordered keyword arguments, and also PyPy achieves much better performance. Therefore PyPy would be most recommended.
 
-Enum34 is optional if you want Enum EnumFlags to take labels from IntEnum IntFlag.
+Following modules are needed only if you want to use certain features:
 
-Numpy is optional, if you want to serialize arrays using Numpy protocol. Otherwise arrays can still be serialized using PrefixedArray.
+* Enum34 is optional if you want Enum EnumFlags to take labels from IntEnum IntFlag.
+* Numpy is optional, if you want to serialize arrays using Numpy protocol. Otherwise arrays can still be serialized using PrefixedArray.
+* Arrow is optional, if you want to use Timestamp class.
+* Different Python versions support different compression modules (like gzip lzma), if you want to use Compressed class.
+* Ruamel.yaml is optional, if you want to use KaitaiStruct (KSY) exporter.
 
-Arrow is optional, if you want to use Timestamp class.
 
-Different Python versions support different compression modules (like gzip lzma), if you want to use Compressed class.
+Installing
+-------------
+
+The library is downloadable and installable from Pypi. Just use standard command-line. There are no hard dependencies, but if you would like to install all supported (not required) modules listed above, you can use the 2nd command-line form.
+
+* pip install construct
+* pip install construct[extras]
