@@ -16,10 +16,18 @@ try:
     supportsksyexport = True
 except (ImportError, AssertionError):
     supportsksyexport = False
+try:
+    from enum import IntEnum
+    supportsintenum = True
+except ImportError:
+    supportsintenum = False
+try:
+    from enum import IntFlag
+    supportsintflag = True
+except ImportError:
+    supportsintflag = False
 
 supportskwordered = PY >= (3,6) or PYPY
-supportsintenum = PY >= (3,4)
-supportsintflag = PY >= (3,6)
 
 
 if PY3:
