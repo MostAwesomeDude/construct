@@ -3954,17 +3954,16 @@ class Padded(Subconstruct):
     r"""
     Appends additional null bytes to achieve a length.
 
-    Note that subcon can actually be variable size, it is the eventual amount of bytes that is read or written during parsing or building that determines actual padding.
-
-    Parsing first parses subcon, then consumes an amount of bytes to sum up to specified length, and discards it. Building first builds subcon, then writes specified pattern byte to sum up to specified length. Size is same as specified.
+    Parsing first parses the subcon, then uses stream.tell() to measure how many bytes were read and consumes additional bytes accordingly. Building first builds the subcon, then uses stream.tell() to measure how many bytes were written and produces additional bytes accordingly. Size is same as `length`, but negative amount results in error. Note that subcon can actually be variable size, it is the eventual amount of bytes that is read or written during parsing or building that determines actual padding.
 
     :param length: integer or context lambda, length of the padding
     :param subcon: Construct instance
-    :param pattern: b-character, padding pattern, default is \\x00
+    :param pattern: optional, b-character, padding pattern, default is \\x00
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises PaddingError: length was negative, or subcon read or written more than the length (would cause negative pad)
-    :raises PaddingError: pattern was not bytes (b-character)
+    :raises PaddingError: length is negative
+    :raises PaddingError: subcon read or written more than the length (would cause negative pad)
+    :raises PaddingError: pattern is not bytes of length 1
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -3993,7 +3992,9 @@ class Padded(Subconstruct):
         self.pattern = pattern
 
     def _parse(self, stream, context, path):
-        length = self.length(context) if callable(self.length) else self.length
+        length = evaluate(self.length, context)
+        if length < 0:
+            raise PaddingError("length cannot be negative")
         position1 = _tell_stream(stream)
         obj = self.subcon._parsereport(stream, context, path)
         position2 = _tell_stream(stream)
@@ -4004,7 +4005,9 @@ class Padded(Subconstruct):
         return obj
 
     def _build(self, obj, stream, context, path):
-        length = self.length(context) if callable(self.length) else self.length
+        length = evaluate(self.length, context)
+        if length < 0:
+            raise PaddingError("length cannot be negative")
         position1 = _tell_stream(stream)
         buildret = self.subcon._build(obj, stream, context, path)
         position2 = _tell_stream(stream)
@@ -4016,7 +4019,10 @@ class Padded(Subconstruct):
 
     def _sizeof(self, context, path):
         try:
-            return self.length(context) if callable(self.length) else self.length
+            length = evaluate(self.length, context)
+            if length < 0:
+                raise PaddingError("length cannot be negative")
+            return length
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context")
 
