@@ -1,7 +1,8 @@
 from declarativeunittest import *
 from construct import *
 from construct.lib import *
-from deprecated_examples import  *
+
+from deprecated_gallery import  *
 
 
 def test_png():

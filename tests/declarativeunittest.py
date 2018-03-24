@@ -41,7 +41,7 @@ def commonhex(format, hexdata):
 
 
 def commondumpdeprecated(format, filename):
-    filename = "tests/deprecated_examples/formats/" + filename
+    filename = "tests/deprecated_gallery/blobs/" + filename
     if ontravis:
         filename = "../" + filename
     with open(filename,'rb') as f:
@@ -50,7 +50,7 @@ def commondumpdeprecated(format, filename):
 
 
 def commondump(format, filename):
-    filename = "gallery/" + filename
+    filename = "tests/gallery/blobs/" + filename
     if ontravis:
         filename = "../" + filename
     with open(filename,'rb') as f:

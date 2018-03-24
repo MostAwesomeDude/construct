@@ -52,7 +52,7 @@ Construct has been used to parse:
 * Executable binaries formats like ELF32, PE32
 * Filesystem layouts like Ext2, Fat16, MBR
 
-See more examples in `current gallery <https://github.com/construct/construct/tree/master/gallery>`_ and in `deprecated gallery <https://github.com/construct/construct/tree/master/deprecated_examples>`_.
+See more examples in `current gallery <https://github.com/construct/construct/tree/master/gallery>`_ and in `deprecated gallery <https://github.com/construct/construct/tree/master/deprecated_gallery>`_.
 
 
 Development and support
