@@ -4649,7 +4649,7 @@ class FixedSized(Subconstruct):
     r"""
     Restricts parsing to specified amount of bytes.
 
-    Parsing reads `length` bytes, then defers to subcon using new BytesIO with said bytes. Building defers to subcon, then measures how many bytes were written using stream tell(), computes the difference, and then writes additional null bytes accordingly. Size is same as `length`, although negative amount raises an error as well.
+    Parsing reads `length` bytes, then defers to subcon using new BytesIO with said bytes. Building builds the subcon using new BytesIO, then writes said data and additional null bytes accordingly. Size is same as `length`, although negative amount raises an error as well.
 
     :param length: integer or context lambda, total amount of bytes (both data and padding)
     :param subcon: Construct instance
@@ -4686,12 +4686,13 @@ class FixedSized(Subconstruct):
         length = evaluate(self.length, context)
         if length < 0:
             raise PaddingError("length cannot be negative")
-        offset1 = _tell_stream(stream)
-        buildret = self.subcon._build(obj, stream, context, path)
-        offset2 = _tell_stream(stream)
-        pad = length - (offset2-offset1)
+        stream2 = io.BytesIO()
+        buildret = self.subcon._build(obj, stream2, context, path)
+        data = stream2.getvalue()
+        pad = length - len(data)
         if pad < 0:
             raise PaddingError("subcon build %d bytes but was allowed only %d" % (offset2-offset1, length, ))
+        _write_stream(stream, data)
         _write_stream(stream, bytes(pad))
         return buildret
 
