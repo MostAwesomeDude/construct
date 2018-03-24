@@ -140,6 +140,9 @@ example = Struct(
     "prefixed1" / Prefixed(Byte, GreedyBytes),
     "prefixed2" / RestreamData(b"\x01", Prefixed(Byte, GreedyBytes, includelength=True)),
     "prefixedarray" / PrefixedArray(Byte, Byte),
+    "fixedsized" / FixedSized(10, GreedyBytes),
+    "nullterminated" / RestreamData(b'\x01\x00', NullTerminated(GreedyBytes)),
+    "nullstripped" / RestreamData(b'\x01\x00', NullStripped(GreedyBytes)),
     "restreamdata" / RestreamData(b"\xff", Byte),
     "restreamdata_verify" / Check(this.restreamdata == 255),
     # TransformData

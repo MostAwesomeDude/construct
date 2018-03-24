@@ -4656,7 +4656,7 @@ class FixedSized(Subconstruct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises PaddingError: length is negative
-    :raises PaddingError: subcon build produced more bytes than entire length (negative padding)
+    :raises PaddingError: subcon written more bytes than entire length (negative padding)
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -4680,7 +4680,7 @@ class FixedSized(Subconstruct):
         if length < 0:
             raise PaddingError("length cannot be negative")
         data = _read_stream(stream, length)
-        return self.subcon._parse(io.BytesIO(data), context, path)
+        return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
         length = evaluate(self.length, context)
@@ -4713,7 +4713,7 @@ class NullTerminated(Subconstruct):
     r"""
     Restricts parsing to bytes preceding a null byte.
 
-    Parsing reads one byte at a time and accumulates it with previous bytes. When term was found, (by default) consumes but discards the term. When EOF was found, (by default) raises same StreamError exception. Size is undefined.
+    Parsing reads one byte at a time and accumulates it with previous bytes. When term was found, (by default) consumes but discards the term. When EOF was found, (by default) raises same StreamError exception. Then subcon is parsed using new BytesIO made with said data. Building builds the subcon and then writes the term. Size is undefined.
 
     :param subcon: Construct instance
     :param term: optional, b-character, terminator byte as byte-string, default is \x00 null byte
@@ -4758,7 +4758,7 @@ class NullTerminated(Subconstruct):
                     _seek_stream(stream, -1, 1)
                 break
             data += b
-        return self.subcon._parse(io.BytesIO(data), context, path)
+        return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
         buildret = self.subcon._build(obj, stream, context, path)
@@ -4768,12 +4768,6 @@ class NullTerminated(Subconstruct):
     def _sizeof(self, context, path):
         raise SizeofError
 
-    def _actualsize(self, stream, context, path):
-        raise NotImplementedError
-
-    def _emitparse(self, code):
-        raise NotImplementedError
-
     def _emitfulltype(self, ksy, bitwise):
         return dict(terminator=byte2int(self.term), include=self.include, consume=self.consume, eos_error=self.require, **self.subcon._compilefulltype(ksy, bitwise))
 
@@ -4782,7 +4776,7 @@ class NullStripped(Subconstruct):
     r"""
     Restricts parsing to bytes except padding left of EOF.
 
-    Parsing reads entire stream, then strips from right to left null bytes. Building defers to subcon. Size is undefined.
+    Parsing reads entire stream, then strips the data from right to left of null bytes, then parses subcon using new BytesIO made of said data. Building defers to subcon as-is. Size is undefined, because it reads till EOF.
 
     :param subcon: Construct instance
     :param pad: optional, b-character, padding byte as byte-string, default is \x00 null byte
@@ -4803,16 +4797,13 @@ class NullStripped(Subconstruct):
     def _parse(self, stream, context, path):
         data = _read_stream_entire(stream)
         data = data.rstrip(self.pad)
-        return self.subcon._parse(io.BytesIO(data), context, path)
+        return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
         return self.subcon._build(obj, stream, context, path)
 
     def _sizeof(self, context, path):
         raise SizeofError
-
-    def _emitparse(self, code):
-        raise NotImplementedError
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(pad_right=byte2int(self.pad), **self.subcon._compilefulltype(ksy, bitwise))
