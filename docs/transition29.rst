@@ -49,7 +49,7 @@ EmbeddedBitStruct removed, instead use BitStruct with Bytewise-wrapped fields (`
 
 Array reimplemented without Range, does not use stream.tell()
 
-Range removed, GreedyRange remains
+Range removed, GreedyRange does not support [:] syntax
 
 Array GreedyRange RepeatUntil added `discard` parameter (`see tutorial page <https://construct.readthedocs.io/en/latest/basics.html#processing-on-the-fly>`_)
 

@@ -638,15 +638,13 @@ class Construct(object):
 
     def __getitem__(self, count):
         """
-        Used for making Arrays and GreedyRanges like Byte[5] and Byte[:].
+        Used for making Arrays like Byte[5] and Byte[this.count].
         """
         if isinstance(count, slice):
-            if any(x is not None for x in [count.start, count.stop, count.step]):
-                raise ValueError("slice can only be like X[:]")
-            return GreedyRange(self)
+            raise ConstructError("subcon[N] syntax can only be used for Arrays, use GreedyRange(subcon) instead?")
         if isinstance(count, int) or callable(count):
             return Array(count, self)
-        raise TypeError("expected integer, context lambda, or full-slice")
+        raise ConstructError("subcon[N] syntax expects integer or context lambda")
 
 
 class Subconstruct(Construct):
@@ -2271,7 +2269,7 @@ class Array(Subconstruct):
 
     Parses into a ListContainer (a list). Parsing and building processes an exact amount of elements. If given list has more or less than count elements, raises RangeError. Size is defined as count multiplied by subcon size, but only if subcon is fixed size.
 
-    Operator [] can be used to make Array (recommended) and GreedyRange instances.
+    Operator [] can be used to make Array instances (recommended syntax).
 
     :param count: integer or context lambda, strict amount of elements
     :param subcon: Construct instance, subcon to process individual elements
@@ -2290,11 +2288,6 @@ class Array(Subconstruct):
         b'\x00\x01\x02\x03\x04'
         >>> d.parse(_)
         [0, 1, 2, 3, 4]
-
-        Alternative syntax (recommended):
-        >>> Bytes[5] creates Array
-        >>> Byte[3:5], Byte[3:], Byte[:5] are invalid
-        >>> Byte[:] creates GreedyRange
     """
 
     def __init__(self, count, subcon, discard=False):
@@ -2351,11 +2344,9 @@ class GreedyRange(Subconstruct):
     r"""
     Homogenous array of elements, similar to C# generic IEnumerable<T>, but works with unknown count of elements by parsing until end of stream.
 
-    Parses into a ListContainer (a list). Parsing stops when an exception occured inside subcon, possibly due to EOF. Builds from enumerable. Size is undefined.
+    Parses into a ListContainer (a list). Parsing stops when an exception occured when parsing the subcon, either due to EOF or subcon format not being able to parse the data. Either way, when GreedyRange encounters either failure it seeks the stream back to a position after last successful subcon parsing. Builds from enumerable, each element as-is. Size is undefined.
 
     This class supports stopping. If :class:`~construct.core.StopIf` field is a member, and it evaluates its lambda as positive, this class ends parsing or building as successful without processing further fields.
-
-    Operator [] can be used to make Array (recommended) and GreedyRange instances.
 
     :param subcon: Construct instance, subcon to process individual elements
     :param discard: optional, bool, if set then parsing returns empty list
@@ -2367,16 +2358,11 @@ class GreedyRange(Subconstruct):
 
     Example::
 
-        >>> d = GreedyRange(Byte) or Byte[:]
+        >>> d = GreedyRange(Byte)
         >>> d.build(range(8))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
         >>> d.parse(_)
         [0, 1, 2, 3, 4, 5, 6, 7]
-
-        Alternative syntax (recommended):
-        >>> Bytes[5] creates Array
-        >>> Byte[3:5], Byte[3:], Byte[:5] are invalid
-        >>> Byte[:] creates GreedyRange
     """
 
     def __init__(self, subcon, discard=False):

@@ -445,8 +445,6 @@ def test_array_nontellable():
 def test_greedyrange():
     common(GreedyRange(Byte), b"", [], SizeofError)
     common(GreedyRange(Byte), b"\x01\x02", [1,2], SizeofError)
-    common(Byte[:], b"", [], SizeofError)
-    common(Byte[:], b"\x01\x02", [1,2], SizeofError)
     assert GreedyRange(Byte, discard=False).parse(b"\x01\x02") == [1,2]
     assert GreedyRange(Byte, discard=True).parse(b"\x01\x02") == []
 
@@ -726,9 +724,9 @@ def test_union_kwctor():
 
 def test_union_issue_348():
     d = Union(None,
-        Int8=Prefixed(Int16ub, Int8ub[:]),
-        Int16=Prefixed(Int16ub, Int16ub[:]),
-        Int32=Prefixed(Int16ub, Int32ub[:]),
+        Int8=Prefixed(Int16ub, GreedyRange(Int8ub)),
+        Int16=Prefixed(Int16ub, GreedyRange(Int16ub)),
+        Int32=Prefixed(Int16ub, GreedyRange(Int32ub)),
     )
     assert d.parse(b'\x00\x04\x11\x22\x33\x44') == {'Int16': [4386, 13124], 'Int32': [287454020], 'Int8': [17, 34, 51, 68]}
     assert d.build(dict(Int16=[4386, 13124])) == b'\x00\x04\x11\x22\x33\x44'
@@ -1281,8 +1279,9 @@ def test_noneof():
     assert raises(NoneOf(Byte,[4,5,6,7]).parse, b"\x06") == ValidationError
 
 def test_filter():
-    assert Filter(obj_ != 0, Byte[:]).parse(b"\x00\x02\x00") == [2]
-    assert Filter(obj_ != 0, Byte[:]).build([0,1,0,2,0]) == b"\x01\x02"
+    d = Filter(obj_ != 0, GreedyRange(Byte))
+    assert d.parse(b"\x00\x02\x00") == [2]
+    assert d.build([0,1,0,2,0]) == b"\x01\x02"
 
 def test_slicing():
     d = Slicing(Array(4,Byte), 4, 1, 3, empty=0)

@@ -182,15 +182,15 @@ Repeaters, as their name suggests, repeat a given unit for a specified number of
 
 Arrays have a fixed constant count of elements. Operator `[]` is used instead of calling the `Array` class (and is recommended syntax).
 
->>> d = Byte[10] or Array(10, Byte)
+>>> d = Array(10, Byte) or Byte[10]
 >>> d.parse(b"1234567890")
 [49, 50, 51, 52, 53, 54, 55, 56, 57, 48]
 >>> d.build([1,2,3,4,5,6,7,8,9,0])
 b'\x01\x02\x03\x04\x05\x06\x07\x08\t\x00'
 
-GreedyRange attempts to parse until EOF or subcon fails to parse correctly.
+GreedyRange attempts to parse until EOF or subcon fails to parse correctly. Either way, when GreedyRange encounters either failure it seeks the stream back to a position after last successful subcon parsing. This means the stream must be seekable/tellable (doesnt work inside Bitwise).
 
->>> d = GreedyRange(Byte) or Byte[:]
+>>> d = GreedyRange(Byte)
 >>> d.parse(b"dsadhsaui")
 [100, 115, 97, 100, 104, 115, 97, 117, 105]
 
@@ -204,7 +204,7 @@ Note that all elements accumulated during parsing are provided as additional lam
 >>> d.build(range(20))
 b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b'
 
->>> d = RepeatUntil(lambda x,lst,ctx: lst[-2:]==[0,0], Byte)
+>>> d = RepeatUntil(lambda x,lst,ctx: lst[-2:] == [0,0], Byte)
 >>> d.parse(b"\x01\x00\x00\xff")
 [1, 0, 0]
 
