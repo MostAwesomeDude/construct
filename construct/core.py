@@ -739,7 +739,9 @@ class Tunnel(Subconstruct):
         return self.subcon.parse(data, **context)
 
     def _build(self, obj, stream, context, path):
-        data = self.subcon.build(obj, **context)
+        stream2 = io.BytesIO()
+        buildret = self.subcon._build(obj, stream2, context, path)
+        data = stream2.getvalue()
         data = self._encode(data, context, path)
         _write_stream(stream, data)
         return obj
