@@ -8,11 +8,12 @@ Obtaining raw bytes
 
 When some value needs to be processed as both a parsed object and its raw bytes representation, both of these can be obtained using RawCopy. You can build from either the object or raw bytes as well. Dict also happen to contain the stream offsets, if you need to know at which position it resides in the stream or if you need to know its size in bytes.
 
->>> RawCopy(Byte).parse(b"\xff")
+>>> d = RawCopy(Byte)
+>>> d.parse(b"\xff")
 Container(data=b'\xff')(value=255)(offset1=0)(offset2=1)(length=1)
->>> RawCopy(Byte).build(dict(data=b"\xff"))
+>>> d.build(dict(data=b"\xff"))
 b'\xff'
->>> RawCopy(Byte).build(dict(value=255))
+>>> d.build(dict(value=255))
 b'\xff'
 
 
@@ -30,9 +31,11 @@ b'\x03\x02\x01'
 
 When bits within each byte need to be swapped, there is another wrapper:
 
->>> Bitwise(Bytes(8)).parse(b"\x01")
+>>> d = Bitwise(Bytes(8))
+>>> d.parse(b"\x01")
 b'\x00\x00\x00\x00\x00\x00\x00\x01'
->>> BitsSwapped(Bitwise(Bytes(8))).parse(b"\x01")
+>>> d = BitsSwapped(Bitwise(Bytes(8)))
+>>> d.parse(b"\x01")
 b'\x01\x00\x00\x00\x00\x00\x00\x00'
 
 
@@ -51,13 +54,22 @@ VarInt encoding is recommended because it is both compact and never overflows. A
 >>> d.parse(b"\x02abcdefgh")
 [1684234849, 1751606885]
 
-There are also other means of restricting constructs to substreamed data. 
+There are also other means of restricting constructs to substreamed data. All 3 classes below work by substreaming data, meaning the subcon is not given the original stream but a new BytesIO made out of pre-read bytes. This allows Greedy* fields to work properly.
 
 FixedSized consumes a specified amount and then exposes inner construct to a new stream build out of those bytes. When building, it appends a padding to make a specified total.
 
 >>> d = FixedSized(10, Byte)
 >>> d.parse(b'\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00')
 255
+
+FixedSized is similar to Padded. The results seem identical but the implementation is entirely different. FixedSized uses a substream and Padded uses stream.tell(). Therefore:
+
+::
+
+    # valid
+    FixedSized(10, GreedyBytes)
+    # UNSAFE
+    Padded(10, GreedyBytes)
 
 NullTerminated consumes bytes up to first occurance of the term. When building, it just writes the subcon followed by the term.
 
@@ -88,10 +100,9 @@ RestreamData allows you to insert a field that parses some data that came either
 ::
 
     d = Struct(
-        ...,
         "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
         "numpy1" / RestreamData(this.numpy_data, Numpy),
-        ...,
+        "numpy2" / Numpy, # this would fail when parsing null bytes
     )
     d.parse(bytes(1000))
 
