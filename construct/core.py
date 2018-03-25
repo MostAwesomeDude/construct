@@ -292,6 +292,8 @@ class Construct(object):
         Parse a stream. Files, pipes, sockets, and other streaming sources of data are handled by this method. See parse().
         """
         context = Container(**contextkw)
+        context._parsing = True
+        context._building = False
         try:
             return self._parsereport(stream, context, "(parsing)")
         except CancelParsing:
@@ -337,6 +339,8 @@ class Construct(object):
         Build an object directly into a stream. See build().
         """
         context = Container(**contextkw)
+        context._parsing = False
+        context._building = True
         self._build(obj, stream, context, "(building)")
 
     def build_file(self, obj, filename, **contextkw):
@@ -367,6 +371,8 @@ class Construct(object):
         :raises SizeofError: size could not be determined in actual context, or is impossible to be determined
         """
         context = Container(**contextkw)
+        context._parsing = False
+        context._building = False
         return self._sizeof(context, "(sizeof)")
 
     def _sizeof(self, context, path):
@@ -417,6 +423,8 @@ class Construct(object):
         """)
         code.append("""
             def parseall(io, this):
+                this['_parsing'] = True
+                this['_building'] = False
                 return %s
             compiled = Compiled(None, None, parseall)
         """ % (self._compileparse(code),))
@@ -2052,8 +2060,7 @@ class Struct(Construct):
 
     def _parse(self, stream, context, path):
         obj = Container()
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         for sc in self.subcons:
             try:
                 subobj = sc._parsereport(stream, context, path)
@@ -2067,8 +2074,7 @@ class Struct(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = Container()
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -2089,6 +2095,8 @@ class Struct(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
+        context._parsing = False
+        context._building = False
         context._subcons = self._subcons
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
@@ -2099,20 +2107,21 @@ class Struct(Construct):
         fname = "parse_struct_%s" % code.allocateId()
         block = """
             def %s(io, this):
+                result = Container()
                 this = Container(_ = this)
+                this['_parsing'] = True
+                this['_building'] = False
                 try:
         """ % (fname, )
         for sc in self.subcons:
             block += """
                     %s%s
-            """ % ("this[%r] = " % sc.name if sc.name else "", sc._compileparse(code))
+            """ % ("result[%r] = this[%r] = " % (sc.name, sc.name) if sc.name else "", sc._compileparse(code))
         block += """
                     pass
                 except StopFieldError:
                     pass
-                del this['_']
-                del this['_index']
-                return this
+                return result
         """
         code.append(block)
         return "%s(io, this)" % (fname,)
@@ -2186,8 +2195,7 @@ class Sequence(Construct):
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         for i,sc in enumerate(self.subcons):
             try:
                 subobj = sc._parsereport(stream, context, path)
@@ -2201,8 +2209,7 @@ class Sequence(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = ListContainer([None for sc in self.subcons])
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         retlist = ListContainer()
         for i,(sc,subobj) in enumerate(zip(self.subcons, obj)):
             try:
@@ -2219,6 +2226,8 @@ class Sequence(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
+        context._parsing = False
+        context._building = False
         context._subcons = self._subcons
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
@@ -2982,8 +2991,7 @@ class FocusedSeq(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         for i,sc in enumerate(self.subcons):
             parseret = sc._parsereport(stream, context, path)
@@ -2994,8 +3002,7 @@ class FocusedSeq(Construct):
         return finalret
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         context[parsebuildfrom] = obj
         for i,sc in enumerate(self.subcons):
@@ -3008,6 +3015,8 @@ class FocusedSeq(Construct):
 
     def _sizeof(self, context, path):
         context = Container(_ = context)
+        context._parsing = False
+        context._building = False
         context._subcons = self._subcons
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
@@ -3427,8 +3436,7 @@ class Union(Construct):
 
     def _parse(self, stream, context, path):
         obj = Container()
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         fallback = _tell_stream(stream)
         forwards = {}
         for i,sc in enumerate(self.subcons):
@@ -3448,8 +3456,7 @@ class Union(Construct):
         return obj
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         context.update(obj)
         for sc in self.subcons:
             if sc.flagbuildnone:
@@ -3470,6 +3477,8 @@ class Union(Construct):
             raise UnionError("cannot build, none of subcons were found in the dictionary %r" % (obj, ))
 
     def _sizeof(self, context, path):
+        context._parsing = False
+        context._building = False
         raise SizeofError("Union builds depending on actual object dict, size is unknown")
 
     def _emitparse(self, code):
@@ -5171,8 +5180,7 @@ class LazyStruct(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         offset = _tell_stream(stream)
         offsets = {0: offset}
         values = {}
@@ -5193,8 +5201,7 @@ class LazyStruct(Construct):
         # exact copy from Struct class
         if obj is None:
             obj = Container()
-        context = Container(_ = context)
-        context._subcons = self._subcons
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -5216,6 +5223,8 @@ class LazyStruct(Construct):
     def _sizeof(self, context, path):
         # exact copy from Struct class
         context = Container(_ = context)
+        context._parsing = False
+        context._building = False
         context._subcons = self._subcons
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)

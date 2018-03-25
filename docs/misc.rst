@@ -375,6 +375,15 @@ b'\xff\x01'
 >>> d.build(255, x=0)
 b'\xff'
 
+In particular, you can use different subcons for parsing and building. The context entries have boolean values and always exist (sizeof has both values as False). For convenience, those two entries are duplicated in Struct Sequence FocusedSeq Union nested contexts. You dont need to reach for the top-most entry. This comes handy when using hackish constructs to achieve some complex semantics that are not available in the core library.
+
+::
+
+    Struct(
+        If(this._parsing, ...),
+        If(this._building, ...),
+    )
+
 
 Switch
 ------

@@ -1648,6 +1648,94 @@ def test_exposing_members_context():
     )
     assert d.parse(b"\x01\x02\x03\x04") == dict(chars=[1,2,3,4],data=b"\x01\x02\x03\x04")
 
+def test_isparsingbuilding():
+    d = Struct(
+        Check(this._parsing & this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.parse(b'')
+    d = Struct(
+        Check(~this._parsing & ~this._._parsing),
+        Check(this._building & this._._building),
+    )
+    d.build(None)
+    d = Struct(
+        Check(~this._parsing & ~this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.sizeof()
+    # ---------------------------------
+    d = Sequence(
+        Check(this._parsing & this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.parse(b'')
+    d = Sequence(
+        Check(~this._parsing & ~this._._parsing),
+        Check(this._building & this._._building),
+    )
+    d.build(None)
+    d = Sequence(
+        Check(~this._parsing & ~this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.sizeof()
+    # ---------------------------------
+    d = FocusedSeq("none",
+        "none" / Pass,
+        Check(this._parsing & this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.parse(b'')
+    d = FocusedSeq("none",
+        "none" / Pass,
+        Check(~this._parsing & ~this._._parsing),
+        Check(this._building & this._._building),
+    )
+    d.build(None)
+    d = FocusedSeq("none",
+        "none" / Pass,
+        Check(~this._parsing & ~this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.sizeof()
+    # ---------------------------------
+    d = Union(None,
+        "none" / Pass,
+        Check(this._parsing & this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.parse(b'')
+    d = Union(None,
+        "none" / Pass,
+        Check(~this._parsing & ~this._._parsing),
+        Check(this._building & this._._building),
+    )
+    d.build(dict(none=None))
+    d = Union(None,
+        "none" / Pass,
+        Check(~this._parsing & ~this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    # doesnt check context because _sizeof just raises the error
+    assert raises(d.sizeof) == SizeofError
+    # ---------------------------------
+    d = LazyStruct(
+        Check(this._parsing & this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.parse(b'')
+    d = LazyStruct(
+        Check(~this._parsing & ~this._._parsing),
+        Check(this._building & this._._building),
+    )
+    d.build({})
+    d = LazyStruct(
+        Check(~this._parsing & ~this._._parsing),
+        Check(~this._building & ~this._._building),
+    )
+    d.sizeof()
+
 def test_parsedhook_repeatersdiscard():
     outputs = []
     def printobj(obj, ctx):

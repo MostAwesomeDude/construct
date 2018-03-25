@@ -43,7 +43,9 @@ Mapping replaced SymmetricMapping, and dropped `default` parameter (`see API pag
 
 Struct Sequence FocusedSeq Union LazyStruct have new embedding semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
 
-Struct Sequence FocusedSeq Union LazyStruct are exposing subcons, as attributes and in context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
+Struct Sequence FocusedSeq Union LazyStruct are exposing subcons, as attributes and in the context (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
+
+Struct Sequence FocusedSeq Union LazyStruct are exposing _parsing _building boolean entries in the context (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#ifthenelse>`_)
 
 EmbeddedBitStruct removed, instead use BitStruct with Bytewise-wrapped fields (`see tutorial page <https://construct.readthedocs.io/en/latest/bitwise.html#fields-that-work-with-bytes>`_)
 

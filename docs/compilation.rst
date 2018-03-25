@@ -28,7 +28,7 @@ Sizeof is applied during compilation (not during parsing and building)
 
 Exceptions do not include `path` information
 
-Struct Sequence FocusedSeq Union LazyStruct do not support `_subcons` in the context
+Struct Sequence FocusedSeq Union LazyStruct do not support `_parsing _building _subcons` context entries
 
 Parsed hooks are not supported, ignored
 
