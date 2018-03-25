@@ -40,6 +40,7 @@ __all__ = [
     'RestreamedBytesIO',
     'setGlobalPrintFalseFlags',
     'setGlobalPrintFullStrings',
+    'setGlobalPrintPrivateEntries',
     'str2bytes',
     'str2unicode',
     'stringtypes',

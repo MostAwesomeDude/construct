@@ -162,6 +162,7 @@ __all__ = [
     'Sequence',
     'setGlobalPrintFalseFlags',
     'setGlobalPrintFullStrings',
+    'setGlobalPrintPrivateEntries',
     'Short',
     'Single',
     'SizeofError',

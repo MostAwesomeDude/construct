@@ -99,7 +99,7 @@ Probe Debugger updated, ProbeInto removed (`see tutorial page <https://construct
 Support classes
 --------------------
 
-Container updated, uses `globalPrintFullStrings` and `globalPrintFalseFlags`
+Container updated, uses `globalPrintFullStrings globalPrintFalseFlags globalPrintPrivateEntries`
 
 FlagsContainer removed
 

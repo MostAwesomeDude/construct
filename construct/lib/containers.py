@@ -4,6 +4,7 @@ import re
 
 globalPrintFullStrings = False
 globalPrintFalseFlags = False
+globalPrintPrivateEntries = False
 
 
 def setGlobalPrintFullStrings(enabled=False):
@@ -24,6 +25,16 @@ def setGlobalPrintFalseFlags(enabled=False):
     """
     global globalPrintFalseFlags
     globalPrintFalseFlags = enabled
+
+
+def setGlobalPrintPrivateEntries(enabled=False):
+    r"""
+    When enabled, Container __str__ shows keys like _ _index _etc, otherwise and by default, it hides those keys. __repr__ never shows private entries.
+
+    :param enabled: bool
+    """
+    global globalPrintPrivateEntries
+    globalPrintPrivateEntries = enabled
 
 
 def recursion_lock(retval="<recursion detected>", lock_name="__recursion_lock__"):
@@ -224,7 +235,7 @@ class Container(dict):
         text = ["Container: "]
         isflags = getattr(self, "_flagsenum", False)
         for k,v in self.items():
-            if isinstance(k, str) and k.startswith("_"):
+            if isinstance(k, str) and k.startswith("_") and not globalPrintPrivateEntries:
                 continue
             if isflags and not v and not globalPrintFalseFlags:
                 continue

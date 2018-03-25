@@ -248,6 +248,20 @@ def test_falseflags():
 
     setGlobalPrintFalseFlags()
 
+def test_privateentries():
+    d = Struct("_private" / Byte)
+    c = d.parse(b"\x01")
+
+    setGlobalPrintPrivateEntries(True)
+    assert str(c) == "Container: \n    _private = 1"
+    assert repr(c) == "Container()"
+
+    setGlobalPrintPrivateEntries(False)
+    assert str(c) == "Container: "
+    assert repr(c) == "Container()"
+
+    setGlobalPrintPrivateEntries()
+
 def test_len_bool():
     c = Container(a=1)(b=2)(c=3)(d=4)
     assert len(c) == 4
