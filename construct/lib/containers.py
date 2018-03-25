@@ -190,6 +190,8 @@ class Container(dict):
         return list(self.keys()) + list(self.__class__.__dict__) + dir(super(Container, self))
 
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, dict):
             return False
         if len(self) != len(other):
@@ -206,17 +208,15 @@ class Container(dict):
 
     @recursion_lock()
     def __repr__(self):
-        parts = ["Container"]
+        parts = []
         for k,v in self.items():
             if isinstance(k, str) and k.startswith("_"):
                 continue
             if isinstance(v, stringtypes):
-                parts.extend(["(", str(k), "=", reprstring(v), ")"])
+                parts.append(str(k) + "=" + reprstring(v))
             else:
-                parts.extend(["(", str(k), "=", repr(v), ")"])
-        if len(parts) == 1:
-            parts.append("()")
-        return "".join(parts)
+                parts.append(str(k) + "=" + repr(v))
+        return "Container(%s)" % ", ".join(parts)
 
     @recursion_lock()
     def __str__(self):

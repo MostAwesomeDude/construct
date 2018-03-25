@@ -168,9 +168,9 @@ def test_eq():
 @xfail(not supportsnumpy, reason="numpy is not installed?")
 def test_eq_numpy():
     import numpy
-
     c = Container(arr=numpy.zeros(10, dtype=numpy.uint8))
-    assert c == c
+    d = Container(arr=numpy.zeros(10, dtype=numpy.uint8))
+    assert c == d
 
 def test_ne():
     c = Container(a=1)(b=2)(c=3)
@@ -187,20 +187,20 @@ def test_str_repr_empty():
 def test_str_repr():
     c = Container(a=1)(b=2)(c=3)
     assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = 3"
-    assert repr(c) == "Container(a=1)(b=2)(c=3)"
+    assert repr(c) == "Container(a=1, b=2, c=3)"
     assert eval(repr(c)) == c
 
 def test_str_repr_nested():
     c = Container(a=1)(b=2)(c=Container())
     assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = Container: "
-    assert repr(c) == "Container(a=1)(b=2)(c=Container())"
+    assert repr(c) == "Container(a=1, b=2, c=Container())"
     assert eval(repr(c)) == c
 
 def test_str_repr_recursive():
     c = Container(a=1)(b=2)
     c.c = c
     assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = <recursion detected>"
-    assert repr(c) == "Container(a=1)(b=2)(c=<recursion detected>)"
+    assert repr(c) == "Container(a=1, b=2, c=<recursion detected>)"
 
 def test_fullstrings():
     setGlobalPrintFullStrings(True)
@@ -240,11 +240,11 @@ def test_falseflags():
 
     setGlobalPrintFalseFlags(True)
     assert str(c) == "Container: \n    set = True\n    unset = False"
-    assert repr(c) == "Container(set=True)(unset=False)"
+    assert repr(c) == "Container(set=True, unset=False)"
 
     setGlobalPrintFalseFlags(False)
     assert str(c) == "Container: \n    set = True"
-    assert repr(c) == "Container(set=True)(unset=False)"
+    assert repr(c) == "Container(set=True, unset=False)"
 
     setGlobalPrintFalseFlags()
 
