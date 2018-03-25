@@ -145,7 +145,7 @@ example = Struct(
     "nullstripped" / RestreamData(b'\x01\x00', NullStripped(GreedyBytes)),
     "restreamdata" / RestreamData(b"\xff", Byte),
     "restreamdata_verify" / Check(this.restreamdata == 255),
-    # TransformData
+    # Transformed
     # Restreamed
     # Checksum
     "compressed_bzip2_data" / Computed(b'BZh91AY&SYSc\x11\x99\x00\x00\x00A\x00@\x00@\x00 \x00!\x00\x82\x83\x17rE8P\x90Sc\x11\x99'),

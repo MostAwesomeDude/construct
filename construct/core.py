@@ -884,7 +884,7 @@ def Bitwise(subcon):
 
     :param subcon: Construct instance, any field that works with bits (like BitsInteger) or is bit-byte agnostic (like Struct or Flag)
 
-    See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
+    See :class:`~construct.core.Transformed` and :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -901,7 +901,7 @@ def Bitwise(subcon):
 
     try:
         size = subcon.sizeof()
-        macro = TransformData(subcon, bytes2bits, size//8, bits2bytes, size//8)
+        macro = Transformed(subcon, bytes2bits, size//8, bits2bytes, size//8)
     except SizeofError:
         macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
     def _emitseq(ksy, bitwise):
@@ -924,7 +924,7 @@ def Bytewise(subcon):
 
     :param subcon: Construct instance, any field that works with bytes or is bit-byte agnostic
 
-    See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
+    See :class:`~construct.core.Transformed` and :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -941,7 +941,7 @@ def Bytewise(subcon):
 
     try:
         size = subcon.sizeof()
-        macro = TransformData(subcon, bits2bytes, size*8, bytes2bits, size*8)
+        macro = Transformed(subcon, bits2bytes, size*8, bytes2bits, size*8)
     except SizeofError:
         macro = Restreamed(subcon, bits2bytes, 8, bytes2bits, 1, lambda n: n*8)
     def _emitseq(ksy, bitwise):
@@ -4484,7 +4484,7 @@ def ByteSwapped(subcon):
 
     :raises SizeofError: ctor or compiler could not compute subcon size
 
-    See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
+    See :class:`~construct.core.Transformed` and :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -4492,7 +4492,7 @@ def ByteSwapped(subcon):
     """
 
     size = subcon.sizeof()
-    return TransformData(subcon, swapbytes, size, swapbytes, size)
+    return Transformed(subcon, swapbytes, size, swapbytes, size)
 
 
 def BitsSwapped(subcon):
@@ -4503,7 +4503,7 @@ def BitsSwapped(subcon):
 
     :raises SizeofError: compiler could not compute subcon size
 
-    See :class:`~construct.core.TransformData` and :class:`~construct.core.Restreamed` for raisable exceptions.
+    See :class:`~construct.core.Transformed` and :class:`~construct.core.Restreamed` for raisable exceptions.
 
     Example::
 
@@ -4516,7 +4516,7 @@ def BitsSwapped(subcon):
 
     try:
         size = subcon.sizeof()
-        return TransformData(subcon, swapbitsinbytes, size, swapbitsinbytes, size)
+        return Transformed(subcon, swapbitsinbytes, size, swapbitsinbytes, size)
     except SizeofError:
         return Restreamed(subcon, swapbitsinbytes, 1, swapbitsinbytes, 1, lambda n: n)
 
@@ -4843,7 +4843,7 @@ class RestreamData(Subconstruct):
         return "restream(%r, lambda io: %s)" % (self.datafunc, self.subcon._compileparse(code), )
 
 
-class TransformData(Subconstruct):
+class Transformed(Subconstruct):
     r"""
     Parses a field on transfored data (or transforms data after building).
 
@@ -4855,7 +4855,7 @@ class TransformData(Subconstruct):
 
     .. warning:: Remember that subcon must consume (or produce) an amount of bytes that is same as `decodeamount` (or `encodeamount`).
 
-    .. warning:: Do NOT use seeking/telling classes inside TransformData context.
+    .. warning:: Do NOT use seeking/telling classes inside Transformed context.
 
     :param subcon: Construct instance
     :param decodefunc: bytes-to-bytes function, applied before parsing subcon
@@ -4872,13 +4872,13 @@ class TransformData(Subconstruct):
 
     Example::
 
-        >>> d = TransformData(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
+        >>> d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
         >>> d.parse(b"\x00\x00")
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
     """
 
     def __init__(self, subcon, decodefunc, decodeamount, encodefunc, encodeamount):
-        super(TransformData, self).__init__(subcon)
+        super(Transformed, self).__init__(subcon)
         self.decodefunc = decodefunc
         self.decodeamount = decodeamount
         self.encodefunc = encodefunc

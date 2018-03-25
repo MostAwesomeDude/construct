@@ -782,7 +782,7 @@ def test_class_nullstripped_build(benchmark):
 
 # - measured by other fields
 # RestreamData
-# TransformData
+# Transformed
 # - not compilable
 # Restreamed
 # Checksum

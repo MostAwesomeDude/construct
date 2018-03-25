@@ -915,7 +915,7 @@ def test_pass():
     common(Pass, b"", None, 0)
     common(Struct("empty"/Pass), b"", Container(empty=None), 0)
 
-@xfail(reason="unknown cause, Bitwise was reimplemented using TransformData")
+@xfail(reason="unknown cause, Bitwise was reimplemented using Transformed")
 def test_terminated():
     common(Terminated, b"", None, 0)
     common(Struct(Terminated), b"", Container(), 0)
@@ -1033,11 +1033,11 @@ def test_restreamdata():
     d = RestreamData(b"", Padding(1))
     assert d.build(None) == b''
 
-def test_transformdata():
-    d = TransformData(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
+def test_transformed():
+    d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
     common(d, b"\x00"*2, b"\x00"*16, 2)
 
-def test_transformdata_issue_676():
+def test_transformed_issue_676():
     d = Struct(
          'inner1' / BitStruct(
              'a' / Default(BitsInteger(8), 0),

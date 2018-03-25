@@ -107,11 +107,11 @@ RestreamData allows you to insert a field that parses some data that came either
     d.parse(bytes(1000))
 
 
-TransformData allows you to process data before it gets into subcon (and after data left it) using simple bytes-to-bytes transformations. In fact, all core classes (like Bitwise) that use Restreamed also use TransformData. The only difference is that TransformData prefetches all bytes and transforms them in advance, but Restreamed fetches a unit at a time (few bytes usually). For example:
+Transformed allows you to process data before it gets into subcon (and after data left it) using simple bytes-to-bytes transformations. In fact, all core classes (like Bitwise) that use Restreamed also use Transformed. The only difference is that Transformed prefetches all bytes and transforms them in advance, but Restreamed fetches a unit at a time (few bytes usually). For example:
 
 ::
 
-    >>> d = TransformData(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
+    >>> d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
     >>> d.parse(b"\x00\x00")
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
@@ -120,9 +120,11 @@ TransformData allows you to process data before it gets into subcon (and after d
     # Bitwise implementation
     try:
         size = subcon.sizeof()
-        macro = TransformData(subcon, bytes2bits, size//8, bits2bytes, size//8)
+        macro = Transformed(subcon, bytes2bits, size//8, bits2bytes, size//8)
     except SizeofError:
         macro = Restreamed(subcon, bytes2bits, 1, bits2bytes, 8, lambda n: n//8)
+
+Restreamed is similar to Transformed, but the main difference is that Transformed requires fixed-sized subcon because it reads all bytes in advance, processes them, and then feeds them to the subcon. Restreamed on the other hand, reads few bytes at a time, the minimum amount on each stream read. Since both are used mostly internally, there is no tutorial how to use it.
 
 
 Compression and checksuming

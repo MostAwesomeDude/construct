@@ -81,7 +81,7 @@ FixedSized NullTerminated NullStripped added, in Tunneling (`see tutorial page <
 
 RestreamData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
 
-TransformData added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
+Transformed added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
 
 ExprAdapter Mapping Restreamed changed parameters order (decoders before encoders)
 

@@ -185,7 +185,7 @@ __all__ = [
     'this',
     'Timestamp',
     'TimestampError',
-    'TransformData',
+    'Transformed',
     'Tunnel',
     'Union',
     'UnionError',

@@ -11,7 +11,7 @@ Core API: Tunneling
 .. autofunction:: construct.NullTerminated
 .. autofunction:: construct.NullStripped
 .. autofunction:: construct.RestreamData
-.. autofunction:: construct.TransformData
+.. autofunction:: construct.Transformed
 .. autofunction:: construct.Restreamed
 .. autofunction:: construct.Checksum
 .. autofunction:: construct.Compressed
