@@ -573,16 +573,11 @@ def test_error():
     assert raises(("x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)).parse, b"\xff\x05") == ExplicitError
 
 def test_focusedseq():
-    common(FocusedSeq(1, Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3)
     common(FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3)
-    common(FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3, s=1)
     common(FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3, s="num")
 
-    assert raises(FocusedSeq(123, Pass).parse, b"") == IndexError
-    assert raises(FocusedSeq(123, Pass).build, {}) == IndexError
-    assert raises(FocusedSeq(123, Pass).sizeof) == 0
-    assert raises(FocusedSeq("missing", Pass).parse, b"") == KeyError
-    assert raises(FocusedSeq("missing", Pass).build, {}) == KeyError
+    assert raises(FocusedSeq("missing", Pass).parse, b"") == UnboundLocalError
+    assert raises(FocusedSeq("missing", Pass).build, {}) == UnboundLocalError
     assert raises(FocusedSeq("missing", Pass).sizeof) == 0
     assert raises(FocusedSeq(this.missing, Pass).parse, b"") == KeyError
     assert raises(FocusedSeq(this.missing, Pass).build, {}) == KeyError
@@ -827,7 +822,7 @@ def test_stopif():
     common(d, b"\x00", [0])
     common(d, b"\x01\x02", [1,None,2])
 
-    d = GreedyRange(FocusedSeq(0, "x"/Byte, StopIf(this.x == 0)))
+    d = GreedyRange(FocusedSeq("x", "x"/Byte, StopIf(this.x == 0)))
     assert d.parse(b"\x01\x00?????") == [1]
     assert d.build([]) == b""
     assert d.build([0]) == b"\x00"
@@ -1635,7 +1630,7 @@ def test_exposing_members_context():
     )
     common(d, b"\x05four", [5,b"four",None])
 
-    d = FocusedSeq(0,
+    d = FocusedSeq("count",
         "count" / Byte,
         "data" / Padding(lambda this: this.count - this._subcons.count.sizeof()),
         Check(lambda this: this._subcons.count.sizeof() == 1),

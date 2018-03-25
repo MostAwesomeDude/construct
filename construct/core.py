@@ -2940,37 +2940,36 @@ class FocusedSeq(Construct):
 
     This class is used internally to implement :class:`~construct.core.PrefixedArray`.
 
-    :param parsebuildfrom: integer index or string name or context lambda, selects a subcon
+    :param parsebuildfrom: string name or context lambda, selects a subcon
     :param \*subcons: Construct instances, list of members, some can be named
     :param \*\*subconskw: Construct instances, list of members (requires Python 3.6)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IndexError: selector does not match any subcon
-    :raises KeyError: selector does not match any subcon
+    :raises UnboundLocalError: selector does not match any subcon
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
     Excample::
 
-        >>> d = FocusedSeq(1 or "num", Const(b"SIG"), "num"/Byte, Terminated)
+        >>> d = FocusedSeq("num", Const(b"SIG"), "num"/Byte, Terminated)
         >>> d.parse(b"SIG\xff")
         255
         >>> d.build(255)
         b'SIG\xff'
 
-        >>> d = FocusedSeq(0,
+        >>> d = FocusedSeq("animal",
         ...     "animal" / Enum(Byte, giraffe=1),
         ... )
         >>> d.animal.giraffe
         'giraffe'
-        >>> d = FocusedSeq(0,
+        >>> d = FocusedSeq("count",
         ...     "count" / Byte,
         ...     "data" / Padding(lambda this: this.count - this._subcons.count.sizeof()),
         ... )
         >>> d.build(4)
         b'\x04\x00\x00\x00'
 
-        PrefixedArray <--> FocusedSeq(1,
+        PrefixedArray <--> FocusedSeq("items",
             "count" / Rebuild(lengthfield, len_(this.items)),
             "items" / subcon[this.count],
         )
@@ -2991,42 +2990,25 @@ class FocusedSeq(Construct):
     def _parse(self, stream, context, path):
         context = Container(_ = context)
         context._subcons = self._subcons
-        parsebuildfrom = self.parsebuildfrom
-        if callable(parsebuildfrom):
-            parsebuildfrom = parsebuildfrom(context)
-        if isinstance(parsebuildfrom, int):
-            index = parsebuildfrom
-            self.subcons[index]  # raises IndexError
-        if isinstance(parsebuildfrom, str):
-            index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[parsebuildfrom] # raises KeyError
+        parsebuildfrom = evaluate(self.parsebuildfrom, context)
         for i,sc in enumerate(self.subcons):
             parseret = sc._parsereport(stream, context, path)
             if sc.name:
                 context[sc.name] = parseret
-            if i == index:
+            if sc.name == parsebuildfrom:
                 finalret = parseret
         return finalret
 
     def _build(self, obj, stream, context, path):
         context = Container(_ = context)
         context._subcons = self._subcons
-        parsebuildfrom = self.parsebuildfrom
-        if callable(parsebuildfrom):
-            parsebuildfrom = parsebuildfrom(context)
-        if isinstance(parsebuildfrom, int):
-            index = parsebuildfrom
-            self.subcons[index]  # raises IndexError
-        if isinstance(parsebuildfrom, str):
-            index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[parsebuildfrom] # raises KeyError
-        context[index] = obj
-        sc = self.subcons[index]
-        if sc.name:
-            context[sc.name] = obj
+        parsebuildfrom = evaluate(self.parsebuildfrom, context)
+        context[parsebuildfrom] = obj
         for i,sc in enumerate(self.subcons):
-            buildret = sc._build(obj if i==index else None, stream, context, path)
+            buildret = sc._build(obj if sc.name == parsebuildfrom else None, stream, context, path)
             if sc.name:
                 context[sc.name] = buildret
-            if i == index:
+            if sc.name == parsebuildfrom:
                 finalret = buildret
         return finalret
 
@@ -3039,8 +3021,6 @@ class FocusedSeq(Construct):
             raise SizeofError("cannot calculate size, key not found in context")
 
     def _emitparse(self, code):
-        if callable(self.parsebuildfrom):
-            raise NotImplementedError("FocusedSeq does not compile non-constant selectors")
         fname = "parse_focusedseq_%s" % code.allocateId()
         block = """
             def %s(io, this):
@@ -3055,15 +3035,9 @@ class FocusedSeq(Construct):
                 block += """
                 this[%r] = result[-1]
                 """ % (sc.name, )
-        parsebuildfrom = self.parsebuildfrom
-        if isinstance(parsebuildfrom, int):
-            index = parsebuildfrom
-            self.subcons[index]  # raises IndexError
-        if isinstance(parsebuildfrom, str):
-            index = {sc.name:i for i,sc in enumerate(self.subcons) if sc.name}[parsebuildfrom] # raises KeyError
         block += """
-                return result[%s]
-        """ % (index, )
+                return this[%r]
+        """ % (self.parsebuildfrom, )
         code.append(block)
         return "%s(io, this)" % (fname,)
 
