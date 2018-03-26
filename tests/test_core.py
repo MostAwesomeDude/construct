@@ -32,10 +32,14 @@ def test_bitwise():
     common(Bitwise(Array(2,Nibble)), b"\xff", [15,15], 1)
     common(Bitwise(Array(1,Octet)), b"\xff", [255], 1)
 
+    common(Bitwise(GreedyBytes), bytes(10), bytes(80), SizeofError)
+
 def test_bytewise():
     common(Bitwise(Bytewise(Bytes(1))), b"\xff", b"\xff", 1)
-    common(BitStruct("p1"/Nibble, "num"/Bytewise(Int24ub), "p2"/Nibble), b"\xf0\x10\x20\x3f", Container(p1=15)(num=0x010203)(p2=15), 4)
+    common(BitStruct("p1"/Nibble, "num"/Bytewise(Int24ub), "p2"/Nibble), b"\xf0\x10\x20\x3f", Container(p1=15, num=0x010203, p2=15), 4)
     common(Bitwise(Sequence(Nibble, Bytewise(Int24ub), Nibble)), b"\xf0\x10\x20\x3f", [0x0f,0x010203,0x0f], 4)
+
+    common(Bitwise(Bytewise(GreedyBytes)), bytes(10), bytes(10), SizeofError)
 
 def test_ints():
     common(Byte, b"\xff", 255, 1)

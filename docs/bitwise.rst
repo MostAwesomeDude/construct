@@ -50,7 +50,6 @@ Important notes
 * BitStructs are non-nestable (because Bitwise are not nestable) so writing something like ``BitStruct(BitStruct(Octet))`` will not work. You can use regular Structs inside BitStructs.
 * Byte aligned - The total size of the elements of a BitStruct must be a multiple of 8 (due to alignment issues). RestreamedBytesIO will raise an error if the amount of bits and bytes does not align properly.
 * GreedyRange Pointer Lazy* - Do not place fields that do seeking/telling or lazy parsing inside bitwise, because RestreamedBytesIO offsets will turn out wrong, have unknown side-effects or raise unknown exceptions.
-* GreedyBytes GreedyString - Do not use fields that read till EOF, because RestreamedBytesIO implementation does not support it.
 * Normal (byte-oriented) classes like Int* Float* can be used by wrapping in Bytewise. If you need to mix byte- and bit-oriented fields, you should use a BitStruct and Bytewise.
 * Advanced classes like tunneling may not work in bitwise context. Only basic fields like integers were throughly tested.
 
@@ -139,11 +138,3 @@ Those do use stream seeking or telling (or both):
 * NullTerminated (actually works unless consume=False)
 * LazyStruct
 * LazyArray
-
-Those that read stream till EOF:
-
-* GreedyBytes
-* GreedyString
-* NullStripped
-* Compressed
-* Tunnel

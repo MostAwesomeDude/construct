@@ -15,18 +15,28 @@ class RestreamedBytesIO(object):
         self.wbuffer = b""
         self.sincereadwritten = 0
 
-    def read(self, count):
-        if count < 0:
-            raise ValueError("count cannot be negative")
-        while len(self.rbuffer) < count:
-            data = self.substream.read(self.decoderunit)
-            if data is None or len(data) == 0:
-                # Restreamed cannot satisfy read request
-                return ""
-            self.rbuffer += self.decoder(data)
-        data, self.rbuffer = self.rbuffer[:count], self.rbuffer[count:]
-        self.sincereadwritten += count
-        return data
+    def read(self, count=None):
+        if count is None:
+            while True:
+                data = self.substream.read(self.decoderunit)
+                if data is None or len(data) == 0:
+                    break
+                self.rbuffer += self.decoder(data)
+            data, self.rbuffer = self.rbuffer, b''
+            self.sincereadwritten += len(data)
+            return data
+
+        else:
+            if count < 0:
+                raise ValueError("count cannot be negative")
+            while len(self.rbuffer) < count:
+                data = self.substream.read(self.decoderunit)
+                if data is None or len(data) == 0:
+                    return b''
+                self.rbuffer += self.decoder(data)
+            data, self.rbuffer = self.rbuffer[:count], self.rbuffer[count:]
+            self.sincereadwritten += count
+            return data
 
     def write(self, data):
         self.wbuffer += data

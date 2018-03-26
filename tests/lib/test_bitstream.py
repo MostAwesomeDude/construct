@@ -3,6 +3,7 @@ from construct.lib.bitstream import *
 
 
 def test_restreamed():
+    # tested by Bitwise Bytewise ByteSwapped BitsSwapped cases
     pass
 
 def test_rebuffered():

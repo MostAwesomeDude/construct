@@ -103,6 +103,8 @@ Container updated, uses `globalPrintFullStrings globalPrintFalseFlags globalPrin
 
 FlagsContainer removed
 
+RestreamedBytesIO supports reading till EOF, enabling GreedyBytes GreedyString inside Bitwise Bytewise
+
 HexString removed
 
 
