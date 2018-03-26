@@ -1461,7 +1461,7 @@ def calculateunits(encoding):
     if encoding not in possiblestringencodings:
         raise StringError("encoding %r not among %r" % (encoding, possiblestringencodings,))
     unitsize = possiblestringencodings[encoding]
-    finalunit = b"\x00" * unitsize
+    finalunit = bytes(unitsize)
     return unitsize, finalunit
 
 
@@ -1495,21 +1495,20 @@ class StringPaddedTrimmed(Construct):
         self.encoding = selectencoding(encoding)
 
     def _parse(self, stream, context, path):
-        length = self.length(context) if callable(self.length) else self.length
+        length = evaluate(self.length, context)
         unitsize, finalunit = calculateunits(self.encoding)
-
         if length % unitsize:
             raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
         obj = _read_stream(stream, length)
         endsat = 0
-        endsatmax = len(obj)
-        while endsat+unitsize <= endsatmax and obj[endsat:endsat+unitsize] != finalunit:
+        objlen = len(obj)
+        while endsat+unitsize <= objlen and obj[endsat:endsat+unitsize] != finalunit:
             endsat += unitsize
         return obj[:endsat]
 
     def _build(self, obj, stream, context, path):
         originalobj = obj
-        length = self.length(context) if callable(self.length) else self.length
+        length = evaluate(self.length, context)
         unitsize, finalunit = calculateunits(self.encoding)
 
         if length % unitsize:
@@ -1523,8 +1522,7 @@ class StringPaddedTrimmed(Construct):
         return originalobj
 
     def _sizeof(self, context, path):
-        length = self.length(context) if callable(self.length) else self.length
-        return length
+        return evaluate(self.length, context)
 
     def _emitparse(self, code):
         unitsize, finalunit = calculateunits(self.encoding)
@@ -1533,9 +1531,10 @@ class StringPaddedTrimmed(Construct):
                 if length % unitsize:
                     raise StringError
                 obj = read_bytes(io, length)
-                endsat = len(obj)
-                while endsat-unitsize >= 0 and obj[endsat-unitsize:endsat] == finalunit:
-                    endsat -= unitsize
+                endsat = 0
+                objlen = len(obj)
+                while endsat+unitsize <= objlen and obj[endsat:endsat+unitsize] != finalunit:
+                    endsat += unitsize
                 return obj[:endsat]
         """)
         return "parse_paddedtrimmedstring(io, %s, %s, %r)" % (self.length, unitsize, finalunit, )
@@ -1561,7 +1560,6 @@ class StringNullTerminated(Construct):
     def _build(self, obj, stream, context, path):
         originalobj = obj
         unitsize, finalunit = calculateunits(self.encoding)
-
         if len(obj) % unitsize:
             raise StringError("string length must be multiple of encoding-unit, %s" % (unitsize,))
         data = obj + finalunit
