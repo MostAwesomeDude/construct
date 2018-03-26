@@ -30,15 +30,15 @@ BitStruct
 
 A BitStruct is a sequence of constructs that are parsed/built in the specified order, much like normal Structs. The difference is that BitStruct operates on bits rather than bytes. When parsing a BitStruct, the data is first converted to a bit stream (a stream of \\x01 and \\x00), and only then is it fed to the subconstructs. The subconstructs are expected to operate on bits instead of bytes. For reference look at the code below:
 
->>> format = BitStruct(
+>>> d = BitStruct(
 ...     "a" / Flag,
 ...     "b" / Nibble,
 ...     "c" / BitsInteger(10),
 ...     "d" / Padding(1),
 ... )
->>> format.parse(b"\xbe\xef")
-Container(a=True)(b=7)(c=887)(d=None)
->>> format.sizeof()
+>>> d.parse(b"\xbe\xef")
+Container(a=True, b=7, c=887, d=None)
+>>> d.sizeof()
 2
 
 BitStruct is actually just a wrapper for the :class:`~construct.core.Bitwise` around a :class:`~construct.core.Struct` .
@@ -49,13 +49,16 @@ Important notes
 
 * BitStructs are non-nestable (because Bitwise are not nestable) so writing something like ``BitStruct(BitStruct(Octet))`` will not work. You can use regular Structs inside BitStructs.
 * Byte aligned - The total size of the elements of a BitStruct must be a multiple of 8 (due to alignment issues). RestreamedBytesIO will raise an error if the amount of bits and bytes does not align properly.
-* Pointers and Lazy* - Do not place fields that do seeking/telling or lazy parsing inside bitwise because it uses an internal stream, so external stream offsets will turn out wrong, have unknown side-effects or raise exceptions.
+* GreedyRange Pointer Lazy* - Do not place fields that do seeking/telling or lazy parsing inside bitwise, because RestreamedBytesIO offsets will turn out wrong, have unknown side-effects or raise unknown exceptions.
+* GreedyBytes GreedyString - Do not use fields that read till EOF, because RestreamedBytesIO implementation does not support it.
 * Normal (byte-oriented) classes like Int* Float* can be used by wrapping in Bytewise. If you need to mix byte- and bit-oriented fields, you should use a BitStruct and Bytewise.
 * Advanced classes like tunneling may not work in bitwise context. Only basic fields like integers were throughly tested.
 
 
 Fields that work with bits
 =============================
+
+Those classes work exclusively in Bitwise context.
 
 ::
 
@@ -77,7 +80,7 @@ Normal classes, that is those working with byte-streams, can be used on bit-stre
     ...     'c' / Padding(4),
     ... ))
     >>> d.parse(bytes(5))
-    Container(a=0)(b=0.0)(c=None)
+    Container(a=0, b=0.0, c=None)
     >>> d.sizeof()
     5
 
@@ -89,22 +92,58 @@ Some simple fields (such as Flag Padding Pass Terminated) are ignorant to the gr
 
 Here's a snippet of a code that operates on bytes:
 
->>> format = Struct(
+>>> d = Struct(
 ...     Padding(2),
 ...     "x" / Flag,
 ...     Padding(5),
 ... )
->>> format.build(dict(x=5))
+>>> d.build(dict(x=5))
 b'\x00\x00\x01\x00\x00\x00\x00\x00'
+>>> d.sizeof()
+8
 
 And here's a snippet of a code that operates on bits. The only difference is BitStruct in place of a normal Struct:
 
->>> format = BitStruct(
+>>> d = Bitwise(Struct(
 ...     Padding(2),
 ...     "x" / Flag,
 ...     Padding(5),
-... )
->>> format.build(dict(x=5))
+... ))
+>>> d.build(dict(x=5))
 b' '
+>>> d.sizeof()
+1
 
 So unlike "classical Construct", there's no need for BytePadding and BitPadding. If Padding is enclosed by a BitStruct, it operates on bits, otherwise, it operates on bytes.
+
+
+Fields that do not work and fail
+=======================================
+
+Following classes may not work within Bitwise Bytewise depending one some circumstances. Actually this section applies to ByteSwapped BitsSwapped as well. Those 4 are macros and resolve to either Transformed or Restreamed depending if subcon is fixed-sized and therefore the data can be prefetched entirely. If yes, then it turns into Transformed and should work just fine, it not, then it turns into Restreamed which uses RestreamedBytesIO which has several limitations in its implementation. Milage may vary.
+
+Those do use stream seeking or telling (or both):
+
+* GreedyRange
+* Union
+* Select
+* Padded (actually works)
+* Aligned (actually works)
+* Pointer
+* Peek
+* Seek
+* Tell
+* RawCopy
+* Prefixed (actually works)
+* PrefixedArray (actually works)
+* NullTerminated (actually works unless consume=False)
+* LazyStruct
+* LazyArray
+
+Those that read stream till EOF:
+
+* GreedyBytes
+* GreedyString
+* NullStripped
+* Compressed
+* Tunnel

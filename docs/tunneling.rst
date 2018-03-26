@@ -10,7 +10,7 @@ When some value needs to be processed as both a parsed object and its raw bytes 
 
 >>> d = RawCopy(Byte)
 >>> d.parse(b"\xff")
-Container(data=b'\xff')(value=255)(offset1=0)(offset2=1)(length=1)
+Container(data=b'\xff', value=255, offset1=0, offset2=1, length=1)
 >>> d.build(dict(data=b"\xff"))
 b'\xff'
 >>> d.build(dict(value=255))

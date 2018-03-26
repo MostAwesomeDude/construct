@@ -1768,26 +1768,25 @@ class Enum(Adapter):
         >>> d = Enum(Byte, one=1, two=2, four=4, eight=8)
         >>> d.parse(b"\x01")
         'one'
+        >>> int(d.parse(b"\x01"))
+        1
         >>> d.parse(b"\xff")
         255
-        >>> d.build(d.one)
-        b'\x01'
-        >>> d.build("one")
-        b'\x01'
-        >>> d.build(1)
+        >>> int(d.parse(b"\xff"))
+        255
+
+        >>> d.build(d.one or "one" or 1)
         b'\x01'
         >>> d.one
         'one'
-        >>> int(d.one)
-        1
 
         import enum
-        class E(enum.IntEnum):
+        class E(enum.IntEnum or enum.IntFlag):
             one = 1
-        class F(enum.IntFlag):
             two = 2
-        Enum(Byte,      E, F) <--> Enum(Byte,      one=1, two=2)
-        FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
+
+        Enum(Byte, E) <--> Enum(Byte, one=1, two=2)
+        FlagsEnum(Byte, E) <--> FlagsEnum(Byte, one=1, two=2)
     """
 
     def __init__(self, subcon, *merge, **mapping):
@@ -1862,27 +1861,20 @@ class FlagsEnum(Adapter):
 
         >>> d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
         >>> d.parse(b"\x03")
-        Container(one=True)(two=True)(four=False)(eight=False)
+        Container(one=True, two=True, four=False, eight=False)
         >>> d.build(dict(one=True,two=True))
         b'\x03'
-        >>> d.build(d.one|d.two)
+
+        >>> d.build(d.one|d.two or "one|two" or 1|2)
         b'\x03'
-        >>> d.build("one|two")
-        b'\x03'
-        >>> d.build(1|2)
-        b'\x03'
-        >>> d.eight
-        'eight'
-        >>> d.one|d.two
-        'one|two'
 
         import enum
-        class E(enum.IntEnum):
+        class E(enum.IntEnum or enum.IntFlag):
             one = 1
-        class F(enum.IntFlag):
             two = 2
-        Enum(Byte,      E, F) <--> Enum(Byte,      one=1, two=2)
-        FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
+
+        Enum(Byte, E) <--> Enum(Byte, one=1, two=2)
+        FlagsEnum(Byte, E) <--> FlagsEnum(Byte, one=1, two=2)
     """
 
     def __init__(self, subcon, *merge, **flags):
@@ -2042,7 +2034,7 @@ class Struct(Construct):
         Alternative syntax (not recommended):
         >>> ("a"/Byte + "b"/Byte + "c"/Byte + "d"/Byte)
 
-        Alternative syntax, but requires Python 3.6:
+        Alternative syntax, but requires Python 3.6 or any PyPy:
         >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
     """
 
@@ -2176,7 +2168,7 @@ class Sequence(Construct):
         Alternative syntax (not recommended):
         >>> (Byte >> "Byte >> "c"/Byte >> "d"/Byte)
 
-        Alternative syntax, but requires Python 3.6:
+        Alternative syntax, but requires Python 3.6 or any PyPy:
         >>> Sequence(a=Byte, b=Byte, c=Byte, d=Byte)
     """
 
@@ -2667,7 +2659,7 @@ class Computed(Construct):
         >>> d.build(dict(width=4,height=5))
         b'\x04\x05'
         >>> d.parse(b"12")
-        Container(width=49)(height=50)(total=2450)
+        Container(width=49, height=50, total=2450)
 
         >>> d = Computed(7)
         >>> d.parse(b"")
@@ -3392,9 +3384,14 @@ class Union(Construct):
 
     Example::
 
-        >>> d = Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8])
+        >>> d = Union(0, 
+        ...     "raw" / Bytes(8),
+        ...     "ints" / Int32ub[2],
+        ...     "shorts" / Int16ub[4],
+        ...     "chars" / Byte[8],
+        ... )
         >>> d.parse(b"12345678")
-        Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
+        Container(raw=b'12345678', ints=[825373492, 892745528], shorts=[12594, 13108, 13622, 14136], chars=[49, 50, 51, 52, 53, 54, 55, 56])
         >>> d.build(dict(chars=range(8)))
         b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
@@ -3410,7 +3407,7 @@ class Union(Construct):
         >>> d.parse(b"\x01\x02\x03\x04")
         Container(chars=[1, 2, 3, 4])(data=b'\x01\x02\x03\x04')
 
-        Alternative syntax, but requires Python 3.6:
+        Alternative syntax, but requires Python 3.6 or any PyPy:
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
     """
 
@@ -3548,7 +3545,7 @@ class Select(Construct):
         >>> d.build(u"Афон")
         b'\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd\x00'
 
-        Alternative syntax, but requires Python 3.6:
+        Alternative syntax, but requires Python 3.6 or any PyPy:
         >>> Select(num=Int32ub, text=CString("utf8"))
     """
 
@@ -3808,9 +3805,9 @@ def EmbeddedSwitch(merged, selector, mapping):
 
         # both parse like following
         >>> d.parse(b"\x00\x00")
-        Container(type=0)(name=u'')(value=None)
+        Container(type=0, name=u'', value=None)
         >>> d.parse(b"\x01\x00")
-        Container(type=1)(name=None)(value=0)
+        Container(type=1, name=None, value=0)
     """
 
     merged2 = list(merged.subcons)
@@ -3890,7 +3887,7 @@ def Padding(length, pattern=b"\x00"):
 
     Example::
 
-        >>> d = Padding(4)
+        >>> d = Padding(4) or Padded(4, Pass)
         >>> d.build(None)
         b'\x00\x00\x00\x00'
         >>> d.parse(b"****")

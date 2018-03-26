@@ -69,7 +69,7 @@ Represents a value dynamically computed from the context. Computed does not read
 ...     "total" / Computed(this.width * this.height),
 ... )
 >>> st.parse(b"12")
-Container(width=49)(height=50)(total=2450)
+Container(width=49, height=50, total=2450)
 >>> st.build(dict(width=4,height=5))
 b'\x04\x05'
 
@@ -308,13 +308,13 @@ When parsing, all fields read the same data bytes, but stream remains at initial
 ...     "chars" / Byte[8],
 ... )
 >>> d.parse(b"12345678")
-Container(raw=b'12345678')(ints=[825373492, 892745528])(shorts=[12594, 13108, 13622, 14136])(chars=[49, 50, 51, 52, 53, 54, 55, 56])
+Container(raw=b'12345678', ints=[825373492, 892745528], shorts=[12594, 13108, 13622, 14136], chars=[49, 50, 51, 52, 53, 54, 55, 56])
 >>> d.build(dict(chars=range(8)))
 b'\x00\x01\x02\x03\x04\x05\x06\x07'
 
 ::
 
-    Note that this syntax works ONLY on Python 3.6 due to ordered keyword arguments:
+    Note that this syntax works ONLY on CPython 3.6 (and PyPy any version) due to ordered keyword arguments. There is similar syntax for many other constructs.
     >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
 
 Select
@@ -332,7 +332,7 @@ Attempts to parse or build each of the subcons, in order they were provided.
 
 ::
 
-    Alternative syntax, but requires Python 3.6:
+    Note that this syntax works ONLY on CPython 3.6 (and PyPy any version) due to ordered keyword arguments. There is similar syntax for many other constructs.
     >>> Select(num=Int32ub, text=CString("utf8"))
 
 Optional
@@ -423,9 +423,9 @@ All fields should have unique names. Otherwise fields that were not selected dur
 
     # both parse like following
     >>> d.parse(b"\x00\x00")
-    Container(type=0)(name=u'')(value=None)
+    Container(type=0, name=u'', value=None)
     >>> d.parse(b"\x01\x00")
-    Container(type=1)(name=None)(value=0)
+    Container(type=1, name=None, value=0)
 
 
 StopIf
@@ -446,9 +446,9 @@ Alignment and padding
 Padding
 -------
 
-Adds additional null bytes (a filler) analog to Padded but without a subcon that follows it. This field is usually anonymous inside a Struct.
+Adds additional null bytes (a filler) analog to Padded but without a subcon that follows it. This field is usually anonymous inside a Struct. Internally this is just Padded(Pass).
 
->>> d = Padding(4)
+>>> d = Padding(4) or Padded(4, Pass)
 >>> d.parse(b"****")
 None
 >>> d.build(None)
@@ -458,17 +458,19 @@ b'\x00\x00\x00\x00'
 Padded
 ------
 
-Appends additional null bytes after subcon to achieve a fixed length.
+Appends additional null bytes after subcon to achieve a fixed length. Note that implementation of this class uses stream.tell() to find how many bytes were written by the subcon.
 
 >>> d = Padded(4, Byte)
 >>> d.build(255)
 b'\xff\x00\x00\x00'
 
+Similar effect can be obtained using FixedSized, but the implementation is rather different. FixedSized uses a separate BytesIO, which means that Greedy* fields should work properly with it (and fail with Padded) and also the stream does not need to be tellable (like pipes sockets etc).
+
 
 Aligned
 -------
 
-Appends additional null bytes after subcon to achieve a given modulus boundary.
+Appends additional null bytes after subcon to achieve a given modulus boundary. This implementation also uses stream.tell().
 
 >>> d = Aligned(4, Int16ub)
 >>> d.build(1)

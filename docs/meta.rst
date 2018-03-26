@@ -7,23 +7,22 @@ Meta constructs are the key to the declarative power of Construct. Meta construc
 
 In order to see the context, let's try this snippet:
 
->>> class PrintContext(Construct):
-...     def _parse(self, stream, context, path):
-...         print(context)
-...
 >>> st = Struct(
 ...     "a" / Byte,
-...     PrintContext(),
+...     Probe(),
 ...     "b" / Byte,
-...     PrintContext(),
+...     Probe(),
 ... )
 >>> st.parse(b"\x01\x02")
-Container:
+--------------------------------------------------
+Container: 
     a = 1
-Container:
+--------------------------------------------------
+Container: 
     a = 1
     b = 2
-Container(a=1)(b=2)
+--------------------------------------------------
+Container(a=1, b=2)
 
 As you can see, the context looks different at different points of the construction.
 
@@ -36,7 +35,7 @@ Using the context is easy. All meta constructs take a function as a parameter, w
 ...     "data" / Bytes(this.count),
 ... )
 >>> st.parse(b"\x05abcde")
-Container(count=5)(data=b'abcde')
+Container(count=5, data=b'abcde')
 
 Of course a function can return anything (it does not need to depend on the context):
 
@@ -58,7 +57,7 @@ And here's how we use the special "_" name to get to the upper container in a ne
 ...     ),
 ... )
 >>> st.parse(b"12")
-Container(length1=49)(inner=Container(length2=50)(sum=99))
+Container(length1=49, inner=Container(length2=50, sum=99))
 
 Context entries can also be passed directly through `parse` and `build` methods. However, one should take into account that some classes are nesting context (like Struct Sequence Union FocusedSeq LazyStruct), so entries passed to these end up on upper level. Compare examples:
 
@@ -81,7 +80,7 @@ Embedding also complicates using the context. Notice that `count` is on same lev
 ...     )),
 ... )
 >>> outer.parse(b"\x041234")
-Container(count=4)(data=b'1234')
+Container(count=4, data=b'1234')
 
 
 
@@ -111,7 +110,7 @@ Container(count=5)(data=b'four')
 ...     "data" / Bytes(lambda this: this._subcons.chars.sizeof()),
 ... )
 >>> d.parse(b"\x01\x02\x03\x04")
-Container(chars=[1, 2, 3, 4])(data=b'\x01\x02\x03\x04')
+Container(chars=[1, 2, 3, 4], data=b'\x01\x02\x03\x04')
 
 This feature is supported in same constructs as embedding: Struct Sequence FocusedSeq Union LazyStruct.
 
@@ -122,11 +121,8 @@ Using `this` expression
 Certain classes take a number of elements, or something similar, and allow a callable to be provided instead. This callable is called at parsing and building, and is provided the current context object. Context is always a Container, not a dict, so it supports attribute as well as key access. Amazingly, this can get even more fancy. Tomer Filiba provided an even better syntax. The `this` singleton object can be used to build a lambda expression. All four examples below are equivalent, but first is recommended:
 
 >>> this._.field
-...
 >>> lambda this: this._.field
-...
 >>> this["_"]["field"]
-...
 >>> lambda this: this["_"]["field"]
 
 Of course, `this` expression can be mixed with other calculations. When evaluating, each instance of `this` is replaced by context Container which supports attribute access to keys.
@@ -155,9 +151,9 @@ Switch can branch the construction path based on previously parsed value.
 ...     }),
 ... )
 >>> st.parse(b"\x02\x00\xff")
-Container(type='INT2')(data=255)
+Container(type='INT2', data=255)
 >>> st.parse(b"\x04\abcdef\x00\x00\x00\x00")
-Container(type='STRING')(data=b'\x07bcdef')
+Container(type='STRING', data=b'\x07bcdef')
 
 
 
@@ -167,7 +163,6 @@ Using `len_` expression
 There used to be a bit of a hassle when you used built-in functions like `len sum min max abs` on context items. Built-in `len` takes a list and returns an integer but `len_` analog takes a lambda and returns a lambda. This allows you to use this kind of shorthand:
 
 >>> len_(this.items)
-...
 >>> lambda this: len(this.items)
 
 These can be used in newly added Rebuild wrappers that compute count/length fields from another list-alike field:
@@ -187,7 +182,6 @@ Using `obj_` expression
 There is also an analog that takes (obj, context) or (obj, list, context) unlike `this` singleton which only takes a context (a single parameter):
 
 >>> obj_ > 0
-...
 >>> lambda obj,ctx: obj > 0
 
 These can be used in at least one construct:
@@ -225,7 +219,6 @@ Known deficiencies
 Logical ``and`` ``or`` ``not`` operators cannot be used in this expressions. You have to either use a lambda or equivalent bitwise operators:
 
 >>> ~this.flag1 | this.flag2 & this.flag3
-...
 >>> lambda this: not this.flag1 or this.flag2 and this.flag3
 
 Contains operator ``in`` cannot be used in this expressions, you have to use a lambda:

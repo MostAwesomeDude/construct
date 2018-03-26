@@ -111,54 +111,49 @@ True
 >>> Flag.build(True)
 b'\x01'
 
-Enums translate between string labels and integer values:
+Enum translates between string labels and integer values. Parsing returns a string (if value has mapping) but returns an integer otherwise. This creates no problem since Enum can build from string and integer representations just the same. Note that resulting string has a special implementation, so it can be converted into a corresponding integer.
 
 >>> d = Enum(Byte, one=1, two=2, four=4, eight=8)
 >>> d.parse(b"\x01")
 'one'
+>>> int(d.parse(b"\x01"))
+1
 >>> d.parse(b"\xff")
 255
->>> d.build(d.one)
-b'\x01'
->>> d.build("one")
-b'\x01'
->>> d.build(1)
+>>> int(d.parse(b"\xff"))
+255
+
+Note that string values can also be obtained using attribute members. 
+
+>>> d.build(d.one or "one" or 1)
 b'\x01'
 >>> d.one
 'one'
->>> int(d.one)
-1
 
 FlagsEnum decomposes an integer value into a set of string labels:
 
 >>> d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
 >>> d.parse(b"\x03")
-Container(one=True)(two=True)(four=False)(eight=False)
+Container(one=True, two=True, four=False, eight=False)
 >>> d.build(dict(one=True,two=True))
 b'\x03'
->>> d.build(d.one|d.two)
+
+Note that string values can also be obtained using attribute members. 
+
+>>> d.build(d.one|d.two or "one|two" or 1|2)
 b'\x03'
->>> d.build("one|two")
-b'\x03'
->>> d.build(1|2)
-b'\x03'
->>> d.eight
-'eight'
->>> d.one|d.two
-'one|two'
 
 Both Enum and FlagsEnum support merging labels from IntEnum and IntFlag (enum34 module):
 
 ::
 
     import enum
-    class E(enum.IntEnum):
+    class E(enum.IntEnum or enum.IntFlag):
         one = 1
-    class F(enum.IntFlag):
         two = 2
 
-    Enum(Byte,      E, F) <--> Enum(Byte,      one=1, two=2)
-    FlagsEnum(Byte, E, F) <--> FlagsEnum(Byte, one=1, two=2)
+    Enum(Byte, E) <--> Enum(Byte, one=1, two=2)
+    FlagsEnum(Byte, E) <--> FlagsEnum(Byte, one=1, two=2)
 
 For completeness, there is also Mapping class, but using it is not recommended. Consider it a last resort.
 
