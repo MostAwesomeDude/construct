@@ -1069,8 +1069,8 @@ def test_restreamdata_issue_701():
     assert d.parse(b'\x01GGGGGGGGGG\x02') == Container(a=1,b=2)
 
 def test_transformed():
-    d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
-    common(d, b"\x00"*2, b"\x00"*16, 2)
+    d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 2)
+    common(d, bytes(2), bytes(16), 2)
 
 def test_transformed_issue_676():
     d = Struct(
@@ -1087,13 +1087,12 @@ def test_transformed_issue_676():
     d.build({})
 
 def test_restreamed():
-    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).parse(b"\x00\x01") == 1
-    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).build(1) == b"\x00\x01"
-    assert Restreamed(Int16ub, ident, 1, ident, 1, ident).sizeof() == 2
-    assert raises(Restreamed(VarInt, ident, 1, ident, 1, ident).sizeof) == SizeofError
-    assert Restreamed(Bytes(2), lambda b: b*2, 1, None, None, None).parse(b"a") == b"aa"
-    assert Restreamed(Bytes(1), None, None, lambda b: b*2, 1, None).build(b"a") == b"aa"
-    assert Restreamed(Bytes(5), None, None, None, None, lambda n: n*2).sizeof() == 10
+    d = Restreamed(Int16ub, ident, 1, ident, 1, ident)
+    common(d, b"\x00\x01", 1, 2)
+    d = Restreamed(VarInt, ident, 1, ident, 1, ident)
+    assert raises(d.sizeof) == SizeofError
+    d = Restreamed(Bytes(2), lambda b: b*2, 1, lambda b: b[0:1], 1, lambda n: n*2)
+    common(d, b"aa", b"aa", 4)
 
 def test_restreamed_partial_read():
     d = Restreamed(Bytes(255), ident, 1, ident, 1, ident)

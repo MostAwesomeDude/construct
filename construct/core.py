@@ -4835,9 +4835,9 @@ class RestreamData(Subconstruct):
 
 class Transformed(Subconstruct):
     r"""
-    Parses a field on transfored data (or transforms data after building).
+    Transforms bytes between the underlying stream and the (fixed-sized) subcon.
 
-    Parsing reads a specified amount, processes data using a bytes-to-bytes decoding function, then parses subcon using those data. Building does build subcon into separate bytes, then processes using encoding encoding, then writes those data into main stream. Size is reported as `encodeamount`.
+    Parsing reads a specified amount, processes data using a bytes-to-bytes decoding function, then parses subcon using those data. Building does build subcon into separate bytes, then processes it using encoding bytes-to-bytes function, then writes those data into main stream. Size is reported as `decodeamount` or `encodeamount` if those are equal, otherwise its SizeofError.
 
     Used internally to implement :class:`~construct.core.Bitwise` :class:`~construct.core.Bytewise` :class:`~construct.core.ByteSwapped` :class:`~construct.core.BitsSwapped` .
 
@@ -4862,7 +4862,7 @@ class Transformed(Subconstruct):
 
     Example::
 
-        >>> d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
+        >>> d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 2)
         >>> d.parse(b"\x00\x00")
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
     """
@@ -4887,17 +4887,19 @@ class Transformed(Subconstruct):
         buildret = self.subcon._build(obj, stream2, context, path)
         data = self.encodefunc(stream2.getvalue())
         if len(data) != self.encodeamount:
-            raise StreamError("encoding transformation produced wrong amount of bytes")
+            raise StreamError("encoding transformation produced wrong amount of bytes, %s instead of expected %s" % (len(data), self.encodeamount, ))
         _write_stream(stream, data)
         return buildret
 
     def _sizeof(self, context, path):
-        return self.encodeamount
+        if self.decodeamount == self.encodeamount:
+            return self.encodeamount
+        raise SizeofError
 
 
 class Restreamed(Subconstruct):
     r"""
-    Transforms bytes between the underlying stream and the subcon.
+    Transforms bytes between the underlying stream and the (variable-sized) subcon.
 
     Used internally to implement :class:`~construct.core.Bitwise` :class:`~construct.core.Bytewise` :class:`~construct.core.ByteSwapped` :class:`~construct.core.BitsSwapped` .
 
@@ -4905,15 +4907,14 @@ class Restreamed(Subconstruct):
 
     .. warning:: Do NOT use seeking/telling classes inside Restreamed context.
 
-    :param subcon: Construct instance, subcon which will operate on the buffer
-    :param encoder: function that takes bytes and returns bytes (used when building)
-    :param encoderunit: integer ratio, encoder takes that many bytes at once
-    :param decoder: function that takes bytes and returns bytes (used when parsing)
-    :param decoderunit: integer ratio, decoder takes that many bytes at once
+    :param subcon: Construct instance
+    :param decoder: bytes-to-bytes function, used on data chunks when parsing
+    :param decoderunit: integer, decoder takes chunks of this size
+    :param encoder: bytes-to-bytes function, used on data chunks when building
+    :param encoderunit: integer, encoder takes chunks of this size
     :param sizecomputer: function that computes amount of bytes outputed
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
-
     Can also raise arbitrary exceptions in its implementation.
 
     Example::
