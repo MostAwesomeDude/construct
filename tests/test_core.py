@@ -1027,9 +1027,21 @@ def test_nullstripped():
     assert d.build(b'\xff') == b'\xff'
 
 def test_restreamdata():
-    d = RestreamData(b"\xff", Byte)
-    common(d, b"", 255, 0)
+    d = RestreamData(b"\x01", Int8ub)
+    common(d, b"", 1, 0)
     d = RestreamData(b"", Padding(1))
+    assert d.build(None) == b''
+
+    d = RestreamData(io.BytesIO(b"\x01\x02"), Int16ub)
+    assert d.parse(b"\x01\x02\x00") == 0x0102
+    assert d.build(None) == b''
+
+    d = RestreamData(NullTerminated(GreedyBytes), Int16ub)
+    assert d.parse(b"\x01\x02\x00") == 0x0102
+    assert d.build(None) == b''
+
+    d = RestreamData(FixedSized(2, GreedyBytes), Int16ub)
+    assert d.parse(b"\x01\x02\x00") == 0x0102
     assert d.build(None) == b''
 
 def test_transformed():

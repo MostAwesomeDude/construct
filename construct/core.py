@@ -4785,20 +4785,27 @@ class RestreamData(Subconstruct):
     r"""
     Parses a field on external data (but does not build).
 
-    Parsing defers to subcon, but provides it a separate stream based on bytes data provided by datafunc (a bytes literal or context lambda). Building does nothing. Size is 0 because as far as other fields see it, this field does not produce or consume any bytes from the stream.
+    Parsing defers to subcon, but provides it a separate BytesIO stream based on data provided by datafunc (a bytes literal or another BytesIO stream or Construct instances that returns bytes or context lambda). Building does nothing. Size is 0 because as far as other fields see it, this field does not produce or consume any bytes from the stream.
 
-    :param datafunc: bytes or context lambda, provides data for subcon to parse
-    :param subcon: Construct instance, subcon used for parsing the value
+    :param datafunc: bytes or BytesIO or Construct instance (that parses into bytes) or context lambda, provides data for subcon to parse from
+    :param subcon: Construct instance
 
     Can propagate any exception from the lambdas, possibly non-ConstructError.
 
     Example::
 
-        >>> d = RestreamData(b"\xff", Byte)
+        >>> d = RestreamData(b"\x01", Int8ub)
         >>> d.parse(b"")
-        255
+        1
         >>> d.build(0)
         b''
+
+        >>> d = RestreamData(NullTerminated(GreedyBytes), Int16ub)
+        >>> d.parse(b"\x01\x02\x00")
+        0x0102
+        >>> d = RestreamData(FixedSized(2, GreedyBytes), Int16ub)
+        >>> d.parse(b"\x01\x02\x00")
+        0x0102
     """
 
     def __init__(self, datafunc, subcon):
@@ -4807,10 +4814,13 @@ class RestreamData(Subconstruct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        data = self.datafunc
-        if callable(data):
-            data = data(context)
-        stream2 = io.BytesIO(data)
+        data = evaluate(self.datafunc, context)
+        if isinstance(data, bytestringtype):
+            stream2 = io.BytesIO(data)
+        if isinstance(data, io.BytesIO):
+            stream2 = data
+        if isinstance(data, Construct):
+            stream2 = io.BytesIO(data._parsereport(stream, context, path))
         return self.subcon._parsereport(stream2, context, path)
 
     def _build(self, obj, stream, context, path):

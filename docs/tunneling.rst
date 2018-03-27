@@ -87,15 +87,27 @@ NullStripped consumes bytes till EOF, and for that matter should be restricted b
 Working with different bytes
 --------------------------------------------------
 
-RestreamData allows you to insert a field that parses some data that came either from some other field, from the context (like Bytes) or some literal hardcoded value in your code. Comes handy when for example, you are testing a large struct by parsing null bytes, but some field is unable to parse null bytes (like Numpy). It substitutes the stream with another data for the purposes of parsing a particular field in a Struct (or Sequence for that matter).
+RestreamData allows you to insert a field that parses some data that came either from some other field, from the context (like Bytes) or some literal hardcoded value in your code. Comes handy when for example, you are testing a large struct by parsing null bytes, but some field is unable to parse null bytes (like Numpy). It substitutes the stream with another data for the purposes of parsing a particular field in a Struct.
+
+Instead of data itself (bytes object) you can reference another stream (taken from the context like `this._stream`) or use a Construct that parses into bytes (including those exposed via context like `this._subcons.field`).
 
 ::
 
-    >>> d = RestreamData(b"\xff", Byte)
+    >>> d = RestreamData(b"\x01", Int8ub)
     >>> d.parse(b"")
-    255
+    1
     >>> d.build(0)
     b''
+
+::
+
+    >>> d = RestreamData(NullTerminated(GreedyBytes), Int16ub)
+    >>> d.parse(b"\x01\x02\x00")
+    0x0102
+
+    >>> d = RestreamData(FixedSized(2, GreedyBytes), Int16ub)
+    >>> d.parse(b"\x01\x02\x00")
+    0x0102
 
 ::
 
