@@ -314,6 +314,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = True
         context._building = False
+        context._root = context
         try:
             return self._parsereport(stream, context, "(parsing)")
         except CancelParsing:
@@ -361,6 +362,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = False
         context._building = True
+        context._root = context
         self._build(obj, stream, context, "(building)")
 
     def build_file(self, obj, filename, **contextkw):
@@ -393,6 +395,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = False
         context._building = False
+        context._root = context
         return self._sizeof(context, "(sizeof)")
 
     def _sizeof(self, context, path):
@@ -443,8 +446,6 @@ class Construct(object):
         """)
         code.append("""
             def parseall(io, this):
-                this['_parsing'] = True
-                this['_building'] = False
                 return %s
             compiled = Compiled(None, None, parseall)
         """ % (self._compileparse(code),))
@@ -2078,7 +2079,8 @@ class Struct(Construct):
 
     def _parse(self, stream, context, path):
         obj = Container(_stream = FeaturedBytesIO(stream))
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         for sc in self.subcons:
             try:
                 subobj = sc._parsereport(stream, context, path)
@@ -2092,7 +2094,8 @@ class Struct(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = Container()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -2112,10 +2115,8 @@ class Struct(Construct):
         return context
 
     def _sizeof(self, context, path):
-        context = Container(_ = context)
-        context._parsing = False
-        context._building = False
-        context._subcons = self._subcons
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context._topmost = context._.get("_topmost", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -2126,9 +2127,8 @@ class Struct(Construct):
         block = """
             def %s(io, this):
                 result = Container()
-                this = Container(_ = this)
-                this['_parsing'] = True
-                this['_building'] = False
+                this = Container(_ = this, _root = this['_root'], _topmost = None, _parsing = True, _building = False)
+                this['_topmost'] = this['_'].get('_topmost', this)
                 try:
         """ % (fname, )
         for sc in self.subcons:
@@ -2213,7 +2213,8 @@ class Sequence(Construct):
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         for i,sc in enumerate(self.subcons):
             try:
                 subobj = sc._parsereport(stream, context, path)
@@ -2227,7 +2228,8 @@ class Sequence(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = ListContainer([None for sc in self.subcons])
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         retlist = ListContainer()
         for i,(sc,subobj) in enumerate(zip(self.subcons, obj)):
             try:
@@ -2243,10 +2245,8 @@ class Sequence(Construct):
         return retlist
 
     def _sizeof(self, context, path):
-        context = Container(_ = context)
-        context._parsing = False
-        context._building = False
-        context._subcons = self._subcons
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context._topmost = context._.get("_topmost", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -2257,7 +2257,8 @@ class Sequence(Construct):
         block = """
             def %s(io, this):
                 result = ListContainer()
-                this = Container(_ = this)
+                this = Container(_ = this, _root = this['_root'], _topmost = None, _parsing = True, _building = False)
+                this['_topmost'] = this['_'].get('_topmost', this)
                 try:
         """ % (fname,)
         for sc in self.subcons:
@@ -3009,7 +3010,8 @@ class FocusedSeq(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         for i,sc in enumerate(self.subcons):
             parseret = sc._parsereport(stream, context, path)
@@ -3020,7 +3022,8 @@ class FocusedSeq(Construct):
         return finalret
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         context[parsebuildfrom] = obj
         for i,sc in enumerate(self.subcons):
@@ -3032,10 +3035,8 @@ class FocusedSeq(Construct):
         return finalret
 
     def _sizeof(self, context, path):
-        context = Container(_ = context)
-        context._parsing = False
-        context._building = False
-        context._subcons = self._subcons
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context._topmost = context._.get("_topmost", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -3046,7 +3047,8 @@ class FocusedSeq(Construct):
         block = """
             def %s(io, this):
                 result = []
-                this = Container(_ = this)
+                this = Container(_ = this, _root = this['_root'], _topmost = None, _parsing = True, _building = False)
+                this['_topmost'] = this['_'].get('_topmost', this)
         """ % (fname, )
         for sc in self.subcons:
             block += """
@@ -3455,7 +3457,8 @@ class Union(Construct):
 
     def _parse(self, stream, context, path):
         obj = Container()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         fallback = _tell_stream(stream)
         forwards = {}
         for i,sc in enumerate(self.subcons):
@@ -3475,7 +3478,8 @@ class Union(Construct):
         return obj
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         context.update(obj)
         for sc in self.subcons:
             if sc.flagbuildnone:
@@ -3496,8 +3500,6 @@ class Union(Construct):
             raise UnionError("cannot build, none of subcons were found in the dictionary %r" % (obj, ))
 
     def _sizeof(self, context, path):
-        context._parsing = False
-        context._building = False
         raise SizeofError("Union builds depending on actual object dict, size is unknown")
 
     def _emitparse(self, code):
@@ -3506,7 +3508,8 @@ class Union(Construct):
         fname = "parse_union_%s" % code.allocateId()
         block = """
             def %s(io, this):
-                this = Container(_ = this)
+                this = Container(_ = this, _root = this['_root'], _topmost = None, _parsing = True, _building = False)
+                this['_topmost'] = this['_'].get('_topmost', this)
                 fallback = io.tell()
         """ % (fname, )
         if isinstance(self.parsefrom, type(None)):
@@ -5329,7 +5332,8 @@ class LazyStruct(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         offset = _tell_stream(stream)
         offsets = {0: offset}
         values = {}
@@ -5350,7 +5354,8 @@ class LazyStruct(Construct):
         # exact copy from Struct class
         if obj is None:
             obj = Container()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
+        context._topmost = context._.get("_topmost", context)
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -5371,10 +5376,8 @@ class LazyStruct(Construct):
 
     def _sizeof(self, context, path):
         # exact copy from Struct class
-        context = Container(_ = context)
-        context._parsing = False
-        context._building = False
-        context._subcons = self._subcons
+        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context._topmost = context._.get("_topmost", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):

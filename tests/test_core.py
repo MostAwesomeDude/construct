@@ -1833,6 +1833,19 @@ def test_struct_stream():
     )
     d.parse(bytes(20))
 
+def test_struct_root_topmost():
+    d = Struct(
+        'x' / Computed(1),
+        'inner' / Struct(
+            'inner2' / Struct(
+                'x' / Computed(this._topmost.x),
+                'z' / Computed(this._root.z),
+                'zz' / Computed(this._topmost._.z),
+            ),
+        ),
+    )
+    assert d.parse(b"", z=2) == Container(x=1, inner=Container(inner2=Container(x=1,z=2,zz=2)))
+
 def test_parsedhook_repeatersdiscard():
     outputs = []
     def printobj(obj, ctx):

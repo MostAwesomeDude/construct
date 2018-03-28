@@ -45,7 +45,7 @@ Struct Sequence FocusedSeq Union LazyStruct have new embedding semantics (`see t
 
 Struct Sequence FocusedSeq Union LazyStruct are exposing subcons, as attributes and in _subcons context entry (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#refering-to-inlined-constructs>`_)
 
-Struct Sequence FocusedSeq Union LazyStruct are exposing _parsing _building boolean entries and _stream entry in the context (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#ifthenelse>`_)
+Struct Sequence FocusedSeq Union LazyStruct are exposing _ _root _topmost _parsing _building _subcons _stream entries in the context (`see tutorial page <https://construct.readthedocs.io/en/latest/misc.html#ifthenelse>`_)
 
 EmbeddedBitStruct removed, instead use BitStruct with Bytewise-wrapped fields (`see tutorial page <https://construct.readthedocs.io/en/latest/bitwise.html#fields-that-work-with-bytes>`_)
 
@@ -106,6 +106,8 @@ Support classes
 --------------------
 
 Container updated, uses `globalPrintFullStrings globalPrintFalseFlags globalPrintPrivateEntries`
+
+Container updated, equality does not check hidden keys like _private or keys order
 
 FlagsContainer removed
 

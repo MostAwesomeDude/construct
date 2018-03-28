@@ -158,6 +158,66 @@ Container(data=b'1234')
 Embedded structs should not be named, see :class:`~construct.core.Embedded` .
 
 
+Hidden context entries
+----------------------
+
+There are few additional, hidden entries in the context. They are mostly used internally so they are not very well documented.
+
+::
+
+    >>> d = Struct(
+    ...     'x' / Computed(1),
+    ...     'inner' / Struct(
+    ...         'inner2' / Struct(
+    ...             'x' / Computed(this._topmost.x),
+    ...             'z' / Computed(this._root.z),
+    ...             'zz' / Computed(this._topmost._.z),
+    ...         ),
+    ...     ),
+    ...     Probe(),
+    ... )
+    >>> d.parse(b'', z=2)
+    --------------------------------------------------
+    Probe, path is (parsing), into is None
+    Container: 
+        _ = Container: 
+            z = 2
+            _parsing = True
+            _building = False
+            _root = <recursion detected>
+        _root = Container: 
+            z = 2
+            _parsing = True
+            _building = False
+            _root = <recursion detected>
+        _topmost = <recursion detected>
+        _parsing = True
+        _building = False
+        _subcons = Container: 
+            x = <Renamed x +nonbuild <Computed +nonbuild>>
+            inner = <Renamed inner +nonbuild <Struct +nonbuild>>
+        _stream = <_io.BytesIO object at 0x7f7e35a5fdb0>
+        x = 1
+        inner = Container: 
+            _stream = <_io.BytesIO object at 0x7f7e35a5fdb0>
+            inner2 = Container: 
+                _stream = <_io.BytesIO object at 0x7f7e35a5fdb0>
+                x = 1
+                z = 2
+                zz = 2
+    --------------------------------------------------
+
+Explanation as follows:
+
+* `_` means up-level in the context stack, every Struct does context nesting
+* `_root` is the level on which externally provided values reside, those passed as parse() keyword arguments
+* `_topmost` is the outer-most Struct, this entry might not exist if you do not use Structs
+* `_parsing _building` are boolean values that are set by `parse build sizeof` public API methods
+* `_subcons` is a list of Construct instances, this Struct members
+* `_stream` is a BytesIO instance that has additional `size eof` methods as well as standard `seek tell` methods
+* (parsed members are also added under matching names)
+
+
 Sequences
 =========
 
