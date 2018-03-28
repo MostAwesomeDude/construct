@@ -999,6 +999,8 @@ def test_fixedsized():
     assert raises(d.parse, bytes(10)) == PaddingError
     assert raises(d.build, 0) == PaddingError
     assert raises(d.sizeof) == PaddingError
+    d = FixedSized(10, GreedyBytes)
+    common(d, bytes(10), bytes(10), 10)
 
 def test_nullterminated():
     d = NullTerminated(Byte)
