@@ -4561,8 +4561,10 @@ class Prefixed(Subconstruct):
         length = self.lengthfield._parsereport(stream, context, path)
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
-        stream2 = io.BytesIO(_read_stream(stream, length))
-        return self.subcon._parsereport(stream2, context, path)
+        data = _read_stream(stream, length)
+        if self.subcon is GreedyBytes and not self.subcon.parsed:
+            return data
+        return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
         stream2 = io.BytesIO()
@@ -4913,9 +4915,9 @@ class Transformed(Subconstruct):
         if isinstance(self.decodeamount, integertypes):
             data = _read_stream(stream, self.decodeamount)
         data = self.decodefunc(data)
-        stream2 = io.BytesIO(data)
-        obj = self.subcon._parsereport(stream2, context, path)
-        return obj
+        if self.subcon is GreedyBytes and not self.subcon.parsed:
+            return data
+        return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
         stream2 = io.BytesIO()
@@ -5026,8 +5028,9 @@ class ProcessXor(Subconstruct):
             data = bytes(bytearray((b ^ pad) for b in iterateints(data)))
         if isinstance(pad, bytestringtype):
             data = bytes(bytearray((b ^ p) for b,p in zip(iterateints(data), itertools.cycle(iterateints(pad)))))
-        stream2 = io.BytesIO(data)
-        return self.subcon._parsereport(stream2, context, path)
+        if self.subcon is GreedyBytes and not self.subcon.parsed:
+            return data
+        return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
         pad = evaluate(self.padfunc, context)
