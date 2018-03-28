@@ -4837,7 +4837,7 @@ class Transformed(Subconstruct):
     r"""
     Transforms bytes between the underlying stream and the (fixed-sized) subcon.
 
-    Parsing reads a specified amount, processes data using a bytes-to-bytes decoding function, then parses subcon using those data. Building does build subcon into separate bytes, then processes it using encoding bytes-to-bytes function, then writes those data into main stream. Size is reported as `decodeamount` or `encodeamount` if those are equal, otherwise its SizeofError.
+    Parsing reads a specified amount (or till EOF), processes data using a bytes-to-bytes decoding function, then parses subcon using those data. Building does build subcon into separate bytes, then processes it using encoding bytes-to-bytes function, then writes those data into main stream. Size is reported as `decodeamount` or `encodeamount` if those are equal, otherwise its SizeofError.
 
     Used internally to implement :class:`~construct.core.Bitwise` :class:`~construct.core.Bytewise` :class:`~construct.core.ByteSwapped` :class:`~construct.core.BitsSwapped` .
 
@@ -4854,8 +4854,7 @@ class Transformed(Subconstruct):
     :param encodeamount: integer, amount of bytes to write
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises StreamError: subcon parsed less than `decodeamount` bytes
-    :raises StreamError: subcon build (and encoder transformed) more or less than `encodeamount` bytes
+    :raises StreamError: subcon build and encoder transformed more or less than `encodeamount` bytes, if amount is specified
     :raises StringError: building from non-bytes value, perhaps unicode
 
     Can propagate any exception from the lambdas, possibly non-ConstructError.
@@ -4863,6 +4862,10 @@ class Transformed(Subconstruct):
     Example::
 
         >>> d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 2)
+        >>> d.parse(b"\x00\x00")
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+        >>> d = Transformed(GreedyBytes, bytes2bits, None, bits2bytes, None)
         >>> d.parse(b"\x00\x00")
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
     """
@@ -4875,23 +4878,29 @@ class Transformed(Subconstruct):
         self.encodeamount = encodeamount
 
     def _parse(self, stream, context, path):
-        data = self.decodefunc(_read_stream(stream, self.decodeamount))
+        if isinstance(self.decodeamount, type(None)):
+            data = _read_stream_entire(stream)
+        if isinstance(self.decodeamount, integertypes):
+            data = _read_stream(stream, self.decodeamount)
+        data = self.decodefunc(data)
         stream2 = io.BytesIO(data)
         obj = self.subcon._parsereport(stream2, context, path)
-        if stream2.read(1):
-            raise StreamError("decoding transformation did not consume all bytes")
         return obj
 
     def _build(self, obj, stream, context, path):
         stream2 = io.BytesIO()
         buildret = self.subcon._build(obj, stream2, context, path)
-        data = self.encodefunc(stream2.getvalue())
-        if len(data) != self.encodeamount:
-            raise StreamError("encoding transformation produced wrong amount of bytes, %s instead of expected %s" % (len(data), self.encodeamount, ))
+        data = stream2.getvalue()
+        data = self.encodefunc(data)
+        if isinstance(self.encodeamount, integertypes):
+            if len(data) != self.encodeamount:
+                raise StreamError("encoding transformation produced wrong amount of bytes, %s instead of expected %s" % (len(data), self.encodeamount, ))
         _write_stream(stream, data)
         return buildret
 
     def _sizeof(self, context, path):
+        if self.decodeamount is None or self.encodeamount is None:
+            raise SizeofError
         if self.decodeamount == self.encodeamount:
             return self.encodeamount
         raise SizeofError

@@ -127,6 +127,14 @@ Transformed allows you to process data before it gets into subcon (and after dat
     >>> d.parse(b"\x00\x00")
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
+Transformed can also process unknown amount of bytes, if that amount is entire data. Decode amount and encode amount are then set to None.
+
+::
+
+    >>> d = Transformed(GreedyBytes, bytes2bits, None, bits2bytes, None)
+    >>> d.parse(b"\x00\x00")
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
 ::
 
     # Bitwise implementation

@@ -1072,6 +1072,9 @@ def test_transformed():
     d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 2)
     common(d, bytes(2), bytes(16), 2)
 
+    d = Transformed(GreedyBytes, bytes2bits, None, bits2bytes, None)
+    common(d, bytes(2), bytes(16), SizeofError)
+
 def test_transformed_issue_676():
     d = Struct(
          'inner1' / BitStruct(
