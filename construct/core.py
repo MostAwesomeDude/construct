@@ -123,6 +123,26 @@ def _tell_stream(stream):
         raise StreamError("stream.tell() failed")
 
 
+def _size_stream(stream):
+    fallback = stream.tell()
+    end = stream.seek(0, 2)
+    stream.seek(fallback)
+    return end
+
+
+def _iseof_stream(stream):
+    fallback = stream.tell()
+    data = stream.read(1)
+    stream.seek(fallback)
+    return not data
+
+
+def FeaturedBytesIO(stream):
+    stream.size = lambda: _size_stream(stream)
+    stream.eof = lambda: _iseof_stream(stream)
+    return stream
+
+
 class CodeGen:
     def __init__(self):
         self.blocks = []
@@ -2057,8 +2077,8 @@ class Struct(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        obj = Container()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        obj = Container(_stream = FeaturedBytesIO(stream))
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         for sc in self.subcons:
             try:
                 subobj = sc._parsereport(stream, context, path)
@@ -2072,7 +2092,7 @@ class Struct(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = Container()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -2193,7 +2213,7 @@ class Sequence(Construct):
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         for i,sc in enumerate(self.subcons):
             try:
                 subobj = sc._parsereport(stream, context, path)
@@ -2207,7 +2227,7 @@ class Sequence(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = ListContainer([None for sc in self.subcons])
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         retlist = ListContainer()
         for i,(sc,subobj) in enumerate(zip(self.subcons, obj)):
             try:
@@ -2989,7 +3009,7 @@ class FocusedSeq(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         for i,sc in enumerate(self.subcons):
             parseret = sc._parsereport(stream, context, path)
@@ -3000,7 +3020,7 @@ class FocusedSeq(Construct):
         return finalret
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         context[parsebuildfrom] = obj
         for i,sc in enumerate(self.subcons):
@@ -3140,6 +3160,7 @@ class NamedTuple(Adapter):
 
     def _decode(self, obj, context, path):
         if isinstance(self.subcon, Struct):
+            del obj["_stream"]
             return self.factory(**obj)
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return self.factory(*obj)
@@ -3434,7 +3455,7 @@ class Union(Construct):
 
     def _parse(self, stream, context, path):
         obj = Container()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         fallback = _tell_stream(stream)
         forwards = {}
         for i,sc in enumerate(self.subcons):
@@ -3454,7 +3475,7 @@ class Union(Construct):
         return obj
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         context.update(obj)
         for sc in self.subcons:
             if sc.flagbuildnone:
@@ -5308,7 +5329,7 @@ class LazyStruct(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         offset = _tell_stream(stream)
         offsets = {0: offset}
         values = {}
@@ -5329,7 +5350,7 @@ class LazyStruct(Construct):
         # exact copy from Struct class
         if obj is None:
             obj = Container()
-        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
+        context = Container(_ = context, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
         context.update(obj)
         for sc in self.subcons:
             try:

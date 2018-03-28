@@ -1807,6 +1807,32 @@ def test_isparsingbuilding():
     )
     d.sizeof()
 
+def test_struct_stream():
+    d = Struct(
+        'fixed' / FixedSized(10, Struct(
+            'data' / GreedyBytes,
+            # check a substream
+            Check(lambda this: this._stream.size() == 10),
+            Check(lambda this: this._stream.eof()),
+            # checks parent original stream
+            Check(lambda this: this._._stream.size() == 20),
+            Check(lambda this: not this._._stream.eof()),
+        )),
+        # checks mid-parsing
+        Check(lambda this: this._stream.tell() == 10),
+        Check(lambda this: this._stream.size() == 20),
+        Check(lambda this: not this._stream.eof()),
+        'rest' / GreedyBytes,
+        # checks after parsed to EOF
+        Check(lambda this: this._stream.tell() == 20),
+        Check(lambda this: this._stream.size() == 20),
+        Check(lambda this: this._stream.eof()),
+        Check(lambda this: this._stream.seek(0,2) == 20),
+        # checks nested struct stream
+        Check(lambda this: this.fixed._stream.size() == 10),
+    )
+    d.parse(bytes(20))
+
 def test_parsedhook_repeatersdiscard():
     outputs = []
     def printobj(obj, ctx):

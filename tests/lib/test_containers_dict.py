@@ -249,8 +249,7 @@ def test_falseflags():
     setGlobalPrintFalseFlags()
 
 def test_privateentries():
-    d = Struct("_private" / Byte)
-    c = d.parse(b"\x01")
+    c = Container(_private = 1)
 
     setGlobalPrintPrivateEntries(True)
     assert str(c) == "Container: \n    _private = 1"

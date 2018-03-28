@@ -205,14 +205,16 @@ class Container(dict):
             return True
         if not isinstance(other, dict):
             return False
-        if len(self) != len(other):
-            return False
         def isequal(v1, v2):
             if v1.__class__.__name__ == "ndarray" or v2.__class__.__name__ == "ndarray":
                 import numpy
                 return numpy.array_equal(v1, v2)
             return v1 == v2
         for k,v in self.items():
+            if isinstance(k, unicodestringtype) and k.startswith(u"_"):
+                continue
+            if isinstance(k, bytestringtype) and k.startswith(b"_"):
+                continue
             if k not in other or not isequal(v, other[k]):
                 return False
         return True
