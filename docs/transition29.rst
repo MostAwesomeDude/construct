@@ -91,6 +91,8 @@ ExprAdapter Mapping Restreamed changed parameters order (decoders before encoder
 
 Adapter changed parameters, added `path` parameter to `_encode _decode _validate` methods (`see tutorial page <https://construct.readthedocs.io/en/latest/adapters.html>`_)
 
+Lazy added, in Lazy equivalents category (`see tutorial page <https://construct.readthedocs.io/en/latest/lazy.html#lazy>`_)
+
 LazyStruct LazyArray reimplemented with new lazy parsing semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/lazy.html#lazystruct>`_)
 
 LazySequence LazyRange LazyField(OnDemand) removed

@@ -22,6 +22,7 @@ setup(
             "enum34",
             "numpy",
             "arrow",
+            "lazy-object-proxy",
             "ruamel.yaml",
         ],
     },

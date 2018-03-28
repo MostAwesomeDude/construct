@@ -104,6 +104,7 @@ __all__ = [
     'Indexing',
     'Int',
     'IntegerError',
+    'Lazy',
     'LazyArray',
     'LazyBound',
     'LazyContainer',

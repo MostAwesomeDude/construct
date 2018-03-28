@@ -1196,6 +1196,27 @@ def test_rebuffered():
     assert raises(Rebuffered(Byte).sizeof) == 1
     assert raises(Rebuffered(VarInt).sizeof) == SizeofError
 
+def test_lazy():
+    d = Struct(
+        'dup' / Lazy(Computed(this.exists)),
+        'exists' / Computed(1),
+    )
+    common(d, b'', Container(exists=1,dup=1), 0)
+
+    d = Struct(
+        'a' / Byte,
+        'b' / Lazy(Byte),
+        'c' / Byte,
+        'trigger' / Computed(this.b),
+        'd' / Byte,
+
+    )
+    # equality does not work, due to lazyproxyobjects?
+    # common(d, b"\x01\x02\x03\x04", Container(a=1,b=2,c=3,trigger=2,d=4), 4)
+    assert d.parse(b"\x01\x02\x03\x04").b == 2
+    assert d.build(Container(a=1,b=2,c=3,d=4)) == b"\x01\x02\x03\x04"
+    assert d.sizeof() == 4
+
 def test_lazystruct():
     d = LazyStruct(
         "num1" / Int8ub,
