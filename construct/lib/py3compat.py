@@ -160,4 +160,4 @@ else:
         if isinstance(countorseq, integertypes):
             return b"\x00" * countorseq
         else:
-            return b"".join(int2byte(x) for x in countorseq)
+            return b"".join(chr(x) for x in countorseq)
