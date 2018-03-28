@@ -144,6 +144,7 @@ __all__ = [
     'Prefixed',
     'PrefixedArray',
     'Probe',
+    'ProcessXor',
     'RangeError',
     'RawCopy',
     'Rebuffered',

@@ -4924,7 +4924,7 @@ class Restreamed(Subconstruct):
     :param sizecomputer: function that computes amount of bytes outputed
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
-    Can also raise arbitrary exceptions in its implementation.
+    Can also raise arbitrary exceptions in RestreamedBytesIO implementation.
 
     Example::
 
@@ -4957,6 +4957,64 @@ class Restreamed(Subconstruct):
             raise SizeofError("Restreamed cannot calculate size without a sizecomputer")
         else:
             return self.sizecomputer(self.subcon._sizeof(context, path))
+
+
+class ProcessXor(Subconstruct):
+    r"""
+    Transforms bytes between the underlying stream and the subcon.
+
+    Used internally by KaitaiStruct compiler, when translating `process: xor` tags.
+
+    Parsing reads till EOF, xors data with the pad, then feeds that data into subcon. Building first builds the subcon into separate BytesIO stream, xors data with the pad, then writes that data into the main stream. Size is the same as subcon, unless it raises SizeofError.
+
+    :param subcon: Construct instance
+    :param padfunc: integer or bytes or context lambda, single or multiple bytes to xor data with
+
+    :raises StringError: pad is not integer or bytes
+
+    Can propagate any exception from the lambda, possibly non-ConstructError.
+
+    Example::
+
+        >>> d = ProcessXor(0xf0 or b'\xf0', Int16ub)
+        >>> d.parse(b"\x00\xff")
+        0xf00f
+        >>> d.sizeof()
+        2
+    """
+
+    def __init__(self, padfunc, subcon):
+        super(ProcessXor, self).__init__(subcon)
+        self.padfunc = padfunc
+
+    def _parse(self, stream, context, path):
+        pad = evaluate(self.padfunc, context)
+        if not isinstance(pad, (integertypes, bytestringtype)):
+            raise StringError("ProcessXor needs integer or bytes pad")
+        data = _read_stream_entire(stream)
+        if isinstance(pad, integertypes):
+            data = bytes(bytearray((b ^ pad) for b in iterateints(data)))
+        if isinstance(pad, bytestringtype):
+            data = bytes(bytearray((b ^ p) for b,p in zip(iterateints(data), itertools.cycle(iterateints(pad)))))
+        stream2 = io.BytesIO(data)
+        return self.subcon._parsereport(stream2, context, path)
+
+    def _build(self, obj, stream, context, path):
+        pad = evaluate(self.padfunc, context)
+        if not isinstance(pad, (integertypes, bytestringtype)):
+            raise StringError("ProcessXor needs integer or bytes pad")
+        stream2 = io.BytesIO()
+        buildret = self.subcon._build(obj, stream2, context, path)
+        data = stream2.getvalue()
+        if isinstance(pad, integertypes):
+            data = bytes(bytearray((b ^ pad) for b in iterateints(data)))
+        if isinstance(pad, bytestringtype):
+            data = bytes(bytearray((b ^ p) for b,p in zip(iterateints(data), itertools.cycle(iterateints(pad)))))
+        _write_stream(stream, data)
+        return buildret
+
+    def _sizeof(self, context, path):
+        return self.subcon._sizeof(context, path)
 
 
 class Checksum(Construct):

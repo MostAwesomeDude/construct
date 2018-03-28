@@ -1071,7 +1071,6 @@ def test_restreamdata_issue_701():
 def test_transformed():
     d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 2)
     common(d, bytes(2), bytes(16), 2)
-
     d = Transformed(GreedyBytes, bytes2bits, None, bits2bytes, None)
     common(d, bytes(2), bytes(16), SizeofError)
 
@@ -1100,6 +1099,17 @@ def test_restreamed():
 def test_restreamed_partial_read():
     d = Restreamed(Bytes(255), ident, 1, ident, 1, ident)
     assert raises(d.parse, b"") == StreamError
+
+def test_processxor():
+    d = ProcessXor(0xf0, Int16ub)
+    common(d, b"\x00\xff", 0xf00f, 2)
+    d = ProcessXor(b"\xf0\xf0\xf0\xf0\xf0", Int16ub)
+    common(d, b"\x00\xff", 0xf00f, 2)
+
+    d = ProcessXor(0xf0, GreedyBytes)
+    common(d, b"\x00\xff", b"\xf0\x0f", SizeofError)
+    d = ProcessXor(b"\xf0\xf0\xf0\xf0\xf0", GreedyBytes)
+    common(d, b"\x00\xff", b"\xf0\x0f", SizeofError)
 
 def test_checksum():
     d = Struct(

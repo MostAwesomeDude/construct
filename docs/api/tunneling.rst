@@ -13,6 +13,7 @@ Core API: Tunneling
 .. autofunction:: construct.RestreamData
 .. autofunction:: construct.Transformed
 .. autofunction:: construct.Restreamed
+.. autofunction:: construct.ProcessXor
 .. autofunction:: construct.Checksum
 .. autofunction:: construct.Compressed
 .. autofunction:: construct.Rebuffered

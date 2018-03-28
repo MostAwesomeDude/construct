@@ -85,6 +85,8 @@ RestreamData added, in Tunneling (`see tutorial page <https://construct.readthed
 
 Transformed added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#working-with-different-bytes>`_)
 
+ProcessXor added, in Tunneling (`see tutorial page <https://construct.readthedocs.io/en/latest/tunneling.html#processing-data-with-xor-and-algorithms>`_)
+
 ExprAdapter Mapping Restreamed changed parameters order (decoders before encoders)
 
 Adapter changed parameters, added `path` parameter to `_encode _decode _validate` methods (`see tutorial page <https://construct.readthedocs.io/en/latest/adapters.html>`_)

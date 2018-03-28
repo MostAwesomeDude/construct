@@ -147,6 +147,20 @@ Transformed can also process unknown amount of bytes, if that amount is entire d
 Restreamed is similar to Transformed, but the main difference is that Transformed requires fixed-sized subcon because it reads all bytes in advance, processes them, and then feeds them to the subcon. Restreamed on the other hand, reads few bytes at a time, the minimum amount on each stream read. Since both are used mostly internally, there is no tutorial how to use it, other than this short code above.
 
 
+Processing data with XOR and algorithms
+----------------------------------------
+
+This chapter is mostly relevant to KaitaiStruct compiler implementation, as following constructs exist mostly for that purpose.
+
+Data can be transformed by XORing with a single integer or several bytes, and those can also be taken from the context at runtime. Note that ProcessXor reads entire stream till EOF so it should be wrapped in FixedSized NullTerminated unless you actually want to process entire remaining stream.
+
+>>> d = ProcessXor(0xf0 or b'\xf0', Int16ub)
+>>> d.parse(b"\x00\xff")
+0xf00f
+>>> d.sizeof()
+2
+
+
 Compression and checksuming
 ----------------------------------------
 
