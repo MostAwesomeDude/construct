@@ -1044,6 +1044,30 @@ def test_restreamdata():
     assert d.parse(b"\x01\x02\x00") == 0x0102
     assert d.build(None) == b''
 
+@xfail(reason="unknown, either StreamError or KeyError due to this.entire or this._.entire")
+def test_restreamdata_issue_701():
+    d = Struct(
+        'entire' / GreedyBytes,
+        'ac' / RestreamData(this.entire, Struct(
+            'a' / Byte,
+            Bytes(len_(this._.entire)-1),
+            'c' / Byte,
+        )),
+    )
+    # StreamError: stream read less then specified amount, expected 1, found 0
+    assert d.parse(b'\x01GGGGGGGGGG\x02') == Container(entire=b'\x01GGGGGGGGGG\x02', ac=Container(a=1,b=2))
+
+    d = FocusedSeq('ac'
+        'entire' / GreedyBytes,
+        'ac' / RestreamData(this.entire, Struct(
+            'a' / Byte,
+            Bytes(len_(this._.entire)-1),
+            'c' / Byte,
+        )),
+    )
+    # KeyError: 'entire'
+    assert d.parse(b'\x01GGGGGGGGGG\x02') == Container(a=1,b=2)
+
 def test_transformed():
     d = Transformed(Bytes(16), bytes2bits, 2, bits2bytes, 16//8)
     common(d, b"\x00"*2, b"\x00"*16, 2)
