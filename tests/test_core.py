@@ -157,7 +157,8 @@ def test_paddedstring():
 
     d = PaddedString(100, "ascii")
     assert d.parse(b"X"*100) == u"X"*100
-    assert d.build(u"X"*100) == b"X"*99+b"\x00"
+    assert d.build(u"X"*100) == b"X"*100
+    assert raises(d.build, u"X"*200) == PaddingError
 
     for e,us in [("utf8",1),("utf16",2),("utf_16_le",2),("utf32",4),("utf_32_le",4)]:
         s = u"Афон"

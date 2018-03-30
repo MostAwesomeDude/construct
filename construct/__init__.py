@@ -174,8 +174,6 @@ __all__ = [
     'StreamError',
     'StringEncoded',
     'StringError',
-    'StringNullTerminated',
-    'StringPaddedTrimmed',
     'Struct',
     'Subconstruct',
     'sum_',

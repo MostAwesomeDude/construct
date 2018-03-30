@@ -1469,21 +1469,12 @@ possiblestringencodings = dict(
 )
 
 
-def selectencoding(encoding):
-    """Used internally."""
-    if not encoding:
-        raise StringError("String* classes require explicit encoding")
-    return encoding
-
-
-def calculateunits(encoding):
+def encodingunit(encoding):
     """Used internally."""
     encoding = encoding.replace("-","_").lower()
     if encoding not in possiblestringencodings:
-        raise StringError("encoding %r not among %r" % (encoding, possiblestringencodings,))
-    unitsize = possiblestringencodings[encoding]
-    finalunit = bytes(unitsize)
-    return unitsize, finalunit
+        raise StringError("encoding %r not found among %r" % (encoding, possiblestringencodings,))
+    return bytes(possiblestringencodings[encoding])
 
 
 class StringEncoded(Adapter):
@@ -1491,7 +1482,9 @@ class StringEncoded(Adapter):
 
     def __init__(self, subcon, encoding):
         super(StringEncoded, self).__init__(subcon)
-        self.encoding = selectencoding(encoding)
+        if not encoding:
+            raise StringError("String* classes require explicit encoding")
+        self.encoding = encoding
 
     def _decode(self, obj, context, path):
         return obj.decode(self.encoding)
@@ -1507,106 +1500,11 @@ class StringEncoded(Adapter):
         return "(%s).decode(%r)" % (self.subcon._compileparse(code), self.encoding, )
 
 
-class StringPaddedTrimmed(Construct):
-    """Used internally."""
-
-    def __init__(self, length, encoding):
-        super(StringPaddedTrimmed, self).__init__()
-        self.length = length
-        self.encoding = selectencoding(encoding)
-
-    def _parse(self, stream, context, path):
-        length = evaluate(self.length, context)
-        unitsize, finalunit = calculateunits(self.encoding)
-        if length % unitsize:
-            raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
-        obj = _read_stream(stream, length)
-        endsat = 0
-        objlen = len(obj)
-        while endsat+unitsize <= objlen and obj[endsat:endsat+unitsize] != finalunit:
-            endsat += unitsize
-        return obj[:endsat]
-
-    def _build(self, obj, stream, context, path):
-        originalobj = obj
-        length = evaluate(self.length, context)
-        unitsize, finalunit = calculateunits(self.encoding)
-
-        if length % unitsize:
-            raise StringError("byte length must be multiple of encoding-unit, %s" % (unitsize,))
-        if len(obj) % unitsize:
-            raise StringError("string length must be multiple of encoding-unit, %s" % (unitsize,))
-        if len(obj) > length-unitsize:
-            obj = obj[:length-unitsize]
-        obj = obj.ljust(length, b"\x00")
-        _write_stream(stream, obj, length)
-        return originalobj
-
-    def _sizeof(self, context, path):
-        return evaluate(self.length, context)
-
-    def _emitparse(self, code):
-        unitsize, finalunit = calculateunits(self.encoding)
-        code.append("""
-            def parse_paddedtrimmedstring(io, length, unitsize, finalunit):
-                if length % unitsize:
-                    raise StringError
-                obj = read_bytes(io, length)
-                endsat = 0
-                objlen = len(obj)
-                while endsat+unitsize <= objlen and obj[endsat:endsat+unitsize] != finalunit:
-                    endsat += unitsize
-                return obj[:endsat]
-        """)
-        return "parse_paddedtrimmedstring(io, %s, %s, %r)" % (self.length, unitsize, finalunit, )
-
-
-class StringNullTerminated(Construct):
-    """Used internally."""
-
-    def __init__(self, encoding):
-        super(StringNullTerminated, self).__init__()
-        self.encoding = selectencoding(encoding)
-
-    def _parse(self, stream, context, path):
-        unitsize, finalunit = calculateunits(self.encoding)
-        result = []
-        while True:
-            unit = _read_stream(stream, unitsize)
-            if unit == finalunit:
-                break
-            result.append(unit)
-        return b"".join(result)
-
-    def _build(self, obj, stream, context, path):
-        originalobj = obj
-        unitsize, finalunit = calculateunits(self.encoding)
-        if len(obj) % unitsize:
-            raise StringError("string length must be multiple of encoding-unit, %s" % (unitsize,))
-        data = obj + finalunit
-        _write_stream(stream, data)
-        return originalobj
-
-    def _emitparse(self, code):
-        unitsize, finalunit = calculateunits(self.encoding)
-        code.append("""
-            def parse_nullterminatedstring(io, unitsize, finalunit):
-                result = []
-                while True:
-                    unit = read_bytes(io, unitsize)
-                    if unit == finalunit:
-                        break
-                    result.append(unit)
-                return b"".join(result)
-        """)
-        return "parse_nullterminatedstring(io, %s, %r)" % (unitsize, finalunit, )
-
-
 def PaddedString(length, encoding):
     r"""
     Configurable, fixed-length or variable-length string field.
 
-    When parsing, the byte string is stripped of null bytes (per encoding unit), then decoded. Length is an integer or context lambda. When building, the string is encoded, then trimmed to specified length minus encoding unit, then padded to specified length. Size is same as length parameter.
+    When parsing, the byte string is stripped of null bytes (per encoding unit), then decoded. Length is an integer or context lambda. When building, the string is encoded and then padded to specified length. If encoded string is larger then the specified length, it fails with PaddingError. Size is same as length parameter.
 
     .. warning:: PaddedString and CString only support encodings explicitly listed in :class:`~construct.core.possiblestringencodings` .
 
@@ -1614,7 +1512,6 @@ def PaddedString(length, encoding):
     :param encoding: string like: utf8 utf16 utf32 ascii
 
     :raises StringError: building a non-unicode string
-    :raises StringError: specified length or object for building is not a multiple of unit
     :raises StringError: selected encoding is not on supported list
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
@@ -1627,7 +1524,7 @@ def PaddedString(length, encoding):
         >>> d.parse(_)
         u'Афон'
     """
-    macro = StringEncoded(StringPaddedTrimmed(length, encoding), encoding)
+    macro = StringEncoded(FixedSized(length, NullStripped(GreedyBytes, pad=encodingunit(encoding))), encoding)
     def _emitfulltype(ksy, bitwise):
         return dict(size=length, type="strz", encoding=encoding)
     macro._emitfulltype = _emitfulltype
@@ -1636,9 +1533,7 @@ def PaddedString(length, encoding):
 
 def PascalString(lengthfield, encoding):
     r"""
-    Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). VarInt is recommended when designing new protocols. Stored length is in bytes, not characters. Size is not defined.
-
-    :class:`~construct.core.VarInt` is recommended for new protocols, as it is more compact and never overflows.
+    Length-prefixed string. The length field can be variable length (such as VarInt) or fixed length (such as Int64ub). :class:`~construct.core.VarInt` is recommended when designing new protocols. Stored length is in bytes, not characters. Size is not defined.
 
     :param lengthfield: Construct instance, field used to parse and build the length (like VarInt Int64ub)
     :param encoding: string like: utf8 utf16 utf32 ascii
@@ -1672,7 +1567,6 @@ def CString(encoding):
     :param encoding: string like: utf8 utf16 utf32 ascii
 
     :raises StringError: building a non-unicode string
-    :raises StringError: object for building is not a multiple of unit
     :raises StringError: selected encoding is not on supported list
 
     Example::
@@ -1683,7 +1577,7 @@ def CString(encoding):
         >>> d.parse(_)
         u'Афон'
     """
-    macro = StringEncoded(StringNullTerminated(encoding), encoding)
+    macro = StringEncoded(NullTerminated(GreedyBytes, term=encodingunit(encoding)), encoding)
     def _emitfulltype(ksy, bitwise):
         return dict(type="strz", encoding=encoding)
     macro._emitfulltype = _emitfulltype
@@ -1692,9 +1586,7 @@ def CString(encoding):
 
 def GreedyString(encoding):
     r"""
-    String that reads entire stream until EOF, and writes a given string as-is. If no encoding is specified, this is essentially GreedyBytes.
-
-    Analog to :class:`~construct.core.GreedyBytes` , and identical when no enoding is used.
+    String that reads entire stream until EOF, and writes a given string as-is. Analog to :class:`~construct.core.GreedyBytes` but also applies unicode-to-bytes encoding.
 
     :param encoding: string like: utf8 utf16 utf32 ascii
 
@@ -4695,7 +4587,7 @@ class FixedSized(Subconstruct):
         data = stream2.getvalue()
         pad = length - len(data)
         if pad < 0:
-            raise PaddingError("subcon build %d bytes but was allowed only %d" % (offset2-offset1, length, ))
+            raise PaddingError("subcon build %d bytes but was allowed only %d" % (len(data), length))
         _write_stream(stream, data)
         _write_stream(stream, bytes(pad))
         return buildret
