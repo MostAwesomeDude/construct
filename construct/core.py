@@ -4719,14 +4719,17 @@ class NullTerminated(Subconstruct):
 
     Parsing reads one byte at a time and accumulates it with previous bytes. When term was found, (by default) consumes but discards the term. When EOF was found, (by default) raises same StreamError exception. Then subcon is parsed using new BytesIO made with said data. Building builds the subcon and then writes the term. Size is undefined.
 
+    The term can be multiple bytes, to support string classes with UTF16/32 encodings.
+
     :param subcon: Construct instance
-    :param term: optional, b-character, terminator byte as byte-string, default is \x00 null byte
+    :param term: optional, bytes, terminator byte-string, default is \x00 single null byte
     :param include: optional, bool, if to include terminator in resulting data, default is False
     :param consume: optional, bool, if to consume terminator or leave it in the stream, default is True
     :param require: optional, bool, if EOF results in failure or not, default is True
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: encountered EOF but require is not disabled
+    :raises PaddingError: terminator is less than 1 bytes in length
 
     Example::
 
@@ -4746,10 +4749,13 @@ class NullTerminated(Subconstruct):
 
     def _parse(self, stream, context, path):
         term = self.term
+        unit = len(term)
+        if unit < 1:
+            raise PaddingError("NullTerminated term must be at least 1 byte")
         data = b''
         while True:
             try:
-                b = _read_stream(stream, 1)
+                b = _read_stream(stream, unit)
             except StreamError:
                 if self.require:
                     raise
@@ -4759,7 +4765,7 @@ class NullTerminated(Subconstruct):
                 if self.include:
                     data += b
                 if not self.consume:
-                    _seek_stream(stream, -1, 1)
+                    _seek_stream(stream, -unit, 1)
                 break
             data += b
         if self.subcon is GreedyBytes:
@@ -4777,6 +4783,8 @@ class NullTerminated(Subconstruct):
         raise SizeofError
 
     def _emitfulltype(self, ksy, bitwise):
+        if len(self.term) > 1:
+            raise NotImplementedError
         return dict(terminator=byte2int(self.term), include=self.include, consume=self.consume, eos_error=self.require, **self.subcon._compilefulltype(ksy, bitwise))
 
 
@@ -4786,8 +4794,12 @@ class NullStripped(Subconstruct):
 
     Parsing reads entire stream, then strips the data from right to left of null bytes, then parses subcon using new BytesIO made of said data. Building defers to subcon as-is. Size is undefined, because it reads till EOF.
 
+    The pad can be multiple bytes, to support string classes with UTF16/32 encodings.
+
     :param subcon: Construct instance
-    :param pad: optional, b-character, padding byte as byte-string, default is \x00 null byte
+    :param pad: optional, bytes, padding byte-string, default is \x00 single null byte
+
+    :raises PaddingError: pad is less than 1 bytes in length
 
     Example::
 
@@ -4803,8 +4815,21 @@ class NullStripped(Subconstruct):
         self.pad = pad
 
     def _parse(self, stream, context, path):
+        pad = self.pad
+        unit = len(pad)
+        if unit < 1:
+            raise PaddingError("NullStripped pad must be at least 1 byte")
         data = _read_stream_entire(stream)
-        data = data.rstrip(self.pad)
+        if unit == 1:
+            data = data.rstrip(pad)
+        else:
+            tailunit = len(data) % unit
+            end = len(data)
+            if tailunit and data[-tailunit:] == pad[:tailunit]:
+                end -= tailunit
+            while end-unit >= 0 and data[end-unit:end] == pad:
+                end -= unit
+            data = data[:end]
         if self.subcon is GreedyBytes:
             return data
         if type(self.subcon) is GreedyString:
@@ -4818,6 +4843,8 @@ class NullStripped(Subconstruct):
         raise SizeofError
 
     def _emitfulltype(self, ksy, bitwise):
+        if len(self.pad) > 1:
+            raise NotImplementedError
         return dict(pad_right=byte2int(self.pad), **self.subcon._compilefulltype(ksy, bitwise))
 
 

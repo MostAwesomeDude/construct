@@ -1030,6 +1030,8 @@ def test_nullterminated():
     common(d, bytes(1), b"", SizeofError)
     d = NullTerminated(GreedyString("utf-8"))
     common(d, bytes(1), u"", SizeofError)
+    d = NullTerminated(GreedyBytes, term=bytes(2))
+    common(d, b"\x01\x00\x00\x02\x00\x00", b"\x01\x00\x00\x02", SizeofError)
 
 def test_nullstripped():
     d = NullStripped(GreedyBytes)
@@ -1043,6 +1045,9 @@ def test_nullstripped():
     d = NullStripped(GreedyString("utf-8"))
     assert d.parse(bytes(10)) == u""
     assert d.build(u"") == b""
+    d = NullStripped(GreedyBytes, pad=bytes(2))
+    assert d.parse(bytes(10)) == b""
+    assert d.parse(bytes(11)) == b""
 
 def test_restreamdata():
     d = RestreamData(b"\x01", Int8ub)
