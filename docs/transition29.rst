@@ -41,6 +41,8 @@ Enum FlagsEnum dropped `default` parameter but returns integer if no mapping fou
 
 Enum FlagsEnum can build from integers and labels, and expose labels as attributes, as bitwisable strings (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#mappings>`_)
 
+FlagsEnum had parsing semantics fixed (affecting multi-bit flags)
+
 Mapping replaced SymmetricMapping, and dropped `default` parameter (`see API page <https://construct.readthedocs.io/en/latest/api/mappings.html#construct.Mapping>`_)
 
 Struct Sequence FocusedSeq Union LazyStruct have new embedding semantics (`see tutorial page <https://construct.readthedocs.io/en/latest/meta.html#nesting-and-embedding>`_)
