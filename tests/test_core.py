@@ -974,14 +974,21 @@ def test_bitsswapped():
     common(d, b"\xf1", Container(a=8)(b=15), 1)
 
 def test_prefixed():
-    assert Prefixed(Byte, Int16ul).parse(b"\x02\xff\xff??????") == 65535
-    assert Prefixed(Byte, Int16ul).build(65535) == b"\x02\xff\xff"
-    assert Prefixed(Byte, Int16ul).sizeof() == 3
-    assert Prefixed(VarInt, GreedyBytes).parse(b"\x03abc??????") == b"abc"
-    assert Prefixed(VarInt, GreedyBytes).build(b"abc") == b'\x03abc'
-    assert Prefixed(Byte, Int64ub).sizeof() == 9
-    assert Prefixed(Byte, Sequence(Peek(Byte), Int16ub, GreedyBytes)).parse(b"\x02\x00\xff????????") == [0,255,b'']
-    assert raises(Prefixed(VarInt, GreedyBytes).sizeof) == SizeofError
+    d = Prefixed(Byte, Int16ul)
+    assert d.parse(b"\x02\xff\xff??????") == 65535
+    assert d.build(65535) == b"\x02\xff\xff"
+    assert d.sizeof() == 3
+    d = Prefixed(VarInt, GreedyBytes)
+    assert d.parse(b"\x03abc??????") == b"abc"
+    assert d.build(b"abc") == b'\x03abc'
+    assert raises(d.sizeof) == SizeofError
+    d = Prefixed(Byte, Sequence(Peek(Byte), Int16ub, GreedyBytes))
+    assert d.parse(b"\x02\x00\xff????????") == [0,255,b'']
+
+    d = Prefixed(Byte, GreedyBytes)
+    common(d, b"\x0a"+bytes(10), bytes(10), SizeofError)
+    d = Prefixed(Byte, GreedyString("utf-8"))
+    common(d, b"\x0a"+bytes(10), u"\x00"*10, SizeofError)
 
 def test_prefixedarray():
     common(PrefixedArray(Byte,Byte), b"\x02\x0a\x0b", [10,11], SizeofError)
@@ -1001,6 +1008,8 @@ def test_fixedsized():
     assert raises(d.sizeof) == PaddingError
     d = FixedSized(10, GreedyBytes)
     common(d, bytes(10), bytes(10), 10)
+    d = FixedSized(10, GreedyString("utf-8"))
+    common(d, bytes(10), u"\x00"*10, 10)
 
 def test_nullterminated():
     d = NullTerminated(Byte)
@@ -1017,6 +1026,10 @@ def test_nullterminated():
     assert raises(d.parse, b'\xff') == StreamError
     d = NullTerminated(GreedyBytes, require=False)
     assert d.parse(b'\xff') == b'\xff'
+    d = NullTerminated(GreedyBytes)
+    common(d, bytes(1), b"", SizeofError)
+    d = NullTerminated(GreedyString("utf-8"))
+    common(d, bytes(1), u"", SizeofError)
 
 def test_nullstripped():
     d = NullStripped(GreedyBytes)
@@ -1027,6 +1040,9 @@ def test_nullstripped():
     common(d, b'\xff', b'\xff', SizeofError)
     assert d.parse(b'\xff\x05\x05') == b'\xff'
     assert d.build(b'\xff') == b'\xff'
+    d = NullStripped(GreedyString("utf-8"))
+    assert d.parse(bytes(10)) == u""
+    assert d.build(u"") == b""
 
 def test_restreamdata():
     d = RestreamData(b"\x01", Int8ub)
@@ -1075,6 +1091,8 @@ def test_transformed():
     common(d, bytes(2), bytes(16), 2)
     d = Transformed(GreedyBytes, bytes2bits, None, bits2bytes, None)
     common(d, bytes(2), bytes(16), SizeofError)
+    d = Transformed(GreedyString("utf-8"), bytes2bits, None, bits2bytes, None)
+    common(d, bytes(2), u"\x00"*16, SizeofError)
 
 def test_transformed_issue_676():
     d = Struct(
@@ -1112,6 +1130,10 @@ def test_processxor():
     common(d, b"\x00\xff", b"\xf0\x0f", SizeofError)
     d = ProcessXor(b"\xf0\xf0\xf0\xf0\xf0", GreedyBytes)
     common(d, b"\x00\xff", b"\xf0\x0f", SizeofError)
+    d = ProcessXor(b"X", GreedyString("utf-8"))
+    common(d, b"\x00", u"X", SizeofError)
+    d = ProcessXor(b"XXXXX", GreedyString("utf-8"))
+    common(d, b"\x00", u"X", SizeofError)
 
 def test_checksum():
     d = Struct(

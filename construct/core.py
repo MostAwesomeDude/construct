@@ -4562,8 +4562,10 @@ class Prefixed(Subconstruct):
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
         data = _read_stream(stream, length)
-        if self.subcon is GreedyBytes and not self.subcon.parsed:
+        if self.subcon is GreedyBytes:
             return data
+        if type(self.subcon) is GreedyString:
+            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -4678,8 +4680,10 @@ class FixedSized(Subconstruct):
         if length < 0:
             raise PaddingError("length cannot be negative")
         data = _read_stream(stream, length)
-        if self.subcon is GreedyBytes and not self.subcon.parsed:
+        if self.subcon is GreedyBytes:
             return data
+        if type(self.subcon) is GreedyString:
+            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -4758,8 +4762,10 @@ class NullTerminated(Subconstruct):
                     _seek_stream(stream, -1, 1)
                 break
             data += b
-        if self.subcon is GreedyBytes and not self.subcon.parsed:
+        if self.subcon is GreedyBytes:
             return data
+        if type(self.subcon) is GreedyString:
+            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -4799,8 +4805,10 @@ class NullStripped(Subconstruct):
     def _parse(self, stream, context, path):
         data = _read_stream_entire(stream)
         data = data.rstrip(self.pad)
-        if self.subcon is GreedyBytes and not self.subcon.parsed:
+        if self.subcon is GreedyBytes:
             return data
+        if type(self.subcon) is GreedyString:
+            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -4915,8 +4923,10 @@ class Transformed(Subconstruct):
         if isinstance(self.decodeamount, integertypes):
             data = _read_stream(stream, self.decodeamount)
         data = self.decodefunc(data)
-        if self.subcon is GreedyBytes and not self.subcon.parsed:
+        if self.subcon is GreedyBytes:
             return data
+        if type(self.subcon) is GreedyString:
+            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
@@ -5028,8 +5038,10 @@ class ProcessXor(Subconstruct):
             data = bytes(bytearray((b ^ pad) for b in iterateints(data)))
         if isinstance(pad, bytestringtype):
             data = bytes(bytearray((b ^ p) for b,p in zip(iterateints(data), itertools.cycle(iterateints(pad)))))
-        if self.subcon is GreedyBytes and not self.subcon.parsed:
+        if self.subcon is GreedyBytes:
             return data
+        if type(self.subcon) is GreedyString:
+            return data.decode(self.subcon.encoding)
         return self.subcon._parsereport(io.BytesIO(data), context, path)
 
     def _build(self, obj, stream, context, path):
