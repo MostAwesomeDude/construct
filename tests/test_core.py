@@ -1487,7 +1487,7 @@ def test_from_issue_171():
             "attrValue" / Switch(this.attrCode, {
                 34: BitsInteger(8),
                 205: BitsInteger(2),
-                512: BitsInteger(2)
+                512: BitsInteger(2),
             }),
         ))),
     )
@@ -1577,19 +1577,20 @@ def test_from_issue_244():
                 con.index = i
             return obj
 
-    assert AddIndexes(Struct("num"/Byte)[4]).parse(b"abcd") == [Container(num=97)(index=0),Container(num=98)(index=1),Container(num=99)(index=2),Container(num=100)(index=3),]
+    d = AddIndexes(Struct("num"/Byte)[4])
+    assert d.parse(b"abcd") == [Container(num=97)(index=0),Container(num=98)(index=1),Container(num=99)(index=2),Container(num=100)(index=3),]
 
 def test_from_issue_269():
-    st = Struct("enabled" / Byte, If(this.enabled, Padding(2)))
-    assert st.build(dict(enabled=1)) == b"\x01\x00\x00"
-    assert st.build(dict(enabled=0)) == b"\x00"
-    st = Struct("enabled" / Byte, "pad" / If(this.enabled, Padding(2)))
-    assert st.build(dict(enabled=1)) == b"\x01\x00\x00"
-    assert st.build(dict(enabled=0)) == b"\x00"
+    d = Struct("enabled" / Byte, If(this.enabled, Padding(2)))
+    assert d.build(dict(enabled=1)) == b"\x01\x00\x00"
+    assert d.build(dict(enabled=0)) == b"\x00"
+    d = Struct("enabled" / Byte, "pad" / If(this.enabled, Padding(2)))
+    assert d.build(dict(enabled=1)) == b"\x01\x00\x00"
+    assert d.build(dict(enabled=0)) == b"\x00"
 
 def test_hanging_issue_280():
-    st = BitStruct('a'/BitsInteger(20), 'b'/BitsInteger(12))
-    assert raises(st.parse, b'\x00') == StreamError
+    d = BitStruct('a'/BitsInteger(20), 'b'/BitsInteger(12))
+    assert raises(d.parse, b'\x00') == StreamError
 
 def test_from_issue_324():
     d = Struct(
@@ -1621,8 +1622,8 @@ def test_from_issue_357():
     assert st2.build(dict(b={})) == b""
 
 def test_context_is_container():
-    st = Struct(Check(lambda ctx: type(ctx) is Container))
-    st.parse(b"")
+    d = Struct(Check(lambda ctx: type(ctx) is Container))
+    d.parse(b"")
 
 def test_from_issue_362():
     FORMAT = Struct(
@@ -1684,7 +1685,7 @@ def test_pickling_constructs():
         # "obj_1" / RepeatUntil(obj_ == 0, Byte),
         # "len_1" / Computed(len_(this.array1)),
     )
-    data = b"\x00"*100
+    data = bytes(100)
 
     du = pickle.loads(pickle.dumps(d, protocol=-1))
     assert du.parse(data) == d.parse(data)
@@ -1977,7 +1978,7 @@ def test_exportksy():
     "struct docstring"
     print(d.export_ksy(filename="example_ksy.ksy"))
 
-@xfail(reason="FixedSized not implemented, and other due to unknown cause")
+@xfail(reason="both sizeof fail because length is 1 level up than when parsing")
 def test_from_issue_692():
     # https://stackoverflow.com/questions/44747202/pythons-construct-sizeof-for-construct-depending-on-its-parent
 
@@ -2000,9 +2001,7 @@ def test_from_issue_692():
         "length" / Int8ul,  # The size in bytes of each handle/value pair
         "datalist" / AttributeHandleValuePair[2],
     )
-    # OK
     assert AttReadByTypeResponse.parse(b"\x04\x01\x02\x03\x04\x01\x02\x03\x04") == Container(length=4,datalist=[dict(handle=0x0201,value=b'\x03\x04'),dict(handle=0x0201,value=b'\x03\x04')])
-    # fails
     assert AttReadByTypeResponse.sizeof(length=4) == 1+2*(2+4-2)
 
 @xfail(reason="GreedyRange seeking inside Restreamed")
@@ -2012,7 +2011,6 @@ def test_greedyrange_issue_697():
     )
     d.parse(bytes(5))
 
-@xfail(reason="GreedyBytes reading entire stream but RestreamedBytesIO.read() does not support that")
 def test_greedybytes_issue_697():
     d = BitStruct(
         "rest" / Bytewise(GreedyBytes),
