@@ -4308,7 +4308,7 @@ class Terminated(Construct):
         return obj
 
     def _sizeof(self, context, path):
-        return 0
+        raise SizeofError
 
 
 #===============================================================================

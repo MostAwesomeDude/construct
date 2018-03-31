@@ -343,7 +343,7 @@ def test_struct():
     common(Struct(), b"", Container(), 0)
     common(Struct("a"/Int16ub, "b"/Int8ub), b"\x00\x01\x02", Container(a=1,b=2), 3)
     common(Struct("a"/Struct("b"/Byte)), b"\x01", Container(a=Container(b=1)), 1)
-    common(Struct(Const(b"\x00"), Padding(1), Pass, Terminated), bytes(2), {}, 2)
+    common(Struct(Const(b"\x00"), Padding(1), Pass, Terminated), bytes(2), {}, SizeofError)
     assert raises(Struct("missingkey"/Byte).build, {}) == KeyError
     assert raises(Struct(Bytes(this.missing)).sizeof) == SizeofError
     d = Struct(Computed(7), Const(b"JPEG"), Pass, Terminated)
@@ -578,8 +578,8 @@ def test_error():
     assert raises(("x"/Int8sb >> IfThenElse(this.x > 0, Int8sb, Error)).parse, b"\xff\x05") == ExplicitError
 
 def test_focusedseq():
-    common(FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3)
-    common(FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, 3, s="num")
+    common(FocusedSeq("num", Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, SizeofError)
+    common(FocusedSeq(this._.s, Const(b"MZ"), "num"/Byte, Terminated), b"MZ\xff", 255, SizeofError, s="num")
 
     assert raises(FocusedSeq("missing", Pass).parse, b"") == UnboundLocalError
     assert raises(FocusedSeq("missing", Pass).build, {}) == UnboundLocalError
@@ -915,11 +915,10 @@ def test_pass():
     common(Pass, b"", None, 0)
     common(Struct("empty"/Pass), b"", Container(empty=None), 0)
 
-@xfail(reason="unknown cause, Bitwise was reimplemented using Transformed")
 def test_terminated():
-    common(Terminated, b"", None, 0)
-    common(Struct(Terminated), b"", Container(), 0)
-    common(BitStruct(Terminated), b"", Container(), 0)
+    common(Terminated, b"", None, SizeofError)
+    common(Struct(Terminated), b"", Container(), SizeofError)
+    common(BitStruct(Terminated), b"", Container(), SizeofError)
     assert raises(Terminated.parse, b"x") == TerminatedError
     assert raises(Struct(Terminated).parse, b"x") == TerminatedError
     assert raises(BitStruct(Terminated).parse, b"x") == TerminatedError
