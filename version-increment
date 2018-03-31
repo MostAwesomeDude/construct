@@ -16,4 +16,5 @@ release_date = "{date.year}.{date.month:02}.{date.day:02}"
 with open("construct/version.py","wt") as f:
     f.write(content)
 
-print(f"git commit -a -m 'version uped to {x}.{y}.{z}'")
+import os
+os.system(f"git commit -a -m 'version uped to {x}.{y}.{z}'")
