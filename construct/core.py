@@ -73,7 +73,7 @@ def singleton(arg):
     return x
 
 
-def _read_stream(stream, length):
+def stream_read(stream, length):
     if length < 0:
         raise StreamError("length must be non-negative, found %s" % length)
     try:
@@ -85,21 +85,21 @@ def _read_stream(stream, length):
     return data
 
 
-def _read_stream_entire(stream):
+def stream_read_entire(stream):
     try:
         return stream.read()
     except Exception:
         raise StreamError("stream.read() failed when reading until EOF")
 
 
-def _write_stream(stream, data, length=None):
+def stream_write(stream, data, length=None):
     if not isinstance(data, bytestringtype):
         raise StringError("given non-bytes value, perhaps unicode? %r" % (data,))
     if length is None:
         length = len(data)
-    elif length < 0:
+    if length < 0:
         raise StreamError("length must be non-negative, found %s" % length)
-    elif len(data) != length:
+    if len(data) != length:
         raise StreamError("bytes object of wrong length, expected %d, found %d" % (length, len(data)))
     try:
         written = stream.write(data)
@@ -109,38 +109,32 @@ def _write_stream(stream, data, length=None):
         raise StreamError("stream written less then specified, expected %d, written %d" % (length, written))
 
 
-def _seek_stream(stream, offset, whence=0):
+def stream_seek(stream, offset, whence=0):
     try:
         return stream.seek(offset, whence)
     except Exception:
         raise StreamError("stream.seek() failed, offset %s, whence %s" % (offset, whence,))
 
 
-def _tell_stream(stream):
+def stream_tell(stream):
     try:
         return stream.tell()
     except Exception:
         raise StreamError("stream.tell() failed")
 
 
-def _size_stream(stream):
+def stream_size(stream):
     fallback = stream.tell()
     end = stream.seek(0, 2)
     stream.seek(fallback)
     return end
 
 
-def _iseof_stream(stream):
+def stream_iseof(stream):
     fallback = stream.tell()
     data = stream.read(1)
     stream.seek(fallback)
     return not data
-
-
-def FeaturedBytesIO(stream):
-    stream.size = lambda: _size_stream(stream)
-    stream.eof = lambda: _iseof_stream(stream)
-    return stream
 
 
 class CodeGen:
@@ -314,7 +308,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = True
         context._building = False
-        context._root = context
+        context._params = context
         try:
             return self._parsereport(stream, context, "(parsing)")
         except CancelParsing:
@@ -362,7 +356,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = False
         context._building = True
-        context._root = context
+        context._params = context
         self._build(obj, stream, context, "(building)")
 
     def build_file(self, obj, filename, **contextkw):
@@ -395,7 +389,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = False
         context._building = False
-        context._root = context
+        context._params = context
         return self._sizeof(context, "(sizeof)")
 
     def _sizeof(self, context, path):
@@ -763,7 +757,7 @@ class Tunnel(Subconstruct):
     Needs to implement `_decode()` for parsing and `_encode()` for building.
     """
     def _parse(self, stream, context, path):
-        data = _read_stream_entire(stream)  # reads entire stream
+        data = stream_read_entire(stream)  # reads entire stream
         data = self._decode(data, context, path)
         return self.subcon.parse(data, **context)
 
@@ -772,7 +766,7 @@ class Tunnel(Subconstruct):
         buildret = self.subcon._build(obj, stream2, context, path)
         data = stream2.getvalue()
         data = self._encode(data, context, path)
-        _write_stream(stream, data)
+        stream_write(stream, data)
         return obj
 
     def _sizeof(self, context, path):
@@ -854,12 +848,12 @@ class Bytes(Construct):
 
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
-        return _read_stream(stream, length)
+        return stream_read(stream, length)
 
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bytes(obj, length) if isinstance(obj, int) else obj
-        _write_stream(stream, data, length)
+        stream_write(stream, data, length)
         return data
 
     def _sizeof(self, context, path):
@@ -894,7 +888,7 @@ class GreedyBytes(Construct):
     """
 
     def _parse(self, stream, context, path):
-        return _read_stream_entire(stream)
+        return stream_read_entire(stream)
 
     def _build(self, obj, stream, context, path):
         stream.write(obj)
@@ -1026,7 +1020,7 @@ class FormatField(Construct):
         self.packer = struct.Struct(endianity+format)
 
     def _parse(self, stream, context, path):
-        data = _read_stream(stream, self.length)
+        data = stream_read(stream, self.length)
         try:
             return self.packer.unpack(data)[0]
         except Exception:
@@ -1037,7 +1031,7 @@ class FormatField(Construct):
             data = self.packer.pack(obj)
         except Exception:
             raise FormatFieldError("struct %r error during building, given value %r" % (self.fmtstr, obj))
-        _write_stream(stream, data, self.length)
+        stream_write(stream, data, self.length)
         return obj
 
     def _sizeof(self, context, path):
@@ -1104,7 +1098,7 @@ class BytesInteger(Construct):
             length = length(context)
         if length < 0:
             raise IntegerError("length must be non-negative")
-        data = _read_stream(stream, length)
+        data = stream_read(stream, length)
         if self.swapped:
             data = data[::-1]
         return bytes2integer(data, self.signed)
@@ -1122,7 +1116,7 @@ class BytesInteger(Construct):
         data = integer2bytes(obj, length)
         if self.swapped:
             data = data[::-1]
-        _write_stream(stream, data, length)
+        stream_write(stream, data, length)
         return obj
 
     def _sizeof(self, context, path):
@@ -1188,7 +1182,7 @@ class BitsInteger(Construct):
             length = length(context)
         if length < 0:
             raise IntegerError("length must be non-negative")
-        data = _read_stream(stream, length)
+        data = stream_read(stream, length)
         if self.swapped:
             if length & 7:
                 raise IntegerError("little-endianness is only defined for multiples of 8 bits")
@@ -1210,7 +1204,7 @@ class BitsInteger(Construct):
             if length & 7:
                 raise IntegerError("little-endianness is only defined for multiples of 8 bits")
             data = swapbytes(data)
-        _write_stream(stream, data, length)
+        stream_write(stream, data, length)
         return obj
 
     def _sizeof(self, context, path):
@@ -1431,7 +1425,7 @@ class VarInt(Construct):
     def _parse(self, stream, context, path):
         acc = []
         while True:
-            b = byte2int(_read_stream(stream, 1))
+            b = byte2int(stream_read(stream, 1))
             acc.append(b & 0b01111111)
             if not b & 0b10000000:
                 break
@@ -1446,9 +1440,9 @@ class VarInt(Construct):
         if obj < 0:
             raise IntegerError("varint cannot build from negative number: %r" % (obj,))
         while obj > 0b01111111:
-            _write_stream(stream, int2byte(0b10000000 | (obj & 0b01111111)), 1)
+            stream_write(stream, int2byte(0b10000000 | (obj & 0b01111111)), 1)
             obj >>= 7
-        _write_stream(stream, int2byte(obj), 1)
+        stream_write(stream, int2byte(obj), 1)
         return obj
 
     def _emitprimitivetype(self, ksy, bitwise):
@@ -1627,10 +1621,10 @@ class Flag(Construct):
     """
 
     def _parse(self, stream, context, path):
-        return _read_stream(stream, 1) != b"\x00"
+        return stream_read(stream, 1) != b"\x00"
 
     def _build(self, obj, stream, context, path):
-        _write_stream(stream, b"\x01" if obj else b"\x00", 1)
+        stream_write(stream, b"\x01" if obj else b"\x00", 1)
         return obj
 
     def _sizeof(self, context, path):
@@ -1970,9 +1964,10 @@ class Struct(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        obj = Container(_stream = FeaturedBytesIO(stream))
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
+        obj = Container()
+        obj._io = stream
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
         for sc in self.subcons:
             try:
                 subobj = sc._parsereport(stream, context, path)
@@ -1986,8 +1981,8 @@ class Struct(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = Container()
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -2007,8 +2002,8 @@ class Struct(Construct):
         return context
 
     def _sizeof(self, context, path):
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = None)
+        context._root = context._.get("_root", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -2019,8 +2014,9 @@ class Struct(Construct):
         block = """
             def %s(io, this):
                 result = Container()
-                this = Container(_ = this, _root = this['_root'], _topmost = None, _parsing = True, _building = False)
-                this['_topmost'] = this['_'].get('_topmost', this)
+                # result['_io'] = io
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _subcons = None, _io = io)
+                this['_root'] = this['_'].get('_root', this)
                 try:
         """ % (fname, )
         for sc in self.subcons:
@@ -2105,8 +2101,8 @@ class Sequence(Construct):
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
         for i,sc in enumerate(self.subcons):
             try:
                 subobj = sc._parsereport(stream, context, path)
@@ -2120,8 +2116,8 @@ class Sequence(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = ListContainer([None for sc in self.subcons])
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
         retlist = ListContainer()
         for i,(sc,subobj) in enumerate(zip(self.subcons, obj)):
             try:
@@ -2137,8 +2133,8 @@ class Sequence(Construct):
         return retlist
 
     def _sizeof(self, context, path):
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = None)
+        context._root = context._.get("_root", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -2149,8 +2145,8 @@ class Sequence(Construct):
         block = """
             def %s(io, this):
                 result = ListContainer()
-                this = Container(_ = this, _root = this['_root'], _topmost = None, _parsing = True, _building = False)
-                this['_topmost'] = this['_'].get('_topmost', this)
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _subcons = None, _io = io)
+                this['_root'] = this['_'].get('_root', this)
                 try:
         """ % (fname,)
         for sc in self.subcons:
@@ -2288,7 +2284,7 @@ class GreedyRange(Subconstruct):
         try:
             for i in itertools.count():
                 context._index = i
-                fallback = _tell_stream(stream)
+                fallback = stream_tell(stream)
                 e = self.subcon._parsereport(stream, context, path)
                 if not self.discard:
                     obj.append(e)
@@ -2297,7 +2293,7 @@ class GreedyRange(Subconstruct):
         except ExplicitError:
             raise
         except Exception:
-            _seek_stream(stream, fallback)
+            stream_seek(stream, fallback)
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -2902,8 +2898,8 @@ class FocusedSeq(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         for i,sc in enumerate(self.subcons):
             parseret = sc._parsereport(stream, context, path)
@@ -2914,8 +2910,8 @@ class FocusedSeq(Construct):
         return finalret
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         context[parsebuildfrom] = obj
         for i,sc in enumerate(self.subcons):
@@ -2927,8 +2923,8 @@ class FocusedSeq(Construct):
         return finalret
 
     def _sizeof(self, context, path):
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = None)
+        context._root = context._.get("_root", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -2939,8 +2935,8 @@ class FocusedSeq(Construct):
         block = """
             def %s(io, this):
                 result = []
-                this = Container(_ = this, _root = this['_root'], _topmost = None, _parsing = True, _building = False)
-                this['_topmost'] = this['_'].get('_topmost', this)
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _subcons = None, _io = io)
+                this['_root'] = this['_'].get('_root', this)
         """ % (fname, )
         for sc in self.subcons:
             block += """
@@ -3054,7 +3050,7 @@ class NamedTuple(Adapter):
 
     def _decode(self, obj, context, path):
         if isinstance(self.subcon, Struct):
-            del obj["_stream"]
+            del obj["_io"]
             return self.factory(**obj)
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return self.factory(*obj)
@@ -3349,29 +3345,29 @@ class Union(Construct):
 
     def _parse(self, stream, context, path):
         obj = Container()
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
-        fallback = _tell_stream(stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
+        fallback = stream_tell(stream)
         forwards = {}
         for i,sc in enumerate(self.subcons):
             subobj = sc._parsereport(stream, context, path)
             if sc.name:
                 obj[sc.name] = subobj
                 context[sc.name] = subobj
-            forwards[i] = _tell_stream(stream)
+            forwards[i] = stream_tell(stream)
             if sc.name:
-                forwards[sc.name] = _tell_stream(stream)
-            _seek_stream(stream, fallback)
+                forwards[sc.name] = stream_tell(stream)
+            stream_seek(stream, fallback)
         parsefrom = self.parsefrom
         if callable(parsefrom):
             parsefrom = parsefrom(context)
         if parsefrom is not None:
-            _seek_stream(stream, forwards[parsefrom]) # raises KeyError
+            stream_seek(stream, forwards[parsefrom]) # raises KeyError
         return obj
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
         context.update(obj)
         for sc in self.subcons:
             if sc.flagbuildnone:
@@ -3400,8 +3396,8 @@ class Union(Construct):
         fname = "parse_union_%s" % code.allocateId()
         block = """
             def %s(io, this):
-                this = Container(_ = this, _root = this['_root'], _topmost = None, _parsing = True, _building = False)
-                this['_topmost'] = this['_'].get('_topmost', this)
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _subcons = None, _io = io)
+                this['_root'] = this['_'].get('_root', this)
                 fallback = io.tell()
         """ % (fname, )
         if isinstance(self.parsefrom, type(None)):
@@ -3480,13 +3476,13 @@ class Select(Construct):
 
     def _parse(self, stream, context, path):
         for sc in self.subcons:
-            fallback = _tell_stream(stream)
+            fallback = stream_tell(stream)
             try:
                 obj = sc._parsereport(stream, context, path)
             except ExplicitError:
                 raise
             except ConstructError:
-                _seek_stream(stream, fallback)
+                stream_seek(stream, fallback)
             else:
                 return obj
         raise SelectError("no subconstruct matched")
@@ -3500,7 +3496,7 @@ class Select(Construct):
             except Exception:
                 pass
             else:
-                _write_stream(stream, data)
+                stream_write(stream, data)
                 return obj
         raise SelectError("no subconstruct matched: %s" % (obj,))
 
@@ -3877,26 +3873,26 @@ class Padded(Subconstruct):
         length = evaluate(self.length, context)
         if length < 0:
             raise PaddingError("length cannot be negative")
-        position1 = _tell_stream(stream)
+        position1 = stream_tell(stream)
         obj = self.subcon._parsereport(stream, context, path)
-        position2 = _tell_stream(stream)
+        position2 = stream_tell(stream)
         pad = length - (position2 - position1)
         if pad < 0:
             raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length))
-        _read_stream(stream, pad)
+        stream_read(stream, pad)
         return obj
 
     def _build(self, obj, stream, context, path):
         length = evaluate(self.length, context)
         if length < 0:
             raise PaddingError("length cannot be negative")
-        position1 = _tell_stream(stream)
+        position1 = stream_tell(stream)
         buildret = self.subcon._build(obj, stream, context, path)
-        position2 = _tell_stream(stream)
+        position2 = stream_tell(stream)
         pad = length - (position2 - position1)
         if pad < 0:
             raise PaddingError("subcon build %d bytes but was allowed only %d" % (position2-position1, length))
-        _write_stream(stream, self.pattern * pad, pad)
+        stream_write(stream, self.pattern * pad, pad)
         return buildret
 
     def _sizeof(self, context, path):
@@ -3953,22 +3949,22 @@ class Aligned(Subconstruct):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         if modulus < 2:
             raise PaddingError("expected modulo 2 or greater")
-        position1 = _tell_stream(stream)
+        position1 = stream_tell(stream)
         obj = self.subcon._parsereport(stream, context, path)
-        position2 = _tell_stream(stream)
+        position2 = stream_tell(stream)
         pad = -(position2 - position1) % modulus
-        _read_stream(stream, pad)
+        stream_read(stream, pad)
         return obj
 
     def _build(self, obj, stream, context, path):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         if modulus < 2:
             raise PaddingError("expected modulo 2 or greater")
-        position1 = _tell_stream(stream)
+        position1 = stream_tell(stream)
         buildret = self.subcon._build(obj, stream, context, path)
-        position2 = _tell_stream(stream)
+        position2 = stream_tell(stream)
         pad = -(position2 - position1) % modulus
-        _write_stream(stream, self.pattern * pad, pad)
+        stream_write(stream, self.pattern * pad, pad)
         return buildret
 
     def _sizeof(self, context, path):
@@ -4066,18 +4062,18 @@ class Pointer(Subconstruct):
 
     def _parse(self, stream, context, path):
         offset = self.offset(context) if callable(self.offset) else self.offset
-        fallback = _tell_stream(stream)
-        _seek_stream(stream, offset, 2 if offset < 0 else 0)
+        fallback = stream_tell(stream)
+        stream_seek(stream, offset, 2 if offset < 0 else 0)
         obj = self.subcon._parsereport(stream, context, path)
-        _seek_stream(stream, fallback)
+        stream_seek(stream, fallback)
         return obj
 
     def _build(self, obj, stream, context, path):
         offset = self.offset(context) if callable(self.offset) else self.offset
-        fallback = _tell_stream(stream)
-        _seek_stream(stream, offset, 2 if offset < 0 else 0)
+        fallback = stream_tell(stream)
+        stream_seek(stream, offset, 2 if offset < 0 else 0)
         buildret = self.subcon._build(obj, stream, context, path)
-        _seek_stream(stream, fallback)
+        stream_seek(stream, fallback)
         return buildret
 
     def _sizeof(self, context, path):
@@ -4128,7 +4124,7 @@ class Peek(Subconstruct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        fallback = _tell_stream(stream)
+        fallback = stream_tell(stream)
         try:
             return self.subcon._parsereport(stream, context, path)
         except ExplicitError:
@@ -4136,7 +4132,7 @@ class Peek(Subconstruct):
         except ConstructError:
             pass
         finally:
-            _seek_stream(stream, fallback)
+            stream_seek(stream, fallback)
 
     def _build(self, obj, stream, context, path):
         return obj
@@ -4195,12 +4191,12 @@ class Seek(Construct):
     def _parse(self, stream, context, path):
         at = self.at(context) if callable(self.at) else self.at
         whence = self.whence(context) if callable(self.whence) else self.whence
-        return _seek_stream(stream, at, whence)
+        return stream_seek(stream, at, whence)
 
     def _build(self, obj, stream, context, path):
         at = self.at(context) if callable(self.at) else self.at
         whence = self.whence(context) if callable(self.whence) else self.whence
-        return _seek_stream(stream, at, whence)
+        return stream_seek(stream, at, whence)
 
     def _sizeof(self, context, path):
         raise SizeofError("Seek only moves the stream, size is not meaningful")
@@ -4234,10 +4230,10 @@ class Tell(Construct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        return _tell_stream(stream)
+        return stream_tell(stream)
 
     def _build(self, obj, stream, context, path):
-        return _tell_stream(stream)
+        return stream_tell(stream)
 
     def _sizeof(self, context, path):
         return 0
@@ -4344,11 +4340,11 @@ class RawCopy(Subconstruct):
     """
 
     def _parse(self, stream, context, path):
-        offset1 = _tell_stream(stream)
+        offset1 = stream_tell(stream)
         obj = self.subcon._parsereport(stream, context, path)
-        offset2 = _tell_stream(stream)
-        _seek_stream(stream, offset1)
-        data = _read_stream(stream, offset2-offset1)
+        offset2 = stream_tell(stream)
+        stream_seek(stream, offset1)
+        data = stream_read(stream, offset2-offset1)
         return Container(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
 
     def _build(self, obj, stream, context, path):
@@ -4356,18 +4352,18 @@ class RawCopy(Subconstruct):
             obj = dict(value=None)
         if 'data' in obj:
             data = obj['data']
-            offset1 = _tell_stream(stream)
-            _write_stream(stream, data)
-            offset2 = _tell_stream(stream)
+            offset1 = stream_tell(stream)
+            stream_write(stream, data)
+            offset2 = stream_tell(stream)
             return Container(obj, data=data, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         if 'value' in obj:
             value = obj['value']
-            offset1 = _tell_stream(stream)
+            offset1 = stream_tell(stream)
             buildret = self.subcon._build(value, stream, context, path)
             value = value if buildret is None else buildret
-            offset2 = _tell_stream(stream)
-            _seek_stream(stream, offset1)
-            data = _read_stream(stream, offset2-offset1)
+            offset2 = stream_tell(stream)
+            stream_seek(stream, offset1)
+            data = stream_read(stream, offset2-offset1)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         raise RawCopyError('RawCopy cannot build, both data and value keys are missing')
 
@@ -4453,7 +4449,7 @@ class Prefixed(Subconstruct):
         length = self.lengthfield._parsereport(stream, context, path)
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
-        data = _read_stream(stream, length)
+        data = stream_read(stream, length)
         if self.subcon is GreedyBytes:
             return data
         if type(self.subcon) is GreedyString:
@@ -4468,18 +4464,18 @@ class Prefixed(Subconstruct):
         if self.includelength:
             length += self.lengthfield._sizeof(context, path)
         self.lengthfield._build(length, stream, context, path)
-        _write_stream(stream, data)
+        stream_write(stream, data)
         return buildret
 
     def _sizeof(self, context, path):
         return self.lengthfield._sizeof(context, path) + self.subcon._sizeof(context, path)
 
     def _actualsize(self, stream, context, path):
-        position1 = _tell_stream(stream)
+        position1 = stream_tell(stream)
         length = self.lengthfield._parse(stream, context, path)
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
-        position2 = _tell_stream(stream)
+        position2 = stream_tell(stream)
         return (position2-position1) + length
 
     def _emitparse(self, code):
@@ -4523,9 +4519,9 @@ def PrefixedArray(countfield, subcon):
         return "ListContainer((%s) for i in range(%s))" % (subcon._compileparse(code), countfield._compileparse(code), )
     macro._emitparse = _emitparse
     def _actualsize(self, stream, context, path):
-        position1 = _tell_stream(stream)
+        position1 = stream_tell(stream)
         count = countfield._parse(stream, context, path)
-        position2 = _tell_stream(stream)
+        position2 = stream_tell(stream)
         return (position2-position1) + count * subcon._sizeof(context, path)
     macro._actualsize = _actualsize
     def _emitseq(ksy, bitwise):
@@ -4571,7 +4567,7 @@ class FixedSized(Subconstruct):
         length = evaluate(self.length, context)
         if length < 0:
             raise PaddingError("length cannot be negative")
-        data = _read_stream(stream, length)
+        data = stream_read(stream, length)
         if self.subcon is GreedyBytes:
             return data
         if type(self.subcon) is GreedyString:
@@ -4588,8 +4584,8 @@ class FixedSized(Subconstruct):
         pad = length - len(data)
         if pad < 0:
             raise PaddingError("subcon build %d bytes but was allowed only %d" % (len(data), length))
-        _write_stream(stream, data)
-        _write_stream(stream, bytes(pad))
+        stream_write(stream, data)
+        stream_write(stream, bytes(pad))
         return buildret
 
     def _sizeof(self, context, path):
@@ -4647,7 +4643,7 @@ class NullTerminated(Subconstruct):
         data = b''
         while True:
             try:
-                b = _read_stream(stream, unit)
+                b = stream_read(stream, unit)
             except StreamError:
                 if self.require:
                     raise
@@ -4657,7 +4653,7 @@ class NullTerminated(Subconstruct):
                 if self.include:
                     data += b
                 if not self.consume:
-                    _seek_stream(stream, -unit, 1)
+                    stream_seek(stream, -unit, 1)
                 break
             data += b
         if self.subcon is GreedyBytes:
@@ -4668,7 +4664,7 @@ class NullTerminated(Subconstruct):
 
     def _build(self, obj, stream, context, path):
         buildret = self.subcon._build(obj, stream, context, path)
-        _write_stream(stream, self.term)
+        stream_write(stream, self.term)
         return buildret
 
     def _sizeof(self, context, path):
@@ -4711,7 +4707,7 @@ class NullStripped(Subconstruct):
         unit = len(pad)
         if unit < 1:
             raise PaddingError("NullStripped pad must be at least 1 byte")
-        data = _read_stream_entire(stream)
+        data = stream_read_entire(stream)
         if unit == 1:
             data = data.rstrip(pad)
         else:
@@ -4838,9 +4834,9 @@ class Transformed(Subconstruct):
 
     def _parse(self, stream, context, path):
         if isinstance(self.decodeamount, type(None)):
-            data = _read_stream_entire(stream)
+            data = stream_read_entire(stream)
         if isinstance(self.decodeamount, integertypes):
-            data = _read_stream(stream, self.decodeamount)
+            data = stream_read(stream, self.decodeamount)
         data = self.decodefunc(data)
         if self.subcon is GreedyBytes:
             return data
@@ -4856,7 +4852,7 @@ class Transformed(Subconstruct):
         if isinstance(self.encodeamount, integertypes):
             if len(data) != self.encodeamount:
                 raise StreamError("encoding transformation produced wrong amount of bytes, %s instead of expected %s" % (len(data), self.encodeamount, ))
-        _write_stream(stream, data)
+        stream_write(stream, data)
         return buildret
 
     def _sizeof(self, context, path):
@@ -4952,7 +4948,7 @@ class ProcessXor(Subconstruct):
         pad = evaluate(self.padfunc, context)
         if not isinstance(pad, (integertypes, bytestringtype)):
             raise StringError("ProcessXor needs integer or bytes pad")
-        data = _read_stream_entire(stream)
+        data = stream_read_entire(stream)
         if isinstance(pad, integertypes):
             data = bytes(bytearray((b ^ pad) for b in iterateints(data)))
         if isinstance(pad, bytestringtype):
@@ -4974,7 +4970,7 @@ class ProcessXor(Subconstruct):
             data = bytes(bytearray((b ^ pad) for b in iterateints(data)))
         if isinstance(pad, bytestringtype):
             data = bytes(bytearray((b ^ p) for b,p in zip(iterateints(data), itertools.cycle(iterateints(pad)))))
-        _write_stream(stream, data)
+        stream_write(stream, data)
         return buildret
 
     def _sizeof(self, context, path):
@@ -5172,12 +5168,12 @@ class Lazy(Subconstruct):
 
     def _parse(self, stream, context, path):
         import lazy_object_proxy
-        offset = _tell_stream(stream)
+        offset = stream_tell(stream)
         def execute():
-            fallback = _tell_stream(stream)
-            _seek_stream(stream, offset)
+            fallback = stream_tell(stream)
+            stream_seek(stream, offset)
             obj = self.subcon._parsereport(stream, context, path)
-            _seek_stream(stream, fallback)
+            stream_seek(stream, fallback)
             return obj
         return lazy_object_proxy.Proxy(execute)
 
@@ -5203,7 +5199,7 @@ class LazyContainer(dict):
             index = self._struct._subconsindexes[index] # KeyError
         if index in self._values:
             return self._values[index]
-        _seek_stream(self._stream, self._offsets[index]) # KeyError
+        stream_seek(self._stream, self._offsets[index]) # KeyError
         parseret = self._struct.subcons[index]._parsereport(self._stream, self._context, self._path)
         self._values[index] = parseret
         return parseret
@@ -5266,21 +5262,21 @@ class LazyStruct(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
-        offset = _tell_stream(stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
+        offset = stream_tell(stream)
         offsets = {0: offset}
         values = {}
         for i,sc in enumerate(self.subcons):
             try:
                 offset += sc._actualsize(stream, context, path)
-                _seek_stream(stream, offset)
+                stream_seek(stream, offset)
             except SizeofError:
                 parseret = sc._parsereport(stream, context, path)
                 values[i] = parseret
                 if sc.name:
                     context[sc.name] = parseret
-                offset = _tell_stream(stream)
+                offset = stream_tell(stream)
             offsets[i+1] = offset
         return LazyContainer(self, stream, offsets, values, context, path)
 
@@ -5288,8 +5284,8 @@ class LazyStruct(Construct):
         # exact copy from Struct class
         if obj is None:
             obj = Container()
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _stream = FeaturedBytesIO(stream))
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context._root = context._.get("_root", context)
         context.update(obj)
         for sc in self.subcons:
             try:
@@ -5310,8 +5306,8 @@ class LazyStruct(Construct):
 
     def _sizeof(self, context, path):
         # exact copy from Struct class
-        context = Container(_ = context, _root = context._root, _topmost = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons)
-        context._topmost = context._.get("_topmost", context)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = None)
+        context._root = context._.get("_root", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
@@ -5335,7 +5331,7 @@ class LazyListContainer(list):
             return [self[i] for i in range(*index.indices(self._count))]
         if index in self._values:
             return self._values[index]
-        _seek_stream(self._stream, self._offsets[index]) # KeyError
+        stream_seek(self._stream, self._offsets[index]) # KeyError
         parseret = self._subcon._parsereport(self._stream, self._context, self._path)
         self._values[index] = parseret
         return parseret
@@ -5391,17 +5387,17 @@ class LazyArray(Subconstruct):
             count = count(context)
         if not 0 <= count:
             raise RangeError("invalid count %s" % (count,))
-        offset = _tell_stream(stream)
+        offset = stream_tell(stream)
         offsets = {0: offset}
         values = {}
         for i in range(count):
             try:
                 offset += sc._actualsize(stream, context, path)
-                _seek_stream(stream, offset)
+                stream_seek(stream, offset)
             except SizeofError:
                 parseret = sc._parsereport(stream, context, path)
                 values[i] = parseret
-                offset = _tell_stream(stream)
+                offset = stream_tell(stream)
             offsets[i+1] = offset
         return LazyListContainer(sc, stream, count, offsets, values, context, path)
 

@@ -1840,38 +1840,46 @@ def test_struct_stream():
         'fixed' / FixedSized(10, Struct(
             'data' / GreedyBytes,
             # check a substream
-            Check(lambda this: this._stream.size() == 10),
-            Check(lambda this: this._stream.eof()),
+            Check(lambda this: stream_size(this._io) == 10),
+            Check(lambda this: stream_iseof(this._io)),
             # checks parent original stream
-            Check(lambda this: this._._stream.size() == 20),
-            Check(lambda this: not this._._stream.eof()),
+            Check(lambda this: stream_size(this._._io) == 20),
+            Check(lambda this: not stream_iseof(this._._io)),
         )),
         # checks mid-parsing
-        Check(lambda this: this._stream.tell() == 10),
-        Check(lambda this: this._stream.size() == 20),
-        Check(lambda this: not this._stream.eof()),
+        Check(lambda this: stream_tell(this._io) == 10),
+        Check(lambda this: stream_size(this._io) == 20),
+        Check(lambda this: not stream_iseof(this._io)),
         'rest' / GreedyBytes,
         # checks after parsed to EOF
-        Check(lambda this: this._stream.tell() == 20),
-        Check(lambda this: this._stream.size() == 20),
-        Check(lambda this: this._stream.eof()),
-        Check(lambda this: this._stream.seek(0,2) == 20),
+        Check(lambda this: stream_tell(this._io) == 20),
+        Check(lambda this: stream_size(this._io) == 20),
+        Check(lambda this: stream_iseof(this._io)),
+        Check(lambda this: stream_seek(this._io, 0, 2) == 20),
         # checks nested struct stream
-        Check(lambda this: this.fixed._stream.size() == 10),
+        Check(lambda this: stream_tell(this.fixed._io) == 10),
+        Check(lambda this: stream_size(this.fixed._io) == 10),
     )
     d.parse(bytes(20))
+
+    d = Struct()
+    d.parse(bytes(20))
+    d.parse_file("/dev/zero")
 
 def test_struct_root_topmost():
     d = Struct(
         'x' / Computed(1),
         'inner' / Struct(
             'inner2' / Struct(
-                'x' / Computed(this._topmost.x),
-                'z' / Computed(this._root.z),
-                'zz' / Computed(this._topmost._.z),
+                'x' / Computed(this._root.x),
+                'z' / Computed(this._params.z),
+                'zz' / Computed(this._root._.z),
             ),
         ),
+        Probe(),
     )
+    # setGlobalPrintPrivateEntries(True)
+    # d.parse(b'', z=2)
     assert d.parse(b"", z=2) == Container(x=1, inner=Container(inner2=Container(x=1,z=2,zz=2)))
 
 def test_parsedhook_repeatersdiscard():
