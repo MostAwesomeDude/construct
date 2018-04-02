@@ -1439,10 +1439,11 @@ class VarInt(Construct):
             raise IntegerError("value is not an integer")
         if obj < 0:
             raise IntegerError("varint cannot build from negative number: %r" % (obj,))
-        while obj > 0b01111111:
-            stream_write(stream, int2byte(0b10000000 | (obj & 0b01111111)), 1)
-            obj >>= 7
-        stream_write(stream, int2byte(obj), 1)
+        x = obj
+        while x > 0b01111111:
+            stream_write(stream, int2byte(0b10000000 | (x & 0b01111111)), 1)
+            x >>= 7
+        stream_write(stream, int2byte(x), 1)
         return obj
 
     def _emitprimitivetype(self, ksy, bitwise):

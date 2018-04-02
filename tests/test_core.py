@@ -152,6 +152,10 @@ def test_varint():
     assert raises(VarInt.parse, b"") == StreamError
     assert raises(VarInt.build, -1) == IntegerError
 
+def test_varint_issue_705():
+    d = Struct('namelen' / VarInt, 'name' / Bytes(this.namelen))
+    d.build(Container(namelen = 400, name = bytes(400)))
+
 def test_paddedstring():
     common(PaddedString(10, "utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
 
