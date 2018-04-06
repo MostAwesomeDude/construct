@@ -1,3 +1,3 @@
-version = (2,9,43)
-version_string = "2.9.43"
-release_date = "2018.03.31"
+version = (2,9,44)
+version_string = "2.9.44"
+release_date = "2018.04.06"
