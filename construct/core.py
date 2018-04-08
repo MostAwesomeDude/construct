@@ -4044,6 +4044,7 @@ class Pointer(Subconstruct):
 
     :param offset: integer or context lambda, positive or negative
     :param subcon: Construct instance
+    :param stream: None to use original stream (default), or context lambda to provide a different stream
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
@@ -4059,12 +4060,14 @@ class Pointer(Subconstruct):
         b'\x00\x00\x00\x00\x00\x00\x00\x00Z'
     """
 
-    def __init__(self, offset, subcon):
+    def __init__(self, offset, subcon, stream=None):
         super(Pointer, self).__init__(subcon)
         self.offset = offset
+        self.stream = stream
 
     def _parse(self, stream, context, path):
-        offset = self.offset(context) if callable(self.offset) else self.offset
+        offset = evaluate(self.offset, context)
+        stream = evaluate(self.stream, context) or stream
         fallback = stream_tell(stream)
         stream_seek(stream, offset, 2 if offset < 0 else 0)
         obj = self.subcon._parsereport(stream, context, path)
@@ -4072,7 +4075,8 @@ class Pointer(Subconstruct):
         return obj
 
     def _build(self, obj, stream, context, path):
-        offset = self.offset(context) if callable(self.offset) else self.offset
+        offset = evaluate(self.offset, context)
+        stream = evaluate(self.stream, context) or stream
         fallback = stream_tell(stream)
         stream_seek(stream, offset, 2 if offset < 0 else 0)
         buildret = self.subcon._build(obj, stream, context, path)

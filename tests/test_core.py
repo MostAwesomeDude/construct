@@ -876,6 +876,12 @@ def test_pointer():
     common(Pointer(2,             Byte), b"\x00\x00\x07", 7, 0)
     common(Pointer(lambda ctx: 2, Byte), b"\x00\x00\x07", 7, 0)
 
+    d = Struct(
+        'inner' / Struct(),
+        'x' / Pointer(0, Byte, stream=this.inner._io),
+    )
+    d.parse(bytes(20)) == 0
+
 def test_peek():
     d = Peek(Int8ub)
     assert d.parse(b"\x01") == 1
