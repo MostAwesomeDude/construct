@@ -95,6 +95,14 @@ if PY3:
     import builtins
     bytes = builtins.bytes
 
+    def integers2bytes(ints):
+        """Converts integer generator into bytes."""
+        return bytes(ints)
+
+    def bytes2integers(data):
+        """Converts bytes into bytes/bytearray, so indexing/iterating yields integers."""
+        return data
+
 
 else:
     #: PY2: str unicode
@@ -140,7 +148,7 @@ else:
 
     def iterateints(data):
         """Iterates though b'...' string yielding (0 through 255) integers."""
-        return (ord(c) for c in data)
+        return bytearray(data)
 
     def reprstring(data):
         """Ensures there is b- u- prefix before the string."""
@@ -157,7 +165,16 @@ else:
             return repr(data)[1:]
 
     def bytes(countorseq=0):
+        """Backports bytes() from PY3."""
         if isinstance(countorseq, integertypes):
             return b"\x00" * countorseq
         else:
             return b"".join(chr(x) for x in countorseq)
+
+    def integers2bytes(ints):
+        """Converts integer generator into bytes."""
+        return bytes(bytearray(ints))
+
+    def bytes2integers(data):
+        """Converts bytes into bytes/bytearray, so indexing/iterating yields integers."""
+        return bytearray(data)

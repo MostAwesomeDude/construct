@@ -31,3 +31,13 @@ def test_iteratebytes():
 def test_iterateints():
     assert list(iterateints(b"abc")) == [97,98,99]
     assert all(list(iterateints(int2byte(i))) == [i] for i in range(256))
+
+def test_bytes():
+    assert bytes() == b''
+    assert bytes(2) == b'\x00\x00'
+    assert bytes([1,2]) == b'\x01\x02'
+
+def test_bytes_integers():
+    assert bytes2integers(b'abc')[0] == 97
+    assert list(bytes2integers(b'abc')) == [97,98,99]
+    assert integers2bytes([97,98,99]) == b'abc'
