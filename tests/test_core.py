@@ -1769,32 +1769,38 @@ def test_isparsingbuilding():
     d = Struct(
         Check(this._parsing & this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.parse(b'')
     d = Struct(
         Check(~this._parsing & ~this._._parsing),
         Check(this._building & this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.build(None)
     d = Struct(
         Check(~this._parsing & ~this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(this._sizing & this._._sizing),
     )
     d.sizeof()
     # ---------------------------------
     d = Sequence(
         Check(this._parsing & this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.parse(b'')
     d = Sequence(
         Check(~this._parsing & ~this._._parsing),
         Check(this._building & this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.build(None)
     d = Sequence(
         Check(~this._parsing & ~this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(this._sizing & this._._sizing),
     )
     d.sizeof()
     # ---------------------------------
@@ -1802,18 +1808,21 @@ def test_isparsingbuilding():
         "none" / Pass,
         Check(this._parsing & this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.parse(b'')
     d = FocusedSeq("none",
         "none" / Pass,
         Check(~this._parsing & ~this._._parsing),
         Check(this._building & this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.build(None)
     d = FocusedSeq("none",
         "none" / Pass,
         Check(~this._parsing & ~this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(this._sizing & this._._sizing),
     )
     d.sizeof()
     # ---------------------------------
@@ -1821,18 +1830,21 @@ def test_isparsingbuilding():
         "none" / Pass,
         Check(this._parsing & this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.parse(b'')
     d = Union(None,
         "none" / Pass,
         Check(~this._parsing & ~this._._parsing),
         Check(this._building & this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.build(dict(none=None))
     d = Union(None,
         "none" / Pass,
         Check(~this._parsing & ~this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(this._sizing & this._._sizing),
     )
     # doesnt check context because _sizeof just raises the error
     assert raises(d.sizeof) == SizeofError
@@ -1840,16 +1852,19 @@ def test_isparsingbuilding():
     d = LazyStruct(
         Check(this._parsing & this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.parse(b'')
     d = LazyStruct(
         Check(~this._parsing & ~this._._parsing),
         Check(this._building & this._._building),
+        Check(~this._sizing & ~this._._sizing),
     )
     d.build({})
     d = LazyStruct(
         Check(~this._parsing & ~this._._parsing),
         Check(~this._building & ~this._._building),
+        Check(this._sizing & this._._sizing),
     )
     d.sizeof()
 

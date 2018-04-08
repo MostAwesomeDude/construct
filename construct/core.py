@@ -310,6 +310,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = True
         context._building = False
+        context._sizing = False
         context._params = context
         try:
             return self._parsereport(stream, context, "(parsing)")
@@ -358,6 +359,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = False
         context._building = True
+        context._sizing = False
         context._params = context
         self._build(obj, stream, context, "(building)")
 
@@ -391,6 +393,7 @@ class Construct(object):
         context = Container(**contextkw)
         context._parsing = False
         context._building = False
+        context._sizing = True
         context._params = context
         return self._sizeof(context, "(sizeof)")
 
@@ -1969,7 +1972,7 @@ class Struct(Construct):
     def _parse(self, stream, context, path):
         obj = Container()
         obj._io = stream
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         for sc in self.subcons:
             try:
@@ -1984,7 +1987,7 @@ class Struct(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = Container()
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         context.update(obj)
         for sc in self.subcons:
@@ -2005,7 +2008,7 @@ class Struct(Construct):
         return context
 
     def _sizeof(self, context, path):
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = None)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = None, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
@@ -2017,8 +2020,7 @@ class Struct(Construct):
         block = """
             def %s(io, this):
                 result = Container()
-                # result['_io'] = io
-                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _subcons = None, _io = io)
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
                 this['_root'] = this['_'].get('_root', this)
                 try:
         """ % (fname, )
@@ -2104,7 +2106,7 @@ class Sequence(Construct):
 
     def _parse(self, stream, context, path):
         obj = ListContainer()
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         for i,sc in enumerate(self.subcons):
             try:
@@ -2119,7 +2121,7 @@ class Sequence(Construct):
     def _build(self, obj, stream, context, path):
         if obj is None:
             obj = ListContainer([None for sc in self.subcons])
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         retlist = ListContainer()
         for i,(sc,subobj) in enumerate(zip(self.subcons, obj)):
@@ -2136,7 +2138,7 @@ class Sequence(Construct):
         return retlist
 
     def _sizeof(self, context, path):
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = None)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = None, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
@@ -2148,7 +2150,7 @@ class Sequence(Construct):
         block = """
             def %s(io, this):
                 result = ListContainer()
-                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _subcons = None, _io = io)
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
                 this['_root'] = this['_'].get('_root', this)
                 try:
         """ % (fname,)
@@ -2901,7 +2903,7 @@ class FocusedSeq(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         for i,sc in enumerate(self.subcons):
@@ -2913,7 +2915,7 @@ class FocusedSeq(Construct):
         return finalret
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         parsebuildfrom = evaluate(self.parsebuildfrom, context)
         context[parsebuildfrom] = obj
@@ -2926,7 +2928,7 @@ class FocusedSeq(Construct):
         return finalret
 
     def _sizeof(self, context, path):
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = None)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = None, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
@@ -2938,7 +2940,7 @@ class FocusedSeq(Construct):
         block = """
             def %s(io, this):
                 result = []
-                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _subcons = None, _io = io)
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
                 this['_root'] = this['_'].get('_root', this)
         """ % (fname, )
         for sc in self.subcons:
@@ -3348,7 +3350,7 @@ class Union(Construct):
 
     def _parse(self, stream, context, path):
         obj = Container()
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         fallback = stream_tell(stream)
         forwards = {}
@@ -3369,7 +3371,7 @@ class Union(Construct):
         return obj
 
     def _build(self, obj, stream, context, path):
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         context.update(obj)
         for sc in self.subcons:
@@ -3399,7 +3401,7 @@ class Union(Construct):
         fname = "parse_union_%s" % code.allocateId()
         block = """
             def %s(io, this):
-                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _subcons = None, _io = io)
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
                 this['_root'] = this['_'].get('_root', this)
                 fallback = io.tell()
         """ % (fname, )
@@ -5393,7 +5395,7 @@ class LazyStruct(Construct):
         raise AttributeError
 
     def _parse(self, stream, context, path):
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         offset = stream_tell(stream)
         offsets = {0: offset}
@@ -5415,7 +5417,7 @@ class LazyStruct(Construct):
         # exact copy from Struct class
         if obj is None:
             obj = Container()
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = stream)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         context.update(obj)
         for sc in self.subcons:
@@ -5437,7 +5439,7 @@ class LazyStruct(Construct):
 
     def _sizeof(self, context, path):
         # exact copy from Struct class
-        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _subcons = self._subcons, _io = None)
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = None, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
