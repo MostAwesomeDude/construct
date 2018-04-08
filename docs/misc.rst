@@ -81,7 +81,7 @@ b'[\x86\xcc\xf1b\xd9\x10\x0f?\x1a'
 Index
 -------
 
-Fields that are inside Array GreedyRange RepeatUntil can reference their index within the outer list. This is being effectuated by repeater class maintaining a context entry "_index" and updating it between each iteration. Note that some classes do context nesting (like Struct) so the key is then "_._index". You can access either key using Index class, or refer to the context entry directly, using `this._index` and `this._._index` expressions. Some constructions are only possible with direct method, when you want to use the index as parameter of a construct, like in `Bytes(this._index+1)`.
+Fields that are inside Array GreedyRange RepeatUntil can reference their index within the outer list. This is being effectuated by repeater class maintaining a context entry "_index" and updating it between each iteration. Note that some classes do context nesting (like Struct), but they do copy the key over. You can access the key using Index class, or refer to the context entry directly, using `this._index` expression. Some constructions are only possible with direct method, when you want to use the index as parameter of a construct, like in `Bytes(this._index+1)`.
 
 
 >>> d = Array(3, Index)
@@ -94,7 +94,7 @@ Fields that are inside Array GreedyRange RepeatUntil can reference their index w
 >>> d = Array(3, Computed(this._index+1))
 >>> d.parse(b"")
 [1, 2, 3]
->>> d = Array(3, Struct("i" / Computed(this._._index+1)))
+>>> d = Array(3, Struct("i" / Computed(this._index+1)))
 >>> d.parse(b"")
 [Container(i=1), Container(i=2), Container(i=3)]
 

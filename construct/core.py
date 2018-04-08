@@ -2618,9 +2618,9 @@ class Index(Construct):
     r"""
     Indexes a field inside outer :class:`~construct.core.Array` :class:`~construct.core.GreedyRange` :class:`~construct.core.RepeatUntil` context.
 
-    Note that you can use this class, or use `this._index` or `this._._index` expressions instead, depending on how its used. See the examples.
+    Note that you can use this class, or use `this._index` expression instead, depending on how its used. See the examples.
 
-    Parsing and building pulls _index or _._index key from the context, in that order. Size is 0 because stream is unaffected.
+    Parsing and building pulls _index key from the context. Size is 0 because stream is unaffected.
 
     :raises IndexFieldError: did not find either key in context
 
@@ -2646,17 +2646,11 @@ class Index(Construct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        if "_index" in context:
-            return context._index
-        if "_" in context and "_index" in context._:
-            return context._._index
+        return context.get("_index", None)
         raise IndexFieldError("did not find either key in context")
 
     def _build(self, obj, stream, context, path):
-        if "_index" in context:
-            return context._index
-        if "_" in context and "_index" in context._:
-            return context._._index
+        return context.get("_index", None)
         raise IndexFieldError("did not find either key in context")
 
     def _sizeof(self, context, path):
