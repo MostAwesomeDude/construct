@@ -155,6 +155,9 @@ example = Struct(
     "compressed_bzip2" / RestreamData(this.compressed_bzip2_data, Compressed(GreedyBytes, "bzip2", level=9)),
     # Rebuffered
 
+    # Lazy
+    # LazyStruct
+    # LazyArray
     # LazyBound
 
     # adapters and validators

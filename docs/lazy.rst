@@ -8,17 +8,17 @@ Lazy
 
 This wrapper allows you to do lazy parsing of individual fields inside a normal Struct (without using LazyStruct which may not in every scenario). It is also used by KaitaiStruct compiler to emit `instances` because those are not processed greedily, and they may refer to other not yet parsed fields. Those are 2 entirely different applications but semantics are the same.
 
->>> d = Struct(
-...     'dup' / Lazy(Computed(this.exists)), # refers to non-existent context entry
-...     'exists' / Computed(1),
-... )
->>> d.parse(b'')
-Container(dup=<Proxy at 0x7f9c88a631c8 wrapping 1 at 0xa6dcc0 with factory <function Lazy._parse.<locals>.execute at 0x7f9c9ed6f620>>, exists=1)
->>> obj = d.parse(b'')
->>> obj.dup
->>> obj.dup == 1
-True
->>> obj.exists
+>>> d = Lazy(Byte)
+>>> x = d.parse(b'\x00')
+>>> x
+<function construct.core.Lazy._parse.<locals>.execute>
+>>> x()
+0
+>>> d.build(0)
+b'\x00'
+>>> d.build(x)
+b'\x00'
+>>> d.sizeof()
 1
 
 

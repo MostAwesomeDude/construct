@@ -5263,36 +5263,33 @@ class Lazy(Subconstruct):
 
     This wrapper allows you to do lazy parsing of individual fields inside a normal Struct (without using LazyStruct which may not work in every scenario). It is also used by KaitaiStruct compiler to emit `instances` because those are not processed greedily, and they may refer to other not yet parsed fields. Those are 2 entirely different applications but semantics are the same.
 
-    Parsing saves the current stream offset and returns a lazy proxy object. If and when that object gets evaluated, it seeks the stream to then current position, parses the subcon, and seeks the stream back to previous position. Building and size just defer to subcon.
+    Parsing saves the current stream offset and returns a lambda. If and when that lambda gets evaluated, it seeks the stream to then-current position, parses the subcon, and seeks the stream back to previous position. Building evaluates that lambda into an object (if needed), then defers to subcon. Size also defers to subcon.
 
     :param subcon: Construct instance
 
-    :raises ImportError: lazy_object_proxy could not be imported during ctor
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises StreamError: stream is not seekable and tellable
 
     Example::
 
-        >>> d = Struct(
-        ...     'dup' / Lazy(Computed(this.exists)), # refers to non-existent context entry
-        ...     'exists' / Computed(1),
-        ... )
-        >>> d.parse(b'')
-        Container(dup=<Proxy at 0x7f9c88a631c8 wrapping 1 at 0xa6dcc0 with factory <function Lazy._parse.<locals>.execute at 0x7f9c9ed6f620>>, exists=1)
-        >>> obj = d.parse(b'')
-        >>> obj.dup
-        >>> obj.dup == 1
-        True
-        >>> obj.exists
+        >>> d = Lazy(Byte)
+        >>> x = d.parse(b'\x00')
+        >>> x
+        <function construct.core.Lazy._parse.<locals>.execute>
+        >>> x()
+        0
+        >>> d.build(0)
+        b'\x00'
+        >>> d.build(x)
+        b'\x00'
+        >>> d.sizeof()
         1
     """
 
     def __init__(self, subcon):
         super(Lazy, self).__init__(subcon)
-        import lazy_object_proxy
 
     def _parse(self, stream, context, path):
-        import lazy_object_proxy
         offset = stream_tell(stream)
         def execute():
             fallback = stream_tell(stream)
@@ -5300,7 +5297,12 @@ class Lazy(Subconstruct):
             obj = self.subcon._parsereport(stream, context, path)
             stream_seek(stream, fallback)
             return obj
-        return lazy_object_proxy.Proxy(execute)
+        return execute
+
+    def _build(self, obj, stream, context, path):
+        if callable(obj):
+            obj = obj()
+        return self.subcon._build(obj, stream, context, path)
 
 
 class LazyContainer(dict):
