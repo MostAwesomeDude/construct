@@ -147,18 +147,31 @@ Transformed can also process unknown amount of bytes, if that amount is entire d
 Restreamed is similar to Transformed, but the main difference is that Transformed requires fixed-sized subcon because it reads all bytes in advance, processes them, and then feeds them to the subcon. Restreamed on the other hand, reads few bytes at a time, the minimum amount on each stream read. Since both are used mostly internally, there is no tutorial how to use it, other than this short code above.
 
 
-Processing data with XOR and algorithms
+Processing data with XOR and ROL
 ----------------------------------------
 
 This chapter is mostly relevant to KaitaiStruct compiler implementation, as following constructs exist mostly for that purpose.
 
-Data can be transformed by XORing with a single integer or several bytes, and those can also be taken from the context at runtime. Note that ProcessXor reads entire stream till EOF so it should be wrapped in FixedSized NullTerminated unless you actually want to process entire remaining stream.
+Data can be transformed by XORing with a single or several bytes, and the key can also be taken from the context at runtime. Key can be of any positive length.
 
 >>> d = ProcessXor(0xf0 or b'\xf0', Int16ub)
 >>> d.parse(b"\x00\xff")
 0xf00f
 >>> d.sizeof()
 2
+
+Data can also be rotated (cycle shifted). Rotation is to the left on parsing, and to the right on building. Amount is in bits, and can be negative to make rotation right instead of left. Group size defines the size of chunks to which rotation is applied.
+
+>>> d = ProcessRotateLeft(4, 1, Int16ub)
+>>> d.parse(b'\x0f\xf0')
+0xf00f
+>>> d = ProcessRotateLeft(4, 2, Int16ub)
+>>> d.parse(b'\x0f\xf0')
+0xff00
+>>> d.sizeof()
+2
+
+Note that the classes read entire stream till EOF so they should be wrapped in FixedSized Prefixed etc unless you actually want to process the entire remaining stream.
 
 
 Compression and checksuming

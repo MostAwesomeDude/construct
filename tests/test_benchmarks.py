@@ -786,6 +786,7 @@ def test_class_nullstripped_build(benchmark):
 # - not compilable
 # Restreamed
 # ProcessXor
+# ProcessRotateLeft
 # Checksum
 # - decompilable
 # Compressed

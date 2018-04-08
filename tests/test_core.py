@@ -1130,8 +1130,12 @@ def test_restreamed_partial_read():
     assert raises(d.parse, b"") == StreamError
 
 def test_processxor():
+    d = ProcessXor(0, Int16ub)
+    common(d, b"\xf0\x0f", 0xf00f, 2)
     d = ProcessXor(0xf0, Int16ub)
     common(d, b"\x00\xff", 0xf00f, 2)
+    d = ProcessXor(bytes(10), Int16ub)
+    common(d, b"\xf0\x0f", 0xf00f, 2)
     d = ProcessXor(b"\xf0\xf0\xf0\xf0\xf0", Int16ub)
     common(d, b"\x00\xff", 0xf00f, 2)
 
@@ -1143,6 +1147,16 @@ def test_processxor():
     common(d, b"\x00", u"X", SizeofError)
     d = ProcessXor(b"XXXXX", GreedyString("utf-8"))
     common(d, b"\x00", u"X", SizeofError)
+
+def test_processrotateleft():
+    d = ProcessRotateLeft(0, 1, GreedyBytes)
+    common(d, bytes(10), bytes(10))
+    d = ProcessRotateLeft(0, 2, GreedyBytes)
+    common(d, bytes(10), bytes(10))
+    d = ProcessRotateLeft(4, 1, GreedyBytes)
+    common(d, b'\x0f\xf0', b'\xf0\x0f')
+    d = ProcessRotateLeft(4, 2, GreedyBytes)
+    common(d, b'\x0f\xf0', b'\xff\x00')
 
 def test_checksum():
     d = Struct(
