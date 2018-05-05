@@ -246,6 +246,8 @@ class Container(dict):
                 text.append("(enum) (unknown) %s" % (v, ))
             elif v.__class__.__name__ == "EnumIntegerString":
                 text.append("(enum) %s %s" % (v, v.intvalue, ))
+            elif v.__class__.__name__ in ["HexDisplayedBytes", "HexDumpDisplayedBytes"]:
+                text.append(indentation.join(str(v).split("\n")))
             elif isinstance(v, bytestringtype):
                 printingcap = 16
                 if len(v) <= printingcap or globalPrintFullStrings:
