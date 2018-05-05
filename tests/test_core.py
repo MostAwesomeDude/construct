@@ -891,7 +891,7 @@ def test_peek():
     assert d.sizeof() == 0
     d = Peek(VarInt)
     assert d.sizeof() == 0
-    
+
     d = Struct("a"/Peek(Int8ub), "b"/Int16ub)
     common(d, b"\x01\x02", Container(a=0x01)(b=0x0102), 2)
     d = Struct(Peek("a"/Byte), Peek("b"/Int16ub))
@@ -2048,3 +2048,30 @@ def test_greedybytes_issue_697():
         "rest" / Bytewise(GreedyBytes),
     )
     d.parse(bytes(5))
+
+def test_hex_issue_709():
+    # Make sure, the fix doesn't destroy already working code
+    d = Hex(Bytes(1))
+    obj = d.parse(b"\xff")
+    assert "unhexlify('ff')" in str(obj)
+
+    d = Struct("x" / Hex(Byte))
+    obj = d.parse(b"\xff")
+    assert "x = 0xFF" in str(obj)
+
+    d = HexDump(Bytes(1))
+    obj = d.parse(b"\xff")
+    assert "hexundump" in str(obj)
+
+    # The following checks only succeed after fixing the issue
+    d = Struct("x" / Hex(Bytes(1)))
+    obj = d.parse(b"\xff")
+    assert "x = unhexlify('ff')" in str(obj)
+
+    d = Struct("x" / HexDump(Bytes(1)))
+    obj = d.parse(b"\xff")
+    assert "x = hexundump" in str(obj)
+
+    d = Struct("x" / Struct("y" / Hex(Bytes(1))))
+    obj = d.parse(b"\xff")
+    assert "y = unhexlify('ff')" in str(obj)
