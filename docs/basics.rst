@@ -284,7 +284,7 @@ Repeater classes like GreedyRange support indexing feature, which inserts increm
 
     def printobj(obj, ctx):
         print(obj)
-        if ctx._._index+1 >= 3:
+        if ctx._index+1 >= 3:
             raise CancelParsing
     st = Struct(
         "first" / Byte * printobj,
