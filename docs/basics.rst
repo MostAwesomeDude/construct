@@ -279,12 +279,13 @@ Processing on-the-fly
 Data can be parsed and processed before further items get parsed. Hooks can be attached by using * operator.
 
 Repeater classes like GreedyRange support indexing feature, which inserts incremental numbers into the context under `_index` key, in case you want to enumerate the objects. If you dont want to process further data, just raise CancelParsing from within the hook, and the parse method will exit clean.
+Note that all exceptions inside the hook function are silently dropped.
 
 ::
 
     def printobj(obj, ctx):
         print(obj)
-        if ctx._._index+1 >= 3:
+        if ctx._index+1 >= 3:
             raise CancelParsing
     st = Struct(
         "first" / Byte * printobj,
