@@ -83,7 +83,7 @@ def stream_read(stream, length):
     except Exception:
         raise StreamError("stream.read() failed, requested %s bytes" % (length,))
     if len(data) != length:
-        raise StreamError("stream read less then specified amount, expected %d, found %d" % (length, len(data)))
+        raise StreamError("stream read less than specified amount, expected %d, found %d" % (length, len(data)))
     return data
 
 
@@ -108,7 +108,7 @@ def stream_write(stream, data, length=None):
     except Exception:
         raise StreamError("stream.write() failed, given %r" % (data,))
     if written != length:
-        raise StreamError("stream written less then specified, expected %d, written %d" % (length, written))
+        raise StreamError("stream written less than specified, expected %d, written %d" % (length, written))
 
 
 def stream_seek(stream, offset, whence=0):
@@ -1504,7 +1504,7 @@ def PaddedString(length, encoding):
     r"""
     Configurable, fixed-length or variable-length string field.
 
-    When parsing, the byte string is stripped of null bytes (per encoding unit), then decoded. Length is an integer or context lambda. When building, the string is encoded and then padded to specified length. If encoded string is larger then the specified length, it fails with PaddingError. Size is same as length parameter.
+    When parsing, the byte string is stripped of null bytes (per encoding unit), then decoded. Length is an integer or context lambda. When building, the string is encoded and then padded to specified length. If encoded string is larger than the specified length, it fails with PaddingError. Size is same as length parameter.
 
     .. warning:: PaddedString and CString only support encodings explicitly listed in :class:`~construct.core.possiblestringencodings` .
 
