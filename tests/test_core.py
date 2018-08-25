@@ -753,7 +753,26 @@ def test_optional():
     assert d.parse(b"\x01\x00\x00\x00") == 1
     assert d.build(1) == b"\x01\x00\x00\x00"
     assert d.parse(b"???") == None
+    assert d.parse(b"") == None
     assert d.build(None) == b""
+    assert raises(d.sizeof) == SizeofError
+
+def test_optional_in_struct():
+    d = Struct("field" / Optional(Int32ul))
+    assert d.parse(b"\x01\x00\x00\x00") == {"field": 1}
+    assert d.build({"field": 1}) == b"\x01\x00\x00\x00"
+    assert d.parse(b"???") == {"field": None}
+    assert d.build({"field": None}) == b""
+    assert d.parse(b"") == {"field": None}
+    assert raises(d.sizeof) == SizeofError
+
+def test_optional_in_bit_struct():
+    d = BitStruct("field" / Optional(Octet))
+    assert d.parse(b"\x01") == {"field": 1}
+    assert d.build({"field": 1}) == b"\x01"
+    assert d.parse(b"???") == {"field": ord("?")}
+    assert d.build({"field": None}) == b""
+    assert d.parse(b"") == {"field": None}
     assert raises(d.sizeof) == SizeofError
 
 def test_if():
