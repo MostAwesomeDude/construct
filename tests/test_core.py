@@ -756,6 +756,11 @@ def test_optional():
     assert d.build(None) == b""
     assert raises(d.sizeof) == SizeofError
 
+def test_optional_missing_in_struct():
+    d = Struct("opt" / Optional(Byte))
+    assert d.build(dict(opt=1)) == b"\x01"
+    assert d.build(dict()) == b""
+
 def test_if():
     common(If(True,  Byte), b"\x01", 1, 1)
     common(If(False, Byte), b"", None, 0)

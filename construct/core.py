@@ -3522,7 +3522,9 @@ def Optional(subcon):
         >>> d.build(None)
         b''
     """
-    return Select(subcon, Pass)
+    select = Select(subcon, Pass)
+    select.flagbuildnone = True
+    return select
 
 
 def If(condfunc, subcon):
