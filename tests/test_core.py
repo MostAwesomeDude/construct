@@ -1664,7 +1664,7 @@ def test_from_issue_362():
 @xfail(raises=AttributeError, reason="can't access Enums inside BitStruct")
 def test_from_issue_781():
     d = Struct(
-    "animal" / Enum(Byte, giraffe=1),
+        "animal" / Enum(Byte, giraffe=1),
     )
 
     x = d.parse(b"\x01")
