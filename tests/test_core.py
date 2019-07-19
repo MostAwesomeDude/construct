@@ -678,7 +678,7 @@ def test_hexdump():
     assert str(obj) == repr
     assert str(obj) == repr
 
-def test_regression_188():
+def test_hexdump_regression_issue_188():
     # Hex HexDump were not inheriting subcon flags
     d = Struct(Hex(Const(b"MZ")))
     assert d.parse(b"MZ") == Container()
