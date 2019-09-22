@@ -2430,7 +2430,7 @@ class Embedded(Subconstruct):
 
     .. warning::
 
-        Can only be used between Struct Sequence FocusedSeq Union LazyStruct, although they can be used interchangably, for example Struct can embed fields from a Sequence. There is also :class:`~construct.core.EmbeddedSwitch` macro that pseudo-embeds a Switch. Its not possible to embed IfThenElse.
+        Can only be used between Struct Sequence FocusedSeq Union LazyStruct, for example Struct can embed fields from a Sequence or vice versa. There is also :class:`~construct.core.EmbeddedSwitch` macro that pseudo-embeds a Switch, it is NOT a Embedded(Switch(...). Its not possible to embed IfThenElse Switch RawCopy or otherwise.
 
     Parsing building and sizeof are deferred to subcon.
 
