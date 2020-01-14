@@ -1,6 +1,6 @@
 name: CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -22,5 +22,4 @@ jobs:
           pip install pytest pytest-benchmark enum34 numpy arrow ruamel.yaml
       - name: Run tests
         run: |
-          cd tests
-          py.test --benchmark-disable --showlocals --verbose
+          py.test tests/ --benchmark-disable --showlocals --verbose
