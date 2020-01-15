@@ -1,25 +1,24 @@
-sudo: false
-
 language: python
+os: linux
 
 cache: pip
 
 python:
-    - "2.7"
-    - "3.4"
-    - "3.5"
-    - "3.6"
-    - "3.7-dev"
-    - "pypy"
-    - "pypy3"
+  - "2.7"
+  - "3.5"
+  - "3.6"
+  - "3.7"
+  - "pypy"
+  - "pypy3"
 
 install:
-    - pip install pytest pytest-benchmark
-    - pip install enum34 numpy arrow ruamel.yaml
+  - pip install pytest pytest-benchmark
+  - pip install enum34 numpy arrow ruamel.yaml
 
 before_script:
-    - "export PYTHONPATH=$PYTHONPATH:`pwd`"
-    - "uname -a"
-    - "cd tests"
+  - "export PYTHONPATH=$PYTHONPATH:`pwd`"
+  - "uname -a"
+  - "cd tests"
 
 script: py.test --benchmark-disable --showlocals --verbose
+
