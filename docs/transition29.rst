@@ -73,6 +73,8 @@ Hex HexDump reimplemented, return bytes and not hexlified strings (`see tutorial
 
 Select dropped `includename` parameter (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.Select>`_)
 
+Select allows to build from none if any of its subcons can
+
 If IfThenElse parameter `predicate` renamed to `condfunc`, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.If>`_)
 
 Switch updated, `default` parameter is `Pass` instead of `NoDefault`, dropped `includekey` parameter, and cannot be embedded (`see API page <https://construct.readthedocs.io/en/latest/api/conditional.html#construct.Switch>`_)
