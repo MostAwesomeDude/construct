@@ -1661,6 +1661,24 @@ def test_from_issue_362():
     for i in range(5):
         assert BIT_FORMAT.parse(b'\x00').my_tell == 0
 
+@xfail(raises=AttributeError, reason="can't access Enums inside BitStruct")
+def test_from_issue_781():
+    d = Struct(
+        "animal" / Enum(Byte, giraffe=1),
+    )
+
+    x = d.parse(b"\x01")
+    assert x.animal == "giraffe"  # works
+    assert x.animal == d.animal.giraffe  # works
+
+    d = BitStruct(
+        "animal" / Enum(BitsInteger(8), giraffe=1),
+    )
+
+    x = d.parse(b"\x01")
+    assert x.animal == "giraffe"  # works
+    assert x.animal == d.animal.giraffe  # AttributeError: 'Transformed' object has no attribute 'animal'
+
 def test_this_expresion_compare_container():
     st = Struct(
         "flags" / FlagsEnum(Byte, a=1),
