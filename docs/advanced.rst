@@ -50,7 +50,7 @@ Bytes and bits
 
     Python 3 known problem:
 
-    Unprefixed string literals like "data" are on Python 3 interpreted as unicode. This casues failures when using fields like `Bytes`.
+    Unprefixed string literals like "data" are on Python 3 interpreted as unicode. This causes failures when using fields like `Bytes`.
 
 "Strings" of bytes (`str` in PY2 and `bytes` in PY3) can be moved around as-is. Bits are discussed in a later chapter.
 
@@ -92,7 +92,7 @@ b'\x08\xd0\x90\xd1\x84\xd0\xbe\xd0\xbd'
 
 CString is another string representation, that always ends with a null \\0 terminating byte at the end. This scheme was invented in C language and is known in the computer science community very well. One of the authors, Kernighan or Ritchie, admitted that it was one of the most regretable design decisions in history.
 
->>> CString("utf8").build(b"hello")
+>>> CString("utf8").build(u"hello")
 b'hello\x00'
 
 Last would be GreedyString which does the same thing as GreedyBytes, plus encoding. It reads until the end of stream and then decodes data using specified encoding. Greedy* classes are usually used with tunneling constructs, which are discussed in a later chapter.

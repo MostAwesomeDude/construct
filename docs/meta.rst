@@ -3,7 +3,7 @@ The Context
 ===========
 
 
-Meta constructs are the key to the declarative power of Construct. Meta constructs are constructs which are affected by the context of the construction (during parsing and building). The context is a dictionary that is created during the parsing and building process by Structs and Sequences, and is "propagated" down and up to all constructs along the way, so that other members can access other members parsing or building resuslts. It basically represents a mirror image of the construction tree, as it is altered by the different constructs. Nested structs create nested contexts, just as they create nested containers.
+Meta constructs are the key to the declarative power of Construct. Meta constructs are constructs which are affected by the context of the construction (during parsing and building). The context is a dictionary that is created during the parsing and building process by Structs and Sequences, and is "propagated" down and up to all constructs along the way, so that other members can access other members parsing or building results. It basically represents a mirror image of the construction tree, as it is altered by the different constructs. Nested structs create nested contexts, just as they create nested containers.
 
 In order to see the context, let's try this snippet:
 
@@ -82,6 +82,7 @@ Embedding also complicates using the context. Notice that `count` is on same lev
 >>> outer.parse(b"\x041234")
 Container(count=4, data=b'1234')
 
+I cannot stress it enough: embedding is just plain doing-it-wrong and should not be used, unless really really needed.
 
 
 Refering to inlined constructs
