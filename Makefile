@@ -38,6 +38,6 @@ version:
 	./version-increment
 
 upload:
-	./setup.py sdist upload
+	./setup.py sdist
 	python3 -m twine upload dist/*
 
