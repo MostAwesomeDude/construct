@@ -163,7 +163,20 @@ def test_eq():
     c = Container(a=1)(b=2)(c=3)(d=4)(e=5)
     d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
     assert c == c
+    assert d == d
     assert c == d
+    assert d == c
+
+    a = Container(a=1)(b=2)
+    b = Container(a=1)(b=2)(c=3)
+    assert not a == b
+    assert not b == a
+
+    # c contains internal '_io' field, which shouldn't be considered in the comparison
+    c = Struct('a' / Int8ul).parse(b'\x01')
+    d = {'a': 1}
+    assert c == d
+    assert d == c
 
 @xfail(not supportsnumpy, reason="numpy is not installed?")
 def test_eq_numpy():
