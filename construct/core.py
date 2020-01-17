@@ -3487,7 +3487,7 @@ class Select(Construct):
     def __init__(self, *subcons, **subconskw):
         super(Select, self).__init__()
         self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
-        self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
+        self.flagbuildnone = any(sc.flagbuildnone for sc in self.subcons)
         self.flagembedded = all(sc.flagembedded for sc in self.subcons)
 
     def _parse(self, stream, context, path):

@@ -761,6 +761,18 @@ def test_optional():
     assert d.build(None) == b""
     assert raises(d.sizeof) == SizeofError
 
+def test_select_buildfromnone():
+    d = Struct("select" / Select(Int32ub, Default(Bytes(3), b"abc")))
+    assert d.parse(b"def") == dict(select=b"def")
+    assert d.parse(b"\x01\x02\x03\x04") == dict(select=0x01020304)
+    assert d.build(dict(select=b"def")) == b"def"
+    assert d.build(dict(select=0xbeefcace)) == b"\xbe\xef\xca\xce"
+    assert d.build(dict()) == b"abc"
+
+    d = Struct("opt" / Optional(Byte))
+    assert d.build(dict(opt=1)) == b"\x01"
+    assert d.build(dict()) == b""
+
 def test_if():
     common(If(True,  Byte), b"\x01", 1, 1)
     common(If(False, Byte), b"", None, 0)
