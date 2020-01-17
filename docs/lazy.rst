@@ -2,6 +2,8 @@
 Lazy parsing
 ============
 
+.. warning:: This feature is fully implemented but may not be fully mature.
+
 
 Lazy
 ---------------
