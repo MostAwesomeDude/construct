@@ -10,7 +10,7 @@ Stream manipulation
 Field wrappers
 ==============
 
-Pointer allows for non-sequential construction. The pointer first moves the stream into new position, does the construction, and then restores the stream back to original position. This allows for random-access within the stream.
+Pointer allows for non-sequential construction. The pointer first moves the stream into new position, does the construction, and then restores the stream back to original position. This allows for random access within the stream.
 
 >>> d = Pointer(8, Bytes(1))
 >>> d.parse(b"abcdefghijkl")
@@ -18,7 +18,7 @@ b'i'
 >>> d.build(b"Z")
 b'\x00\x00\x00\x00\x00\x00\x00\x00Z'
 
-Peek parses a field but restores the stream position afterwards (it does peeking). Building does nothing, it does NOT defer to subcon.
+Peek parses a field but restores the stream position afterwards (it peeks into the stream). Building does nothing, it does NOT defer to subcon.
 
 >>> d = Sequence(Peek(Int16ul), Peek(Int16ub))
 >>> d.parse(b"\x01\x02")
