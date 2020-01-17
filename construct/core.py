@@ -757,7 +757,7 @@ class Validator(SymmetricAdapter):
 
 class Tunnel(Subconstruct):
     r"""
-    Abstract class that allows other constructs to read part of the stream as if they were reading the entrie stream. See Prefixed for example.
+    Abstract class that allows other constructs to read part of the stream as if they were reading the entire stream. See Prefixed for example.
 
     Needs to implement `_decode()` for parsing and `_encode()` for building.
     """
@@ -1017,12 +1017,15 @@ class FormatField(Construct):
     def __init__(self, endianity, format):
         if endianity not in list("=<>"):
             raise FormatFieldError("endianity must be like: = < >", endianity)
-        if format not in list("fdBHLQbhlq"):
-            raise FormatFieldError("format must be like: f d B H L Q b h l q", format)
+
+        if format not in list("fdBHLQbhlqe"):
+            raise FormatFieldError("format must be like: f d B H L Q b h l q e", format)
+
         super(FormatField, self).__init__()
         self.fmtstr = endianity+format
-        self.length = struct.calcsize(endianity+format)
-        self.packer = struct.Struct(endianity+format)
+        if format != 'e' or supportshalffloats:
+            self.length = struct.calcsize(endianity+format)
+            self.packer = struct.Struct(endianity+format)
 
     def _parse(self, stream, context, path):
         data = stream_read(stream, self.length)
@@ -1351,6 +1354,19 @@ Int   = Int32ub
 Long  = Int64ub
 
 @singleton
+def Float16b():
+    """Big endian, 16-bit IEEE 754 floating point number"""
+    return FormatField(">", "e")
+@singleton
+def Float16l():
+    """Little endian, 16-bit IEEE 754 floating point number"""
+    return FormatField("<", "e")
+@singleton
+def Float16n():
+    """Native endianity, 16-bit IEEE 754 floating point number"""
+    return FormatField("=", "e")
+
+@singleton
 def Float32b():
     """Big endian, 32-bit IEEE floating point number"""
     return FormatField(">", "f")
@@ -1376,6 +1392,7 @@ def Float64n():
     """Native endianity, 64-bit IEEE floating point number"""
     return FormatField("=", "d")
 
+Half = Float16b
 Single = Float32b
 Double = Float64b
 
@@ -2413,7 +2430,7 @@ class Embedded(Subconstruct):
 
     .. warning::
 
-        Can only be used between Struct Sequence FocusedSeq Union LazyStruct, although they can be used interchangably, for example Struct can embed fields from a Sequence. There is also :class:`~construct.core.EmbeddedSwitch` macro that pseudo-embeds a Switch. Its not possible to embed IfThenElse.
+        Can only be used between Struct Sequence FocusedSeq Union LazyStruct, for example Struct can embed fields from a Sequence or vice versa. There is also :class:`~construct.core.EmbeddedSwitch` macro that pseudo-embeds a Switch, it is NOT a Embedded(Switch(...). Its not possible to embed IfThenElse Switch RawCopy or otherwise.
 
     Parsing building and sizeof are deferred to subcon.
 
@@ -3470,7 +3487,7 @@ class Select(Construct):
     def __init__(self, *subcons, **subconskw):
         super(Select, self).__init__()
         self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
-        self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
+        self.flagbuildnone = any(sc.flagbuildnone for sc in self.subcons)
         self.flagembedded = all(sc.flagembedded for sc in self.subcons)
 
     def _parse(self, stream, context, path):
