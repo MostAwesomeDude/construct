@@ -19,7 +19,7 @@ All constructs: `parse build sizeof` methods take context entries ONLY as keywor
 
 All constructs: `parse_file` and `build_file` methods were added (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#processing-files>`_)
 
-All constructs: operator * can be used for docstrings and parsed hooks (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_)
+All constructs: operator * can be used for docstrings and parsed hooks (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#documenting-fields>`_ and `tutorial page <https://construct.readthedocs.io/en/latest/basics.html#processing-on-the-fly>`_)
 
 All constructs: added `compile` and `benchmark` methods (`see tutorial page <https://construct.readthedocs.io/en/latest/compilation.html#compiling-schemas>`_)
 
