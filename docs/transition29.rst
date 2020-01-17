@@ -27,7 +27,7 @@ All constructs: added `parsed` hook/callback (`see tutorial page <https://constr
 
 Compiled added (used internally)
 
-Half was added alongisde Single, Double
+Half was added alongside Single, Double
 
 String* require explicit encodings, all of them support UTF16 UTF32 encodings, but PaddedString CString dropped some parameters and support only encodings explicitly listed in `possiblestringencodings` (`see tutorial page <https://construct.readthedocs.io/en/latest/advanced.html#strings>`_)
 
