@@ -159,7 +159,7 @@ def test_pickling():
     nested_unpickled = pickle.loads(pickle.dumps(nested))
     assert nested_unpickled == nested
 
-def test_eq():
+def test_eq_issue_818():
     c = Container(a=1)(b=2)(c=3)(d=4)(e=5)
     d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
     assert c == c
@@ -185,7 +185,7 @@ def test_eq_numpy():
     d = Container(arr=numpy.zeros(10, dtype=numpy.uint8))
     assert c == d
 
-def test_ne():
+def test_ne_issue_818():
     c = Container(a=1)(b=2)(c=3)
     d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
     assert c != d

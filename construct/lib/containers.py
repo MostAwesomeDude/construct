@@ -217,7 +217,17 @@ class Container(dict):
                 continue
             if k not in other or not isequal(v, other[k]):
                 return False
+        for k,v in other.items():
+            if isinstance(k, unicodestringtype) and k.startswith(u"_"):
+                continue
+            if isinstance(k, bytestringtype) and k.startswith(b"_"):
+                continue
+            if k not in self or not isequal(v, self[k]):
+                return False
         return True
+
+    def __ne__(self, other):
+       return not self == other
 
     @recursion_lock()
     def __repr__(self):
