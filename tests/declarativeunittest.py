@@ -8,7 +8,6 @@ import os, math, random, collections, itertools, io, hashlib, binascii
 from construct import *
 from construct.lib import *
 
-ontravis = "TRAVIS" in os.environ
 ident = lambda x: x
 devzero = open("/dev/zero", "rb")
 
@@ -42,8 +41,6 @@ def commonhex(format, hexdata):
 
 def commondumpdeprecated(format, filename):
     filename = "tests/deprecated_gallery/blobs/" + filename
-    if ontravis:
-        filename = "../" + filename
     with open(filename,'rb') as f:
         data = f.read()
     commonbytes(format, data)
@@ -51,8 +48,6 @@ def commondumpdeprecated(format, filename):
 
 def commondump(format, filename):
     filename = "tests/gallery/blobs/" + filename
-    if ontravis:
-        filename = "../" + filename
     with open(filename,'rb') as f:
         data = f.read()
     commonbytes(format, data)
