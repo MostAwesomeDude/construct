@@ -2,7 +2,6 @@
 Transition to 2.9
 =================
 
-.. warning:: Construct is undergoing heavy changes at the moment, expect unstable API until further notice.
 
 Overall
 ==========
