@@ -89,7 +89,7 @@ Note that this syntax works ONLY on CPython 3.6 (and PyPy any version) due to or
 
 >>> Struct(a=Byte, b=Byte, c=Byte, d=Byte)
 
-Operator `+` can also be used to make Structs, and to merge them. Structs are embedded (not nested) when added.
+Operator `+` can also be used to make Structs, and to merge them. Structs are embedded (not nested) when added. Truth be told, I am not keen on using this way of declaring Structs. You should use the / operator as shown in first example.
 
 >>> st = "count"/Byte + "items"/Byte[this.count] + Terminated
 >>> st.parse(b"\x03\x01\x02\x03")
@@ -156,6 +156,8 @@ A Struct can be embedded into an enclosing Struct. This means that all fields of
 Container(data=b'1234')
 
 Embedded structs should not be named, see :class:`~construct.core.Embedded` .
+
+Be warned, that using Embedding is highly NOT recommended. It doesnt work quite the way you hope it does, and most Construct classes are not compatible with it. You should be nesting instead.
 
 
 Hidden context entries
