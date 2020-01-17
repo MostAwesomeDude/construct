@@ -896,7 +896,7 @@ class GreedyBytes(Construct):
         return stream_read_entire(stream)
 
     def _build(self, obj, stream, context, path):
-        stream.write(obj)
+        stream_write(stream, obj)
         return obj
 
     def _emitparse(self, code):
