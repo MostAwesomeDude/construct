@@ -75,7 +75,7 @@ def singleton(arg):
     return x
 
 
-def stream_read(stream, length):
+def stream_read(stream, length, path):
     if length < 0:
         raise StreamError("length must be non-negative, found %s" % length)
     try:
@@ -87,7 +87,7 @@ def stream_read(stream, length):
     return data
 
 
-def stream_read_entire(stream):
+def stream_read_entire(stream, path):
     try:
         return stream.read()
     except Exception:
@@ -762,7 +762,7 @@ class Tunnel(Subconstruct):
     Needs to implement `_decode()` for parsing and `_encode()` for building.
     """
     def _parse(self, stream, context, path):
-        data = stream_read_entire(stream)  # reads entire stream
+        data = stream_read_entire(stream, path)  # reads entire stream
         data = self._decode(data, context, path)
         return self.subcon.parse(data, **context)
 
@@ -853,7 +853,7 @@ class Bytes(Construct):
 
     def _parse(self, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
-        return stream_read(stream, length)
+        return stream_read(stream, length, path)
 
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
@@ -893,7 +893,7 @@ class GreedyBytes(Construct):
     """
 
     def _parse(self, stream, context, path):
-        return stream_read_entire(stream)
+        return stream_read_entire(stream, path)
 
     def _build(self, obj, stream, context, path):
         stream_write(stream, obj)
@@ -1028,7 +1028,7 @@ class FormatField(Construct):
             self.packer = struct.Struct(endianity+format)
 
     def _parse(self, stream, context, path):
-        data = stream_read(stream, self.length)
+        data = stream_read(stream, self.length, path)
         try:
             return self.packer.unpack(data)[0]
         except Exception:
@@ -1106,7 +1106,7 @@ class BytesInteger(Construct):
             length = length(context)
         if length < 0:
             raise IntegerError("length must be non-negative")
-        data = stream_read(stream, length)
+        data = stream_read(stream, length, path)
         if self.swapped:
             data = data[::-1]
         return bytes2integer(data, self.signed)
@@ -1190,7 +1190,7 @@ class BitsInteger(Construct):
             length = length(context)
         if length < 0:
             raise IntegerError("length must be non-negative")
-        data = stream_read(stream, length)
+        data = stream_read(stream, length, path)
         if self.swapped:
             if length & 7:
                 raise IntegerError("little-endianness is only defined for multiples of 8 bits")
@@ -1447,7 +1447,7 @@ class VarInt(Construct):
     def _parse(self, stream, context, path):
         acc = []
         while True:
-            b = byte2int(stream_read(stream, 1))
+            b = byte2int(stream_read(stream, 1, path))
             acc.append(b & 0b01111111)
             if not b & 0b10000000:
                 break
@@ -1644,7 +1644,7 @@ class Flag(Construct):
     """
 
     def _parse(self, stream, context, path):
-        return stream_read(stream, 1) != b"\x00"
+        return stream_read(stream, 1, path) != b"\x00"
 
     def _build(self, obj, stream, context, path):
         stream_write(stream, b"\x01" if obj else b"\x00", 1)
@@ -3895,7 +3895,7 @@ class Padded(Subconstruct):
         pad = length - (position2 - position1)
         if pad < 0:
             raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length))
-        stream_read(stream, pad)
+        stream_read(stream, pad, path)
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -3969,7 +3969,7 @@ class Aligned(Subconstruct):
         obj = self.subcon._parsereport(stream, context, path)
         position2 = stream_tell(stream)
         pad = -(position2 - position1) % modulus
-        stream_read(stream, pad)
+        stream_read(stream, pad, path)
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -4364,7 +4364,7 @@ class RawCopy(Subconstruct):
         obj = self.subcon._parsereport(stream, context, path)
         offset2 = stream_tell(stream)
         stream_seek(stream, offset1)
-        data = stream_read(stream, offset2-offset1)
+        data = stream_read(stream, offset2-offset1, path)
         return Container(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
 
     def _build(self, obj, stream, context, path):
@@ -4383,7 +4383,7 @@ class RawCopy(Subconstruct):
             value = value if buildret is None else buildret
             offset2 = stream_tell(stream)
             stream_seek(stream, offset1)
-            data = stream_read(stream, offset2-offset1)
+            data = stream_read(stream, offset2-offset1, path)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         raise RawCopyError('RawCopy cannot build, both data and value keys are missing')
 
@@ -4469,7 +4469,7 @@ class Prefixed(Subconstruct):
         length = self.lengthfield._parsereport(stream, context, path)
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
-        data = stream_read(stream, length)
+        data = stream_read(stream, length, path)
         if self.subcon is GreedyBytes:
             return data
         if type(self.subcon) is GreedyString:
@@ -4587,7 +4587,7 @@ class FixedSized(Subconstruct):
         length = evaluate(self.length, context)
         if length < 0:
             raise PaddingError("length cannot be negative")
-        data = stream_read(stream, length)
+        data = stream_read(stream, length, path)
         if self.subcon is GreedyBytes:
             return data
         if type(self.subcon) is GreedyString:
@@ -4663,7 +4663,7 @@ class NullTerminated(Subconstruct):
         data = b''
         while True:
             try:
-                b = stream_read(stream, unit)
+                b = stream_read(stream, unit, path)
             except StreamError:
                 if self.require:
                     raise
@@ -4727,7 +4727,7 @@ class NullStripped(Subconstruct):
         unit = len(pad)
         if unit < 1:
             raise PaddingError("NullStripped pad must be at least 1 byte")
-        data = stream_read_entire(stream)
+        data = stream_read_entire(stream, path)
         if unit == 1:
             data = data.rstrip(pad)
         else:
@@ -4854,9 +4854,9 @@ class Transformed(Subconstruct):
 
     def _parse(self, stream, context, path):
         if isinstance(self.decodeamount, type(None)):
-            data = stream_read_entire(stream)
+            data = stream_read_entire(stream, path)
         if isinstance(self.decodeamount, integertypes):
-            data = stream_read(stream, self.decodeamount)
+            data = stream_read(stream, self.decodeamount, path)
         data = self.decodefunc(data)
         if self.subcon is GreedyBytes:
             return data
@@ -4970,7 +4970,7 @@ class ProcessXor(Subconstruct):
             raise StringError("ProcessXor needs integer or bytes pad")
         if isinstance(pad, bytestringtype) and len(pad) == 1:
             pad = byte2int(pad)
-        data = stream_read_entire(stream)
+        data = stream_read_entire(stream, path)
         if isinstance(pad, integertypes):
             if not (pad == 0):
                 data = integers2bytes( (b ^ pad) for b in iterateints(data) )
@@ -5050,7 +5050,7 @@ class ProcessRotateLeft(Subconstruct):
 
         amount = amount % (group * 8)
         amount_bytes = amount // 8
-        data = stream_read_entire(stream)
+        data = stream_read_entire(stream, path)
         data_ints = bytes2integers(data)
 
         if len(data) % group != 0:

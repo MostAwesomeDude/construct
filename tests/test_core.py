@@ -4,7 +4,6 @@ from declarativeunittest import *
 from construct import *
 from construct.lib import *
 
-
 def test_bytes():
     d = Bytes(4)
     common(d, b"1234", b"1234", 4)
@@ -2129,3 +2128,11 @@ def test_hex_issue_709():
     d = Struct("x" / Struct("y" / Hex(Bytes(1))))
     obj = d.parse(b"\xff")
     assert "y = unhexlify('ff')" in str(obj)
+
+
+@xfail(reason="Enable to see path information in stream operations")
+def test_showpath():
+    # trips stream_read
+    d = Struct("inner"/Struct("x"/Byte))
+    d.parse(b"")
+
