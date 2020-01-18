@@ -319,7 +319,7 @@ class Construct(object):
         r"""
         Parse a closed binary file. See parse().
         """
-        with open(filename, 'rb') as f:
+        with io.open(filename, 'rb') as f:
             return self.parse_stream(f, **contextkw)
 
     def _parsereport(self, stream, context, path):
@@ -365,7 +365,7 @@ class Construct(object):
         r"""
         Build an object into a closed binary file. See build().
         """
-        with open(filename, 'wb') as f:
+        with io.open(filename, 'wb') as f:
             self.build_stream(obj, f, **contextkw)
 
     def _build(self, obj, stream, context, path):

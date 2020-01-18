@@ -2136,3 +2136,7 @@ def test_showpath():
     d = Struct("inner"/Struct("x"/Byte))
     d.parse(b"")
 
+def test_buildfile_issue_737():
+    Byte.build_file(Byte.parse(b'\xff'), 'out')
+    assert Byte.parse_file('out') == 255
+
