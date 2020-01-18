@@ -1933,17 +1933,17 @@ def test_struct_stream():
             Check(lambda this: not stream_iseof(this._._io)),
         )),
         # checks mid-parsing
-        Check(lambda this: stream_tell(this._io) == 10),
+        Check(lambda this: stream_tell(this._io, None) == 10),
         Check(lambda this: stream_size(this._io) == 20),
         Check(lambda this: not stream_iseof(this._io)),
         'rest' / GreedyBytes,
         # checks after parsed to EOF
-        Check(lambda this: stream_tell(this._io) == 20),
+        Check(lambda this: stream_tell(this._io, None) == 20),
         Check(lambda this: stream_size(this._io) == 20),
         Check(lambda this: stream_iseof(this._io)),
         Check(lambda this: stream_seek(this._io, 0, 2, None) == 20),
         # checks nested struct stream
-        Check(lambda this: stream_tell(this.fixed._io) == 10),
+        Check(lambda this: stream_tell(this.fixed._io, None) == 10),
         Check(lambda this: stream_size(this.fixed._io) == 10),
     )
     d.parse(bytes(20))

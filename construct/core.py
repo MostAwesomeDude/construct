@@ -116,7 +116,7 @@ def stream_seek(stream, offset, whence, path):
         raise StreamError("stream.seek() failed, offset %s, whence %s" % (offset, whence,))
 
 
-def stream_tell(stream):
+def stream_tell(stream, path):
     try:
         return stream.tell()
     except Exception:
@@ -2304,7 +2304,7 @@ class GreedyRange(Subconstruct):
         try:
             for i in itertools.count():
                 context._index = i
-                fallback = stream_tell(stream)
+                fallback = stream_tell(stream, path)
                 e = self.subcon._parsereport(stream, context, path)
                 if not self.discard:
                     obj.append(e)
@@ -3361,16 +3361,16 @@ class Union(Construct):
         obj = Container()
         context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
-        fallback = stream_tell(stream)
+        fallback = stream_tell(stream, path)
         forwards = {}
         for i,sc in enumerate(self.subcons):
             subobj = sc._parsereport(stream, context, path)
             if sc.name:
                 obj[sc.name] = subobj
                 context[sc.name] = subobj
-            forwards[i] = stream_tell(stream)
+            forwards[i] = stream_tell(stream, path)
             if sc.name:
-                forwards[sc.name] = stream_tell(stream)
+                forwards[sc.name] = stream_tell(stream, path)
             stream_seek(stream, fallback, 0, path)
         parsefrom = self.parsefrom
         if callable(parsefrom):
@@ -3490,7 +3490,7 @@ class Select(Construct):
 
     def _parse(self, stream, context, path):
         for sc in self.subcons:
-            fallback = stream_tell(stream)
+            fallback = stream_tell(stream, path)
             try:
                 obj = sc._parsereport(stream, context, path)
             except ExplicitError:
@@ -3887,9 +3887,9 @@ class Padded(Subconstruct):
         length = evaluate(self.length, context)
         if length < 0:
             raise PaddingError("length cannot be negative")
-        position1 = stream_tell(stream)
+        position1 = stream_tell(stream, path)
         obj = self.subcon._parsereport(stream, context, path)
-        position2 = stream_tell(stream)
+        position2 = stream_tell(stream, path)
         pad = length - (position2 - position1)
         if pad < 0:
             raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length))
@@ -3900,9 +3900,9 @@ class Padded(Subconstruct):
         length = evaluate(self.length, context)
         if length < 0:
             raise PaddingError("length cannot be negative")
-        position1 = stream_tell(stream)
+        position1 = stream_tell(stream, path)
         buildret = self.subcon._build(obj, stream, context, path)
-        position2 = stream_tell(stream)
+        position2 = stream_tell(stream, path)
         pad = length - (position2 - position1)
         if pad < 0:
             raise PaddingError("subcon build %d bytes but was allowed only %d" % (position2-position1, length))
@@ -3963,9 +3963,9 @@ class Aligned(Subconstruct):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         if modulus < 2:
             raise PaddingError("expected modulo 2 or greater")
-        position1 = stream_tell(stream)
+        position1 = stream_tell(stream, path)
         obj = self.subcon._parsereport(stream, context, path)
-        position2 = stream_tell(stream)
+        position2 = stream_tell(stream, path)
         pad = -(position2 - position1) % modulus
         stream_read(stream, pad, path)
         return obj
@@ -3974,9 +3974,9 @@ class Aligned(Subconstruct):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         if modulus < 2:
             raise PaddingError("expected modulo 2 or greater")
-        position1 = stream_tell(stream)
+        position1 = stream_tell(stream, path)
         buildret = self.subcon._build(obj, stream, context, path)
-        position2 = stream_tell(stream)
+        position2 = stream_tell(stream, path)
         pad = -(position2 - position1) % modulus
         stream_write(stream, self.pattern * pad, pad, path)
         return buildret
@@ -4079,7 +4079,7 @@ class Pointer(Subconstruct):
     def _parse(self, stream, context, path):
         offset = evaluate(self.offset, context)
         stream = evaluate(self.stream, context) or stream
-        fallback = stream_tell(stream)
+        fallback = stream_tell(stream, path)
         stream_seek(stream, offset, 2 if offset < 0 else 0, path)
         obj = self.subcon._parsereport(stream, context, path)
         stream_seek(stream, fallback, 0, path)
@@ -4088,7 +4088,7 @@ class Pointer(Subconstruct):
     def _build(self, obj, stream, context, path):
         offset = evaluate(self.offset, context)
         stream = evaluate(self.stream, context) or stream
-        fallback = stream_tell(stream)
+        fallback = stream_tell(stream, path)
         stream_seek(stream, offset, 2 if offset < 0 else 0, path)
         buildret = self.subcon._build(obj, stream, context, path)
         stream_seek(stream, fallback, 0, path)
@@ -4142,7 +4142,7 @@ class Peek(Subconstruct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        fallback = stream_tell(stream)
+        fallback = stream_tell(stream, path)
         try:
             return self.subcon._parsereport(stream, context, path)
         except ExplicitError:
@@ -4248,10 +4248,10 @@ class Tell(Construct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        return stream_tell(stream)
+        return stream_tell(stream, path)
 
     def _build(self, obj, stream, context, path):
-        return stream_tell(stream)
+        return stream_tell(stream, path)
 
     def _sizeof(self, context, path):
         return 0
@@ -4358,9 +4358,9 @@ class RawCopy(Subconstruct):
     """
 
     def _parse(self, stream, context, path):
-        offset1 = stream_tell(stream)
+        offset1 = stream_tell(stream, path)
         obj = self.subcon._parsereport(stream, context, path)
-        offset2 = stream_tell(stream)
+        offset2 = stream_tell(stream, path)
         stream_seek(stream, offset1, 0, path)
         data = stream_read(stream, offset2-offset1, path)
         return Container(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
@@ -4370,16 +4370,16 @@ class RawCopy(Subconstruct):
             obj = dict(value=None)
         if 'data' in obj:
             data = obj['data']
-            offset1 = stream_tell(stream)
+            offset1 = stream_tell(stream, path)
             stream_write(stream, data, len(data), path)
-            offset2 = stream_tell(stream)
+            offset2 = stream_tell(stream, path)
             return Container(obj, data=data, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         if 'value' in obj:
             value = obj['value']
-            offset1 = stream_tell(stream)
+            offset1 = stream_tell(stream, path)
             buildret = self.subcon._build(value, stream, context, path)
             value = value if buildret is None else buildret
-            offset2 = stream_tell(stream)
+            offset2 = stream_tell(stream, path)
             stream_seek(stream, offset1, 0, path)
             data = stream_read(stream, offset2-offset1, path)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
@@ -4489,11 +4489,11 @@ class Prefixed(Subconstruct):
         return self.lengthfield._sizeof(context, path) + self.subcon._sizeof(context, path)
 
     def _actualsize(self, stream, context, path):
-        position1 = stream_tell(stream)
+        position1 = stream_tell(stream, path)
         length = self.lengthfield._parse(stream, context, path)
         if self.includelength:
             length -= self.lengthfield._sizeof(context, path)
-        position2 = stream_tell(stream)
+        position2 = stream_tell(stream, path)
         return (position2-position1) + length
 
     def _emitparse(self, code):
@@ -4537,9 +4537,9 @@ def PrefixedArray(countfield, subcon):
         return "ListContainer((%s) for i in range(%s))" % (subcon._compileparse(code), countfield._compileparse(code), )
     macro._emitparse = _emitparse
     def _actualsize(self, stream, context, path):
-        position1 = stream_tell(stream)
+        position1 = stream_tell(stream, path)
         count = countfield._parse(stream, context, path)
-        position2 = stream_tell(stream)
+        position2 = stream_tell(stream, path)
         return (position2-position1) + count * subcon._sizeof(context, path)
     macro._actualsize = _actualsize
     def _emitseq(ksy, bitwise):
@@ -5305,9 +5305,9 @@ class Lazy(Subconstruct):
         super(Lazy, self).__init__(subcon)
 
     def _parse(self, stream, context, path):
-        offset = stream_tell(stream)
+        offset = stream_tell(stream, path)
         def execute():
-            fallback = stream_tell(stream)
+            fallback = stream_tell(stream, path)
             stream_seek(stream, offset, 0, path)
             obj = self.subcon._parsereport(stream, context, path)
             stream_seek(stream, fallback, 0, path)
@@ -5406,7 +5406,7 @@ class LazyStruct(Construct):
     def _parse(self, stream, context, path):
         context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
-        offset = stream_tell(stream)
+        offset = stream_tell(stream, path)
         offsets = {0: offset}
         values = {}
         for i,sc in enumerate(self.subcons):
@@ -5418,7 +5418,7 @@ class LazyStruct(Construct):
                 values[i] = parseret
                 if sc.name:
                     context[sc.name] = parseret
-                offset = stream_tell(stream)
+                offset = stream_tell(stream, path)
             offsets[i+1] = offset
         return LazyContainer(self, stream, offsets, values, context, path)
 
@@ -5529,7 +5529,7 @@ class LazyArray(Subconstruct):
             count = count(context)
         if not 0 <= count:
             raise RangeError("invalid count %s" % (count,))
-        offset = stream_tell(stream)
+        offset = stream_tell(stream, path)
         offsets = {0: offset}
         values = {}
         for i in range(count):
@@ -5539,7 +5539,7 @@ class LazyArray(Subconstruct):
             except SizeofError:
                 parseret = sc._parsereport(stream, context, path)
                 values[i] = parseret
-                offset = stream_tell(stream)
+                offset = stream_tell(stream, path)
             offsets[i+1] = offset
         return LazyListContainer(sc, stream, count, offsets, values, context, path)
 
