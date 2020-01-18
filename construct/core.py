@@ -109,7 +109,7 @@ def stream_write(stream, data, length, path):
         raise StreamError("stream written less than specified, expected %d, written %d" % (length, written))
 
 
-def stream_seek(stream, offset, whence=0):
+def stream_seek(stream, offset, whence, path):
     try:
         return stream.seek(offset, whence)
     except Exception:
@@ -2313,7 +2313,7 @@ class GreedyRange(Subconstruct):
         except ExplicitError:
             raise
         except Exception:
-            stream_seek(stream, fallback)
+            stream_seek(stream, fallback, 0, path)
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -3371,12 +3371,12 @@ class Union(Construct):
             forwards[i] = stream_tell(stream)
             if sc.name:
                 forwards[sc.name] = stream_tell(stream)
-            stream_seek(stream, fallback)
+            stream_seek(stream, fallback, 0, path)
         parsefrom = self.parsefrom
         if callable(parsefrom):
             parsefrom = parsefrom(context)
         if parsefrom is not None:
-            stream_seek(stream, forwards[parsefrom]) # raises KeyError
+            stream_seek(stream, forwards[parsefrom], 0, path) # raises KeyError
         return obj
 
     def _build(self, obj, stream, context, path):
@@ -3496,7 +3496,7 @@ class Select(Construct):
             except ExplicitError:
                 raise
             except ConstructError:
-                stream_seek(stream, fallback)
+                stream_seek(stream, fallback, 0, path)
             else:
                 return obj
         raise SelectError("no subconstruct matched")
@@ -4080,18 +4080,18 @@ class Pointer(Subconstruct):
         offset = evaluate(self.offset, context)
         stream = evaluate(self.stream, context) or stream
         fallback = stream_tell(stream)
-        stream_seek(stream, offset, 2 if offset < 0 else 0)
+        stream_seek(stream, offset, 2 if offset < 0 else 0, path)
         obj = self.subcon._parsereport(stream, context, path)
-        stream_seek(stream, fallback)
+        stream_seek(stream, fallback, 0, path)
         return obj
 
     def _build(self, obj, stream, context, path):
         offset = evaluate(self.offset, context)
         stream = evaluate(self.stream, context) or stream
         fallback = stream_tell(stream)
-        stream_seek(stream, offset, 2 if offset < 0 else 0)
+        stream_seek(stream, offset, 2 if offset < 0 else 0, path)
         buildret = self.subcon._build(obj, stream, context, path)
-        stream_seek(stream, fallback)
+        stream_seek(stream, fallback, 0, path)
         return buildret
 
     def _sizeof(self, context, path):
@@ -4150,7 +4150,7 @@ class Peek(Subconstruct):
         except ConstructError:
             pass
         finally:
-            stream_seek(stream, fallback)
+            stream_seek(stream, fallback, 0, path)
 
     def _build(self, obj, stream, context, path):
         return obj
@@ -4209,12 +4209,12 @@ class Seek(Construct):
     def _parse(self, stream, context, path):
         at = self.at(context) if callable(self.at) else self.at
         whence = self.whence(context) if callable(self.whence) else self.whence
-        return stream_seek(stream, at, whence)
+        return stream_seek(stream, at, whence, path)
 
     def _build(self, obj, stream, context, path):
         at = self.at(context) if callable(self.at) else self.at
         whence = self.whence(context) if callable(self.whence) else self.whence
-        return stream_seek(stream, at, whence)
+        return stream_seek(stream, at, whence, path)
 
     def _sizeof(self, context, path):
         raise SizeofError("Seek only moves the stream, size is not meaningful")
@@ -4361,7 +4361,7 @@ class RawCopy(Subconstruct):
         offset1 = stream_tell(stream)
         obj = self.subcon._parsereport(stream, context, path)
         offset2 = stream_tell(stream)
-        stream_seek(stream, offset1)
+        stream_seek(stream, offset1, 0, path)
         data = stream_read(stream, offset2-offset1, path)
         return Container(data=data, value=obj, offset1=offset1, offset2=offset2, length=(offset2-offset1))
 
@@ -4380,7 +4380,7 @@ class RawCopy(Subconstruct):
             buildret = self.subcon._build(value, stream, context, path)
             value = value if buildret is None else buildret
             offset2 = stream_tell(stream)
-            stream_seek(stream, offset1)
+            stream_seek(stream, offset1, 0, path)
             data = stream_read(stream, offset2-offset1, path)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
         raise RawCopyError('RawCopy cannot build, both data and value keys are missing')
@@ -4671,7 +4671,7 @@ class NullTerminated(Subconstruct):
                 if self.include:
                     data += b
                 if not self.consume:
-                    stream_seek(stream, -unit, 1)
+                    stream_seek(stream, -unit, 1, path)
                 break
             data += b
         if self.subcon is GreedyBytes:
@@ -5308,9 +5308,9 @@ class Lazy(Subconstruct):
         offset = stream_tell(stream)
         def execute():
             fallback = stream_tell(stream)
-            stream_seek(stream, offset)
+            stream_seek(stream, offset, 0, path)
             obj = self.subcon._parsereport(stream, context, path)
-            stream_seek(stream, fallback)
+            stream_seek(stream, fallback, 0, path)
             return obj
         return execute
 
@@ -5341,7 +5341,7 @@ class LazyContainer(dict):
             index = self._struct._subconsindexes[index] # KeyError
         if index in self._values:
             return self._values[index]
-        stream_seek(self._stream, self._offsets[index]) # KeyError
+        stream_seek(self._stream, self._offsets[index], 0, self._path) # KeyError
         parseret = self._struct.subcons[index]._parsereport(self._stream, self._context, self._path)
         self._values[index] = parseret
         return parseret
@@ -5412,7 +5412,7 @@ class LazyStruct(Construct):
         for i,sc in enumerate(self.subcons):
             try:
                 offset += sc._actualsize(stream, context, path)
-                stream_seek(stream, offset)
+                stream_seek(stream, offset, 0, path)
             except SizeofError:
                 parseret = sc._parsereport(stream, context, path)
                 values[i] = parseret
@@ -5473,7 +5473,7 @@ class LazyListContainer(list):
             return [self[i] for i in range(*index.indices(self._count))]
         if index in self._values:
             return self._values[index]
-        stream_seek(self._stream, self._offsets[index]) # KeyError
+        stream_seek(self._stream, self._offsets[index], 0, self._path) # KeyError
         parseret = self._subcon._parsereport(self._stream, self._context, self._path)
         self._values[index] = parseret
         return parseret
@@ -5535,7 +5535,7 @@ class LazyArray(Subconstruct):
         for i in range(count):
             try:
                 offset += sc._actualsize(stream, context, path)
-                stream_seek(stream, offset)
+                stream_seek(stream, offset, 0, path)
             except SizeofError:
                 parseret = sc._parsereport(stream, context, path)
                 values[i] = parseret

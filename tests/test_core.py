@@ -1941,7 +1941,7 @@ def test_struct_stream():
         Check(lambda this: stream_tell(this._io) == 20),
         Check(lambda this: stream_size(this._io) == 20),
         Check(lambda this: stream_iseof(this._io)),
-        Check(lambda this: stream_seek(this._io, 0, 2) == 20),
+        Check(lambda this: stream_seek(this._io, 0, 2, None) == 20),
         # checks nested struct stream
         Check(lambda this: stream_tell(this.fixed._io) == 10),
         Check(lambda this: stream_size(this.fixed._io) == 10),
