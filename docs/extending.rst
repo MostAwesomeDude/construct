@@ -23,6 +23,8 @@ In order to write custom adapters, implement ``_decode`` and ``_encode``::
 Constructs
 ==========
 
+    .. note:: This is a last line of defense. If you are not able to achieve whatever that is you are trying to do with Construct existing classes, you can always write your own classes. In particular, you can copy-paste existing classes into your source code and modify them slighly. This is the best way to go.
+
 Generally speaking, you should not write constructs by yourself:
 
 * It's a craft that requires skills and understanding of the internals of the library (which change over time).
