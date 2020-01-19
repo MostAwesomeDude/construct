@@ -2434,7 +2434,7 @@ class Embedded(Subconstruct):
 
     .. warning::
 
-        Can only be used between Struct Sequence FocusedSeq Union LazyStruct, for example Struct can embed fields from a Sequence or vice versa. There is also :class:`~construct.core.EmbeddedSwitch` macro that pseudo-embeds a Switch, it is NOT a Embedded(Switch(...). Its not possible to embed IfThenElse Switch RawCopy or otherwise.
+        Can only be used between Struct Sequence FocusedSeq Union LazyStruct, for example Struct can embed fields from a Sequence or vice versa. Its not possible to embed IfThenElse Switch RawCopy or otherwise.
 
     Parsing building and sizeof are deferred to subcon.
 
@@ -3708,52 +3708,6 @@ class Switch(Construct):
         defaultfname = "compiled_%s" % code.allocateId()
         code.append("%s = lambda io,this: %s" % (defaultfname, self.default._compileparse(code), ))
         return "%s.get(%s, %s)(io, this)" % (fname, self.keyfunc, defaultfname)
-
-
-def EmbeddedSwitch(merged, selector, mapping):
-    r"""
-    Macro that simulates embedding Switch, which under new embedding semantics is not possible. This macro does NOT produce a Switch. It generates classes that behave the same way as you would expect from embedded Switch, only that. Instance created by this macro CAN be embedded.
-
-    Both `merged` and all values in `mapping` must be Struct instances. Macro re-creates a single struct that contains all fields, where each field is wrapped in `If(selector == key, ...)`. Note that resulting dictionary contains None values for fields that would not be chosen by switch. Note also that if selector does not match any cases, it passes successfully (default Switch behavior).
-
-    All fields should have unique names. Otherwise fields that were not selected during parsing may return None and override other fields context entries that have same name. This is because `If` field returns None value if condition is not met, but the Struct inserts that None value into the context entry regardless.
-
-    :param merged: Struct instance
-    :param selector: this expression, that references one of `merged` fields
-    :param mapping: dict with values being Struct instances
-
-    Example::
-
-        d = EmbeddedSwitch(
-            Struct(
-                "type" / Byte,
-            ),
-            this.type,
-            {
-                0: Struct("name" / PascalString(Byte, "utf8")),
-                1: Struct("value" / Byte),
-            }
-        )
-
-        # generates essentially following
-        d = Struct(
-            "type" / Byte,
-            "name" / If(this.type == 0, PascalString(Byte, "utf8")),
-            "value" / If(this.type == 1, Byte),
-        )
-
-        # both parse like following
-        >>> d.parse(b"\x00\x00")
-        Container(type=0, name=u'', value=None)
-        >>> d.parse(b"\x01\x00")
-        Container(type=1, name=None, value=0)
-    """
-
-    merged2 = list(merged.subcons)
-    for key,st in mapping.items():
-        for sc in st.subcons:
-            merged2.append(sc.name / If(selector == key, sc))
-    return Struct(*merged2)
 
 
 class StopIf(Construct):

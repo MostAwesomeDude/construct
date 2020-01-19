@@ -62,6 +62,7 @@ User Guide
    intro
    transition28
    transition29
+   transition210
    basics
    advanced
    bitwise

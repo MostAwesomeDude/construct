@@ -5,16 +5,6 @@ from construct import *
 from construct.lib import *
 
 
-embeddedswitch1 = EmbeddedSwitch(
-    Struct(
-        "type" / Byte,
-    ),
-    this.type,
-    {
-        0: Struct("name" / PascalString(Byte, "utf8")),
-        1: Struct("value" / Byte),
-    }
-)
 example = Struct(
     "num" / Byte,
 
@@ -115,7 +105,6 @@ example = Struct(
     "switch1" / Switch(this.num, {0 : Byte, 255 : Error}),
     "switch2" / Switch(this.num, {}),
     "switch3" / Switch(this.num, {}, default=Byte),
-    "embeddedswitch1" / embeddedswitch1,
     "stopif0" / StopIf(this.num == 255),
     "stopif1" / Struct(StopIf(this._.num == 0), Error),
     "stopif2" / Sequence(StopIf(this._.num == 0), Error),

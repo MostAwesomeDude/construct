@@ -830,33 +830,6 @@ def test_switch_issue_357():
     )
     assert st1.parse(b"") == st2.parse(b"")
 
-def test_embeddedswitch():
-    d = EmbeddedSwitch(
-        Struct(
-            "type" / Byte,
-        ),
-        this.type,
-        {
-            0: Struct("name" / PascalString(Byte, "utf8")),
-            1: Struct("value" / Byte),
-        }
-    )
-    common(d, b"\x00\x00", Container(type=0, name=u"", value=None))
-    common(d, b"\x01\x00", Container(type=1, name=None, value=0))
-
-def test_embeddedswitch_issue_684():
-    d = EmbeddedSwitch(
-        Struct(
-            "type" / Byte,
-        ),
-        this.type,
-        {
-            1: Struct("value" / Byte),
-            2: Struct("value" / Byte),
-        }
-    )
-    d.parse(b"\x01\xff") == Container(type=1, value=None)
-
 def test_stopif():
     d = Struct("x"/Byte, StopIf(this.x == 0), "y"/Byte)
     common(d, b"\x00", Container(x=0))

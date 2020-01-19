@@ -13,7 +13,7 @@ Special wrapper that allows outer multiple-subcons construct to merge fields fro
 
 .. warning::
 
-    Can only be used between Struct Sequence FocusedSeq Union LazyStruct, for example Struct can embed fields from a Sequence or vice versa. There is also :class:`~construct.core.EmbeddedSwitch` macro that pseudo-embeds a Switch, it is NOT a Embedded(Switch(...). Its not possible to embed IfThenElse Switch RawCopy or otherwise.
+    Can only be used between Struct Sequence FocusedSeq Union LazyStruct, for example Struct can embed fields from a Sequence or vice versa. Its not possible to embed IfThenElse Switch RawCopy or otherwise.
 
 >>> outer = Struct(
 ...     Embedded(Struct(
@@ -401,40 +401,6 @@ b'\x00\x00\x00\x05'
 1
 >>> d.build(1, n=255)
 b"\x01"
-
-
-EmbeddedSwitch
-----------------
-
-Macro that simulates embedding Switch, which under new embedding semantics is not possible. This macro does NOT produce a Switch. It generates classes that behave the same way as you would expect from embedded Switch, only that. Instance created by this macro CAN be embedded.
-
-All fields should have unique names. Otherwise fields that were not selected during parsing may return None and override other fields context entries that have same name. This is because `If` field returns None value if condition is not met, but the Struct inserts that None value into the context entry regardless.
-
-::
-
-    d = EmbeddedSwitch(
-        Struct(
-            "type" / Byte,
-        ),
-        this.type,
-        {
-            0: Struct("name" / PascalString(Byte, "utf8")),
-            1: Struct("value" / Byte),
-        }
-    )
-
-    # generates essentially following
-    d = Struct(
-        "type" / Byte,
-        "name" / If(this.type == 0, PascalString(Byte, "utf8")),
-        "value" / If(this.type == 1, Byte),
-    )
-
-    # both parse like following
-    >>> d.parse(b"\x00\x00")
-    Container(type=0, name=u'', value=None)
-    >>> d.parse(b"\x01\x00")
-    Container(type=1, name=None, value=0)
 
 
 StopIf
