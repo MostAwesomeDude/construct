@@ -2136,6 +2136,26 @@ def test_showpath():
     d = Struct("inner"/Struct("x"/Byte))
     d.parse(b"")
 
+@xfail(reason="Enable to see path information in stream operations")
+def test_showpath2():
+    x = Struct(
+        'foo' / Bytes(1),
+        'a' / Struct(
+            'foo' / Bytes(1),
+            'b' / Struct(
+                'foo' / Bytes(1),
+                'c' / Struct(
+                    'foo' / Bytes(1),
+                    'bar' / Bytes(1)
+                )
+            )
+        )
+    )
+    x.parse(b'\xff' * 5)
+    x.parse(b'\xff' * 3)
+    # StreamError: Error in path (parsing) -> a -> b -> c -> foo
+    # stream read less than specified amount, expected 1, found 0
+
 def test_buildfile_issue_737():
     Byte.build_file(Byte.parse(b'\xff'), 'out')
     assert Byte.parse_file('out') == 255
