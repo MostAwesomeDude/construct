@@ -11,7 +11,13 @@ from construct.version import *
 # exceptions
 #===============================================================================
 class ConstructError(Exception):
-    pass
+    def __init__(self, message='', path=None):
+        self.path = path
+        if path is None:
+            super(ConstructError, self).__init__(message)
+        else:
+            message = "Error in path {}\n".format(path) + message
+            super(ConstructError, self).__init__(message)
 class SizeofError(ConstructError):
     pass
 class AdaptationError(ConstructError):
@@ -77,13 +83,13 @@ def singleton(arg):
 
 def stream_read(stream, length, path):
     if length < 0:
-        raise StreamError("length must be non-negative, found %s" % length)
+        raise StreamError("length must be non-negative, found %s" % length, path=path)
     try:
         data = stream.read(length)
     except Exception:
-        raise StreamError("stream.read() failed, requested %s bytes" % (length,))
+        raise StreamError("stream.read() failed, requested %s bytes" % (length,), path=path)
     if len(data) != length:
-        raise StreamError("stream read less than specified amount, expected %d, found %d" % (length, len(data)))
+        raise StreamError("stream read less than specified amount, expected %d, found %d" % (length, len(data)), path=path)
     return data
 
 
@@ -91,36 +97,36 @@ def stream_read_entire(stream, path):
     try:
         return stream.read()
     except Exception:
-        raise StreamError("stream.read() failed when reading until EOF")
+        raise StreamError("stream.read() failed when reading until EOF", path=path)
 
 
 def stream_write(stream, data, length, path):
     if not isinstance(data, bytestringtype):
-        raise StringError("given non-bytes value, perhaps unicode? %r" % (data,))
+        raise StringError("given non-bytes value, perhaps unicode? %r" % (data,), path=path)
     if length < 0:
-        raise StreamError("length must be non-negative, found %s" % length)
+        raise StreamError("length must be non-negative, found %s" % length, path=path)
     if len(data) != length:
-        raise StreamError("bytes object of wrong length, expected %d, found %d" % (length, len(data)))
+        raise StreamError("bytes object of wrong length, expected %d, found %d" % (length, len(data)), path=path)
     try:
         written = stream.write(data)
     except Exception:
-        raise StreamError("stream.write() failed, given %r" % (data,))
+        raise StreamError("stream.write() failed, given %r" % (data,), path=path)
     if written != length:
-        raise StreamError("stream written less than specified, expected %d, written %d" % (length, written))
+        raise StreamError("stream written less than specified, expected %d, written %d" % (length, written), path=path)
 
 
 def stream_seek(stream, offset, whence, path):
     try:
         return stream.seek(offset, whence)
     except Exception:
-        raise StreamError("stream.seek() failed, offset %s, whence %s" % (offset, whence,))
+        raise StreamError("stream.seek() failed, offset %s, whence %s" % (offset, whence), path=path)
 
 
 def stream_tell(stream, path):
     try:
         return stream.tell()
     except Exception:
-        raise StreamError("stream.tell() failed")
+        raise StreamError("stream.tell() failed", path=path)
 
 
 def stream_size(stream):
@@ -397,7 +403,7 @@ class Construct(object):
 
     def _sizeof(self, context, path):
         """Override in your subclass."""
-        raise SizeofError
+        raise SizeofError(path=path)
 
     def _actualsize(self, stream, context, path):
         return self._sizeof(context, path)
@@ -746,7 +752,7 @@ class Validator(SymmetricAdapter):
     """
     def _decode(self, obj, context, path):
         if not self._validate(obj, context, path):
-            raise ValidationError("object failed validation: %s" % (obj,))
+            raise ValidationError("object failed validation: %s" % (obj,), path=path)
         return obj
 
     def _validate(self, obj, context, path):
@@ -773,7 +779,7 @@ class Tunnel(Subconstruct):
         return obj
 
     def _sizeof(self, context, path):
-        raise SizeofError
+        raise SizeofError(path=path)
 
     def _decode(self, data, context, path):
         raise NotImplementedError
@@ -863,7 +869,7 @@ class Bytes(Construct):
         try:
             return self.length(context) if callable(self.length) else self.length
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         return "read_bytes(io, %s)" % (self.length,)
@@ -1030,13 +1036,13 @@ class FormatField(Construct):
         try:
             return self.packer.unpack(data)[0]
         except Exception:
-            raise FormatFieldError("struct %r error during parsing" % self.fmtstr)
+            raise FormatFieldError("struct %r error during parsing" % self.fmtstr, path=path)
 
     def _build(self, obj, stream, context, path):
         try:
             data = self.packer.pack(obj)
         except Exception:
-            raise FormatFieldError("struct %r error during building, given value %r" % (self.fmtstr, obj))
+            raise FormatFieldError("struct %r error during building, given value %r" % (self.fmtstr, obj), path=path)
         stream_write(stream, data, self.length, path)
         return obj
 
@@ -1103,7 +1109,7 @@ class BytesInteger(Construct):
         if callable(length):
             length = length(context)
         if length < 0:
-            raise IntegerError("length must be non-negative")
+            raise IntegerError("length must be non-negative", path=path)
         data = stream_read(stream, length, path)
         if self.swapped:
             data = data[::-1]
@@ -1111,14 +1117,14 @@ class BytesInteger(Construct):
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value %r is not an integer" % (obj,))
+            raise IntegerError("value %r is not an integer" % (obj,), path=path)
         if obj < 0 and not self.signed:
-            raise IntegerError("value %r is negative, but field is not signed" % (obj,))
+            raise IntegerError("value %r is negative, but field is not signed" % (obj,), path=path)
         length = self.length
         if callable(length):
             length = length(context)
         if length < 0:
-            raise IntegerError("length must be non-negative")
+            raise IntegerError("length must be non-negative", path=path)
         data = integer2bytes(obj, length)
         if self.swapped:
             data = data[::-1]
@@ -1132,7 +1138,7 @@ class BytesInteger(Construct):
                 length = length(context)
             return length
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         return "bytes2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed)
@@ -1187,28 +1193,28 @@ class BitsInteger(Construct):
         if callable(length):
             length = length(context)
         if length < 0:
-            raise IntegerError("length must be non-negative")
+            raise IntegerError("length must be non-negative", path=path)
         data = stream_read(stream, length, path)
         if self.swapped:
             if length & 7:
-                raise IntegerError("little-endianness is only defined for multiples of 8 bits")
+                raise IntegerError("little-endianness is only defined for multiples of 8 bits", path=path)
             data = swapbytes(data)
         return bits2integer(data, self.signed)
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value %r is not an integer" % (obj,))
+            raise IntegerError("value %r is not an integer" % (obj,), path=path)
         if obj < 0 and not self.signed:
-            raise IntegerError("value %r is negative, but field is not signed" % (obj,))
+            raise IntegerError("value %r is negative, but field is not signed" % (obj,), path=path)
         length = self.length
         if callable(length):
             length = length(context)
         if length < 0:
-            raise IntegerError("length must be non-negative")
+            raise IntegerError("length must be non-negative", path=path)
         data = integer2bits(obj, length)
         if self.swapped:
             if length & 7:
-                raise IntegerError("little-endianness is only defined for multiples of 8 bits")
+                raise IntegerError("little-endianness is only defined for multiples of 8 bits", path=path)
             data = swapbytes(data)
         stream_write(stream, data, length, path)
         return obj
@@ -1220,7 +1226,7 @@ class BitsInteger(Construct):
                 length = length(context)
             return length
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         return "bits2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed, )
@@ -1456,9 +1462,9 @@ class VarInt(Construct):
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value is not an integer")
+            raise IntegerError("value is not an integer", path=path)
         if obj < 0:
-            raise IntegerError("varint cannot build from negative number: %r" % (obj,))
+            raise IntegerError("varint cannot build from negative number: %r" % (obj,), path=path)
         x = obj
         while x > 0b01111111:
             stream_write(stream, int2byte(0b10000000 | (x & 0b01111111)), 1, path)
@@ -1506,7 +1512,7 @@ class StringEncoded(Adapter):
 
     def _encode(self, obj, context, path):
         if not isinstance(obj, unicodestringtype):
-            raise StringError("string encoding failed, expected unicode string")
+            raise StringError("string encoding failed, expected unicode string", path=path)
         if obj == u"":
             return b""
         return obj.encode(self.encoding)
@@ -1749,7 +1755,7 @@ class Enum(Adapter):
                 return obj
             return self.encmapping[obj]
         except KeyError:
-            raise MappingError("building failed, no mapping for %r" % (obj,))
+            raise MappingError("building failed, no mapping for %r" % (obj,), path=path)
 
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
@@ -1849,9 +1855,9 @@ class FlagsEnum(Adapter):
                         if value:
                             flags |= self.flags[name] # KeyError
                 return flags
-            raise MappingError("building failed, unknown object: %r" % (obj,))
+            raise MappingError("building failed, unknown object: %r" % (obj,), path=path)
         except KeyError:
-            raise MappingError("building failed, unknown label: %r" % (obj,))
+            raise MappingError("building failed, unknown label: %r" % (obj,), path=path)
 
     def _emitparse(self, code):
         return "reuse(%s, lambda x: Container(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %s)" % (k,v) for k,v in self.flags.items()), )
@@ -1894,13 +1900,13 @@ class Mapping(Adapter):
         try:
             return self.decmapping[obj] # KeyError
         except (KeyError, TypeError):
-            raise MappingError("parsing failed, no decoding mapping for %r" % (obj,))
+            raise MappingError("parsing failed, no decoding mapping for %r" % (obj,), path=path)
 
     def _encode(self, obj, context, path):
         try:
             return self.encmapping[obj] # KeyError
         except (KeyError, TypeError):
-            raise MappingError("building failed, no encoding mapping for %r" % (obj,))
+            raise MappingError("building failed, no encoding mapping for %r" % (obj,), path=path)
 
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
@@ -2028,7 +2034,7 @@ class Struct(Construct):
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         fname = "parse_struct_%s" % code.allocateId()
@@ -2158,7 +2164,7 @@ class Sequence(Construct):
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         fname = "parse_sequence_%s" % code.allocateId()
@@ -2230,7 +2236,7 @@ class Array(Subconstruct):
         if callable(count):
             count = count(context)
         if not 0 <= count:
-            raise RangeError("invalid count %s" % (count,))
+            raise RangeError("invalid count %s" % (count,), path=path)
         obj = ListContainer()
         for i in range(count):
             context._index = i
@@ -2244,9 +2250,9 @@ class Array(Subconstruct):
         if callable(count):
             count = count(context)
         if not 0 <= count:
-            raise RangeError("invalid count %s" % (count,))
+            raise RangeError("invalid count %s" % (count,), path=path)
         if not len(obj) == count:
-            raise RangeError("expected %d elements, found %d" % (count, len(obj)))
+            raise RangeError("expected %d elements, found %d" % (count, len(obj)), path=path)
         retlist = ListContainer()
         for i,e in enumerate(obj):
             context._index = i
@@ -2260,7 +2266,7 @@ class Array(Subconstruct):
             if callable(count):
                 count = count(context)
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
         return count * self.subcon._sizeof(context, path)
 
     def _emitparse(self, code):
@@ -2328,7 +2334,7 @@ class GreedyRange(Subconstruct):
             pass
 
     def _sizeof(self, context, path):
-        raise SizeofError
+        raise SizeofError(path=path)
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(type=self.subcon._compileprimitivetype(ksy, bitwise), repeat="eos")
@@ -2394,11 +2400,11 @@ class RepeatUntil(Subconstruct):
             if predicate(e, partiallist, context):
                 break
         else:
-            raise RepeatError("expected any item to match predicate, when building")
+            raise RepeatError("expected any item to match predicate, when building", path=path)
         return retlist
 
     def _sizeof(self, context, path):
-        raise SizeofError("cannot calculate size, amount depends on actual data")
+        raise SizeofError("cannot calculate size, amount depends on actual data", path=path)
 
     def _emitparse(self, code):
         fname = "parse_repeatuntil_%s" % code.allocateId()
@@ -2552,12 +2558,12 @@ class Const(Subconstruct):
     def _parse(self, stream, context, path):
         obj = self.subcon._parsereport(stream, context, path)
         if obj != self.value:
-            raise ConstError("parsing expected %r but parsed %r" % (self.value, obj))
+            raise ConstError("parsing expected %r but parsed %r" % (self.value, obj), path=path)
         return obj
 
     def _build(self, obj, stream, context, path):
         if obj not in (None, self.value):
-            raise ConstError("building expected None or %r but got %r" % (self.value, obj))
+            raise ConstError("building expected None or %r but got %r" % (self.value, obj), path=path)
         return self.subcon._build(self.value, stream, context, path)
 
     def _sizeof(self, context, path):
@@ -2662,11 +2668,11 @@ class Index(Construct):
 
     def _parse(self, stream, context, path):
         return context.get("_index", None)
-        raise IndexFieldError("did not find either key in context")
+        raise IndexFieldError("did not find either key in context", path=path)
 
     def _build(self, obj, stream, context, path):
         return context.get("_index", None)
-        raise IndexFieldError("did not find either key in context")
+        raise IndexFieldError("did not find either key in context", path=path)
 
     def _sizeof(self, context, path):
         return 0
@@ -2793,12 +2799,12 @@ class Check(Construct):
     def _parse(self, stream, context, path):
         passed = self.func(context) if callable(self.func) else self.func
         if not passed:
-            raise CheckError("check failed during parsing")
+            raise CheckError("check failed during parsing", path=path)
 
     def _build(self, obj, stream, context, path):
         passed = self.func(context) if callable(self.func) else self.func
         if not passed:
-            raise CheckError("check failed during building")
+            raise CheckError("check failed during building", path=path)
 
     def _sizeof(self, context, path):
         return 0
@@ -2832,13 +2838,13 @@ class Error(Construct):
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
-        raise ExplicitError("Error field was activated during parsing")
+        raise ExplicitError("Error field was activated during parsing", path=path)
 
     def _build(self, obj, stream, context, path):
-        raise ExplicitError("Error field was activated during building")
+        raise ExplicitError("Error field was activated during building", path=path)
 
     def _sizeof(self, context, path):
-        raise SizeofError("Error does not have size, because it interrupts parsing and building")
+        raise SizeofError("Error does not have size, because it interrupts parsing and building", path=path)
 
     def _emitparse(self, code):
         code.append("""
@@ -2942,7 +2948,7 @@ class FocusedSeq(Construct):
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         fname = "parse_focusedseq_%s" % code.allocateId()
@@ -3068,14 +3074,14 @@ class NamedTuple(Adapter):
             return self.factory(**obj)
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return self.factory(*obj)
-        raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRangeGreedyRange")
+        raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRangeGreedyRange", path=path)
 
     def _encode(self, obj, context, path):
         if isinstance(self.subcon, Struct):
             return Container({sc.name:getattr(obj,sc.name) for sc in self.subcon.subcons if sc.name})
         if isinstance(self.subcon, (Sequence,Array,GreedyRange)):
             return list(obj)
-        raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRange")
+        raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRange", path=path)
 
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
@@ -3399,10 +3405,10 @@ class Union(Construct):
                 context[sc.name] = buildret
             return Container({sc.name:buildret})
         else:
-            raise UnionError("cannot build, none of subcons were found in the dictionary %r" % (obj, ))
+            raise UnionError("cannot build, none of subcons were found in the dictionary %r" % (obj, ), path=path)
 
     def _sizeof(self, context, path):
-        raise SizeofError("Union builds depending on actual object dict, size is unknown")
+        raise SizeofError("Union builds depending on actual object dict, size is unknown", path=path)
 
     def _emitparse(self, code):
         if callable(self.parsefrom):
@@ -3499,7 +3505,7 @@ class Select(Construct):
                 stream_seek(stream, fallback, 0, path)
             else:
                 return obj
-        raise SelectError("no subconstruct matched")
+        raise SelectError("no subconstruct matched", path=path)
 
     def _build(self, obj, stream, context, path):
         for sc in self.subcons:
@@ -3512,7 +3518,7 @@ class Select(Construct):
             else:
                 stream_write(stream, data, len(data), path)
                 return obj
-        raise SelectError("no subconstruct matched: %s" % (obj,))
+        raise SelectError("no subconstruct matched: %s" % (obj,), path=path)
 
 
 def Optional(subcon):
@@ -3693,7 +3699,7 @@ class Switch(Construct):
             return sc._sizeof(context, path)
 
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         fname = "factory_%s" % code.allocateId()
@@ -3779,17 +3785,17 @@ class StopIf(Construct):
         if callable(condfunc):
             condfunc = condfunc(context)
         if condfunc:
-            raise StopFieldError
+            raise StopFieldError(path=path)
 
     def _build(self, obj, stream, context, path):
         condfunc = self.condfunc
         if callable(condfunc):
             condfunc = condfunc(context)
         if condfunc:
-            raise StopFieldError
+            raise StopFieldError(path=path)
 
     def _sizeof(self, context, path):
-        raise SizeofError("StopIf cannot determine size because it depends on actual context which then depends on actual data and outer constructs")
+        raise SizeofError("StopIf cannot determine size because it depends on actual context which then depends on actual data and outer constructs", path=path)
 
     def _emitparse(self, code):
         code.append("""
@@ -3886,26 +3892,26 @@ class Padded(Subconstruct):
     def _parse(self, stream, context, path):
         length = evaluate(self.length, context)
         if length < 0:
-            raise PaddingError("length cannot be negative")
+            raise PaddingError("length cannot be negative", path=path)
         position1 = stream_tell(stream, path)
         obj = self.subcon._parsereport(stream, context, path)
         position2 = stream_tell(stream, path)
         pad = length - (position2 - position1)
         if pad < 0:
-            raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length))
+            raise PaddingError("subcon parsed %d bytes but was allowed only %d" % (position2-position1, length), path=path)
         stream_read(stream, pad, path)
         return obj
 
     def _build(self, obj, stream, context, path):
         length = evaluate(self.length, context)
         if length < 0:
-            raise PaddingError("length cannot be negative")
+            raise PaddingError("length cannot be negative", path=path)
         position1 = stream_tell(stream, path)
         buildret = self.subcon._build(obj, stream, context, path)
         position2 = stream_tell(stream, path)
         pad = length - (position2 - position1)
         if pad < 0:
-            raise PaddingError("subcon build %d bytes but was allowed only %d" % (position2-position1, length))
+            raise PaddingError("subcon build %d bytes but was allowed only %d" % (position2-position1, length), path=path)
         stream_write(stream, self.pattern * pad, pad, path)
         return buildret
 
@@ -3913,10 +3919,10 @@ class Padded(Subconstruct):
         try:
             length = evaluate(self.length, context)
             if length < 0:
-                raise PaddingError("length cannot be negative")
+                raise PaddingError("length cannot be negative", path=path)
             return length
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         return "(%s, read_bytes(io, (%s)-(%s) ))[0]" % (self.subcon._compileparse(code), self.length, self.subcon.sizeof())
@@ -3962,7 +3968,7 @@ class Aligned(Subconstruct):
     def _parse(self, stream, context, path):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         if modulus < 2:
-            raise PaddingError("expected modulo 2 or greater")
+            raise PaddingError("expected modulo 2 or greater", path=path)
         position1 = stream_tell(stream, path)
         obj = self.subcon._parsereport(stream, context, path)
         position2 = stream_tell(stream, path)
@@ -3973,7 +3979,7 @@ class Aligned(Subconstruct):
     def _build(self, obj, stream, context, path):
         modulus = self.modulus(context) if callable(self.modulus) else self.modulus
         if modulus < 2:
-            raise PaddingError("expected modulo 2 or greater")
+            raise PaddingError("expected modulo 2 or greater", path=path)
         position1 = stream_tell(stream, path)
         buildret = self.subcon._build(obj, stream, context, path)
         position2 = stream_tell(stream, path)
@@ -3985,11 +3991,11 @@ class Aligned(Subconstruct):
         try:
             modulus = self.modulus(context) if callable(self.modulus) else self.modulus
             if modulus < 2:
-                raise PaddingError("expected modulo 2 or greater")
+                raise PaddingError("expected modulo 2 or greater", path=path)
             subconlen = self.subcon._sizeof(context, path)
             return subconlen + (-subconlen % modulus)
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
         return "(%s, read_bytes(io, -(%s) %% (%s) ))[0]" % (self.subcon._compileparse(code), self.subcon.sizeof(), self.modulus, )
@@ -4217,7 +4223,7 @@ class Seek(Construct):
         return stream_seek(stream, at, whence, path)
 
     def _sizeof(self, context, path):
-        raise SizeofError("Seek only moves the stream, size is not meaningful")
+        raise SizeofError("Seek only moves the stream, size is not meaningful", path=path)
 
     def _emitparse(self, code):
         return "io.seek(%s, %s)" % (self.at, self.whence, )
@@ -4320,13 +4326,13 @@ class Terminated(Construct):
 
     def _parse(self, stream, context, path):
         if stream.read(1):
-            raise TerminatedError("expected end of stream")
+            raise TerminatedError("expected end of stream", path=path)
 
     def _build(self, obj, stream, context, path):
         return obj
 
     def _sizeof(self, context, path):
-        raise SizeofError
+        raise SizeofError(path=path)
 
 
 #===============================================================================
@@ -4383,7 +4389,7 @@ class RawCopy(Subconstruct):
             stream_seek(stream, offset1, 0, path)
             data = stream_read(stream, offset2-offset1, path)
             return Container(obj, data=data, value=value, offset1=offset1, offset2=offset2, length=(offset2-offset1))
-        raise RawCopyError('RawCopy cannot build, both data and value keys are missing')
+        raise RawCopyError('RawCopy cannot build, both data and value keys are missing', path=path)
 
 
 def ByteSwapped(subcon):
@@ -4584,7 +4590,7 @@ class FixedSized(Subconstruct):
     def _parse(self, stream, context, path):
         length = evaluate(self.length, context)
         if length < 0:
-            raise PaddingError("length cannot be negative")
+            raise PaddingError("length cannot be negative", path=path)
         data = stream_read(stream, length, path)
         if self.subcon is GreedyBytes:
             return data
@@ -4595,13 +4601,13 @@ class FixedSized(Subconstruct):
     def _build(self, obj, stream, context, path):
         length = evaluate(self.length, context)
         if length < 0:
-            raise PaddingError("length cannot be negative")
+            raise PaddingError("length cannot be negative", path=path)
         stream2 = io.BytesIO()
         buildret = self.subcon._build(obj, stream2, context, path)
         data = stream2.getvalue()
         pad = length - len(data)
         if pad < 0:
-            raise PaddingError("subcon build %d bytes but was allowed only %d" % (len(data), length))
+            raise PaddingError("subcon build %d bytes but was allowed only %d" % (len(data), length), path=path)
         stream_write(stream, data, len(data), path)
         stream_write(stream, bytes(pad), pad, path)
         return buildret
@@ -4609,7 +4615,7 @@ class FixedSized(Subconstruct):
     def _sizeof(self, context, path):
         length = evaluate(self.length, context)
         if length < 0:
-            raise PaddingError("length cannot be negative")
+            raise PaddingError("length cannot be negative", path=path)
         return length
 
     def _emitparse(self, code):
@@ -4657,7 +4663,7 @@ class NullTerminated(Subconstruct):
         term = self.term
         unit = len(term)
         if unit < 1:
-            raise PaddingError("NullTerminated term must be at least 1 byte")
+            raise PaddingError("NullTerminated term must be at least 1 byte", path=path)
         data = b''
         while True:
             try:
@@ -4686,7 +4692,7 @@ class NullTerminated(Subconstruct):
         return buildret
 
     def _sizeof(self, context, path):
-        raise SizeofError
+        raise SizeofError(path=path)
 
     def _emitfulltype(self, ksy, bitwise):
         if len(self.term) > 1:
@@ -4724,7 +4730,7 @@ class NullStripped(Subconstruct):
         pad = self.pad
         unit = len(pad)
         if unit < 1:
-            raise PaddingError("NullStripped pad must be at least 1 byte")
+            raise PaddingError("NullStripped pad must be at least 1 byte", path=path)
         data = stream_read_entire(stream, path)
         if unit == 1:
             data = data.rstrip(pad)
@@ -4746,7 +4752,7 @@ class NullStripped(Subconstruct):
         return self.subcon._build(obj, stream, context, path)
 
     def _sizeof(self, context, path):
-        raise SizeofError
+        raise SizeofError(path=path)
 
     def _emitfulltype(self, ksy, bitwise):
         if len(self.pad) > 1:
@@ -4869,16 +4875,16 @@ class Transformed(Subconstruct):
         data = self.encodefunc(data)
         if isinstance(self.encodeamount, integertypes):
             if len(data) != self.encodeamount:
-                raise StreamError("encoding transformation produced wrong amount of bytes, %s instead of expected %s" % (len(data), self.encodeamount, ))
+                raise StreamError("encoding transformation produced wrong amount of bytes, %s instead of expected %s" % (len(data), self.encodeamount, ), path=path)
         stream_write(stream, data, len(data), path)
         return buildret
 
     def _sizeof(self, context, path):
         if self.decodeamount is None or self.encodeamount is None:
-            raise SizeofError
+            raise SizeofError(path=path)
         if self.decodeamount == self.encodeamount:
             return self.encodeamount
-        raise SizeofError
+        raise SizeofError(path=path)
 
 
 class Restreamed(Subconstruct):
@@ -4929,7 +4935,7 @@ class Restreamed(Subconstruct):
 
     def _sizeof(self, context, path):
         if self.sizecomputer is None:
-            raise SizeofError("Restreamed cannot calculate size without a sizecomputer")
+            raise SizeofError("Restreamed cannot calculate size without a sizecomputer", path=path)
         else:
             return self.sizecomputer(self.subcon._sizeof(context, path))
 
@@ -4965,7 +4971,7 @@ class ProcessXor(Subconstruct):
     def _parse(self, stream, context, path):
         pad = evaluate(self.padfunc, context)
         if not isinstance(pad, (integertypes, bytestringtype)):
-            raise StringError("ProcessXor needs integer or bytes pad")
+            raise StringError("ProcessXor needs integer or bytes pad", path=path)
         if isinstance(pad, bytestringtype) and len(pad) == 1:
             pad = byte2int(pad)
         data = stream_read_entire(stream, path)
@@ -4984,7 +4990,7 @@ class ProcessXor(Subconstruct):
     def _build(self, obj, stream, context, path):
         pad = evaluate(self.padfunc, context)
         if not isinstance(pad, (integertypes, bytestringtype)):
-            raise StringError("ProcessXor needs integer or bytes pad")
+            raise StringError("ProcessXor needs integer or bytes pad", path=path)
         if isinstance(pad, bytestringtype) and len(pad) == 1:
             pad = byte2int(pad)
         stream2 = io.BytesIO()
@@ -5044,7 +5050,7 @@ class ProcessRotateLeft(Subconstruct):
         amount = evaluate(self.amount, context)
         group = evaluate(self.group, context)
         if group < 1:
-            raise RotationError("group size must be at least 1 to be valid")
+            raise RotationError("group size must be at least 1 to be valid", path=path)
 
         amount = amount % (group * 8)
         amount_bytes = amount // 8
@@ -5052,7 +5058,7 @@ class ProcessRotateLeft(Subconstruct):
         data_ints = bytes2integers(data)
 
         if len(data) % group != 0:
-            raise RotationError("data length must be a multiple of group size")
+            raise RotationError("data length must be a multiple of group size", path=path)
 
         if amount == 0:
             pass
@@ -5081,7 +5087,7 @@ class ProcessRotateLeft(Subconstruct):
         amount = evaluate(self.amount, context)
         group = evaluate(self.group, context)
         if group < 1:
-            raise RotationError("group size must be at least 1 to be valid")
+            raise RotationError("group size must be at least 1 to be valid", path=path)
 
         amount = -amount % (group * 8)
         amount_bytes = amount // 8
@@ -5091,7 +5097,7 @@ class ProcessRotateLeft(Subconstruct):
         data_ints = bytes2integers(data)
 
         if len(data) % group != 0:
-            raise RotationError("data length must be a multiple of group size")
+            raise RotationError("data length must be a multiple of group size", path=path)
 
         if amount == 0:
             pass
@@ -5171,9 +5177,12 @@ class Checksum(Construct):
         hash1 = self.checksumfield._parsereport(stream, context, path)
         hash2 = self.hashfunc(self.bytesfunc(context))
         if hash1 != hash2:
-            raise ChecksumError("wrong checksum, read %r, computed %r" % (
-                hash1 if not isinstance(hash1,bytestringtype) else binascii.hexlify(hash1),
-                hash2 if not isinstance(hash2,bytestringtype) else binascii.hexlify(hash2), ))
+            raise ChecksumError(
+                "wrong checksum, read %r, computed %r" % (
+                    hash1 if not isinstance(hash1,bytestringtype) else binascii.hexlify(hash1),
+                    hash2 if not isinstance(hash2,bytestringtype) else binascii.hexlify(hash2), ),
+                path=path
+            )
         return hash1
 
     def _build(self, obj, stream, context, path):
@@ -5453,7 +5462,7 @@ class LazyStruct(Construct):
         try:
             return sum(sc._sizeof(context, path) for sc in self.subcons)
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
 
 
 class LazyListContainer(list):
@@ -5528,7 +5537,7 @@ class LazyArray(Subconstruct):
         if callable(count):
             count = count(context)
         if not 0 <= count:
-            raise RangeError("invalid count %s" % (count,))
+            raise RangeError("invalid count %s" % (count,), path=path)
         offset = stream_tell(stream, path)
         offsets = {0: offset}
         values = {}
@@ -5549,9 +5558,9 @@ class LazyArray(Subconstruct):
         if callable(count):
             count = count(context)
         if not 0 <= count:
-            raise RangeError("invalid count %s" % (count,))
+            raise RangeError("invalid count %s" % (count,), path=path)
         if not len(obj) == count:
-            raise RangeError("expected %d elements, found %d" % (count, len(obj)))
+            raise RangeError("expected %d elements, found %d" % (count, len(obj)), path=path)
         retlist = ListContainer()
         for i,e in enumerate(obj):
             context._index = i
@@ -5566,7 +5575,7 @@ class LazyArray(Subconstruct):
             if callable(count):
                 count = count(context)
         except (KeyError, AttributeError):
-            raise SizeofError("cannot calculate size, key not found in context")
+            raise SizeofError("cannot calculate size, key not found in context", path=path)
         return count * self.subcon._sizeof(context, path)
 
 
