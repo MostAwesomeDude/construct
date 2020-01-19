@@ -128,7 +128,7 @@ Thanks to blapid, containers can also be searched. Structs nested within Structs
 [1, 2]
 
 
-Nesting and embedding
+Nesting
 ---------------------
 
 Structs can be nested. Structs can contain other Structs, as well as any other constructs. Here's how it's done:
@@ -144,20 +144,6 @@ Container(inner=Container(data=b'1234'))
 Container:
     inner = Container:
         data = b'1234'
-
-A Struct can be embedded into an enclosing Struct. This means that all fields of the embedded Struct get merged into the fields of the enclosing Struct. This is useful when you want to split a big Struct into multiple parts, and then combine them all into one Struct. If names are duplicated, consistency is not guaranteed (you should avoid that).
-
->>> outer = Struct(
-...     Embedded(Struct(
-...         "data" / Bytes(4),
-...     )),
-... )
->>> outer.parse(b"1234")
-Container(data=b'1234')
-
-Embedded structs should not be named, see :class:`~construct.core.Embedded` .
-
-Be warned, that using Embedding is highly NOT recommended. It doesnt work quite the way you hope it does, and most Construct classes are not compatible with it. You should be nesting instead.
 
 
 Hidden context entries

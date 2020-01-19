@@ -187,28 +187,9 @@ def hyphenatelist(l):
     return [hyphenatedict(d) for d in l]
 
 
-def mergefields(*subcons):
-    def select(sc):
-        if isinstance(sc, (Renamed, Embedded)):
-            return select(sc.subcon)
-        if isinstance(sc, (Struct, Sequence, FocusedSeq, Union, LazyStruct)):
-            return sc.subcons
-        raise ConstructError("Embedding only works with: Struct Sequence FocusedSeq Union LazyStruct")
-
-    result = []
-    for sc in subcons:
-        if sc.flagembedded:
-            result.extend(select(sc))
-        else:
-            result.append(sc)
-    return result
-
-
 def extractfield(sc):
     if isinstance(sc, Renamed):
         return extractfield(sc.subcon)
-    if isinstance(sc, Embedded):
-        raise ConstructError("Embedded itself is not parsable")
     return sc
 
 
@@ -261,11 +242,10 @@ class Construct(object):
         self.name = None
         self.docs = ""
         self.flagbuildnone = False
-        self.flagembedded = False
         self.parsed = None
 
     def __repr__(self):
-        return "<%s%s%s%s%s>" % (self.__class__.__name__, " "+self.name if self.name else "", " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "", " +docs" if self.docs else "", )
+        return "<%s%s%s%s>" % (self.__class__.__name__, " "+self.name if self.name else "", " +nonbuild" if self.flagbuildnone else "", " +docs" if self.docs else "", )
 
     def __getstate__(self):
         attrs = {}
@@ -691,10 +671,9 @@ class Subconstruct(Construct):
         super(Subconstruct, self).__init__()
         self.subcon = subcon
         self.flagbuildnone = subcon.flagbuildnone
-        self.flagembedded = subcon.flagembedded
 
     def __repr__(self):
-        return "<%s%s%s%s%s %s>" % (self.__class__.__name__, " "+self.name if self.name else "", " +nonbuild" if self.flagbuildnone else "", " +embedded" if self.flagembedded else "", " +docs" if self.docs else "", repr(self.subcon), )
+        return "<%s%s%s%s %s>" % (self.__class__.__name__, " "+self.name if self.name else "", " +nonbuild" if self.flagbuildnone else "", " +docs" if self.docs else "", repr(self.subcon), )
 
     def _parse(self, stream, context, path):
         return self.subcon._parsereport(stream, context, path)
@@ -1921,15 +1900,13 @@ class Struct(Construct):
     r"""
     Sequence of usually named constructs, similar to structs in C. The members are parsed and build in the order they are defined. If a member is anonymous (its name is None) then it gets parsed and the value discarded, or it gets build from nothing (from None).
 
-    Some fields do not need to be named, since they are built without value anyway. See: Const Padding Check Error Pass Terminated Seek Tell for examples of such fields. :class:`~construct.core.Embedded` fields do not need to (and should not) be named.
+    Some fields do not need to be named, since they are built without value anyway. See: Const Padding Check Error Pass Terminated Seek Tell for examples of such fields. 
 
     Operator + can also be used to make Structs (although not recommended).
 
     Parses into a Container (dict with attribute and key access) where keys match subcon names. Builds from a dict (not necessarily a Container) where each member gets a value from the dict matching the subcon name. If field has build-from-none flag, it gets build even when there is no matching entry in the dict. Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
-
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcon members are merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union LazyStruct, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
 
@@ -1980,8 +1957,7 @@ class Struct(Construct):
 
     def __init__(self, *subcons, **subconskw):
         super(Struct, self).__init__()
-        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
-        self.subcons = mergefields(*subcons)
+        self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
 
@@ -2064,15 +2040,13 @@ class Struct(Construct):
 
 class Sequence(Construct):
     r"""
-    Sequence of usually un-named constructs. The members are parsed and build in the order they are defined. If a member is named, its parsed value gets inserted into the context. This allows using members that refer to previous members. :class:`~construct.core.Embedded` fields do not need to (and should not) be named.
+    Sequence of usually un-named constructs. The members are parsed and build in the order they are defined. If a member is named, its parsed value gets inserted into the context. This allows using members that refer to previous members.
 
     Operator >> can also be used to make Sequences (although not recommended).
 
     Parses into a ListContainer (list with pretty-printing) where values are in same order as subcons. Builds from a list (not necessarily a ListContainer) where each subcon is given the element at respective position. Size is the sum of all subcon sizes, unless any subcon raises SizeofError.
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
-
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcon members are merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union LazyStruct, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
 
@@ -2115,8 +2089,7 @@ class Sequence(Construct):
 
     def __init__(self, *subcons, **subconskw):
         super(Sequence, self).__init__()
-        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
-        self.subcons = mergefields(*subcons)
+        self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
 
@@ -2428,34 +2401,6 @@ class RepeatUntil(Subconstruct):
 #===============================================================================
 # specials
 #===============================================================================
-class Embedded(Subconstruct):
-    r"""
-    Special wrapper that allows outer multiple-subcons construct to merge fields from another multiple-subcons construct. Embedded does not change a field, only wraps it like a candy with a flag.
-
-    .. warning::
-
-        Can only be used between Struct Sequence FocusedSeq Union LazyStruct, for example Struct can embed fields from a Sequence or vice versa. Its not possible to embed IfThenElse Switch RawCopy or otherwise.
-
-    Parsing building and sizeof are deferred to subcon.
-
-    :param subcon: Construct instance, its fields to embed inside a struct or sequence
-
-    Example::
-
-        >>> outer = Struct(
-        ...     Embedded(Struct(
-        ...         "data" / Bytes(4),
-        ...     )),
-        ... )
-        >>> outer.parse(b"1234")
-        Container(data=b'1234')
-    """
-
-    def __init__(self, subcon):
-        super(Embedded, self).__init__(subcon)
-        self.flagembedded = True
-
-
 class Renamed(Subconstruct):
     r"""
     Special wrapper that allows a Struct (or other similar class) to see a field as having a name (or a different name) or having a parsed hook. Library classes do not have names (its None). Renamed does not change a field, only wraps it like a candy with a label. Used internally by / and * operators.
@@ -2862,8 +2807,6 @@ class FocusedSeq(Construct):
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
 
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcon members are merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union LazyStruct, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
-
     This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
 
     This class exposes subcons in the context. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) within other inlined fields using the context. Note that you need to use a lambda (`this` expression is not supported). Also note that compiler does not support this feature. See examples.
@@ -2908,8 +2851,7 @@ class FocusedSeq(Construct):
     def __init__(self, parsebuildfrom, *subcons, **subconskw):
         super(FocusedSeq, self).__init__()
         self.parsebuildfrom = parsebuildfrom
-        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
-        self.subcons = mergefields(*subcons)
+        self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
 
     def __getattr__(self, name):
@@ -3294,13 +3236,11 @@ class HexDump(Adapter):
 #===============================================================================
 class Union(Construct):
     r"""
-    Treats the same data as multiple constructs (similar to C union) so you can look at the data in multiple views. Fields are usually named (so parsed values are inserted into dictionary under same name). :class:`~construct.core.Embedded` fields do not need to (and should not) be named.
+    Treats the same data as multiple constructs (similar to C union) so you can look at the data in multiple views. Fields are usually named (so parsed values are inserted into dictionary under same name).
 
     Parses subcons in sequence, and reverts the stream back to original position after each subcon. Afterwards, advances the stream by selected subcon. Builds from first subcon that has a matching key in given dict. Size is undefined (because parsefrom is not used for building).
 
     This class does context nesting, meaning its members are given access to a new dictionary where the "_" entry points to the outer context. When parsing, each member gets parsed and subcon parse return value is inserted into context under matching key only if the member was named. When building, the matching entry gets inserted into context before subcon gets build, and if subcon build returns a new value (not None) that gets replaced in the context.
-
-    This class supports embedding. :class:`~construct.core.Embedded` semantics dictate, that during instance creation (in ctor), each field is checked for embedded flag, and its subcon members are merged. This changes behavior of some code examples. Only few classes are supported: Struct Sequence FocusedSeq Union LazyStruct, although those can be used interchangably (a Struct can embed a Sequence, or rather its members).
 
     This class exposes subcons as attributes. You can refer to subcons that were inlined (and therefore do not exist as variable in the namespace) by accessing the struct attributes, under same name. Also note that compiler does not support this feature. See examples.
 
@@ -3354,8 +3294,7 @@ class Union(Construct):
             raise UnionError("parsefrom should be either: None int str context-function")
         super(Union, self).__init__()
         self.parsefrom = parsefrom
-        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
-        self.subcons = mergefields(*subcons)
+        self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
 
     def __getattr__(self, name):
@@ -3492,7 +3431,6 @@ class Select(Construct):
         super(Select, self).__init__()
         self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.flagbuildnone = any(sc.flagbuildnone for sc in self.subcons)
-        self.flagembedded = all(sc.flagembedded for sc in self.subcons)
 
     def _parse(self, stream, context, path):
         for sc in self.subcons:
@@ -5355,8 +5293,7 @@ class LazyStruct(Construct):
 
     def __init__(self, *subcons, **subconskw):
         super(LazyStruct, self).__init__()
-        subcons = list(subcons) + list(k/v for k,v in subconskw.items())
-        self.subcons = mergefields(*subcons)
+        self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
         self._subconsindexes = Container((sc.name,i) for i,sc in enumerate(self.subcons) if sc.name)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)

@@ -52,11 +52,8 @@ example = Struct(
     "mapping" / Mapping(Byte, {"zero":0}),
 
     "struct" / Struct("field" / Byte),
-    "embeddedstruct" / Embedded(Struct("embeddedfield1" / Byte)),
     "sequence1" / Sequence(Byte, Byte),
     "sequence2" / Sequence("num1" / Byte, "num2" / Byte),
-    "embeddedsequence1" / Sequence(Embedded(Sequence(Byte, Byte))),
-    "embeddedsequence2" / Sequence(Embedded(Sequence("num1" / Byte, "num2" / Byte))),
 
     "array1" / Array(5, Byte),
     "array2" / Array(this.num, Byte),
@@ -97,7 +94,6 @@ example = Struct(
     "union2" / Union(1, "char"/Byte, "short"/Short, "int"/Int),
     "union3" / Union(0, "char1"/Byte, "char2"/Byte, "char3"/Byte),
     "union4" / Union("char1", "char1"/Byte, "char2"/Byte, "char3"/Byte),
-    "unionembedded" / Union(None, Embedded(Struct("char"/Byte))),
     "select" / Select(Byte, CString("ascii")),
     "optional" / Optional(Byte),
     "if1" / If(this.num == 0, Byte),

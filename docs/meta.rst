@@ -44,7 +44,7 @@ Of course a function can return anything (it does not need to depend on the cont
 
 
 
-Nesting and embedding
+Nesting
 ============================
 
 And here's how we use the special "_" name to get to the upper container in a nested containers situation (which happens when parsing nested Structs). Notice that `length1` is on different (upper) level than `length2`, therefore it exists within a different up-level containter.
@@ -70,19 +70,6 @@ b'\x00\x00\x00\x00'
 ... )
 >>> d.parse(bytes(100), n=4)
 Container(data=b'\x00\x00\x00\x00')
-
-Embedding also complicates using the context. Notice that `count` is on same level as `data` because embedding simply "levels the plainfield".
-
->>> outer = Struct(
-...     "count" / Byte,
-...     Embedded(Struct(
-...         "data" / Bytes(this.count),
-...     )),
-... )
->>> outer.parse(b"\x041234")
-Container(count=4, data=b'1234')
-
-I cannot stress it enough: embedding is just plain doing-it-wrong and should not be used, unless really really needed.
 
 
 Refering to inlined constructs

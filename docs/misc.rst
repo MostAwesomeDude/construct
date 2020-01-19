@@ -6,23 +6,6 @@ Miscellaneous
 Special
 =============
 
-Embedded
---------
-
-Special wrapper that allows outer multiple-subcons construct to merge fields from another multiple-subcons construct. Embedded does not change a field, only wraps it like a candy with a flag.
-
-.. warning::
-
-    Can only be used between Struct Sequence FocusedSeq Union LazyStruct, for example Struct can embed fields from a Sequence or vice versa. Its not possible to embed IfThenElse Switch RawCopy or otherwise.
-
->>> outer = Struct(
-...     Embedded(Struct(
-...         "data" / Bytes(4),
-...     )),
-... )
->>> outer.parse(b"1234")
-Container(data=b'1234')
-
 Renamed
 -------
 

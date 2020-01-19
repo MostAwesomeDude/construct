@@ -357,11 +357,9 @@ def test_struct():
     d = Struct(Computed(7), Const(b"JPEG"), Pass, Terminated)
     assert d.build(None) == d.build({})
 
-def test_struct_nested_embedded():
+def test_struct_nested():
     d = Struct("a"/Byte, "b"/Int16ub, "inner"/Struct("c"/Byte, "d"/Byte))
     common(d, b"\x01\x00\x02\x03\x04", Container(a=1,b=2,inner=Container(c=3,d=4)), 5)
-    d = Struct("a"/Byte, "b"/Int16ub, Embedded("inner"/Struct("c"/Byte, "d"/Byte)))
-    common(d, b"\x01\x00\x02\x03\x04", Container(a=1,b=2,c=3,d=4), 5)
 
 @xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_struct_kwctor():
@@ -380,18 +378,7 @@ def test_struct_proper_context():
         "c"/Computed(this.x+3),
         "d"/Computed(this.inner.y+4),
     )
-    d2 = Struct(
-        "x"/Byte,
-        "inner"/Embedded(Struct(
-            "y"/Byte,
-            "a"/Computed(this.x+1),  # important
-            "b"/Computed(this.y+2),  # important
-        )),
-        "c"/Computed(this.x+3),
-        "d"/Computed(this.y+4),
-    )
     assert d1.parse(b"\x01\x0f") == Container(x=1)(inner=Container(y=15)(a=2)(b=17))(c=4)(d=19)
-    assert d2.parse(b"\x01\x0f") == Container(x=1)(y=15)(a=2)(b=17)(c=4)(d=19)
 
 def test_struct_sizeof_context_nesting():
     st = Struct(
@@ -406,20 +393,6 @@ def test_struct_sizeof_context_nesting():
     )
     st.sizeof()
 
-def test_struct_issue_566():
-    inner = Struct(
-        Embedded(Struct(
-            "b" / Byte,
-        )),
-        "c" / If(this._.a > 0, Byte),
-    )
-    outer = Struct(
-        "a" / Byte,
-        "inner" / inner,
-    )
-    outer.parse(b'\x01\x02\x03') == Container(a=1)(inner=Container(b=2)(c=3))
-    outer.build(Container(a=1)(inner=Container(b=2)(c=3))) == b'\x01\x02\x80\x03\x04'
-
 def test_sequence():
     common(Sequence(), b"", [], 0)
     common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
@@ -427,9 +400,8 @@ def test_sequence():
     d = Sequence(Computed(7), Const(b"JPEG"), Pass, Terminated)
     assert d.build(None) == d.build([None,None,None,None])
 
-def test_sequence_nested_embedded():
+def test_sequence_nested():
     common(Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)), b"\x01\x00\x02\x03\x04", [1,2,[3,4]], 5)
-    common(Sequence(Int8ub, Int16ub, Embedded(Sequence(Int8ub, Int8ub))), b"\x01\x00\x02\x03\x04", [1,2,3,4], 5)
 
 def test_array():
     common(Byte[0], b"", [], 0)
@@ -712,17 +684,6 @@ def test_union():
 
     # regression check, so first subcon is not parsefrom by accident
     assert raises(Union, Byte, VarInt) == UnionError
-
-def test_union_embedded():
-    d = Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub))) >> Byte
-    assert d.parse(b"\x01\x02\x03") == [Container(a=0x0102, b=0x01, c=0x01), 0x01]
-
-    d = Union(None, "a"/Int16ub, Embedded(Struct("b"/Int8ub, "c"/Int8ub)))
-    assert d.parse(b"\x01\x02") == Container(a=0x0102, b=0x01, c=0x01)
-    assert d.build(dict(a=0x0102)) == b"\x01\x02"
-    assert d.build(dict(b=0x01)) == b"\x01"
-    assert d.build(dict(c=0x01)) == b"\x01"
-    assert raises(d.build, dict()) == UnionError
 
 @xfail(not supportskwordered, reason="ordered kw was introduced in 3.6")
 def test_union_kwctor():
@@ -1447,11 +1408,9 @@ def test_operators():
     common(Int8ub >> Int16ub >> Int32ub, b"\x01\x00\x02\x00\x00\x00\x03", [1,2,3], 7)
     common(Int8ub[2] >> Int16ub[2], b"\x01\x02\x00\x03\x00\x04", [[1,2],[3,4]], 6)
 
-    common(Sequence(Embedded(Sequence(Int8ub)), Embedded(Sequence(Int16ub)) ), b"\x01\x00\x02", [1,2], 3)
     common(Sequence(Int8ub) >> Sequence(Int16ub), b"\x01\x00\x02", [1,2], 3)
     common(Struct("count"/Byte, "items"/Byte[this.count], Pass, Terminated), b"\x03\x01\x02\x03", Container(count=3)(items=[1,2,3]), SizeofError)
     common("count"/Byte + "items"/Byte[this.count] + Pass + Terminated, b"\x03\x01\x02\x03", Container(count=3)(items=[1,2,3]), SizeofError)
-    common(Struct(Embedded(Struct(a=Byte)), Embedded(Struct(b=Byte)) ), b"\x01\x02", Container(a=1)(b=2), 2)
     common(Struct(a=Byte) + Struct(b=Byte), b"\x01\x02", Container(a=1)(b=2), 2)
 
     d = Byte * "description"
@@ -1493,17 +1452,6 @@ def test_from_issue_60():
     assert Header.build(dict(type=0, size=5)) == b"\x00\x05"
     assert Header.build(dict(type=1, size=5)) == b"\x01\x00\x05"
     assert Header.build(dict(type=2, size=5)) == b"\x02\x00\x00\x00\x05"
-
-    HeaderData = Struct(
-        Embedded(Header),
-        "data" / Bytes(lambda ctx: ctx.size),
-    )
-    assert HeaderData.parse(b"\x00\x0512345")             == Container(type=0)(size=5)(length=2)(data=b"12345")
-    assert HeaderData.parse(b"\x01\x00\x0512345")         == Container(type=1)(size=5)(length=3)(data=b"12345")
-    assert HeaderData.parse(b"\x02\x00\x00\x00\x0512345") == Container(type=2)(size=5)(length=5)(data=b"12345")
-    assert HeaderData.build(dict(type=0, size=5, data=b"12345")) == b"\x00\x0512345"
-    assert HeaderData.build(dict(type=1, size=5, data=b"12345")) == b"\x01\x00\x0512345"
-    assert HeaderData.build(dict(type=2, size=5, data=b"12345")) == b"\x02\x00\x00\x00\x0512345"
 
 def test_from_issue_171():
     attributes = BitStruct(
