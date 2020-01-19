@@ -7,3 +7,5 @@ Overall
 ==========
 
 Embedded and EmbeddedSwitch were permanently removed
+
+Exceptions always display path information
