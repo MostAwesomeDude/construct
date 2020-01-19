@@ -41,7 +41,7 @@ Construct
     <strong>Sticky</strong><br/>
     <br/>
 
-    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.9</a> was released in January 2018. It adds compiler feature (for better performance!), and other major upgrades. Documentation was overhauled (see Core API pages!). See Transition page.<br/>
+    <a class="reference external" href="https://github.com/construct/construct/releases">Version 2.10</a> was released in January 2020. It removes major neckpains (Embedded and EmbeddedSwitch). See Transition page.<br/>
     <br/>
 
     Happy to announce collaboration with <a class="reference external" href="http://kaitai.io/">Kaitai Struct</a>, a multi-platform binary parser. <br/>
