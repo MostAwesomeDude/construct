@@ -128,7 +128,7 @@ Thanks to blapid, containers can also be searched. Structs nested within Structs
 [1, 2]
 
 
-Nesting
+Nesting and embedding
 ---------------------
 
 Structs can be nested. Structs can contain other Structs, as well as any other constructs. Here's how it's done:
@@ -144,6 +144,8 @@ Container(inner=Container(data=b'1234'))
 Container:
     inner = Container:
         data = b'1234'
+
+It used to be that structs could have been embedded (flattened out). However, this created more problems than it solved so this feature was recently removed. Since Construct 2.10 its no longer possible to embed structs. You should, and always should have been, be nesting them just like in the example above.
 
 
 Hidden context entries
