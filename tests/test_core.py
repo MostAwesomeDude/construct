@@ -25,6 +25,12 @@ def test_bytes():
 def test_greedybytes():
     common(GreedyBytes, b"1234", b"1234", SizeofError)
 
+def test_bytes_issue_827():
+    d = Bytes(3)
+    assert d.build(bytearray(b'\x01\x02\x03')) == b'\x01\x02\x03'
+    d = GreedyBytes
+    assert d.build(bytearray(b'\x01\x02\x03')) == b'\x01\x02\x03'
+
 def test_bitwise():
     common(Bitwise(Bytes(8)), b"\xff", b"\x01\x01\x01\x01\x01\x01\x01\x01", 1)
     common(Bitwise(Array(8,Bit)), b"\xff", [1,1,1,1,1,1,1,1], 1)

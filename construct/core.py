@@ -801,6 +801,8 @@ class Bytes(Construct):
 
     Parses into a bytes (of given length). Builds into the stream directly (but checks that given object matches specified length). Can also build from an integer for convenience (although BytesInteger should be used instead). Size is the specified length.
 
+    Can also build from a bytearray.
+
     :param length: integer or context lambda
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
@@ -841,6 +843,7 @@ class Bytes(Construct):
     def _build(self, obj, stream, context, path):
         length = self.length(context) if callable(self.length) else self.length
         data = integer2bytes(obj, length) if isinstance(obj, int) else obj
+        data = bytes(data) if type(data) is bytearray else data
         stream_write(stream, data, length, path)
         return data
 
@@ -864,6 +867,8 @@ class GreedyBytes(Construct):
 
     Parses the stream to the end. Builds into the stream directly (without checks). Size is undefined.
 
+    Can also build from a bytearray.
+
     :raises StreamError: stream failed when reading until EOF
     :raises StringError: building from non-bytes value, perhaps unicode
 
@@ -879,8 +884,9 @@ class GreedyBytes(Construct):
         return stream_read_entire(stream, path)
 
     def _build(self, obj, stream, context, path):
-        stream_write(stream, obj, len(obj), path)
-        return obj
+        data = bytes(obj) if type(obj) is bytearray else obj
+        stream_write(stream, data, len(data), path)
+        return data
 
     def _emitparse(self, code):
         return "io.read()"
