@@ -64,6 +64,12 @@ Bytes can also be consumed until end of stream. Tunneling is discussed in a late
 >>> GreedyBytes.parse(b"39217839219...")
 b'39217839219...'
 
+Since recently, you can also build from bytearrays too:
+
+>>> d = GreedyBytes or Bytes(5)
+>>> d.build(bytearray(b'12345'))
+b'12345'
+
 
 Strings
 ========
