@@ -148,6 +148,31 @@ Container:
 It used to be that structs could have been embedded (flattened out). However, this created more problems than it solved so this feature was recently removed. Since Construct 2.10 its no longer possible to embed structs. You should, and always should have been, be nesting them just like in the example above.
 
 
+Showing path information in exceptions
+----------------------------------------
+
+If your construct throws an exception, for any reason, there should be a "path information" attached to it. In the example below, the "(parsing) -> a -> b -> c -> foo" field throws an exception due to lack of bytes to consume. You can see that in the exception message.
+
+::
+
+    >>> x = Struct(
+    ...     'foo' / Bytes(1),
+    ...     'a' / Struct(
+    ...         'foo' / Bytes(1),
+    ...         'b' / Struct(
+    ...             'foo' / Bytes(1),
+    ...             'c' / Struct(
+    ...                 'foo' / Bytes(1),
+    ...                 'bar' / Bytes(1)
+    ...             )
+    ...         )
+    ...     )
+    ... )
+    >>> x.parse(b'\xff' * 3)
+    construct.core.StreamError: Error in path (parsing) -> a -> b -> c -> foo
+    stream read less than specified amount, expected 1, found 0
+
+
 Hidden context entries
 ----------------------
 
