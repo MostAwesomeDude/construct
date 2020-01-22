@@ -94,7 +94,7 @@ When there is an array separated from its length field, the Rebuild wrapper can 
 >>> st.build(dict(items=[1,2,3]))
 b'\x03\x01\x02\x03'
 
-When the length field is directly before the items, `PrefixedArray` can be used instead:
+When the count field is directly before the items, `PrefixedArray` can be used instead:
 
 >>> d = PrefixedArray(Byte, Byte)
 >>> d.build([1,2,3])
