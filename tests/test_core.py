@@ -2086,3 +2086,18 @@ def test_buildfile_issue_737():
     Byte.build_file(Byte.parse(b'\xff'), 'out')
     assert Byte.parse_file('out') == 255
 
+@xfail(reason="Context is not properly processed, see #771 and PR #784")
+def test_struct_issue_771():
+    spec = Struct(
+        'a' / Int32ul,
+        'b' / Struct(
+            'count' / Int32ul,
+            'entries' / Byte[this.count]
+        )
+    )
+    data = b'\x01\x00\x00\x00\x02\x00\x00\x00\x0a\x0b'
+    info = spec.parse(data)
+    assert info == {'a': 1, 'b': {'count': 2, 'entries': [0x0a, 0x0b]}}
+    assert spec.build(info) == data
+    assert spec.sizeof(**info) == 10
+
