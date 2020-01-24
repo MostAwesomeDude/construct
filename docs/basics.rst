@@ -200,24 +200,28 @@ There are few additional, hidden entries in the context. They are mostly used in
             z = 2
             _parsing = True
             _building = False
+            _sizing = False
             _params = <recursion detected>
         _params = Container: 
             z = 2
             _parsing = True
             _building = False
+            _sizing = False
             _params = <recursion detected>
         _root = <recursion detected>
         _parsing = True
         _building = False
+        _sizing = False
         _subcons = Container: 
             x = <Renamed x +nonbuild <Computed +nonbuild>>
             inner = <Renamed inner +nonbuild <Struct +nonbuild>>
-        _io = <_io.BytesIO object at 0x7fa29d7f9938>
+        _io = <_io.BytesIO object at 0x7fd91e7313b8>
+        _index = None
         x = 1
         inner = Container: 
-            _io = <_io.BytesIO object at 0x7fa29d7f9938>
+            _io = <_io.BytesIO object at 0x7fd91e7313b8>
             inner2 = Container: 
-                _io = <_io.BytesIO object at 0x7fa29d7f9938>
+                _io = <_io.BytesIO object at 0x7fd91e7313b8>
                 x = 1
                 z = 2
                 zz = 2
@@ -230,9 +234,10 @@ Explanation as follows:
 * `_` means up-level in the context stack, every Struct does context nesting
 * `_params` is the level on which externally provided values reside, those passed as parse() keyword arguments
 * `_root` is the outer-most Struct, this entry might not exist if you do not use Structs
-* `_parsing _building` are boolean values that are set by `parse build sizeof` public API methods
+* `_parsing _building _sizing` are boolean values that are set by `parse build sizeof` public API methods
 * `_subcons` is a list of Construct instances, this Struct members
 * `_io` is a memory-stream or file-stream or whatever was provided to `parse_stream` public API method
+* `_index` is an indexing number used eg. in Arrays
 * (parsed members are also added under matching names)
 
 
