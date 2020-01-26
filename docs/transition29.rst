@@ -126,6 +126,8 @@ HexString removed
 Exceptions
 -------------
 
+Exceptions always display path information
+
 FieldError was replaced with StreamError (raised when stream returns less than requested amount) and FormatFieldError (raised by FormatField class, for example if building Float from non-float value and struct.pack complains).
 
 StreamError can be raised by most classes, when the stream is not seekable or tellable
