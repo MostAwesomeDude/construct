@@ -2959,7 +2959,7 @@ class Numpy(Construct):
     Parses using `numpy.load() <https://docs.scipy.org/doc/numpy/reference/generated/numpy.load.html#numpy.load>`_ and builds using `numpy.save() <https://docs.scipy.org/doc/numpy/reference/generated/numpy.save.html#numpy.save>`_ functions, using Numpy binary protocol. Size is undefined.
 
     :raises ImportError: numpy could not be imported during parsing or building
-    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises ValueError: could not read enough bytes, or so
 
     Can propagate numpy.load() and numpy.save() exceptions.
 

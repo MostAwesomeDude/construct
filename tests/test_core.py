@@ -579,6 +579,11 @@ def test_numpy():
     obj = numpy.array([1,2,3], dtype=numpy.int64)
     assert numpy.array_equal(Numpy.parse(Numpy.build(obj)), obj)
 
+@xfail(reason="docs stated that it throws StreamError, not true at all")
+def test_numpy_error():
+    import numpy, io
+    numpy.load(io.BytesIO(b""))
+
 def test_namedtuple():
     coord = collections.namedtuple("coord", "x y z")
     d = NamedTuple("coord", "x y z", Array(3, Byte))
