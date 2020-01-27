@@ -5,31 +5,6 @@ PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PYPY = '__pypy__' in sys.builtin_module_names
 
-try:
-    import numpy
-    supportsnumpy = True
-except ImportError:
-    supportsnumpy = False
-try:
-    import ruamel.yaml
-    assert PY3
-    supportsksyexport = True
-except (ImportError, AssertionError):
-    supportsksyexport = False
-try:
-    from enum import IntEnum
-    supportsintenum = True
-except ImportError:
-    supportsintenum = False
-try:
-    from enum import IntFlag
-    supportsintflag = True
-except ImportError:
-    supportsintflag = False
-
-supportskwordered = PY >= (3,6) or PYPY
-supportshalffloats = PY >= (3,6)
-
 
 stringtypes = (bytes, str, )
 integertypes = (int, )
@@ -52,14 +27,6 @@ def str2bytes(string):
 def bytes2str(string):
     """Converts b'...' string into '...' string. On PY2 they are equivalent. On PY3 its utf8 decoded."""
     return string.decode("utf8")
-
-def str2unicode(string):
-    """Converts '...' string into u'...' string. On PY2 its utf8 encoded. On PY3 they are equivalent."""
-    return string
-
-def unicode2str(string):
-    """Converts u'...' string into '...' string. On PY2 its utf8 decoded. On PY3 they are equivalent."""
-    return string
 
 ITERATEBYTES_CACHE = {i:bytes((i,)) for i in range(256)}
 def iteratebytes(data):

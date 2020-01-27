@@ -417,20 +417,17 @@ def test_class_pickled_build(benchmark):
         data = b"(lp0\n(taI1\naF2.3\na(dp1\na(lp2\naS'1'\np3\naS''\np4\na."
     benchmark(d.build, d.parse(data))
 
-@xfail(not supportsnumpy, raises=ImportError, reason="numpy not installed?")
 def test_class_numpy_parse(benchmark):
     d = Numpy
     data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
     benchmark(d.parse, data)
 
-@xfail(not supportsnumpy, raises=ImportError, reason="numpy not installed?")
 def test_class_numpy_parse_compiled(benchmark):
     d = Numpy
     d = d.compile()
     data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"
     benchmark(d.parse, data)
 
-@xfail(not supportsnumpy, raises=ImportError, reason="numpy not installed?")
 def test_class_numpy_build(benchmark):
     d = Numpy
     data = b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"

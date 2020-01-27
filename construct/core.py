@@ -1012,9 +1012,8 @@ class FormatField(Construct):
 
         super(FormatField, self).__init__()
         self.fmtstr = endianity+format
-        if format != 'e' or supportshalffloats:
-            self.length = struct.calcsize(endianity+format)
-            self.packer = struct.Struct(endianity+format)
+        self.length = struct.calcsize(endianity+format)
+        self.packer = struct.Struct(endianity+format)
 
     def _parse(self, stream, context, path):
         data = stream_read(stream, self.length, path)

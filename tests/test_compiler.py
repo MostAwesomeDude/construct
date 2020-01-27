@@ -77,7 +77,7 @@ example = Struct(
     "pickled_data" / Computed(b"(lp0\n(taI1\naF2.3\na(dp1\na(lp2\naS'1'\np3\naS''\np4\na."),
     "pickled" / RestreamData(this.pickled_data, Pickled),
     "numpy_data" / Computed(b"\x93NUMPY\x01\x00F\x00{'descr': '<i8', 'fortran_order': False, 'shape': (3,), }            \n\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00"),
-    "numpy1" / If(supportsnumpy, RestreamData(this.numpy_data, Numpy)),
+    "numpy1" / RestreamData(this.numpy_data, Numpy),
     "namedtuple1" / NamedTuple("coord", "x y z", Byte[3]),
     "namedtuple2" / RestreamData(b"\x00\x00\x00", NamedTuple("coord", "x y z", GreedyRange(Byte))),
     "namedtuple3" / NamedTuple("coord", "x y z", Byte >> Byte >> Byte),
