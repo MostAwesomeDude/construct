@@ -16,6 +16,7 @@ setup(
     url = "http://construct.readthedocs.org",
     author = "Arkadiusz Bulski, Tomer Filiba, Corbin Simpson",
     author_email = "arek.bulski@gmail.com, tomerfiliba@gmail.com, MostAwesomeDude@gmail.com",
+    python_requires = ">=3.6",
     install_requires = [],
     extras_require = {
         "extras": [
