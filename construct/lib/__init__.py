@@ -8,7 +8,6 @@ __all__ = [
     'bits2bytes',
     'bits2integer',
     'byte2int',
-    'bytes',
     'bytes2bits',
     'bytes2integer',
     'bytes2integers',

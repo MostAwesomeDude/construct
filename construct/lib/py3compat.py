@@ -51,9 +51,6 @@ def trimstring(data):
     if isinstance(data, str):
         return repr(data)
 
-import builtins
-bytes = builtins.bytes
-
 def integers2bytes(ints):
     """Converts integer generator into bytes."""
     return bytes(ints)
