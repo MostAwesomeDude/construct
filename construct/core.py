@@ -987,7 +987,7 @@ class FormatField(Construct):
     Parses into an integer. Builds from an integer into specified byte count and endianness. Size is determined by `struct` module according to specified format string.
 
     :param endianity: string, character like: < > =
-    :param format: string, character like: f d B H L Q b h l q
+    :param format: string, character like: f d B H L Q b h l q e
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises FormatFieldError: wrong format string, or struct.(un)pack complained about the value
