@@ -1,4 +1,4 @@
-Construct 2.9
+Construct 2.10
 ===================
 
 Construct is a powerful **declarative** and **symmetrical** parser and builder for binary data.
