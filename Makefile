@@ -26,6 +26,7 @@ installdeps:
 	apt-get install python3.6 python3-sphinx --upgrade
 	python3.6 -m pip install pytest pytest-benchmark pytest-cov twine --upgrade
 	python3.6 -m pip install enum34 numpy arrow ruamel.yaml --upgrade
+
 version:
 	./version-increment
 
