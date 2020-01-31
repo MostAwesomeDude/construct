@@ -11,14 +11,15 @@ integertypes = (int, )
 unicodestringtype = str
 bytestringtype = bytes
 
-INT2BYTE_CACHE = {i:bytes((i,)) for i in range(256)}
+INT2BYTE_CACHE = {i:bytes([i]) for i in range(256)}
 def int2byte(character):
     """Converts (0 through 255) integer into b'...' character."""
     return INT2BYTE_CACHE[character]
 
+BYTE2INT_CACHE = {bytes([i]):i for i in range(256)}
 def byte2int(character):
     """Converts b'...' character into (0 through 255) integer."""
-    return ord(character)
+    return BYTE2INT_CACHE[character]
 
 def str2bytes(string):
     """Converts '...' string into b'...' string. On PY2 they are equivalent. On PY3 its utf8 encoded."""
@@ -28,7 +29,7 @@ def bytes2str(string):
     """Converts b'...' string into '...' string. On PY2 they are equivalent. On PY3 its utf8 decoded."""
     return string.decode("utf8")
 
-ITERATEBYTES_CACHE = {i:bytes((i,)) for i in range(256)}
+ITERATEBYTES_CACHE = {i:bytes([i]) for i in range(256)}
 def iteratebytes(data):
     """Iterates though b'...' string yielding b'...' characters."""
     return (ITERATEBYTES_CACHE[i] for i in data)
