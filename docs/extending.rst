@@ -70,7 +70,6 @@ Deriving from class Subconstruct, these wrap an inner construct, inheriting it's
             self.name = subcon.name
             self.subcon = subcon
             self.flagbuildnone = subcon.flagbuildnone
-            self.flagembedded = subcon.flagembedded
 
         def _parse(self, stream, context, path):
             obj = self.subcon._parse(stream, context, path)
