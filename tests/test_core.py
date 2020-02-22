@@ -1157,6 +1157,49 @@ def test_checksum_nonbytes_issue_323():
     assert st.parse(b"\x00\x00\x00") == Container(vals=[0, 0])(checksum=0)
     assert raises(st.parse, b"\x00\x00\x01") == ChecksumError
 
+def test_checksum_warnings_issue_841():
+
+    class ChecksumWarning(Warning):
+        pass
+    class Checksum2(Construct):
+        def __init__(self, checksumfield, hashfunc, bytesfunc):
+            super().__init__()
+            self.checksumfield = checksumfield
+            self.hashfunc = hashfunc
+            self.bytesfunc = bytesfunc
+            self.flagbuildnone = True
+
+        def _parse(self, stream, context, path):
+            hash1 = self.checksumfield._parsereport(stream, context, path)
+            hash2 = self.hashfunc(self.bytesfunc(context))
+            if hash1 != hash2:
+                import warnings
+                warnings.warn(
+                    "wrong checksum, read %r, computed %r, path %s" % (
+                        hash1 if not isinstance(hash1,bytestringtype) else binascii.hexlify(hash1),
+                        hash2 if not isinstance(hash2,bytestringtype) else binascii.hexlify(hash2), 
+                        path),
+                    ChecksumWarning
+                )
+            return hash1
+
+        def _build(self, obj, stream, context, path):
+            hash2 = self.hashfunc(self.bytesfunc(context))
+            self.checksumfield._build(hash2, stream, context, path)
+            return hash2
+
+        def _sizeof(self, context, path):
+            return self.checksumfield._sizeof(context, path)
+
+    d = Struct(
+        "fields" / RawCopy(Struct(
+            "a" / Byte,
+            "b" / Byte,
+        )),
+        "checksum" / Checksum2(Bytes(64), lambda data: hashlib.sha512(data).digest(), this.fields.data),
+    )
+    d.parse(bytes(66))
+
 def test_compressed_zlib():
     zeros = bytes(10000)
     d = Compressed(GreedyBytes, "zlib")
