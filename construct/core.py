@@ -351,7 +351,10 @@ class Construct(object):
         r"""
         Build an object into a closed binary file. See build().
         """
-        with open(filename, 'wb') as f:
+        # Open the file for reading as well as writing. This allows builders to
+        # read back the stream just written. For example. RawCopy does this.
+        # See issue #888.
+        with open(filename, 'w+b') as f:
             self.build_stream(obj, f, **contextkw)
 
     def _build(self, obj, stream, context, path):
