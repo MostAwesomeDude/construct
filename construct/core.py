@@ -86,8 +86,8 @@ def stream_read(stream, length, path):
         raise StreamError("length must be non-negative, found %s" % length, path=path)
     try:
         data = stream.read(length)
-    except Exception as e:
-        raise StreamError("stream.read() failed, requested %s bytes" % (length,), path=path) from e
+    except Exception:
+        raise StreamError("stream.read() failed, requested %s bytes" % (length,), path=path)
     if len(data) != length:
         raise StreamError("stream read less than specified amount, expected %d, found %d" % (length, len(data)), path=path)
     return data
