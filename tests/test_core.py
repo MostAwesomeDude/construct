@@ -935,8 +935,9 @@ def test_rawcopy_issue_888():
     # RawCopy._build may also attempt to read from the file, which won't work
     # if build_file opened the file for writing only.
     with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'test')
         d = RawCopy(Byte)
-        d.build_file(dict(value=0), filename=os.path.join(tmpdir, 'test'))
+        d.build_file(dict(value=0), filename=fname)
 
 def test_byteswapped():
     d = ByteSwapped(Bytes(5))
