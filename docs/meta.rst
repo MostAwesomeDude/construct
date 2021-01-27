@@ -213,4 +213,8 @@ Contains operator ``in`` cannot be used in this expressions, you have to use a l
 
 >>> lambda this: this.value in (1, 2, 3)
 
+Indexing (square brackets) do not work in this expressions. Use a lambda:
+
+>>> lambda this: this.list[this.index]
+
 Lambdas (unlike this expressions) are not compilable.
