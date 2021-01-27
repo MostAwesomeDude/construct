@@ -13,3 +13,5 @@ Bytes GreedyBytes can build from bytearrays (not just bytes)
 Embedded and EmbeddedSwitch were permanently removed
 
 Exceptions always display path information
+
+build_file() opens a file for both reading and writing
