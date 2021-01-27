@@ -64,7 +64,7 @@ Main documentation is at `readthedocs <http://construct.readthedocs.org>`_, whic
 
 Requirements
 --------------
-Construct should run on CPython 3.6 3.7 3.8 and PyPy 3.5 implementations. Recommended is newest CPython and PyPy because they support ordered keyword arguments, and also PyPy achieves much better performance. Therefore PyPy would be most recommended, despite the 3.5 version.
+Construct should run on CPython 3.6 3.7 3.8 and PyPy implementations. PyPy achieves much better performance. Therefore PyPy would be somewhat recommended.
 
 Following modules are needed only if you want to use certain features:
 

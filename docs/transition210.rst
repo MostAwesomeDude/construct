@@ -6,7 +6,7 @@ Transition to 2.10
 Overall
 ==========
 
-Dropped support for Python 2.7 and 3.5 (pypy 3.5 still supported)
+Dropped support for Python 2.7 and 3.5 (pypy is also supported)
 
 Bytes GreedyBytes can build from bytearrays (not just bytes)
 
