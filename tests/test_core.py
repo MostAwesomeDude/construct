@@ -930,6 +930,15 @@ def test_rawcopy_issue_358():
     d = Struct("a"/RawCopy(Byte), "check"/Check(this.a.value == 255))
     assert d.build(dict(a=dict(value=255))) == b"\xff"
 
+def test_rawcopy_issue_888():
+    # If you use build_file() on a RawCopy that has only a value defined, then
+    # RawCopy._build may also attempt to read from the file, which won't work
+    # if build_file opened the file for writing only.
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'test')
+        d = RawCopy(Byte)
+        d.build_file(dict(value=0), filename=fname)
+
 def test_byteswapped():
     d = ByteSwapped(Bytes(5))
     common(d, b"12345", b"54321", 5)

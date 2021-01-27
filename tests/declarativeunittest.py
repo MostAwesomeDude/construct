@@ -3,7 +3,7 @@ xfail = pytest.mark.xfail
 skip = pytest.mark.skip
 skipif = pytest.mark.skipif
 
-import os, math, random, collections, itertools, io, hashlib, binascii
+import os, math, random, collections, itertools, io, hashlib, binascii, tempfile
 
 from construct import *
 from construct.lib import *
