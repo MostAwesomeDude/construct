@@ -21,7 +21,7 @@ Few fields have aliases, Byte among integers and Single among floats.
     Short   <-->  Int16ub
     Int     <-->  Int32ub
     Long    <-->  Int64ub
-    Half    <-->  Float16b (Python 3.6 and above only)
+    Half    <-->  Float16b
     Single  <-->  Float32b
     Double  <-->  Float64b
 
@@ -30,7 +30,7 @@ Integers can also be variable-length encoded for compactness. Google invented a 
 >>> VarInt.build(1234567890)
 b'\xd2\x85\xd8\xcc\x04'
 
-Long integers (or those of particularly odd sizes) can be encoded using a fixed-sized `BytesInteger`. Here is a 128-bit integer.
+Long integers (or those of particularly odd sizes) can be encoded using a `BytesInteger`. Here is a 128-bit integer.
 
 >>> BytesInteger(16).build(255)
 b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff'
