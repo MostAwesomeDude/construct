@@ -26,6 +26,8 @@ Compiled classes only parse faster, building and sizeof defers to core classes
 
 Sizeof is applied during compilation (not during parsing and building)
 
+Lambdas (unlike this expressions) are not compilable.
+
 Exceptions do not include `path` information
 
 Struct Sequence FocusedSeq Union LazyStruct do not support `_subcons _stream` context entries
