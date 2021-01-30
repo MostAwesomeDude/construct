@@ -1,18 +1,8 @@
-import sys
-sys.path = [".."] + sys.path  # Use construct from repo, not pip
-from construct import (
-    Construct,
-    byte2int,
-    int2byte,
-    stream_read,
-    stream_write,
-    integertypes,
-    IntegerError,
-    Struct,
-)
+from construct import *
+from construct.lib import *
 
 
-class Idx(Construct):
+class UTIndex(Construct):
     """
     Format for "Index" objects in Unreal Tournament 1999 packages.
     Index objects are variable length signed integers with the following structure:
@@ -80,30 +70,3 @@ class Idx(Construct):
             if not more_bit:
                 break
         return obj
-
-
-if __name__ == "__main__":
-    c = Struct("index" / Idx())
-    test_data = [
-        [0x0f, 0x40, 0xff],  # 0x0f
-        [0x4f, 0x40, 0xff],  # (0x40 << 6) + 0x0f = 0x100f
-        [0x8f, 0x40, 0xff],  # -0x0f
-        [0xcf, 0x40, 0xff],  # -((0x40 << 6) + 0x0f) = 0x100f
-        [0x4f, 0x80, 0x40, 0xff],  # (0x40 << 13) + 0x0f = 0x8000f
-        [0x4f, 0x80, 0x80, 0x40, 0xff],  # (0x40 << 20) + 0x0f = 0x400000f
-        [0x4f, 0x80, 0x80, 0x80, 0x8f, 0xff]  # 0x8f << 27 + 0x0f = 0x47800000f
-    ]
-    expected_values = [
-        0x0f,
-        0x100f,
-        -0x0f,
-        -0x100f,
-        0x8000f,
-        0x400000f,
-        0x47800000f
-    ]
-    for test, ev in zip(test_data, expected_values):
-        assert c.parse(bytes(test)).index == ev
-        new_bytes = c.build(dict(index=ev))
-        assert new_bytes == bytes(test[:len(new_bytes)])
-    print("All tests passed!")
