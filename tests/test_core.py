@@ -132,6 +132,15 @@ def test_formatfield_floats_randomized():
             if not math.isnan(d.parse(b)):
                 assert d.build(d.parse(b)) == b
 
+def test_formatfield_bool_issue_901():
+	d = FormatField(">","?")
+	assert d.parse(b"\x01") == True
+	assert d.parse(b"\xff") == True
+	assert d.parse(b"\x00") == False
+	assert d.build(True) == b"\x01"
+	assert d.build(False) == b"\x00"
+	assert d.sizeof() == 1
+
 def test_bytesinteger():
     d = BytesInteger(4, signed=True, swapped=False)
     common(d, b"\x01\x02\x03\x04", 0x01020304, 4)

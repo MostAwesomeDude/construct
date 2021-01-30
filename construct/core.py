@@ -984,14 +984,14 @@ def Bytewise(subcon):
 #===============================================================================
 class FormatField(Construct):
     r"""
-    Field that uses `struct` module to pack and unpack CPU-sized integers and floats. This is used to implement most Int* Float* fields, but for example cannot pack 24-bit integers, which is left to :class:`~construct.core.BytesInteger` class.
+    Field that uses `struct` module to pack and unpack CPU-sized integers and floats and booleans. This is used to implement most Int* Float* fields, but for example cannot pack 24-bit integers, which is left to :class:`~construct.core.BytesInteger` class. For booleans I also recommend using Flag class instead.
 
     See `struct module <https://docs.python.org/3/library/struct.html>`_ documentation for instructions on crafting format strings.
 
-    Parses into an integer. Builds from an integer into specified byte count and endianness. Size is determined by `struct` module according to specified format string.
+    Parses into an integer or float or boolean. Builds from an integer or float or boolean into specified byte count and endianness. Size is determined by `struct` module according to specified format string.
 
     :param endianity: string, character like: < > =
-    :param format: string, character like: f d B H L Q b h l q e
+    :param format: string, character like: f d B H L Q b h l q e ?
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises FormatFieldError: wrong format string, or struct.(un)pack complained about the value
@@ -1010,9 +1010,8 @@ class FormatField(Construct):
     def __init__(self, endianity, format):
         if endianity not in list("=<>"):
             raise FormatFieldError("endianity must be like: = < >", endianity)
-
-        if format not in list("fdBHLQbhlqe"):
-            raise FormatFieldError("format must be like: f d B H L Q b h l q e", format)
+        if format not in list("fdBHLQbhlqe?"):
+            raise FormatFieldError("format must be like: f d B H L Q b h l q e ?", format)
 
         super(FormatField, self).__init__()
         self.fmtstr = endianity+format
