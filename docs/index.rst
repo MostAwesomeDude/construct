@@ -10,9 +10,8 @@
     <strong>External links</strong><br/>
     <ul>
     <li><a href="https://github.com/construct/construct">Code repository</a></li>
-    <li><a href="https://travis-ci.org/construct/construct/builds">Travis CI</a></li>
+    <li><a href="https://travis-ci.org/construct/construct/builds">Travis CI (deprecated)</a></li>
     <li><a href="https://github.com/construct/construct/issues">Questions on Issues</a></li>
-    <li><a href="https://gitter.im/construct-construct/Lobby">Questions on Chat</a></li>
     <li><a href="https://pypi.org/project/construct/">Downloads</a></li>
     </ul>
     <strong>Personal sites</strong><br/>
@@ -47,7 +46,7 @@ Construct
     Happy to announce collaboration with <a class="reference external" href="http://kaitai.io/">Kaitai Struct</a>, a multi-platform binary parser. <br/>
     <br/>
 
-    Please use <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests (and vote for them), report issues and bugs, and to submit PRs. Feel free to request any changes that would support your project. There is also a <a class="reference external" href="https://gitter.im/construct-construct/Lobby">gitter chat</a> but using Issues is highly recommended.<br/>
+    Please use <a class="reference external" href="https://github.com/construct/construct/issues">github issues</a> to ask general questions, make feature requests (and vote for them), report issues and bugs, and to submit PRs. Feel free to request any changes that would support your project.<br/>
     <br/>
 
     </div>
