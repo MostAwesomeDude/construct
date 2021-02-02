@@ -57,7 +57,7 @@ See more examples in `current gallery <https://github.com/construct/construct/tr
 
 Development and support
 -------------------------
-Please use `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests (and vote for them), report issues and bugs, and to submit PRs. Feel free to request any changes that would support your project. There is also a `gitter chat <https://gitter.im/construct-construct/Lobby>`_ but using Issues is highly recommended.
+Please use `github issues <https://github.com/construct/construct/issues>`_ to ask general questions, make feature requests (and vote for them), report issues and bugs, and to submit PRs. Feel free to request any changes that would support your project.
 
 Main documentation is at `readthedocs <http://construct.readthedocs.org>`_, which is substantial. Source is at `github <https://github.com/construct/construct>`_. Releases are available at `pypi <https://pypi.org/project/construct/>`_.
 
