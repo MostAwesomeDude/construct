@@ -17,3 +17,5 @@ Exceptions always display path information
 build_file() opens a file for both reading and writing
 
 BytesInteger BitsInteger can take lambda for swapped parameter
+
+cloudpickle is now supported and tested for
