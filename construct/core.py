@@ -1013,21 +1013,20 @@ class FormatField(Construct):
         if format not in list("fdBHLQbhlqe?"):
             raise FormatFieldError("format must be like: f d B H L Q b h l q e ?", format)
 
-        super(FormatField, self).__init__()
+        super().__init__()
         self.fmtstr = endianity+format
         self.length = struct.calcsize(endianity+format)
-        self.packer = struct.Struct(endianity+format)
 
     def _parse(self, stream, context, path):
         data = stream_read(stream, self.length, path)
         try:
-            return self.packer.unpack(data)[0]
+            return struct.unpack(self.fmtstr, data)[0]
         except Exception:
             raise FormatFieldError("struct %r error during parsing" % self.fmtstr, path=path)
 
     def _build(self, obj, stream, context, path):
         try:
-            data = self.packer.pack(obj)
+            data = struct.pack(self.fmtstr, obj)
         except Exception:
             raise FormatFieldError("struct %r error during building, given value %r" % (self.fmtstr, obj), path=path)
         stream_write(stream, data, self.length, path)
