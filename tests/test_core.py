@@ -1736,14 +1736,14 @@ def test_pickling_constructs_issue_894():
     import cloudpickle
 
     fundus_header = Struct(
-            'width' / Int32un,
-            'height' / Int32un,
-            'bits_per_pixel' / Int32un,
-            'number_slices' / Int32un,
-            'unknown' / PaddedString(4, 'ascii'),
-            'size' / Int32un,
-            'img' / Int8un,
-        )
+        'width' / Int32un,
+        'height' / Int32un,
+        'bits_per_pixel' / Int32un,
+        'number_slices' / Int32un,
+        'unknown' / PaddedString(4, 'ascii'),
+        'size' / Int32un,
+        'img' / Int8un,
+    )
 
     cloudpickle.dumps(fundus_header)
 
