@@ -133,13 +133,13 @@ def test_formatfield_floats_randomized():
                 assert d.build(d.parse(b)) == b
 
 def test_formatfield_bool_issue_901():
-	d = FormatField(">","?")
-	assert d.parse(b"\x01") == True
-	assert d.parse(b"\xff") == True
-	assert d.parse(b"\x00") == False
-	assert d.build(True) == b"\x01"
-	assert d.build(False) == b"\x00"
-	assert d.sizeof() == 1
+    d = FormatField(">","?")
+    assert d.parse(b"\x01") == True
+    assert d.parse(b"\xff") == True
+    assert d.parse(b"\x00") == False
+    assert d.build(True) == b"\x01"
+    assert d.build(False) == b"\x00"
+    assert d.sizeof() == 1
 
 def test_bytesinteger():
     d = BytesInteger(4, signed=True, swapped=False)
@@ -1703,49 +1703,49 @@ def test_this_expresion_compare_container():
     )
     common(st, b"\x01", dict(flags=Container(_flagsenum=True)(a=True)), 1)
 
-@xfail(reason="unknown causes")
 def test_pickling_constructs():
-    # it seems there are few problems:
-    # - singletons still dont pickle (_pickle.PicklingError: Can't pickle <class 'construct.core.GreedyBytes'>: it's not the same object as construct.core.GreedyBytes)
-    # - this expressions, ExprMixin added __get(set)state__
-    # - FormatField uses a packer that needs to be re-created
-    # what was fixed so far:
-    # - singleton decorator adds __reduce__ to instance
-
-    import pickle
+    import cloudpickle
 
     d = Struct(
-        # - singletons still dont pickle
         "count" / Byte,
-        # - singletons still dont pickle
         "greedybytes" / Prefixed(Byte, GreedyBytes),
         "formatfield" / FormatField("=","Q"),
         "bytesinteger" / BytesInteger(1),
-        # - singletons still dont pickle
         "varint" / VarInt,
         "text1" / PascalString(Byte, "utf8"),
         "text2" / CString("utf8"),
         "enum" / Enum(Byte, zero=0),
         "flagsenum" / FlagsEnum(Byte, zero=0),
         "array1" / Byte[5],
-        # - uses this-expression
-        # "array2" / Byte[this.count],
+        "array2" / Byte[this.count],
         "greedyrange" / Prefixed(Byte, GreedyRange(Byte)),
-        # - its a macro around Switch, should reimplement
-        # "if1" / IfThenElse(True, Byte, Byte),
+        "if1" / IfThenElse(True, Byte, Byte),
         "padding" / Padding(1),
         "peek" / Peek(Byte),
-        # - singletons still dont pickle
         "tell" / Tell,
-        # - unknown causes
-        # "this1" / Byte[this.count],
-        # "obj_1" / RepeatUntil(obj_ == 0, Byte),
-        # "len_1" / Computed(len_(this.array1)),
+        "this1" / Byte[this.count],
+        "obj_1" / RepeatUntil(obj_ == 0, Byte),
+        "len_1" / Computed(len_(this.array1)),
     )
     data = bytes(100)
 
-    du = pickle.loads(pickle.dumps(d, protocol=-1))
+    du = cloudpickle.loads(cloudpickle.dumps(d, protocol=-1))
     assert du.parse(data) == d.parse(data)
+
+def test_pickling_constructs_issue_894():
+    import cloudpickle
+
+    fundus_header = Struct(
+            'width' / Int32un,
+            'height' / Int32un,
+            'bits_per_pixel' / Int32un,
+            'number_slices' / Int32un,
+            'unknown' / PaddedString(4, 'ascii'),
+            'size' / Int32un,
+            'img' / Int8un,
+        )
+
+    cloudpickle.dumps(fundus_header)
 
 def test_exposing_members_attributes():
     d = Struct(
