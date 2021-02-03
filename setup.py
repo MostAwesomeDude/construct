@@ -24,6 +24,7 @@ setup(
             "numpy",
             "arrow",
             "ruamel.yaml",
+            "cloudpickle",
         ],
     },
     keywords = [
