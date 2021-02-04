@@ -77,7 +77,6 @@ class CancelParsing(ConstructError):
 #===============================================================================
 def singleton(arg):
     x = arg()
-    x.__reduce__ = lambda: arg.__name__
     return x
 
 
