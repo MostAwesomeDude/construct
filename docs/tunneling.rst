@@ -50,7 +50,7 @@ b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 Working with bytes subsets
 --------------------------------------------
 
-Greedy* constructs consume as much data as possible. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending a byte count (see Prefixed) or by prepending an element count (see PrefixedArray):
+Greedy* constructs consume as much data as possible, they read until EOF. This is convenient when building from a list of unknown length but becomes a problem when parsing it back and the list needs to be separated from following data. This can be achieved either by prepending a byte count (see Prefixed) or by prepending an element count (see PrefixedArray):
 
 VarInt encoding is recommended because it is both compact and never overflows. Also and optionally, the length field can include its own size. If so, length field must be of fixed size.
 
