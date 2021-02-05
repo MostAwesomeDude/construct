@@ -2612,11 +2612,9 @@ class Index(Construct):
 
     def _parse(self, stream, context, path):
         return context.get("_index", None)
-        raise IndexFieldError("did not find either key in context", path=path)
 
     def _build(self, obj, stream, context, path):
         return context.get("_index", None)
-        raise IndexFieldError("did not find either key in context", path=path)
 
     def _sizeof(self, context, path):
         return 0
