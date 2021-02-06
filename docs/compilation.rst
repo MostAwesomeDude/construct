@@ -38,7 +38,7 @@ Parsed hooks are not supported, ignored
 Compiling schemas
 ===================
 
-Every construct (even those that do not compile) has a parameter-less `compile` method that returns also a construct (instance of Compiled class). It may be a good idea to compile something that is used for processing megabyte-sized data or millions of blobs. That compiled instance has `parse` and `build` methods just like the construct is was compiled from. Therefore, in your code, you can simply reassign the compiled instance over the original one.
+Every construct (even those that do not compile) has a parameter-less `compile` method that returns also a construct (instance of Compiled class). It may be a good idea to compile something that is used for processing megabyte-sized data or millions of blobs. That compiled instance has `parse` and `build` methods just like the construct it was compiled from. Therefore, in your code, you can simply reassign the compiled instance over the original one.
 
 >>> st = Struct("num" / Byte)
 >>> st.parse(b"\x01")
