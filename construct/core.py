@@ -4452,7 +4452,7 @@ class FixedSized(Subconstruct):
     r"""
     Restricts parsing to specified amount of bytes.
 
-    Parsing reads `length` bytes, then defers to subcon using new BytesIO with said bytes. Building builds the subcon using new BytesIO, then writes said data and additional null bytes accordingly. Size is same as `length`, although negative amount raises an error as well.
+    Parsing reads `length` bytes, then defers to subcon using new BytesIO with said bytes. Building builds the subcon using new BytesIO, then writes said data and additional null bytes accordingly. Size is same as `length`, although negative amount raises an error.
 
     :param length: integer or context lambda, total amount of bytes (both data and padding)
     :param subcon: Construct instance
