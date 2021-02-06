@@ -26,7 +26,7 @@ Compiled classes only parse faster, building and sizeof defers to core classes
 
 Sizeof is applied during compilation (not during parsing and building)
 
-Lambdas (unlike this expressions) are not compilable.
+Lambdas (unlike this expressions) are not compilable
 
 Exceptions do not include `path` information
 
