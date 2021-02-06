@@ -49,6 +49,7 @@ b'\x01\x00'
 >>> d.build(1, swapped=True)
 b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
+
 Working with bytes subsets
 --------------------------------------------
 
