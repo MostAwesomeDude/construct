@@ -8,6 +8,8 @@ Obtaining raw bytes
 
 When some value needs to be processed as both a parsed object and its raw bytes representation, both of these can be obtained using RawCopy. You can build from either the object or raw bytes as well. Dict also happen to contain the stream offsets, if you need to know at which position it resides in the stream or if you need to know its size in bytes.
 
+When building, if both the "value" and "data" keys are present, then the "data" key is used and the "value" key is ignored. This is undesirable in the case that you parse some data for the purpose of modifying it and writing it back; in this case, delete the "data" key when modifying the "value" key to correctly rebuild the former.
+
 >>> d = RawCopy(Byte)
 >>> d.parse(b"\xff")
 Container(data=b'\xff', value=255, offset1=0, offset2=1, length=1)
