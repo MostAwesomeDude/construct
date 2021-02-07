@@ -11,6 +11,7 @@ integertypes = (int, )
 unicodestringtype = str
 bytestringtype = bytes
 
+
 INT2BYTE_CACHE = {i:bytes([i]) for i in range(256)}
 def int2byte(character):
     """Converts (0 through 255) integer into b'...' character."""
