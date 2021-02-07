@@ -182,8 +182,10 @@ def test_varint_issue_705():
 
 def test_zigzag():
     d = ZigZag
+    assert d.parse(b"\x00") == 0
     assert d.parse(b"\x05") == -3
     assert d.parse(b"\x06") == 3
+    assert d.build(0) == b"\x00"
     assert d.build(-3) == b"\x05"
     assert d.build(3) == b"\x06"
     assert raises(d.parse, b"") == StreamError
