@@ -1464,7 +1464,7 @@ class ZigZag(Construct):
     Parses into an integer. Builds from an integer. Size is undefined.
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: given a negative value, or not an integer
+    :raises IntegerError: given not an integer
 
     Example::
 
