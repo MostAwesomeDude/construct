@@ -180,6 +180,16 @@ def test_varint_issue_705():
     d = Struct('namelen' / VarInt, 'name' / Bytes(this.namelen))
     d.build(Container(namelen = 400, name = bytes(400)))
 
+def test_zigzag():
+    d = ZigZag
+    assert d.parse(b"\x05") == -3
+    assert d.parse(b"\x06") == 3
+    assert d.build(-3) == b"\x05"
+    assert d.build(3) == b"\x06"
+    assert raises(d.parse, b"") == StreamError
+    assert raises(d.build, None) == IntegerError
+    assert raises(d.sizeof) == SizeofError
+
 def test_paddedstring():
     common(PaddedString(10, "utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
 

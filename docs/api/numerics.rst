@@ -6,3 +6,4 @@ Core API: Integers and Floats
 .. autofunction:: construct.BytesInteger
 .. autofunction:: construct.BitsInteger
 .. autofunction:: construct.VarInt
+.. autofunction:: construct.ZigZag

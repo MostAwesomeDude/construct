@@ -30,6 +30,13 @@ Integers can also be variable-length encoded for compactness. Google invented a 
 >>> VarInt.build(1234567890)
 b'\xd2\x85\xd8\xcc\x04'
 
+Signed integers can also be variable-length encoded using an encoding similar to VarInt. Also from Google:
+
+>>> ZigZag.build(-3)
+b'\x05'
+>>> ZigZag.build(3)
+b'\x06'
+
 Long integers (or those of particularly odd sizes) can be encoded using a `BytesInteger`. Here is a 128-bit integer.
 
 >>> BytesInteger(16).build(255)

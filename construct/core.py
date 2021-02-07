@@ -1409,7 +1409,7 @@ def Int24sn():
 @singleton
 class VarInt(Construct):
     r"""
-    VarInt encoded integer. Each 7 bits of the number are encoded in one byte of the stream, where leftmost bit (MSB) is unset when byte is terminal. Scheme is defined at Google site related to `Protocol Buffers <https://developers.google.com/protocol-buffers/docs/encoding>`_.
+    VarInt encoded unsigned integer. Each 7 bits of the number are encoded in one byte of the stream, where leftmost bit (MSB) is unset when byte is terminal. Scheme is defined at Google site related to `Protocol Buffers <https://developers.google.com/protocol-buffers/docs/encoding>`_.
 
     Can only encode non-negative numbers.
 
@@ -1452,6 +1452,45 @@ class VarInt(Construct):
 
     def _emitprimitivetype(self, ksy, bitwise):
         return "vlq_base128_le"
+
+
+@singleton
+class ZigZag(Construct):
+    r"""
+    ZigZag encoded signed integer. This is a variation of VarInt encoding that also can encode negative numbers. Scheme is defined at Google site related to `Protocol Buffers <https://developers.google.com/protocol-buffers/docs/encoding>`_.
+
+    Can encode negative numbers.
+
+    Parses into an integer. Builds from an integer. Size is undefined.
+
+    :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
+    :raises IntegerError: given a negative value, or not an integer
+
+    Example::
+
+        >>> ZigZag.build(-3)
+        b'\x05'
+        >>> ZigZag.build(3)
+        b'\x06'
+    """
+
+    def _parse(self, stream, context, path):
+        x = VarInt._parse(stream, context, path)
+        if x & 1 == 0:
+            x /= 2
+        else:
+            x = -(x//2+1)
+        return x
+
+    def _build(self, obj, stream, context, path):
+        if not isinstance(obj, integertypes):
+            raise IntegerError("value is not an integer", path=path)
+        if obj >= 0:
+            x = 2*obj
+        else:
+            x = 2*abs(obj)-1
+        VarInt._build(x, stream, context, path)
+        return obj
 
 
 #===============================================================================
