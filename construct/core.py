@@ -1431,7 +1431,7 @@ class VarInt(Construct):
         while True:
             b = byte2int(stream_read(stream, 1, path))
             acc.append(b & 0b01111111)
-            if not b & 0b10000000:
+            if b & 0b10000000 == 0:
                 break
         num = 0
         for b in reversed(acc):
