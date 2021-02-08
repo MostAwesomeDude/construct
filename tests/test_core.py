@@ -1267,7 +1267,6 @@ def test_compressed_bzip2():
     assert len(d.build(zeros)) < 50
     assert raises(d.sizeof) == SizeofError
 
-@xfail(PYPY, raises=ImportError, reason="lzma module was added in 3.3 but fails on pypy 3.5")
 def test_compressed_lzma():
     zeros = bytes(10000)
     d = Compressed(GreedyBytes, "lzma")
