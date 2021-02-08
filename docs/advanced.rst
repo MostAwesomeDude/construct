@@ -56,8 +56,6 @@ Bytes and bits
 
 .. warning::
 
-    Python 3 known problem:
-
     Unprefixed string literals like "data" are on Python 3 interpreted as unicode. This causes failures when using fields like `Bytes`.
 
 "Strings" of bytes (`str` in PY2 and `bytes` in PY3) can be moved around as-is. Bits are discussed in a later chapter.
@@ -81,12 +79,6 @@ b'12345'
 
 Strings
 ========
-
-.. warning::
-
-    Python 2 known problem:
-
-    Unprefixed string literals like "text" are on Python 2 interpreted as bytes. This causes failures when using fields that operate on unicode objects only like String* classes.
 
 .. note::
 
@@ -185,8 +177,6 @@ Processing files
 ===========================
 
 .. warning::
-
-    Python 3 known problem:
 
     Opening a file without mode like ``open(filename)`` implies text mode, which cannot be parsed or build.
 
