@@ -46,9 +46,8 @@ b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff'
 
 Some numerical classes are implemented using `struct` module, others use BytesInteger field.
 
->>> FormatField("<","l").build(1)
-b'\x01\x00\x00\x00'
->>> BytesInteger(4, swapped=True).build(1)
+>>> d = FormatField("<","l") or BytesInteger(4, swapped=True)
+>>> d.build(1)
 b'\x01\x00\x00\x00'
 
 
