@@ -990,7 +990,7 @@ class FormatField(Construct):
     Parses into an integer or float or boolean. Builds from an integer or float or boolean into specified byte count and endianness. Size is determined by `struct` module according to specified format string.
 
     :param endianity: string, character like: < > =
-    :param format: string, character like: f d B H L Q b h l q e ?
+    :param format: string, character like: B H L Q b h l q e f d ?
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises FormatFieldError: wrong format string, or struct.(un)pack complained about the value
@@ -1010,7 +1010,7 @@ class FormatField(Construct):
         if endianity not in list("=<>"):
             raise FormatFieldError("endianity must be like: = < >", endianity)
         if format not in list("fdBHLQbhlqe?"):
-            raise FormatFieldError("format must be like: f d B H L Q b h l q e ?", format)
+            raise FormatFieldError("format must be like: B H L Q b h l q e f d ?", format)
 
         super().__init__()
         self.fmtstr = endianity+format
