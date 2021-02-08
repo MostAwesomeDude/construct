@@ -27,6 +27,8 @@ Few fields have aliases, Byte among integers and Single among floats.
 
 Integers can also be variable-length encoded for compactness. Google invented a popular encoding:
 
+>>> VarInt.build(127)
+b'\x7f'
 >>> VarInt.build(1234567890)
 b'\xd2\x85\xd8\xcc\x04'
 
