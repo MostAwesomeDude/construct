@@ -21,3 +21,5 @@ BytesInteger BitsInteger can take lambda for swapped parameter
 cloudpickle is now supported and tested for
 
 ZigZag signed integer encoding from Protocol Buffers added
+
+FormatField now supports ? format string
