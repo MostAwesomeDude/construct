@@ -1578,13 +1578,13 @@ def test_from_issue_71():
     payload = Inner.build(Container(
         name=u"unknown",
         occupation=u"worker",
-        ))
+    ))
     Outer.build(Container(
         struct_type=9001,
         payload_len=len(payload),
         payload=Container(data=payload),
         serial=12345,
-        ))
+    ))
 
 def test_from_issue_231():
     u = Union(0, "raw"/Byte[8], "ints"/Int[2])
