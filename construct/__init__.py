@@ -62,6 +62,7 @@ __all__ = [
     'ChecksumError',
     'Compiled',
     'Compressed',
+    'CompressedLZ4',
     'Computed',
     'Const',
     'ConstError',

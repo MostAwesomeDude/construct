@@ -1285,6 +1285,13 @@ def test_compressed_prefixed():
     assert st.parse(st.build(Container(one=zeros,two=zeros))) == Container(one=zeros,two=zeros)
     assert raises(d.sizeof) == SizeofError
 
+def test_compressedlz4():
+    zeros = bytes(10000)
+    d = CompressedLZ4(GreedyBytes)
+    assert d.parse(d.build(zeros)) == zeros
+    assert len(d.build(zeros)) < 100
+    assert raises(d.sizeof) == SizeofError
+
 def test_rebuffered():
     data = b"0" * 1000
     assert Rebuffered(Array(1000,Byte)).parse_stream(io.BytesIO(data)) == [48]*1000

@@ -17,4 +17,5 @@ Core API: Tunneling
 .. autofunction:: construct.ProcessRotateLeft
 .. autofunction:: construct.Checksum
 .. autofunction:: construct.Compressed
+.. autofunction:: construct.CompressedLZ4
 .. autofunction:: construct.Rebuffered

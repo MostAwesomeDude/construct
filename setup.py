@@ -25,6 +25,7 @@ setup(
             "arrow",
             "ruamel.yaml",
             "cloudpickle",
+            "lz4",
         ],
     },
     keywords = [

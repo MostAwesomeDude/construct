@@ -5130,7 +5130,7 @@ class Checksum(Construct):
 
 class Compressed(Tunnel):
     r"""
-    Compresses and decompresses underlying stream when processing subcon. When parsing, entire stream is consumed. When building, puts compressed bytes without marking the end. This construct should be used with :class:`~construct.core.Prefixed` .
+    Compresses and decompresses underlying stream when processing subcon. When parsing, entire stream is consumed. When building, it puts compressed bytes without marking the end. This construct should be used with :class:`~construct.core.Prefixed` .
 
     Parsing and building transforms all bytes using a specified codec. Since data is processed until EOF, it behaves similar to `GreedyBytes`. Size is undefined.
 
@@ -5146,11 +5146,12 @@ class Compressed(Tunnel):
         >>> d = Prefixed(VarInt, Compressed(GreedyBytes, "zlib"))
         >>> d.build(bytes(100))
         b'\x0cx\x9cc`\xa0=\x00\x00\x00d\x00\x01'
-
+        >>> len(_)
+        13
    """
 
     def __init__(self, subcon, encoding, level=None):
-        super(Compressed, self).__init__(subcon)
+        super().__init__(subcon)
         self.encoding = encoding
         self.level = level
         if self.encoding == "zlib":
@@ -5181,6 +5182,40 @@ class Compressed(Tunnel):
             else:
                 return self.lib.compress(data, self.level)
         return self.lib.encode(data, self.encoding)
+
+
+class CompressedLZ4(Tunnel):
+    r"""
+    Compresses and decompresses underlying stream before processing subcon. When parsing, entire stream is consumed. When building, it puts compressed bytes without marking the end. This construct should be used with :class:`~construct.core.Prefixed` .
+
+    Parsing and building transforms all bytes using LZ4 library. Since data is processed until EOF, it behaves similar to `GreedyBytes`. Size is undefined.
+
+    :param subcon: Construct instance, subcon used for storing the value
+
+    :raises ImportError: needed module could not be imported by ctor
+    :raises StreamError: stream failed when reading until EOF
+
+    Can propagate lz4.frame exceptions.
+
+    Example::
+
+        >>> d = Prefixed(VarInt, CompressedLZ4(GreedyBytes))
+        >>> d.build(bytes(100))
+        b'"\x04"M\x18h@d\x00\x00\x00\x00\x00\x00\x00#\x0b\x00\x00\x00\x1f\x00\x01\x00KP\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        >>> len(_)
+        35
+   """
+
+    def __init__(self, subcon):
+        super().__init__(subcon)
+        import lz4.frame
+        self.lib = lz4.frame
+
+    def _decode(self, data, context, path):
+        return self.lib.decompress(data)
+
+    def _encode(self, data, context, path):
+        return self.lib.compress(data)
 
 
 class Rebuffered(Subconstruct):
