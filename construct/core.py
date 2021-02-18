@@ -1477,7 +1477,7 @@ class ZigZag(Construct):
     def _parse(self, stream, context, path):
         x = VarInt._parse(stream, context, path)
         if x & 1 == 0:
-            x /= 2
+            x = x//2
         else:
             x = -(x//2+1)
         return x

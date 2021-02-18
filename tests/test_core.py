@@ -192,6 +192,11 @@ def test_zigzag():
     assert raises(d.build, None) == IntegerError
     assert raises(d.sizeof) == SizeofError
 
+def test_zigzag_regression():
+    d = ZigZag
+    assert isinstance(d.parse(b"\x05"), integertypes)
+    assert isinstance(d.parse(b"\x06"), integertypes)
+
 def test_paddedstring():
     common(PaddedString(10, "utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)
 
