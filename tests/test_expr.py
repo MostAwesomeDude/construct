@@ -33,7 +33,7 @@ def test_this():
             "c2" / Int8ub,
         ),
     )
-    common(this_example, b"\x05helloABXXXX", Container(length=5)(value=b'hello')(nested=Container(b1=65)(b2=66)(b3=4295))(condition=1482184792))
+    common(this_example, b"\x05helloABXXXX", Container(length=5, value=b'hello', nested=Container(b1=65, b2=66, b3=4295), condition=1482184792))
 
 def test_this_getitem():
     d = Struct(
@@ -135,4 +135,4 @@ def test_this_shift_operator():
        "ls" / Computed(this.a << 1),
        "rs" / Computed(this.a >> 1),
     )
-    assert d.parse(b"\x02") == Container(a=2)(ls=4)(rs=1)
+    assert d.parse(b"\x02") == Container(a=2, ls=4, rs=1)

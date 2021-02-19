@@ -42,11 +42,11 @@ def test_ctor_empty():
     assert c == Container([])
 
 def test_ctor_chained():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     assert c == Container(c)
 
 def test_ctor_dict():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     c = Container(c)
     assert len(c) == 4
     assert list(c.items()) == [('a',1),('b',2),('c',3),('d',4)]
@@ -58,35 +58,35 @@ def test_ctor_seqoftuples():
 
 def test_ctor_orderedkw():
     c = Container(a=1, b=2, c=3, d=4)
-    d = Container(a=1)(b=2)(c=3)(d=4)
+    d = Container(a=1, b=2, c=3, d=4)
     assert c == d
     assert len(c) == len(d)
     assert list(c.items()) == list(d.items())
 
 def test_keys():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     assert list(c.keys()) == ["a","b","c","d"]
 
 def test_values():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     assert list(c.values()) == [1,2,3,4]
 
 def test_items():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     assert list(c.items()) == [("a",1),("b",2),("c",3),("d",4)]
 
 def test_iter():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     assert list(c) == list(c.keys())
 
 def test_clear():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     c.clear()
     assert c == Container()
     assert list(c.items()) == []
 
 def test_pop():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     assert c.pop("b") == 2
     assert c.pop("d") == 4
     assert c.pop("a") == 1
@@ -95,7 +95,7 @@ def test_pop():
     assert c == Container()
 
 def test_popitem():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     assert c.popitem() == ("d",4)
     assert c.popitem() == ("c",3)
     assert c.popitem() == ("b",2)
@@ -103,7 +103,7 @@ def test_popitem():
     assert raises(c.popitem) == KeyError
 
 def test_update_dict():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     d = Container()
     d.update(c)
     assert d.a == 1
@@ -114,7 +114,7 @@ def test_update_dict():
     assert list(c.items()) == list(d.items())
 
 def test_update_seqoftuples():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     d = Container()
     d.update([("a",1),("b",2),("c",3),("d",4)])
     assert d.a == 1
@@ -154,20 +154,20 @@ def test_pickling():
     empty_unpickled = pickle.loads(pickle.dumps(empty))
     assert empty_unpickled == empty
 
-    nested = Container(a=1)(b=Container())(c=3)(d=Container(e=4))
+    nested = Container(a=1,b=Container(),c=3,d=Container(e=4))
     nested_unpickled = pickle.loads(pickle.dumps(nested))
     assert nested_unpickled == nested
 
 def test_eq_issue_818():
-    c = Container(a=1)(b=2)(c=3)(d=4)(e=5)
-    d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
+    c = Container(a=1, b=2, c=3, d=4, e=5)
+    d = Container(a=1, b=2, c=3, d=4, e=5)
     assert c == c
     assert d == d
     assert c == d
     assert d == c
 
-    a = Container(a=1)(b=2)
-    b = Container(a=1)(b=2)(c=3)
+    a = Container(a=1,b=2)
+    b = Container(a=1,b=2,c=3)
     assert not a == b
     assert not b == a
 
@@ -184,8 +184,8 @@ def test_eq_numpy():
     assert c == d
 
 def test_ne_issue_818():
-    c = Container(a=1)(b=2)(c=3)
-    d = Container(a=1)(b=2)(c=3)(d=4)(e=5)
+    c = Container(a=1, b=2, c=3)
+    d = Container(a=1, b=2, c=3, d=4, e=5)
     assert c != d
     assert d != c
 
@@ -196,19 +196,19 @@ def test_str_repr_empty():
     assert eval(repr(c)) == c
 
 def test_str_repr():
-    c = Container(a=1)(b=2)(c=3)
+    c = Container(a=1, b=2, c=3)
     assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = 3"
     assert repr(c) == "Container(a=1, b=2, c=3)"
     assert eval(repr(c)) == c
 
 def test_str_repr_nested():
-    c = Container(a=1)(b=2)(c=Container())
+    c = Container(a=1,b=2,c=Container())
     assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = Container: "
     assert repr(c) == "Container(a=1, b=2, c=Container())"
     assert eval(repr(c)) == c
 
 def test_str_repr_recursive():
-    c = Container(a=1)(b=2)
+    c = Container(a=1,b=2)
     c.c = c
     assert str(c) == "Container: \n    a = 1\n    b = 2\n    c = <recursion detected>"
     assert repr(c) == "Container(a=1, b=2, c=<recursion detected>)"
@@ -272,7 +272,7 @@ def test_privateentries():
     setGlobalPrintPrivateEntries()
 
 def test_len_bool():
-    c = Container(a=1)(b=2)(c=3)(d=4)
+    c = Container(a=1, b=2, c=3, d=4)
     assert len(c) == 4
     assert c
     c = Container()

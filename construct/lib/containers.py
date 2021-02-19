@@ -68,8 +68,6 @@ class Container(collections.OrderedDict):
         >>> Container([ ("name","anonymous"), ("age",21) ])
         # This syntax requires Python 3.6
         >>> Container(name="anonymous", age=21)
-        # This syntax is for internal use only
-        >>> Container(name="anonymous")(age=21)
         # copies another dict
         >>> Container(dict2)
         >>> Container(container2)
@@ -77,7 +75,7 @@ class Container(collections.OrderedDict):
     ::
 
         >>> print(repr(obj))
-        Container(text='utf8 decoded string...')(value=123)
+        Container(text='utf8 decoded string...', value=123)
         >>> print(obj)
         Container
             text = u'utf8 decoded string...' (total 22)
@@ -111,12 +109,6 @@ class Container(collections.OrderedDict):
                 del self[name]
         except KeyError:
             raise AttributeError(name)
-
-    def __call__(self, **entrieskw):
-        """Chains adding new entries to the same container. See ctor."""
-        for k,v in entrieskw.items():
-            self[k] = v
-        return self
 
     def update(self, seqordict):
         """Appends items from another dict/Container or list-of-tuples."""

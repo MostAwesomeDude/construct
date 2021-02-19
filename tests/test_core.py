@@ -305,15 +305,15 @@ def test_enum_issue_298():
         Probe(),
         "optional" / If(this.ctrl == "NAK", Byte),
     )
-    common(st, b"\x15\xff", Container(ctrl='NAK')(optional=255))
-    common(st, b"\x02", Container(ctrl='STX')(optional=None))
+    common(st, b"\x15\xff", Container(ctrl='NAK', optional=255))
+    common(st, b"\x02", Container(ctrl='STX', optional=None))
 
     # FlagsEnum is not affected by same bug
     st = Struct(
         "flags" / FlagsEnum(Byte, a=1),
-        Check(lambda ctx: ctx.flags == Container(_flagsenum=True)(a=1)),
+        Check(lambda ctx: ctx.flags == Container(_flagsenum=True, a=1)),
     )
-    common(st, b"\x01", dict(flags=Container(_flagsenum=True)(a=True)), 1)
+    common(st, b"\x01", dict(flags=Container(_flagsenum=True, a=True)), 1)
 
     # Flag is not affected by same bug
     st = Struct(
@@ -341,7 +341,7 @@ def test_enum_issue_677():
 
 def test_flagsenum():
     d = FlagsEnum(Byte, one=1, two=2, four=4, eight=8)
-    common(d, b"\x03", Container(_flagsenum=True)(one=True)(two=True)(four=False)(eight=False), 1)
+    common(d, b"\x03", Container(_flagsenum=True, one=True, two=True, four=False, eight=False), 1)
     assert d.build({}) == b'\x00'
     assert d.build(dict(one=True,two=True)) == b'\x03'
     assert d.build(8) == b'\x08'
@@ -361,9 +361,9 @@ def test_flagsenum_enum34():
         a = 1
     class F(enum.IntEnum):
         b = 2
-    common(FlagsEnum(Byte, E, F), b"\x01", Container(_flagsenum=True)(a=True,b=False), 1)
-    common(FlagsEnum(Byte, E, F), b"\x02", Container(_flagsenum=True)(a=False,b=True), 1)
-    common(FlagsEnum(Byte, E, F), b"\x03", Container(_flagsenum=True)(a=True,b=True), 1)
+    common(FlagsEnum(Byte, E, F), b"\x01", Container(_flagsenum=True, a=True,b=False), 1)
+    common(FlagsEnum(Byte, E, F), b"\x02", Container(_flagsenum=True, a=False,b=True), 1)
+    common(FlagsEnum(Byte, E, F), b"\x03", Container(_flagsenum=True, a=True,b=True), 1)
 
 def test_flagsenum_enum36():
     import enum
@@ -371,9 +371,9 @@ def test_flagsenum_enum36():
         a = 1
     class F(enum.IntFlag):
         b = 2
-    common(FlagsEnum(Byte, E, F), b"\x01", Container(_flagsenum=True)(a=True,b=False), 1)
-    common(FlagsEnum(Byte, E, F), b"\x02", Container(_flagsenum=True)(a=False,b=True), 1)
-    common(FlagsEnum(Byte, E, F), b"\x03", Container(_flagsenum=True)(a=True,b=True), 1)
+    common(FlagsEnum(Byte, E, F), b"\x01", Container(_flagsenum=True, a=True,b=False), 1)
+    common(FlagsEnum(Byte, E, F), b"\x02", Container(_flagsenum=True, a=False,b=True), 1)
+    common(FlagsEnum(Byte, E, F), b"\x03", Container(_flagsenum=True, a=True,b=True), 1)
 
 def test_mapping():
     x = object
@@ -410,7 +410,7 @@ def test_struct_proper_context():
         "c"/Computed(this.x+3),
         "d"/Computed(this.inner.y+4),
     )
-    assert d1.parse(b"\x01\x0f") == Container(x=1)(inner=Container(y=15)(a=2)(b=17))(c=4)(d=19)
+    assert d1.parse(b"\x01\x0f") == Container(x=1, inner=Container(y=15, a=2, b=17), c=4, d=19)
 
 def test_struct_sizeof_context_nesting():
     st = Struct(
@@ -519,7 +519,7 @@ def test_rebuild():
         "count" / Rebuild(Byte, len_(this.items)),
         "items"/Byte[this.count],
     )
-    assert d.parse(b"\x02ab") == Container(count=2)(items=[97,98])
+    assert d.parse(b"\x02ab") == Container(count=2, items=[97,98])
     assert d.build(dict(count=None,items=[255])) == b"\x01\xff"
     assert d.build(dict(count=-1,items=[255])) == b"\x01\xff"
     assert d.build(dict(items=[255])) == b"\x01\xff"
@@ -696,7 +696,7 @@ def test_hexdump_regression_issue_188():
 
 def test_union():
     d = Union(None, "a"/Bytes(2), "b"/Int16ub)
-    assert d.parse(b"\x01\x02") == Container(a=b"\x01\x02")(b=0x0102)
+    assert d.parse(b"\x01\x02") == Container(a=b"\x01\x02", b=0x0102)
     assert raises(Union(123, Pass).parse, b"") == KeyError
     assert raises(Union("missing", Pass).parse, b"") == KeyError
     assert d.build(dict(a=b"zz"))  == b"zz"
@@ -855,7 +855,7 @@ def test_padded():
 
 def test_aligned():
     common(Aligned(4, Byte), b"\x01\x00\x00\x00", 1, 4)
-    common(Struct("a"/Aligned(4, Byte), "b"/Byte), b"\x01\x00\x00\x00\x02", Container(a=1)(b=2), 5)
+    common(Struct("a"/Aligned(4, Byte), "b"/Byte), b"\x01\x00\x00\x00\x02", Container(a=1, b=2), 5)
     assert Aligned(4, Int8ub).build(1) == b"\x01\x00\x00\x00"
     assert Aligned(4, Int16ub).build(1) == b"\x00\x01\x00\x00"
     assert Aligned(4, Int32ub).build(1) == b"\x00\x00\x00\x01"
@@ -867,13 +867,13 @@ def test_aligned():
 
 def test_alignedstruct():
     d = AlignedStruct(4, "a"/Int8ub, "b"/Int16ub)
-    common(d, b"\x01\x00\x00\x00\x00\x05\x00\x00", Container(a=1)(b=5), 8)
+    common(d, b"\x01\x00\x00\x00\x00\x05\x00\x00", Container(a=1, b=5), 8)
 
 def test_bitstruct():
     d = BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "d"/BitsInteger(5))
-    common(d, b"\xe1\x1f", Container(a=7)(b=False)(c=8)(d=31), 2)
+    common(d, b"\xe1\x1f", Container(a=7, b=False, c=8, d=31), 2)
     d = BitStruct("a"/BitsInteger(3), "b"/Flag, Padding(3), "c"/Nibble, "sub"/Struct("d"/Nibble, "e"/Bit))
-    common(d, b"\xe1\x1f", Container(a=7)(b=False)(c=8)(sub=Container(d=15)(e=1)), 2)
+    common(d, b"\xe1\x1f", Container(a=7, b=False, c=8, sub=Container(d=15, e=1)), 2)
 
 def test_pointer():
     common(Pointer(2,             Byte), b"\x00\x00\x07", 7, 0)
@@ -896,10 +896,10 @@ def test_peek():
     assert d.sizeof() == 0
 
     d = Struct("a"/Peek(Int8ub), "b"/Int16ub)
-    common(d, b"\x01\x02", Container(a=0x01)(b=0x0102), 2)
+    common(d, b"\x01\x02", Container(a=0x01, b=0x0102), 2)
     d = Struct(Peek("a"/Byte), Peek("b"/Int16ub))
-    d.parse(b"\x01\x02") == Container(a=0x01)(b=0x0102)
-    d.build(Container(a=0x01)(b=0x0102)) == b"\x01\x02"
+    d.parse(b"\x01\x02") == Container(a=0x01, b=0x0102)
+    d.build(Container(a=0x01, b=0x0102)) == b"\x01\x02"
     d.sizeof() == 0
 
 def test_seek():
@@ -910,7 +910,7 @@ def test_seek():
     assert (d >> Byte).build([5,255]) == b"\x00\x00\x00\x00\x00\xff"
     assert (Bytes(10) >> d >> Byte).parse(b"0123456789") == [b"0123456789",5,ord('5')]
     assert (Bytes(10) >> d >> Byte).build([b"0123456789",None,255]) == b"01234\xff6789"
-    assert Struct("data"/Bytes(10), d, "addin"/Byte).parse(b"0123456789") == Container(data=b"0123456789")(addin=53)
+    assert Struct("data"/Bytes(10), d, "addin"/Byte).parse(b"0123456789") == Container(data=b"0123456789", addin=53)
     assert Struct("data"/Bytes(10), d, "addin"/Byte).build(dict(data=b"0123456789",addin=53)) == b"01234\x356789"
     assert (Seek(10,1) >> Seek(-5,1) >> Bytes(1)).parse(b"0123456789") == [10,5,b"5"]
     assert (Seek(10,1) >> Seek(-5,1) >> Bytes(1)).build([None,None,255]) == b"\x00\x00\x00\x00\x00\xff"
@@ -920,8 +920,8 @@ def test_tell():
     assert Tell.parse(b"") == 0
     assert Tell.build(None) == b""
     assert Tell.sizeof() == 0
-    assert Struct("a"/Tell, "b"/Byte, "c"/Tell).parse(b"\xff") == Container(a=0)(b=255)(c=1)
-    assert Struct("a"/Tell, "b"/Byte, "c"/Tell).build(Container(a=0)(b=255)(c=1)) == b"\xff"
+    assert Struct("a"/Tell, "b"/Byte, "c"/Tell).parse(b"\xff") == Container(a=0, b=255, c=1)
+    assert Struct("a"/Tell, "b"/Byte, "c"/Tell).build(Container(a=0, b=255, c=1)) == b"\xff"
     assert Struct("a"/Tell, "b"/Byte, "c"/Tell).build(dict(b=255)) == b"\xff"
 
 def test_pass():
@@ -973,13 +973,13 @@ def test_byteswapped():
     d = ByteSwapped(Bytes(5))
     common(d, b"12345", b"54321", 5)
     d = ByteSwapped(Struct("a"/Byte, "b"/Byte))
-    common(d, b"\x01\x02", Container(a=2)(b=1), 2)
+    common(d, b"\x01\x02", Container(a=2, b=1), 2)
 
 def test_byteswapped_from_issue_70():
     d = ByteSwapped(BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitsInteger(16), Padding(4)))
-    assert d.parse(b'\xd0\xbc\xfa') == Container(flag1=1)(flag2=1)(number=0xabcd)
+    assert d.parse(b'\xd0\xbc\xfa') == Container(flag1=1, flag2=1, number=0xabcd)
     d = BitStruct("flag1"/Bit, "flag2"/Bit, Padding(2), "number"/BitsInteger(16), Padding(4))
-    assert d.parse(b'\xfa\xbc\xd1') == Container(flag1=1)(flag2=1)(number=0xabcd)
+    assert d.parse(b'\xfa\xbc\xd1') == Container(flag1=1, flag2=1, number=0xabcd)
 
 def test_bitsswapped():
     d = BitsSwapped(Bytes(2))
@@ -989,9 +989,9 @@ def test_bitsswapped():
     d = BitsSwapped(Bitwise(Bytes(8)))
     common(d, b"\xf2", b'\x00\x01\x00\x00\x01\x01\x01\x01', 1)
     d = BitStruct("a"/Nibble, "b"/Nibble)
-    common(d, b"\xf1", Container(a=15)(b=1), 1)
+    common(d, b"\xf1", Container(a=15, b=1), 1)
     d = BitsSwapped(BitStruct("a"/Nibble, "b"/Nibble))
-    common(d, b"\xf1", Container(a=8)(b=15), 1)
+    common(d, b"\xf1", Container(a=8, b=15), 1)
 
 def test_prefixed():
     d = Prefixed(Byte, Int16ul)
@@ -1184,7 +1184,7 @@ def test_checksum():
     )
 
     c = hashlib.sha512(b"\x01\x02").digest()
-    assert d.parse(b"\x01\x02"+c) == Container(fields=dict(data=b"\x01\x02", value=Container(a=1)(b=2), offset1=0, offset2=2, length=2))(checksum=c)
+    assert d.parse(b"\x01\x02"+c) == Container(fields=dict(data=b"\x01\x02", value=Container(a=1, b=2), offset1=0, offset2=2, length=2), checksum=c)
     assert d.build(dict(fields=dict(data=b"\x01\x02"))) == b"\x01\x02"+c
     assert d.build(dict(fields=dict(value=dict(a=1,b=2)))) == b"\x01\x02"+c
 
@@ -1193,7 +1193,7 @@ def test_checksum_nonbytes_issue_323():
         "vals" / Byte[2],
         "checksum" / Checksum(Byte, lambda vals: sum(vals) & 0xFF, this.vals),
     )
-    assert st.parse(b"\x00\x00\x00") == Container(vals=[0, 0])(checksum=0)
+    assert st.parse(b"\x00\x00\x00") == Container(vals=[0, 0], checksum=0)
     assert raises(st.parse, b"\x00\x00\x01") == ChecksumError
 
 def test_checksum_warnings_issue_841():
@@ -1387,7 +1387,7 @@ def test_lazybound():
         "value" / Byte,
         "next" / If(this.value > 0, LazyBound(lambda: d)),
     )
-    common(d, b"\x05\x09\x00", Container(value=5)(next=Container(value=9)(next=Container(value=0)(next=None))))
+    common(d, b"\x05\x09\x00", Container(value=5, next=Container(value=9, next=Container(value=0, next=None))))
 
     d = Struct(
         "value" / Byte,
@@ -1498,9 +1498,9 @@ def test_operators():
     common(Int8ub[2] >> Int16ub[2], b"\x01\x02\x00\x03\x00\x04", [[1,2],[3,4]], 6)
 
     common(Sequence(Int8ub) >> Sequence(Int16ub), b"\x01\x00\x02", [1,2], 3)
-    common(Struct("count"/Byte, "items"/Byte[this.count], Pass, Terminated), b"\x03\x01\x02\x03", Container(count=3)(items=[1,2,3]), SizeofError)
-    common("count"/Byte + "items"/Byte[this.count] + Pass + Terminated, b"\x03\x01\x02\x03", Container(count=3)(items=[1,2,3]), SizeofError)
-    common(Struct(a=Byte) + Struct(b=Byte), b"\x01\x02", Container(a=1)(b=2), 2)
+    common(Struct("count"/Byte, "items"/Byte[this.count], Pass, Terminated), b"\x03\x01\x02\x03", Container(count=3, items=[1,2,3]), SizeofError)
+    common("count"/Byte + "items"/Byte[this.count] + Pass + Terminated, b"\x03\x01\x02\x03", Container(count=3, items=[1,2,3]), SizeofError)
+    common(Struct(a=Byte) + Struct(b=Byte), b"\x01\x02", Container(a=1, b=2), 2)
 
     d = Byte * "description"
     assert d.docs == "description"
@@ -1522,7 +1522,7 @@ def test_operators_issue_87():
 
 def test_from_issue_76():
     d = Aligned(4, Struct("a"/Byte, "f"/Bytes(lambda ctx: ctx.a)))
-    common(d, b"\x02\xab\xcd\x00", Container(a=2)(f=b"\xab\xcd"))
+    common(d, b"\x02\xab\xcd\x00", Container(a=2, f=b"\xab\xcd"))
 
 def test_from_issue_60():
     Header = Struct(
@@ -1535,9 +1535,9 @@ def test_from_issue_60():
         }),
         "length" / Tell,
     )
-    assert Header.parse(b"\x00\x05")             == Container(type=0)(size=5)(length=2)
-    assert Header.parse(b"\x01\x00\x05")         == Container(type=1)(size=5)(length=3)
-    assert Header.parse(b"\x02\x00\x00\x00\x05") == Container(type=2)(size=5)(length=5)
+    assert Header.parse(b"\x00\x05")             == Container(type=0, size=5, length=2)
+    assert Header.parse(b"\x01\x00\x05")         == Container(type=1, size=5, length=3)
+    assert Header.parse(b"\x02\x00\x00\x00\x05") == Container(type=2, size=5, length=5)
     assert Header.build(dict(type=0, size=5)) == b"\x00\x05"
     assert Header.build(dict(type=1, size=5)) == b"\x01\x00\x05"
     assert Header.build(dict(type=2, size=5)) == b"\x02\x00\x00\x00\x05"
@@ -1555,9 +1555,9 @@ def test_from_issue_171():
     )
     blob = b"\x00\x22\x82\x00\xCD\x80\x80\x10"
     assert attributes.parse(blob) == Container(attr=[
-        Container(attrCode=34)(attrValue=130),
-        Container(attrCode=205)(attrValue=2),
-        Container(attrCode=512)(attrValue=1), ])
+        Container(attrCode=34, attrValue=130),
+        Container(attrCode=205, attrValue=2),
+        Container(attrCode=512, attrValue=1), ])
 
 def test_from_issue_175():
     @FuncPath
@@ -1630,7 +1630,7 @@ def test_from_issue_246():
         'numVx8' / Bitwise(Aligned(8, Struct('num'/ BitsInteger(12)))),
         'numVx16'/ Bitwise(Aligned(8, Struct('num'/ BitsInteger(28)))),
     )
-    assert NumVertices.parse(b'\x01\x34\x56\x70') == Container(numVx4=Container(num=0))(numVx8=Container(num=19))(numVx16=Container(num=1262951))
+    assert NumVertices.parse(b'\x01\x34\x56\x70') == Container(numVx4=Container(num=0), numVx8=Container(num=19), numVx16=Container(num=1262951))
 
 def test_from_issue_244():
     class AddIndexes(Adapter):
@@ -1640,7 +1640,7 @@ def test_from_issue_244():
             return obj
 
     d = AddIndexes(Struct("num"/Byte)[4])
-    assert d.parse(b"abcd") == [Container(num=97)(index=0),Container(num=98)(index=1),Container(num=99)(index=2),Container(num=100)(index=3),]
+    assert d.parse(b"abcd") == [Container(num=97, index=0),Container(num=98, index=1),Container(num=99, index=2),Container(num=100, index=3),]
 
 def test_from_issue_269():
     d = Struct("enabled" / Byte, If(this.enabled, Padding(2)))
@@ -1722,9 +1722,9 @@ def test_from_issue_781():
 def test_this_expresion_compare_container():
     st = Struct(
         "flags" / FlagsEnum(Byte, a=1),
-        Check(lambda this: this.flags == Container(_flagsenum=True)(a=1)),
+        Check(lambda this: this.flags == Container(_flagsenum=True, a=1)),
     )
-    common(st, b"\x01", dict(flags=Container(_flagsenum=True)(a=True)), 1)
+    common(st, b"\x01", dict(flags=Container(_flagsenum=True, a=True)), 1)
 
 def test_pickling_constructs():
     import cloudpickle
