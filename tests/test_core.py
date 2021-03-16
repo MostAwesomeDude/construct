@@ -459,6 +459,7 @@ def test_array():
     assert raises(d.sizeof) == SizeofError
     assert raises(d.sizeof, n=3) == 3
 
+@xfail(ONWINDOWS, reason="/dev/zero not available on Windows")
 def test_array_nontellable():
     assert Array(5, Byte).parse_stream(devzero) == [0,0,0,0,0]
 
@@ -1938,7 +1939,6 @@ def test_isparsingbuilding():
     )
     d.sizeof()
 
-@pytest.mark.skipif(platform.system() == "Windows", reason="'/dev/zero' is not available on windows")
 def test_struct_stream():
     d = Struct(
         'fixed' / FixedSized(10, Struct(
@@ -1965,10 +1965,6 @@ def test_struct_stream():
         Check(lambda this: stream_size(this.fixed._io) == 10),
     )
     d.parse(bytes(20))
-
-    d = Struct()
-    d.parse(bytes(20))
-    d.parse_file("/dev/zero")
 
 def test_struct_root_topmost():
     d = Struct(

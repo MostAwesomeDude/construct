@@ -32,6 +32,7 @@ __all__ = [
     'iteratebytes',
     'iterateints',
     'ListContainer',
+    'ONWINDOWS',
     'PY',
     'PY2',
     'PY3',

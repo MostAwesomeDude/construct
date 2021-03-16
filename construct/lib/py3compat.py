@@ -1,9 +1,10 @@
-import sys
+import sys, platform
 
 PY = sys.version_info[:2]
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PYPY = '__pypy__' in sys.builtin_module_names
+ONWINDOWS = platform.system() == "Windows"
 
 
 stringtypes = (bytes, str, )
