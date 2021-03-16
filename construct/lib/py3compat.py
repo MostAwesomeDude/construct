@@ -18,10 +18,9 @@ def int2byte(character):
     """Converts (0 through 255) integer into b'...' character."""
     return INT2BYTE_CACHE[character]
 
-BYTE2INT_CACHE = {bytes([i]):i for i in range(256)}
 def byte2int(character):
     """Converts b'...' character into (0 through 255) integer."""
-    return BYTE2INT_CACHE[character]
+    return character[0]
 
 def str2bytes(string):
     """Converts '...' string into b'...' string. On PY2 they are equivalent. On PY3 its utf8 encoded."""
