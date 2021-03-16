@@ -10,7 +10,7 @@ from construct import *
 from construct.lib import *
 
 if not ONWINDOWS:
-	devzero = open("/dev/zero", "rb")
+    devzero = open("/dev/zero", "rb")
 
 ident = lambda x: x
 
