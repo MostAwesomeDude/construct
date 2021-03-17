@@ -58,5 +58,5 @@ def integers2bytes(ints):
     return bytes(ints)
 
 def bytes2integers(data):
-    """Converts bytes into bytes/bytearray, so indexing/iterating yields integers."""
-    return data
+    """Converts bytes into integer list, so indexing/iterating yields integers."""
+    return list(data)

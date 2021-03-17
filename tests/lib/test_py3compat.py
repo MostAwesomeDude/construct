@@ -30,6 +30,5 @@ def test_bytes():
     assert bytes((1,)) == b'\x01'
 
 def test_bytes_integers():
-    assert bytes2integers(b'abc')[0] == 97
-    assert list(bytes2integers(b'abc')) == [97,98,99]
+    assert bytes2integers(b'abc') == [97,98,99]
     assert integers2bytes([97,98,99]) == b'abc'
