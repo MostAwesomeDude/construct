@@ -173,6 +173,7 @@ def test_varint():
 
     assert raises(d.parse, b"") == StreamError
     assert raises(d.build, -1) == IntegerError
+    assert raises(d.build, None) == IntegerError
 
 def test_varint_issue_705():
     d = Struct('namelen' / VarInt, 'name' / Bytes(this.namelen))
