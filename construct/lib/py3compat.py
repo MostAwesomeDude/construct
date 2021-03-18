@@ -6,12 +6,10 @@ PY3 = sys.version_info[0] == 3
 PYPY = '__pypy__' in sys.builtin_module_names
 ONWINDOWS = platform.system() == "Windows"
 
-
 stringtypes = (bytes, str, )
 integertypes = (int, )
 unicodestringtype = str
 bytestringtype = bytes
-
 
 INT2BYTE_CACHE = {i:bytes([i]) for i in range(256)}
 def int2byte(character):
