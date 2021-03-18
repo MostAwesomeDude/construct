@@ -27,6 +27,7 @@ example = Struct(
     # - unknown cause (SizeofError: cannot calculate size, key not found in context)
     # "bitsinteger3" / Bitwise(BitsInteger(this.num)),
     "varint" / VarInt,
+    "zigzag" / ZigZag,
     "byte" / Byte,
     "float1" / Single,
     "float2" / Double,
