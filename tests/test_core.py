@@ -2191,7 +2191,7 @@ def test_struct_copy():
     import copy
     d = Struct(
         "a" / Int16ub,
-        "b" / Int8ub
+        "b" / Int8ub,
     )
     d_copy = copy.copy(d)
     
