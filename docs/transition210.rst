@@ -25,3 +25,5 @@ ZigZag signed integer encoding from Protocol Buffers added
 FormatField now supports ? format string
 
 CompressedLZ4 tunneling class added
+
+Windows is now officially supported and tested for
