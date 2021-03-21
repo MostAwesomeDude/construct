@@ -5,7 +5,7 @@ import binascii
 
 def integer2bits(number, width, signed=False):
     r"""
-    Converts an integer into its binary representation in a bit-string. Width is the amount of bits to generate. If width is larger than the actual amount of bits required to represent number in binary, sign-extension is used. If it's smaller, the representation is trimmed to width bits. Each bit is represented as either \\x00 or \\x01. The most significant is first, big-endian. This is reverse to `bits2integer`.
+    Converts an integer into its binary representation in a bit-string. Width is the amount of bits to generate. Each bit is represented as either \\x00 or \\x01. The most significant bit is first, big-endian. This is reverse to `bits2integer`.
 
     Examples:
 
@@ -13,19 +13,28 @@ def integer2bits(number, width, signed=False):
         b'\x00\x00\x00\x01\x00\x00\x01\x01'
     """
     if width < 0:
-        raise ValueError("width must be non-negative")
-    number = int(number)
+        raise ValueError(f"width {width} must be non-negative")
     if number < 0 and not signed:
         raise ValueError(f"negative number {number} not expected")
+
+    if signed:
+        min = -(2 ** width // 2)
+        max = 2 ** width // 2 - 1
+    else:
+        min = 0
+        max = 2 ** width - 1
+    if not min <= number <= max:
+        raise ValueError(f"number {number} is out of range (min={min}, max={max})")
+
     if number < 0:
         number += 1 << width
-    bits = [b"\x00"] * width
+    bits = bytearray(width)
     i = width - 1
     while number and i >= 0:
-        bits[i] = int2byte(number & 1)
+        bits[i] = number & 1
         number >>= 1
         i -= 1
-    return b"".join(bits)
+    return bytes(bits)
 
 
 def integer2bytes(number, width, signed=False):
@@ -37,20 +46,14 @@ def integer2bytes(number, width, signed=False):
         >>> integer2bytes(19,4)
         '\x00\x00\x00\x13'
     """
+    # pypy does not check this in int.to_bytes, lazy fuckers
     if width < 0:
-        raise ValueError("width must be non-negative")
-    number = int(number)
-    if number < 0 and not signed:
-        raise ValueError(f"negative number {number} not expected")
-    if number < 0:
-        number += 1 << (width * 8)
-    acc = [b"\x00"] * width
-    i = width - 1
-    while number > 0:
-        acc[i] = int2byte(number & 255)
-        number >>= 8
-        i -= 1
-    return b"".join(acc)
+        raise ValueError(f"width {width} must be non-negative")
+
+    try:
+        return int.to_bytes(number, width, 'big', signed=signed)
+    except OverflowError:
+        raise ValueError(f"number {number} does not fit width {width} signed {signed}")
 
 
 def bits2integer(data, signed=False):
@@ -69,7 +72,7 @@ def bits2integer(data, signed=False):
     for b in data:
         number = (number << 1) | b
 
-    if signed and byte2int(data[0:1]):
+    if signed and data[0]:
         bias = 1 << len(data)
         return number - bias
     else:
@@ -85,18 +88,7 @@ def bytes2integer(data, signed=False):
         >>> bytes2integer(b'\x00\x00\x00\x13')
         19
     """
-    if data == b"":
-        return 0
-
-    number = 0
-    for b in data:
-        number = (number << 8) | b
-
-    if signed and byte2int(bytes2bits(data[0:1])[0:1]):
-        bias = 1 << len(data)*8
-        return number - bias
-    else:
-        return number
+    return int.from_bytes(data, 'big', signed=signed)
 
 
 BYTES2BITS_CACHE = {i:integer2bits(i,8) for i in range(256)}
