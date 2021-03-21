@@ -1,8 +1,9 @@
-from construct.lib.py3compat import *
+from construct import *
+from construct.lib import *
 import binascii
 
 
-def integer2bits(number, width):
+def integer2bits(number, width, signed=False):
     r"""
     Converts an integer into its binary representation in a bit-string. Width is the amount of bits to generate. If width is larger than the actual amount of bits required to represent number in binary, sign-extension is used. If it's smaller, the representation is trimmed to width bits. Each bit is represented as either \\x00 or \\x01. The most significant is first, big-endian. This is reverse to `bits2integer`.
 
@@ -14,6 +15,8 @@ def integer2bits(number, width):
     if width < 0:
         raise ValueError("width must be non-negative")
     number = int(number)
+    if number < 0 and not signed:
+        raise ValueError(f"negative number {number} not expected")
     if number < 0:
         number += 1 << width
     bits = [b"\x00"] * width
@@ -25,7 +28,7 @@ def integer2bits(number, width):
     return b"".join(bits)
 
 
-def integer2bytes(number, width):
+def integer2bytes(number, width, signed=False):
     r"""
     Converts a bytes-string into an integer. This is reverse to `bytes2integer`.
 
@@ -37,6 +40,8 @@ def integer2bytes(number, width):
     if width < 0:
         raise ValueError("width must be non-negative")
     number = int(number)
+    if number < 0 and not signed:
+        raise ValueError(f"negative number {number} not expected")
     if number < 0:
         number += 1 << (width * 8)
     acc = [b"\x00"] * width

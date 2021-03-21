@@ -1084,7 +1084,7 @@ class BytesInteger(Construct):
     """
 
     def __init__(self, length, signed=False, swapped=False):
-        super(BytesInteger, self).__init__()
+        super().__init__()
         self.length = length
         self.signed = signed
         self.swapped = swapped
@@ -1106,7 +1106,7 @@ class BytesInteger(Construct):
         length = evaluate(self.length, context)
         if length < 0:
             raise IntegerError("length must be non-negative", path=path)
-        data = integer2bytes(obj, length)
+        data = integer2bytes(obj, length, self.signed)
         if evaluate(self.swapped, context):
             data = data[::-1]
         stream_write(stream, data, length, path)
@@ -1165,7 +1165,7 @@ class BitsInteger(Construct):
     """
 
     def __init__(self, length, signed=False, swapped=False):
-        super(BitsInteger, self).__init__()
+        super().__init__()
         self.length = length
         self.signed = signed
         self.swapped = swapped
@@ -1189,7 +1189,7 @@ class BitsInteger(Construct):
         length = evaluate(self.length, context)
         if length < 0:
             raise IntegerError("length must be non-negative", path=path)
-        data = integer2bits(obj, length)
+        data = integer2bits(obj, length, self.signed)
         if evaluate(self.swapped, context):
             if length & 7:
                 raise IntegerError("little-endianness is only defined for multiples of 8 bits", path=path)
