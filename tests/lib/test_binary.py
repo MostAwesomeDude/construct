@@ -3,7 +3,8 @@ from construct.lib.binary import *
 
 
 def test_integer2bits():
-    assert integer2bits(0, 0) == b""
+    assert integer2bits(0, 0, False) == b""
+    assert integer2bits(0, 0, True) == b""
     assert integer2bits(19, 5) == b"\x01\x00\x00\x01\x01"
     assert integer2bits(19, 8) == b"\x00\x00\x00\x01\x00\x00\x01\x01"
     assert integer2bits(-13, 5, True) == b"\x01\x00\x00\x01\x01"
@@ -16,23 +17,25 @@ def test_integer2bits():
     assert raises(integer2bits,  2**64, 8, False) == ValueError
 
 def test_integer2bytes():
-    assert integer2bytes(0, 0) == b""
+    assert integer2bytes(0, 0, False) == b""
+    assert integer2bytes(0, 0, True) == b""
     assert integer2bytes(0, 4) == b"\x00\x00\x00\x00"
     assert integer2bytes(1, 4) == b"\x00\x00\x00\x01"
     assert integer2bytes(255, 4) == b"\x00\x00\x00\xff"
+    assert integer2bytes(255, 1) == b"\xff"
     assert integer2bytes(-1, 4, True) == b"\xff\xff\xff\xff"
     assert integer2bytes(-255, 4, True) == b"\xff\xff\xff\x01"
     assert raises(integer2bytes, 0, -1) == ValueError
     assert raises(integer2bytes, -1, 8, False) == ValueError
 
 def test_bits2integer():
-    assert bits2integer(b"") == 0
+    assert bits2integer(b"", False) == 0
     assert bits2integer(b"", True) == 0
-    assert bits2integer(b"\x01\x00\x00\x01\x01") == 19
+    assert bits2integer(b"\x01\x00\x00\x01\x01", False) == 19
     assert bits2integer(b"\x01\x00\x00\x01\x01", True) == -13
 
 def test_bytes2integer():
-    assert bytes2integer(b"") == 0
+    assert bytes2integer(b"", False) == 0
     assert bytes2integer(b"", True) == 0
     assert bytes2integer(b"\x00") == 0
     assert bytes2integer(b"\x00", True) == 0

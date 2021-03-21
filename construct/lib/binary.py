@@ -14,6 +14,8 @@ def integer2bits(number, width, signed=False):
     """
     if width < 0:
         raise ValueError(f"width {width} must be non-negative")
+    if width == 0:
+        return b""
 
     if signed:
         min = -(2 ** width // 2)
