@@ -58,7 +58,7 @@ def bits2integer(data, signed=False):
         19
     """
     number = 0
-    for b in iterateints(data):
+    for b in data:
         number = (number << 1) | b
 
     if signed and byte2int(data[0:1]):
@@ -78,7 +78,7 @@ def bytes2integer(data, signed=False):
         19
     """
     number = 0
-    for b in iterateints(data):
+    for b in data:
         number = (number << 8) | b
 
     if signed and byte2int(bytes2bits(data[0:1])[0:1]):
@@ -98,7 +98,7 @@ def bytes2bits(data):
         >>> bytes2bits(b'ab')
         b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
     """
-    return b"".join(BYTES2BITS_CACHE[b] for b in iterateints(data))
+    return b"".join(BYTES2BITS_CACHE[b] for b in data)
 
 
 BITS2BYTES_CACHE = {bytes2bits(int2byte(i)):int2byte(i) for i in range(256)}
@@ -152,7 +152,7 @@ def swapbitsinbytes(data):
         >>> swapbits(b'\xf0')
         b'\x0f'
     """
-    return b"".join(SWAPBITSINBYTES_CACHE[b] for b in iterateints(data))
+    return b"".join(SWAPBITSINBYTES_CACHE[b] for b in data)
 
 
 def hexlify(data):
