@@ -1069,6 +1069,7 @@ class BytesInteger(Construct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises IntegerError: lenght is negative, given a negative value when field is not signed, or not an integer
+    :raises ValueError: number does not fit given width and signed parameters
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -1150,6 +1151,7 @@ class BitsInteger(Construct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises IntegerError: lenght is negative, given a negative value when field is not signed, or not an integer
+    :raises ValueError: number does not fit given width and signed parameters
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
