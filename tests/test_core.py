@@ -1670,7 +1670,7 @@ def test_from_issue_324():
         )),
         "checksum" / Checksum(
             Byte,
-            lambda data: sum(iterateints(data)) & 0xFF,
+            lambda data: sum(data) & 0xFF,
             this.vals.data
         ),
     )

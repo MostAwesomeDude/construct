@@ -29,8 +29,6 @@ __all__ = [
     'integer2bytes',
     'integers2bytes',
     'integertypes',
-    'iteratebytes',
-    'iterateints',
     'ListContainer',
     'ONWINDOWS',
     'PY',

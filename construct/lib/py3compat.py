@@ -28,15 +28,6 @@ def bytes2str(string):
     """Converts b'...' string into '...' string. On PY2 they are equivalent. On PY3 its utf8 decoded."""
     return string.decode("utf8")
 
-ITERATEBYTES_CACHE = {i:bytes([i]) for i in range(256)}
-def iteratebytes(data):
-    """Iterates though b'...' string yielding b'...' characters."""
-    return (ITERATEBYTES_CACHE[i] for i in data)
-
-def iterateints(data):
-    """Iterates though b'...' string yielding (0 through 255) integers."""
-    return data
-
 def reprstring(data):
     """Ensures there is b- u- prefix before the string."""
     if isinstance(data, bytes):

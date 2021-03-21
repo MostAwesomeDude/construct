@@ -2534,7 +2534,7 @@ class Const(Subconstruct):
             if not isinstance(value, bytestringtype):
                 raise StringError("given non-bytes value, perhaps unicode? %r" % (value,))
             subcon = Bytes(len(value))
-        super(Const, self).__init__(subcon)
+        super().__init__(subcon)
         self.value = value
         self.flagbuildnone = True
 
@@ -2562,7 +2562,7 @@ class Const(Subconstruct):
 
     def _emitfulltype(self, ksy, bitwise):
         data = self.subcon.build(self.value)
-        return dict(contents=list(iterateints(data)))
+        return dict(contents=list(data))
 
 
 class Computed(Construct):
@@ -4899,7 +4899,7 @@ class ProcessXor(Subconstruct):
     """
 
     def __init__(self, padfunc, subcon):
-        super(ProcessXor, self).__init__(subcon)
+        super().__init__(subcon)
         self.padfunc = padfunc
 
     def _parse(self, stream, context, path):
@@ -4911,10 +4911,10 @@ class ProcessXor(Subconstruct):
         data = stream_read_entire(stream, path)
         if isinstance(pad, integertypes):
             if not (pad == 0):
-                data = integers2bytes( (b ^ pad) for b in iterateints(data) )
+                data = integers2bytes( (b ^ pad) for b in data )
         if isinstance(pad, bytestringtype):
             if not (len(pad) <= 64 and pad == bytes(len(pad))):
-                data = integers2bytes( (b ^ p) for b,p in zip(iterateints(data), itertools.cycle(iterateints(pad))) )
+                data = integers2bytes( (b ^ p) for b,p in zip(data, itertools.cycle(pad)) )
         if self.subcon is GreedyBytes:
             return data
         if type(self.subcon) is GreedyString:
@@ -4932,10 +4932,10 @@ class ProcessXor(Subconstruct):
         data = stream2.getvalue()
         if isinstance(pad, integertypes):
             if not (pad == 0):
-                data = integers2bytes( (b ^ pad) for b in iterateints(data) )
+                data = integers2bytes( (b ^ pad) for b in data )
         if isinstance(pad, bytestringtype):
             if not (len(pad) <= 64 and pad == bytes(len(pad))):
-                data = integers2bytes( (b ^ p) for b,p in zip(iterateints(data), itertools.cycle(iterateints(pad))) )
+                data = integers2bytes( (b ^ p) for b,p in zip(data, itertools.cycle(pad)) )
         stream_write(stream, data, len(data), path)
         return buildret
 
@@ -4976,7 +4976,7 @@ class ProcessRotateLeft(Subconstruct):
     precomputed_single_rotations = {amount: [(i << amount) & 0xff | (i >> (8-amount)) for i in range(256)] for amount in range(1,8)}
 
     def __init__(self, amount, group, subcon):
-        super(ProcessRotateLeft, self).__init__(subcon)
+        super().__init__(subcon)
         self.amount = amount
         self.group = group
 
