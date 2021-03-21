@@ -57,6 +57,9 @@ def bits2integer(data, signed=False):
         >>> bits2integer(b"\x01\x00\x00\x01\x01")
         19
     """
+    if data == b"":
+        return 0
+
     number = 0
     for b in data:
         number = (number << 1) | b
@@ -77,6 +80,9 @@ def bytes2integer(data, signed=False):
         >>> bytes2integer(b'\x00\x00\x00\x13')
         19
     """
+    if data == b"":
+        return 0
+
     number = 0
     for b in data:
         number = (number << 8) | b
