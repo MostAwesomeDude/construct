@@ -1096,7 +1096,7 @@ class BytesInteger(Construct):
             raise IntegerError("length must be non-negative", path=path)
         data = stream_read(stream, length, path)
         if evaluate(self.swapped, context):
-            data = data[::-1]
+            data = swapbytes(data)
         return bytes2integer(data, self.signed)
 
     def _build(self, obj, stream, context, path):
@@ -1109,7 +1109,7 @@ class BytesInteger(Construct):
             raise IntegerError("length must be non-negative", path=path)
         data = integer2bytes(obj, length, self.signed)
         if evaluate(self.swapped, context):
-            data = data[::-1]
+            data = swapbytes(data)
         stream_write(stream, data, length, path)
         return obj
 
