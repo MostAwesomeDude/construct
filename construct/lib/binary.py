@@ -39,7 +39,7 @@ def integer2bits(number, width, signed=False):
 
 def integer2bytes(number, width, signed=False):
     r"""
-    Converts a bytes-string into an integer. This is reverse to `bytes2integer`.
+    Converts an integer into a byte-string. This is reverse to `bytes2integer`.
 
     Examples:
 
@@ -58,7 +58,7 @@ def integer2bytes(number, width, signed=False):
 
 def bits2integer(data, signed=False):
     r"""
-    Converts a bit-string into an integer. Set sign to interpret the number as a 2-s complement signed integer. This is reverse to `integer2bits`.
+    Converts a bit-string into an integer. Set signed to interpret the number as a 2-s complement signed integer. This is reverse to `integer2bits`.
 
     Examples:
 
@@ -94,7 +94,7 @@ def bytes2integer(data, signed=False):
 BYTES2BITS_CACHE = {i:integer2bits(i,8) for i in range(256)}
 def bytes2bits(data):
     r""" 
-    Converts between bit and byte representations in b-strings.
+    Converts between bit-string and byte-string representations, both as bytes type.
 
     Example:
 
@@ -107,7 +107,7 @@ def bytes2bits(data):
 BITS2BYTES_CACHE = {bytes2bits(int2byte(i)):int2byte(i) for i in range(256)}
 def bits2bytes(data):
     r""" 
-    Converts between bit and byte representations in b-strings.
+    Converts between bit-string and byte-string representations, both as bytes type.
 
     Example:
 
@@ -148,7 +148,7 @@ def swapbytesinbits(data):
 SWAPBITSINBYTES_CACHE = {i:bits2bytes(bytes2bits(int2byte(i))[::-1]) for i in range(256)}
 def swapbitsinbytes(data):
     r"""
-    Performs a bit-reversal within a byte-string.
+    Performs a bit-reversal on each byte within a byte-string.
 
     Example:
 
