@@ -38,6 +38,7 @@ def common(format, datasample, objsample, sizesample=SizeofError, **kw):
 def common2(format, datasample, objsample, sizesample=SizeofError, **kw):
     common(format, datasample, objsample, sizesample, **kw)
     # following was added to test compiling functionality
+    # and implies: format.parse(data) == cformat.parse(data)
     cformat = format.compile()
     obj = cformat.parse(datasample, **kw)
     assert obj == objsample
