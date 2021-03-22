@@ -35,6 +35,13 @@ def common(format, datasample, objsample, sizesample=SizeofError, **kw):
         size = raises(format.sizeof, **kw)
         assert size == sizesample
 
+def common2(format, datasample, objsample, sizesample=SizeofError, **kw):
+    common(format, datasample, objsample, sizesample. **kw)
+    # following was added to test compiling functionality
+    cformat = format.compile()
+    obj = cformat.parse(datasample, **kw)
+    assert obj == objsample
+
 def commonhex(format, hexdata):
     commonbytes(format, binascii.unhexlify(hexdata))
 
