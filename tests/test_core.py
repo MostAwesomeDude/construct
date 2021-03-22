@@ -180,23 +180,26 @@ def test_varint():
         assert d.parse(d.build(n)) == n
     for n in range(0, 127):
         common(d, int2byte(n), n, SizeofError)
-
     assert raises(d.parse, b"") == StreamError
     assert raises(d.build, -1) == IntegerError
     assert raises(d.build, None) == IntegerError
+    assert raises(d.sizeof) == SizeofError
 
 def test_varint_issue_705():
     d = Struct('namelen' / VarInt, 'name' / Bytes(this.namelen))
     d.build(Container(namelen = 400, name = bytes(400)))
+    d = Struct('namelen' / VarInt, Check(this.namelen == 400))
+    d.build(dict(namelen=400))
 
 def test_zigzag():
     d = ZigZag
-    assert d.parse(b"\x00") == 0
-    assert d.parse(b"\x05") == -3
-    assert d.parse(b"\x06") == 3
-    assert d.build(0) == b"\x00"
-    assert d.build(-3) == b"\x05"
-    assert d.build(3) == b"\x06"
+    common(d, b"\x00", 0)
+    common(d, b"\x05", -3)
+    common(d, b"\x06", 3)
+    for n in [0,1,5,100,255,256,65535,65536,2**32,2**100]:
+        assert d.parse(d.build(n)) == n
+    for n in range(0, 63):
+        common(d, int2byte(n*2), n, SizeofError)
     assert raises(d.parse, b"") == StreamError
     assert raises(d.build, None) == IntegerError
     assert raises(d.sizeof) == SizeofError
@@ -205,6 +208,8 @@ def test_zigzag_regression():
     d = ZigZag
     assert isinstance(d.parse(b"\x05"), integertypes)
     assert isinstance(d.parse(b"\x06"), integertypes)
+    d = Struct('namelen' / ZigZag, Check(this.namelen == 400))
+    d.build(dict(namelen=400))
 
 def test_paddedstring():
     common(PaddedString(10, "utf8"), b"hello\x00\x00\x00\x00\x00", u"hello", 10)

@@ -1442,9 +1442,9 @@ class VarInt(Construct):
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value is not an integer", path=path)
+            raise IntegerError(f"value {obj} is not an integer", path=path)
         if obj < 0:
-            raise IntegerError("varint cannot build from negative number: %r" % (obj,), path=path)
+            raise IntegerError(f"VarInt cannot build from negative number {obj}", path=path)
         x = obj
         while x > 0b01111111:
             stream_write(stream, int2byte(0b10000000 | (x & 0b01111111)), 1, path)
@@ -1459,7 +1459,7 @@ class VarInt(Construct):
 @singleton
 class ZigZag(Construct):
     r"""
-    ZigZag encoded signed integer. This is a variation of VarInt encoding that also can encode negative numbers. Scheme is defined at Google site related to `Protocol Buffers <https://developers.google.com/protocol-buffers/docs/encoding>`_.
+    ZigZag encoded signed integer. This is a variant of VarInt encoding that also can encode negative numbers. Scheme is defined at Google site related to `Protocol Buffers <https://developers.google.com/protocol-buffers/docs/encoding>`_.
 
     Can encode negative numbers.
 
@@ -1486,7 +1486,7 @@ class ZigZag(Construct):
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value is not an integer", path=path)
+            raise IntegerError(f"value {obj} is not an integer", path=path)
         if obj >= 0:
             x = 2*obj
         else:
