@@ -115,7 +115,7 @@ def bits2bytes(data):
         b'ab'
     """
     if len(data) % 8:
-        raise ValueError("data length must be a multiple of 8")
+        raise ValueError(f"data length {len(data)} must be a multiple of 8")
     return b"".join(BITS2BYTES_CACHE[data[i:i+8]] for i in range(0,len(data),8))
 
 
@@ -141,7 +141,7 @@ def swapbytesinbits(data):
         b'1111111100000000'
     """
     if len(data) % 8:
-        raise ValueError("data length must be multiple of 8")
+        raise ValueError(f"data length {len(data)} must be a multiple of 8")
     return b"".join(data[i:i+8] for i in reversed(range(0,len(data),8)))
 
 
