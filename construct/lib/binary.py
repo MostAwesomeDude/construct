@@ -107,14 +107,14 @@ def bytes2bits(data):
 BITS2BYTES_CACHE = {bytes2bits(int2byte(i)):int2byte(i) for i in range(256)}
 def bits2bytes(data):
     r""" 
-    Converts between bit-string and byte-string representations, both as bytes type.
+    Converts between bit-string and byte-string representations, both as bytes type. Its length must be multiple of 8.
 
     Example:
 
         >>> bits2bytes(b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00")
         b'ab'
     """
-    if len(data) & 7:
+    if len(data) % 8:
         raise ValueError("data length must be a multiple of 8")
     return b"".join(BITS2BYTES_CACHE[data[i:i+8]] for i in range(0,len(data),8))
 
@@ -140,7 +140,7 @@ def swapbytesinbits(data):
         >>> swapbytesinbits(b'0000000011111111')
         b'1111111100000000'
     """
-    if len(data) & 7:
+    if len(data) % 8:
         raise ValueError("data length must be multiple of 8")
     return b"".join(data[i:i+8] for i in reversed(range(0,len(data),8)))
 
