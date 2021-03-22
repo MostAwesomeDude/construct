@@ -1057,7 +1057,7 @@ class FormatField(Construct):
 
 class BytesInteger(Construct):
     r"""
-    Field that packs arbitrarily large integers. Some Int24* fields use this class.
+    Field that packs integers of arbitrary size. Int24* fields use this class.
 
     Parses into an integer. Builds from an integer into specified byte count and endianness. Size is specified in ctor.
 
@@ -1093,7 +1093,7 @@ class BytesInteger(Construct):
     def _parse(self, stream, context, path):
         length = evaluate(self.length, context)
         if length < 0:
-            raise IntegerError("length must be non-negative", path=path)
+            raise IntegerError(f"length {length} must be non-negative", path=path)
         data = stream_read(stream, length, path)
         if evaluate(self.swapped, context):
             data = swapbytes(data)
@@ -1101,12 +1101,12 @@ class BytesInteger(Construct):
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value %r is not an integer" % (obj,), path=path)
+            raise IntegerError(f"value {obj} is not an integer", path=path)
         if obj < 0 and not self.signed:
-            raise IntegerError("value %r is negative, but field is not signed" % (obj,), path=path)
+            raise IntegerError(f"value {obj} is negative but signed is false", path=path)
         length = evaluate(self.length, context)
         if length < 0:
-            raise IntegerError("length must be non-negative", path=path)
+            raise IntegerError(f"length {length} must be non-negative", path=path)
         data = integer2bytes(obj, length, self.signed)
         if evaluate(self.swapped, context):
             data = swapbytes(data)
@@ -1175,26 +1175,26 @@ class BitsInteger(Construct):
     def _parse(self, stream, context, path):
         length = evaluate(self.length, context)
         if length < 0:
-            raise IntegerError("length must be non-negative", path=path)
+            raise IntegerError(f"length {length} must be non-negative", path=path)
         data = stream_read(stream, length, path)
         if evaluate(self.swapped, context):
             if length % 8:
-                raise IntegerError("little-endianness is only defined for multiples of 8 bits", path=path)
+                raise IntegerError(f"little-endianness is only defined if {length} is multiple of 8 bits", path=path)
             data = swapbytes(data)
         return bits2integer(data, self.signed)
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
-            raise IntegerError("value %r is not an integer" % (obj,), path=path)
+            raise IntegerError(f"value {obj} is not an integer", path=path)
         if obj < 0 and not self.signed:
-            raise IntegerError("value %r is negative, but field is not signed" % (obj,), path=path)
+            raise IntegerError(f"value {obj} is negative but signed is false", path=path)
         length = evaluate(self.length, context)
         if length < 0:
-            raise IntegerError("length must be non-negative", path=path)
+            raise IntegerError(f"length {length} must be non-negative", path=path)
         data = integer2bits(obj, length, self.signed)
         if evaluate(self.swapped, context):
             if length % 8:
-                raise IntegerError("little-endianness is only defined for multiples of 8 bits", path=path)
+                raise IntegerError(f"little-endianness is only defined if {length} is multiple of 8 bits", path=path)
             data = swapbytes(data)
         stream_write(stream, data, length, path)
         return obj

@@ -139,17 +139,23 @@ def test_formatfield_bool_issue_901():
     assert d.sizeof() == 1
 
 def test_bytesinteger():
+    d = BytesInteger(0)
+    common(d, b"", 0, 0)
     d = BytesInteger(4, signed=True, swapped=False)
     common(d, b"\x01\x02\x03\x04", 0x01020304, 4)
     common(d, b"\xff\xff\xff\xff", -1, 4)
     d = BytesInteger(4, signed=False, swapped=this.swapped)
     common(d, b"\x01\x02\x03\x04", 0x01020304, 4, swapped=False)
     common(d, b"\x04\x03\x02\x01", 0x01020304, 4, swapped=True)
+    assert raises(BytesInteger(-1).parse, b"") == IntegerError
+    assert raises(BytesInteger(-1).build, 0) == IntegerError
+    assert raises(BytesInteger(8).build, None) == IntegerError
+    assert raises(BytesInteger(8, signed=False).build, -1) == IntegerError
     assert raises(BytesInteger(this.missing).sizeof) == SizeofError
-    assert raises(BytesInteger(4, signed=False).build, -1) == IntegerError
-    common(BytesInteger(0), b"", 0, 0)
 
 def test_bitsinteger():
+    d = BitsInteger(0)
+    common(d, b"", 0, 0)
     d = BitsInteger(8)
     common(d, b"\x01\x01\x01\x01\x01\x01\x01\x01", 255, 8)
     d = BitsInteger(8, signed=True)
@@ -159,9 +165,13 @@ def test_bitsinteger():
     d = BitsInteger(16, swapped=this.swapped)
     common(d, b"\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00", 0xff00, 16, swapped=False)
     common(d, b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01", 0xff00, 16, swapped=True)
-    assert raises(BitsInteger(this.missing).sizeof) == SizeofError
+    assert raises(BitsInteger(-1).parse, b"") == IntegerError
+    assert raises(BitsInteger(-1).build, 0) == IntegerError
+    assert raises(BitsInteger(5, swapped=True).parse, bytes(5)) == IntegerError
+    assert raises(BitsInteger(5, swapped=True).build, 0) == IntegerError
+    assert raises(BitsInteger(8).build, None) == IntegerError
     assert raises(BitsInteger(8, signed=False).build, -1) == IntegerError
-    common(BitsInteger(0), b"", 0, 0)
+    assert raises(BitsInteger(this.missing).sizeof) == SizeofError
 
 def test_varint():
     d = VarInt
