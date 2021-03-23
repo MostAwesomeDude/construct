@@ -145,7 +145,7 @@ def swapbytesinbits(data):
     return b"".join(data[i:i+8] for i in reversed(range(0,len(data),8)))
 
 
-SWAPBITSINBYTES_CACHE = {i:bits2bytes(bytes2bits(int2byte(i))[::-1]) for i in range(256)}
+SWAPBITSINBYTES_CACHE = {i:bits2bytes(swapbytes(bytes2bits(int2byte(i)))) for i in range(256)}
 def swapbitsinbytes(data):
     r"""
     Performs a bit-reversal on each byte within a byte-string.
