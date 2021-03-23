@@ -104,7 +104,7 @@ def bytes2bits(data):
     return b"".join(BYTES2BITS_CACHE[b] for b in data)
 
 
-BITS2BYTES_CACHE = {bytes2bits(int2byte(i)):int2byte(i) for i in range(256)}
+BITS2BYTES_CACHE = {bytes2bits(int2byte(i)):i for i in range(256)}
 def bits2bytes(data):
     r""" 
     Converts between bit-string and byte-string representations, both as bytes type. Its length must be multiple of 8.
@@ -116,7 +116,7 @@ def bits2bytes(data):
     """
     if len(data) % 8:
         raise ValueError(f"data length {len(data)} must be a multiple of 8")
-    return b"".join(BITS2BYTES_CACHE[data[i:i+8]] for i in range(0,len(data),8))
+    return bytes(BITS2BYTES_CACHE[data[i:i+8]] for i in range(0,len(data),8))
 
 
 def swapbytes(data):
@@ -145,7 +145,7 @@ def swapbytesinbits(data):
     return b"".join(data[i:i+8] for i in reversed(range(0,len(data),8)))
 
 
-SWAPBITSINBYTES_CACHE = {i:bits2bytes(swapbytes(bytes2bits(int2byte(i)))) for i in range(256)}
+SWAPBITSINBYTES_CACHE = {i:byte2int(bits2bytes(swapbytes(bytes2bits(int2byte(i))))) for i in range(256)}
 def swapbitsinbytes(data):
     r"""
     Performs a bit-reversal on each byte within a byte-string.
@@ -155,7 +155,7 @@ def swapbitsinbytes(data):
         >>> swapbitsinbytes(b"\xf0\x00")
         b"\x0f\x00"
     """
-    return b"".join(SWAPBITSINBYTES_CACHE[b] for b in data)
+    return bytes(SWAPBITSINBYTES_CACHE[b] for b in data)
 
 
 def hexlify(data):
