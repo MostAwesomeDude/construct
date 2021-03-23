@@ -27,6 +27,10 @@ def test_integer2bytes():
     assert integer2bytes(-255, 4, True) == b"\xff\xff\xff\x01"
     assert raises(integer2bytes, 0, -1) == ValueError
     assert raises(integer2bytes, -1, 8, False) == ValueError
+    assert raises(integer2bytes, -2**64, 4, True) == ValueError
+    assert raises(integer2bytes,  2**64, 4, True) == ValueError
+    assert raises(integer2bytes, -2**64, 4, False) == ValueError
+    assert raises(integer2bytes,  2**64, 4, False) == ValueError
 
 def test_bits2integer():
     assert bits2integer(b"", False) == 0
