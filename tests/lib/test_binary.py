@@ -21,8 +21,9 @@ def test_integer2bytes():
     assert integer2bytes(0, 0, True) == b""
     assert integer2bytes(0, 4) == b"\x00\x00\x00\x00"
     assert integer2bytes(1, 4) == b"\x00\x00\x00\x01"
-    assert integer2bytes(255, 4) == b"\x00\x00\x00\xff"
+    assert integer2bytes(19, 4) == b'\x00\x00\x00\x13'
     assert integer2bytes(255, 1) == b"\xff"
+    assert integer2bytes(255, 4) == b"\x00\x00\x00\xff"
     assert integer2bytes(-1, 4, True) == b"\xff\xff\xff\xff"
     assert integer2bytes(-255, 4, True) == b"\xff\xff\xff\x01"
     assert raises(integer2bytes, 0, -1) == ValueError
@@ -45,6 +46,8 @@ def test_bytes2integer():
     assert bytes2integer(b"\x00", True) == 0
     assert bytes2integer(b"\xff") == 255
     assert bytes2integer(b"\xff", True) == -1
+    assert bytes2integer(b'\x00\x00\x00\x13', False) == 19
+    assert bytes2integer(b'\x00\x00\x00\x13', True) == 19
 
 def test_cross_integers():
     for i in [-300,-255,-100,-1,0,1,100,255,300]:

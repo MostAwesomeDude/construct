@@ -152,8 +152,8 @@ def swapbitsinbytes(data):
 
     Example:
 
-        >>> swapbitsinbytes(b'\xf0')
-        b'\x0f'
+        >>> swapbitsinbytes(b"\xf0\x00")
+        b"\x0f\x00"
     """
     return b"".join(SWAPBITSINBYTES_CACHE[b] for b in data)
 
