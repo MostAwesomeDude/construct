@@ -43,7 +43,7 @@ def integer2bytes(number, width, signed=False):
 
     Examples:
 
-        >>> integer2bytes(19,4)
+        >>> integer2bytes(19, 4)
         '\x00\x00\x00\x13'
     """
     # pypy does not check this in int.to_bytes, lazy fuckers
@@ -152,7 +152,7 @@ def swapbitsinbytes(data):
 
     Example:
 
-        >>> swapbits(b'\xf0')
+        >>> swapbitsinbytes(b'\xf0')
         b'\x0f'
     """
     return b"".join(SWAPBITSINBYTES_CACHE[b] for b in data)
