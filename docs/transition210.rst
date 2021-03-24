@@ -29,3 +29,5 @@ CompressedLZ4 tunneling class added
 Windows is now officially supported and tested for
 
 BytesInteger and BitsInteger are checking numbers are valid
+
+BitsInteger swapped semantic was fixed
