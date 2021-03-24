@@ -196,10 +196,6 @@ def evaluate(param, context):
     return param(context) if callable(param) else param
 
 
-def disableif(condition):
-    return "# " if condition else "pass; "
-
-
 #===============================================================================
 # abstract constructs
 #===============================================================================
