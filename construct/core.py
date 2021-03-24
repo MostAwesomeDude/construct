@@ -1057,7 +1057,14 @@ class BytesInteger(Construct):
 
     Parses into an integer. Builds from an integer into specified byte count and endianness. Size is specified in ctor.
 
-    Analog to :class:`~construct.core.BitsInteger` that operates on bits. In fact, ``BytesInteger(n)`` is equivalent to ``Bitwise(BitsInteger(8*n))`` and ``BitsInteger(n)`` is equivalent to ``Bytewise(BytesInteger(n//8)))`` .
+    Analog to :class:`~construct.core.BitsInteger` which operates on bits. In fact::
+
+        BytesInteger(n) <--> Bitwise(BitsInteger(8*n))
+        BitsInteger(8*n) <--> Bytewise(BytesInteger(n))
+
+    Byte ordering refers to bytes (chunks of 8 bits) so, for example::
+
+        BytesInteger(n, swapped=True) <--> Bitwise(BitsInteger(8*n, swapped=True))
 
     :param length: integer or context lambda, number of bytes in the field
     :param signed: bool, whether the value is signed (two's complement), default is False (unsigned)
