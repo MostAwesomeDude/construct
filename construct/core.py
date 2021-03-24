@@ -1134,9 +1134,18 @@ class BitsInteger(Construct):
 
     Parses into an integer. Builds from an integer into specified bit count and endianness. Size (in bits) is specified in ctor.
 
+    Analog to :class:`~construct.core.BytesInteger` which operates on bytes. In fact::
+
+        BytesInteger(n) <--> Bitwise(BitsInteger(8*n))
+        BitsInteger(8*n) <--> Bytewise(BytesInteger(n))
+
     Note that little-endianness is only defined for multiples of 8 bits.
 
-    Analog to :class:`~construct.core.BytesInteger` that operates on bytes. In fact, ``BytesInteger(n)`` is equivalent to ``Bitwise(BitsInteger(8*n))`` and ``BitsInteger(n)`` is equivalent to ``Bytewise(BytesInteger(n//8)))`` .
+    Byte ordering refers to bytes (chunks of 8 bits) so, for example::
+
+        BytesInteger(n, swapped=True) <--> Bitwise(BitsInteger(8*n, swapped=True))
+
+    Swapped argument was recently fixed. To obtain previous (faulty) behavior, you can use `ByteSwapped`, `BitsSwapped` and `Bitwise` in whatever particular order.
 
     :param length: integer or context lambda, number of bits in the field
     :param signed: bool, whether the value is signed (two's complement), default is False (unsigned)
@@ -1144,6 +1153,7 @@ class BitsInteger(Construct):
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
     :raises IntegerError: lenght is negative, given a negative value when field is not signed, or not an integer
+    :raises IntegerError: little-endianness is only defined if length is multiple of 8 bits
     :raises ValueError: number does not fit given width and signed parameters
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
@@ -1173,7 +1183,7 @@ class BitsInteger(Construct):
         if evaluate(self.swapped, context):
             if length % 8:
                 raise IntegerError(f"little-endianness is only defined if {length} is multiple of 8 bits", path=path)
-            data = swapbytes(data)
+            data = swapbytesinbits(data)
         return bits2integer(data, self.signed)
 
     def _build(self, obj, stream, context, path):
@@ -1188,7 +1198,7 @@ class BitsInteger(Construct):
         if evaluate(self.swapped, context):
             if length % 8:
                 raise IntegerError(f"little-endianness is only defined if {length} is multiple of 8 bits", path=path)
-            data = swapbytes(data)
+            data = swapbytesinbits(data)
         stream_write(stream, data, length, path)
         return obj
 
@@ -1199,7 +1209,7 @@ class BitsInteger(Construct):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
-        return f"bits2integer(swapbytes(read_bytes(io, {self.length})) if {self.swapped} else read_bytes(io, {self.length}), {self.signed})"
+        return f"bits2integer(swapbytesinbits(read_bytes(io, {self.length})) if {self.swapped} else read_bytes(io, {self.length}), {self.signed})"
 
     def _emitprimitivetype(self, ksy, bitwise):
         assert not self.signed
