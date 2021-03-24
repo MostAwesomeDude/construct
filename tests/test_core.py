@@ -151,6 +151,10 @@ def test_bytesinteger():
     assert raises(BytesInteger(-1).build, 0) == IntegerError
     assert raises(BytesInteger(8).build, None) == IntegerError
     assert raises(BytesInteger(8, signed=False).build, -1) == IntegerError
+    assert raises(BytesInteger(8, True).build,  -2**64) == IntegerError
+    assert raises(BytesInteger(8, True).build,   2**64) == IntegerError
+    assert raises(BytesInteger(8, False).build, -2**64) == IntegerError
+    assert raises(BytesInteger(8, False).build,  2**64) == IntegerError
     assert raises(BytesInteger(this.missing).sizeof) == SizeofError
 
 def test_bitsinteger():
@@ -171,6 +175,10 @@ def test_bitsinteger():
     assert raises(BitsInteger(5, swapped=True).build, 0) == IntegerError
     assert raises(BitsInteger(8).build, None) == IntegerError
     assert raises(BitsInteger(8, signed=False).build, -1) == IntegerError
+    assert raises(BitsInteger(8, True).build,  -2**64) == IntegerError
+    assert raises(BitsInteger(8, True).build,   2**64) == IntegerError
+    assert raises(BitsInteger(8, False).build, -2**64) == IntegerError
+    assert raises(BitsInteger(8, False).build,  2**64) == IntegerError
     assert raises(BitsInteger(this.missing).sizeof) == SizeofError
 
 def test_varint():

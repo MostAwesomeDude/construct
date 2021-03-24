@@ -1071,8 +1071,9 @@ class BytesInteger(Construct):
     :param swapped: bool or context lambda, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: lenght is negative, given a negative value when field is not signed, or not an integer
-    :raises ValueError: number does not fit given width and signed parameters
+    :raises IntegerError: length is negative
+    :raises IntegerError: value is not an integer
+    :raises IntegerError: number does not fit given width and signed parameters
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -1100,7 +1101,10 @@ class BytesInteger(Construct):
         data = stream_read(stream, length, path)
         if evaluate(self.swapped, context):
             data = swapbytes(data)
-        return bytes2integer(data, self.signed)
+        try:
+            return bytes2integer(data, self.signed)
+        except ValueError as e:
+            raise IntegerError(str(e), path=path)
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
@@ -1110,7 +1114,10 @@ class BytesInteger(Construct):
         length = evaluate(self.length, context)
         if length < 0:
             raise IntegerError(f"length {length} must be non-negative", path=path)
-        data = integer2bytes(obj, length, self.signed)
+        try:
+            data = integer2bytes(obj, length, self.signed)
+        except ValueError as e:
+            raise IntegerError(str(e), path=path)
         if evaluate(self.swapped, context):
             data = swapbytes(data)
         stream_write(stream, data, length, path)
@@ -1159,9 +1166,10 @@ class BitsInteger(Construct):
     :param swapped: bool or context lambda, whether to swap byte order (little endian), default is False (big endian)
 
     :raises StreamError: requested reading negative amount, could not read enough bytes, requested writing different amount than actual data, or could not write all bytes
-    :raises IntegerError: lenght is negative, given a negative value when field is not signed, or not an integer
-    :raises IntegerError: little-endianness is only defined if length is multiple of 8 bits
-    :raises ValueError: number does not fit given width and signed parameters
+    :raises IntegerError: length is negative
+    :raises IntegerError: value is not an integer
+    :raises IntegerError: number does not fit given width and signed parameters
+    :raises IntegerError: little-endianness selected but length is not multiple of 8 bits
 
     Can propagate any exception from the lambda, possibly non-ConstructError.
 
@@ -1191,7 +1199,10 @@ class BitsInteger(Construct):
             if length % 8:
                 raise IntegerError(f"little-endianness is only defined if {length} is multiple of 8 bits", path=path)
             data = swapbytesinbits(data)
-        return bits2integer(data, self.signed)
+        try:
+            return bits2integer(data, self.signed)
+        except ValueError as e:
+            raise IntegerError(str(e), path=path)
 
     def _build(self, obj, stream, context, path):
         if not isinstance(obj, integertypes):
@@ -1201,7 +1212,10 @@ class BitsInteger(Construct):
         length = evaluate(self.length, context)
         if length < 0:
             raise IntegerError(f"length {length} must be non-negative", path=path)
-        data = integer2bits(obj, length, self.signed)
+        try:
+            data = integer2bits(obj, length, self.signed)
+        except ValueError as e:
+            raise IntegerError(str(e), path=path)
         if evaluate(self.swapped, context):
             if length % 8:
                 raise IntegerError(f"little-endianness is only defined if {length} is multiple of 8 bits", path=path)
