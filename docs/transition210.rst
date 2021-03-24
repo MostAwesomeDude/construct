@@ -27,3 +27,5 @@ FormatField now supports ? format string
 CompressedLZ4 tunneling class added
 
 Windows is now officially supported and tested for
+
+BytesInteger and BitsInteger are checking numbers are valid
