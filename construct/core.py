@@ -1120,10 +1120,7 @@ class BytesInteger(Construct):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
-        if callable(self.swapped):
-            return "bytes2integer(read_bytes(io, %s)[::-1] if %s else read_bytes(io, %s), %s)" % (self.length, self.swapped, self.length, self.signed, )
-        else:
-            return "bytes2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed, )
+        return f"bytes2integer(swapbytes(read_bytes(io, {self.length})) if {self.swapped} else read_bytes(io, {self.length}), {self.signed})"
 
     def _emitprimitivetype(self, ksy, bitwise):
         if bitwise:
@@ -1206,10 +1203,7 @@ class BitsInteger(Construct):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
-        if callable(self.swapped):
-            return "bits2integer(read_bytes(io, %s)[::-1] if %s else read_bytes(io, %s), %s)" % (self.length, self.swapped, self.length, self.signed, )
-        else:
-            return "bits2integer(read_bytes(io, %s)%s, %s)" % (self.length, "[::-1]" if self.swapped else "", self.signed, )
+        return f"bits2integer(swapbytes(read_bytes(io, {self.length})) if {self.swapped} else read_bytes(io, {self.length}), {self.signed})"
 
     def _emitprimitivetype(self, ksy, bitwise):
         assert not self.signed
