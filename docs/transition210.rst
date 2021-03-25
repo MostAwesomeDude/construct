@@ -31,3 +31,5 @@ Windows is now officially supported and tested for
 BytesInteger and BitsInteger are checking numbers are valid
 
 BitsInteger swapped semantic was fixed
+
+COMPILED BUILDERS ARE WORK IN PROGRESS, SOME CLASSES FAIL INTEGRITY CHECKS

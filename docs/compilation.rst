@@ -4,25 +4,27 @@ Compilation feature
 
 .. warning:: This feature is fully implemented but may not be fully mature.
 
+.. warning:: COMPILED BUILDERS ARE WORK IN PROGRESS, SOME CLASSES FAIL INTEGRITY CHECKS
+
 
 Overall
 =========
 
 Construct 2.9 adds an experimental feature: compiling user made constructs into much faster (but less feature-rich) code. If you are familiar with Kaitai Struct, an alternative framework to Construct, Kaitai compiles yaml-based schemas into pure Python modules. Construct on the other hand, defines schemas in pure Python and compiles them into pure Python modules. Once you define a construct, you can use it to parse and build blobs without compilation. Compilation has only one purpose: performance.
 
-It should be made clear that currently the compiler supports only parsing. Building and sizeof are deferred to original constructs, from which a compiled instance was made. Building support may be added in the future, depending on popularity of this feature. In that sense, perhaps the documentation should use the term "compiled parser" rather than "compiled construct".
+It should be made clear that currently the compiler supports only parsing and (being implemented right now) building. Sizeof is deferred to original construct, from which a compiled instance was made. Building support is being added as we speak.
 
 
 Requirements
 ---------------
 
-Compilation feature requires Construct 2.9, preferrably the newest version to date. More importantly, you should have a test suite of your own. Construct aims to be reliable, but the compiler makes some undocumented assumptions, and generates a code that "takes shortcuts". Since few checks are ommited by generated code, you should not use it to parse corrupted data.
+Compilation feature requires Construct 2.9 for compiled parsing and Construct 2.10 for compiled building, preferrably the newest version to date. More importantly, you should have a test suite of your own. Construct aims to be reliable, but the compiler makes a lot of undocumented assumptions, and generates a code that "takes shortcuts" a lot. Since some checks are ommited by generated code, you should not use it to parse corrupted or untrusted data.
 
 
 Restrictions
 ---------------
 
-Compiled classes only parse faster, building and sizeof defers to core classes
+Compiled classes only parse faster, building is in progress, and sizeof defers to core classes
 
 Sizeof is applied during compilation (not during parsing and building)
 
@@ -30,9 +32,13 @@ Lambdas (unlike this expressions) are not compilable
 
 Exceptions do not include `path` information
 
+_index context entry is not supported, neither is Index class
+
 Struct Sequence FocusedSeq Union LazyStruct do not support `_subcons _stream` context entries
 
 Parsed hooks are not supported, ignored
+
+Debugger is not supported, ignored
 
 
 Compiling schemas

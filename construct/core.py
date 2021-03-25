@@ -147,8 +147,10 @@ class CodeGen:
         self.blocks = []
         self.nextid = 0
         self.parsercache = {}
+        self.buildercache = {}
         self.linkedinstances = {}
         self.linkedparsers = {}
+        self.linkedbuilders = {}
 
     def allocateId(self):
         self.nextid += 1
@@ -406,18 +408,22 @@ class Construct(object):
             import collections
             import itertools
 
-            def read_bytes(io, count):
-                if not count >= 0: raise StreamError
-                data = io.read(count)
-                if not len(data) == count: raise StreamError
-                return data
+            # def read_bytes(io, count):
+            #     return io.read(count)
+            # def read_bytes_entire(io):
+            #     return io.read()
+
             def restream(data, func):
                 return func(BytesIO(data))
             def reuse(obj, func):
                 return func(obj)
 
+            # def write_bytes(data, io):
+            #     return io.write(data)
+
             linkedinstances = {}
             linkedparsers = {}
+            linkedbuilders = {}
 
             len_ = len
             sum_ = sum
@@ -425,11 +431,13 @@ class Construct(object):
             max_ = max
             abs_ = abs
         """)
-        code.append("""
+        code.append(f"""
             def parseall(io, this):
-                return %s
-            compiled = Compiled(None, None, parseall)
-        """ % (self._compileparse(code),))
+                return {self._compileparse(code)}
+            def buildall(obj, io, this):
+                return {self._compilebuild(code)}
+            compiled = Compiled(parseall, buildall)
+        """)
         source = code.toString()
 
         if filename:
@@ -444,6 +452,7 @@ class Construct(object):
 
         module.linkedinstances = code.linkedinstances
         module.linkedparsers = code.linkedparsers
+        module.linkedbuilders = code.linkedbuilders
         compiled = module.compiled
         compiled.source = source
         compiled.module = module
@@ -454,16 +463,14 @@ class Construct(object):
     def _compileinstance(self, code):
         """Used internally."""
         if id(self) in code.linkedinstances:
-            return code.linkedinstances[id(self)]
-
-        code.append("""
-            # linkedinstances[%s] is %r
-        """ % (id(self), self, ))
-
+            return
+        code.append(f"""
+            # linkedinstances[{id(self)}] is {self}
+        """)
         field = extractfield(self)
         code.linkedinstances[id(self)] = field
         code.linkedparsers[id(self)] = field._parse
-        return "linkedinstances[%s]" % id(self)
+        code.linkedbuilders[id(self)] = field._build
 
     def _compileparse(self, code):
         """Used internally."""
@@ -475,11 +482,19 @@ class Construct(object):
             return emitted
         except NotImplementedError:
             self._compileinstance(code)
-            return "linkedparsers[%s](io, this, '(???)')" % id(self)
+            return f"linkedparsers[{id(self)}](io, this, '(???)')"
 
     def _compilebuild(self, code):
         """Used internally."""
-        raise NotImplementedError
+        try:
+            if id(self) in code.buildercache:
+                return code.buildercache[id(self)]
+            emitted = self._emitbuild(code)
+            code.buildercache[id(self)] = emitted
+            return emitted
+        except NotImplementedError:
+            self._compileinstance(code)
+            return f"linkedbuilders[{id(self)}](obj, io, this, '(???)')"
 
     def _emitparse(self, code):
         """Override in your subclass."""
@@ -491,63 +506,60 @@ class Construct(object):
 
     def benchmark(self, sampledata, filename=None):
         """
-        Measures performance of your construct (its parsing and building runtime), both for the original instance and the compiled instance. Uses timeit module, over at min 1 sample, and at max over 1 second time.
+        Measures performance of your construct (its parsing and building runtime), both for the original instance and the compiled instance. Uses timeit module, over at min 1 loop, and at max over 100 millisecond time.
 
-        Optionally, results are saved to a text file for later inspection. Otherwise you can print the result string to terminal.
-
-        Also this method checks correctness, by comparing parsing/building results from both instances.
+        Optionally, results are saved to a text file for later inspection. Otherwise you can print the resulting string to terminal.
 
         :param sampledata: bytes, a valid blob parsable by this construct
-        :param filename: optional, string, source is saved to that file
+        :param filename: optional, string, results are saved to that file
 
         :returns: string containing measurements
         """
         from timeit import timeit
 
-        try:
-            parsetime = "failed"
-            buildtime = "failed"
-            parsetime2 = "failed"
+        sampleobj = self.parse(sampledata)
+        parsetime = timeit(lambda: self.parse(sampledata), number=1)
+        runs = int(0.1/parsetime)
+        if runs > 1:
+            parsetime = timeit(lambda: self.parse(sampledata), number=runs)/runs
+        parsetime = "{:.10f} sec/call".format(parsetime)
 
-            sampleobj = self.parse(sampledata)
-            parsetime = timeit(lambda: self.parse(sampledata), number=1)
-            runs = min(1000, max(1, int(1./parsetime)))
-            if runs > 1:
-                parsetime = timeit(lambda: self.parse(sampledata), number=runs)/runs
-            parsetime = "{:.10f} sec/call".format(parsetime)
+        self.build(sampleobj)
+        buildtime = timeit(lambda: self.build(sampleobj), number=1)
+        runs = int(0.1/buildtime)
+        if runs > 1:
+            buildtime = timeit(lambda: self.build(sampleobj), number=runs)/runs
+        buildtime = "{:.10f} sec/call".format(buildtime)
 
-            self.build(sampleobj)
-            buildtime = timeit(lambda: self.build(sampleobj), number=1)
-            runs = min(1000, max(1, int(1./buildtime)))
-            if runs > 1:
-                buildtime = timeit(lambda: self.build(sampleobj), number=runs)/runs
-            buildtime = "{:.10f} sec/call".format(buildtime)
+        compiled = self.compile()
+        compiled.parse(sampledata)
+        parsetime2 = timeit(lambda: compiled.parse(sampledata), number=1)
+        runs = int(0.1/parsetime2)
+        if runs > 1:
+            parsetime2 = timeit(lambda: compiled.parse(sampledata), number=runs)/runs
+        parsetime2 = "{:.10f} sec/call".format(parsetime2)
 
-            compiled = self.compile()
-
-            obj = compiled.parse(sampledata)
-            assert sampleobj == obj
-            parsetime2 = timeit(lambda: compiled.parse(sampledata), number=1)
-            runs = min(1000, max(1, int(1./parsetime2)))
-            if runs > 1:
-                parsetime2 = timeit(lambda: compiled.parse(sampledata), number=runs)/runs
-            parsetime2 = "{:.10f} sec/call".format(parsetime2)
-
-        except Exception:
-            pass
+        compiled.build(sampleobj)
+        buildtime2 = timeit(lambda: compiled.build(sampleobj), number=1)
+        runs = int(0.1/buildtime2)
+        if runs > 1:
+            buildtime2 = timeit(lambda: compiled.build(sampleobj), number=runs)/runs
+        buildtime2 = "{:.10f} sec/call".format(buildtime2)
 
         lines = [
-            "Timeit measurements:",
-            "parsing:           {}",
-            "parsing compiled:  {}",
-            "building:          {}",
+            "Compiled instance performance:",
+            "parsing:            {}",
+            "parsing compiled:   {}",
+            "building:           {}",
+            "building compiled:  {}",
             ""
         ]
-        results = "\n".join(lines).format(parsetime, parsetime2, buildtime)
+        results = "\n".join(lines).format(parsetime, parsetime2, buildtime, buildtime2)
 
         if filename:
             with open(filename, "wt") as f:
                 f.write(results)
+
         return results
 
     def export_ksy(self, schemaname="unnamed_schema", filename=None):
@@ -769,17 +781,18 @@ class Tunnel(Subconstruct):
 class Compiled(Construct):
     """Used internally."""
 
-    def __init__(self, source, defersubcon, parsefunc):
+    def __init__(self, parsefunc, buildfunc):
         super(Compiled, self).__init__()
-        self.source = source
-        self.defersubcon = defersubcon
+        self.source = None
+        self.defersubcon = None
         self.parsefunc = parsefunc
+        self.buildfunc = buildfunc
 
     def _parse(self, stream, context, path):
         return self.parsefunc(stream, context)
 
     def _build(self, obj, stream, context, path):
-        return self.defersubcon._build(obj, stream, context, path)
+        return self.buildfunc(obj, stream, context)
 
     def _sizeof(self, context, path):
         return self.defersubcon._sizeof(context, path)
@@ -853,7 +866,10 @@ class Bytes(Construct):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
-        return "read_bytes(io, %s)" % (self.length,)
+        return f"io.read({self.length})"
+
+    def _emitbuild(self, code):
+        return f"(io.write(obj), obj)[1]"
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(size=self.length)
@@ -888,7 +904,10 @@ class GreedyBytes(Construct):
         return data
 
     def _emitparse(self, code):
-        return "io.read()"
+        return f"io.read()"
+
+    def _emitbuild(self, code):
+        return f"io.write(obj)"
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(size_eos=True)
@@ -1031,9 +1050,14 @@ class FormatField(Construct):
         return self.length
 
     def _emitparse(self, code):
-        fname = "formatfield_%s" % code.allocateId()
-        code.append("%s = struct.Struct(%r)" % (fname, self.fmtstr, ))
-        return "%s.unpack(read_bytes(io, %s))[0]" % (fname, self.length)
+        fname = f"formatfield_{code.allocateId()}"
+        code.append(f"{fname} = struct.Struct({repr(self.fmtstr)})")
+        return f"{fname}.unpack(io.read({self.length}))[0]"
+
+    def _emitbuild(self, code):
+        fname = f"formatfield_{code.allocateId()}"
+        code.append(f"{fname} = struct.Struct({repr(self.fmtstr)})")
+        return f"(io.write({fname}.pack(obj)), obj)[1]"
 
     def _emitprimitivetype(self, ksy, bitwise):
         endianity,format = self.fmtstr
@@ -1130,7 +1154,10 @@ class BytesInteger(Construct):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
-        return f"bytes2integer(swapbytes(read_bytes(io, {self.length})) if {self.swapped} else read_bytes(io, {self.length}), {self.signed})"
+        return f"bytes2integer(swapbytes(io.read({self.length})) if {self.swapped} else io.read({self.length}), {self.signed})"
+
+    def _emitbuild(self, code):
+        return f"io.write(swapbytes(integer2bytes(obj, {self.length}, {self.signed})) if ({self.swapped}) else integer2bytes(obj, {self.length}, {self.signed}))"
 
     def _emitprimitivetype(self, ksy, bitwise):
         if bitwise:
@@ -1230,7 +1257,10 @@ class BitsInteger(Construct):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
-        return f"bits2integer(swapbytesinbits(read_bytes(io, {self.length})) if {self.swapped} else read_bytes(io, {self.length}), {self.signed})"
+        return f"bits2integer(swapbytesinbits(io.read({self.length})) if {self.swapped} else io.read({self.length}), {self.signed})"
+
+    def _emitbuild(self, code):
+        return f"io.write(swapbytesinbits(integer2bits(obj, {self.length}, {self.signed})) if ({self.swapped}) else integer2bits(obj, {self.length}, {self.signed}))"
 
     def _emitprimitivetype(self, ksy, bitwise):
         assert not self.signed
@@ -1558,7 +1588,12 @@ class StringEncoded(Adapter):
         return obj.encode(self.encoding)
 
     def _emitparse(self, code):
-        return "(%s).decode(%r)" % (self.subcon._compileparse(code), self.encoding, )
+        return f"({self.subcon._compileparse(code)}).decode({repr(self.encoding)})"
+
+    def _emitbuild(self, code):
+        raise NotImplementedError
+        # This is not a valid implementation. obj.encode() should be inserted into subcon
+        # return f"({self.subcon._compilebuild(code)}).encode({repr(self.encoding)})"
 
 
 def PaddedString(length, encoding):
@@ -1610,12 +1645,18 @@ def PascalString(lengthfield, encoding):
         u'Афон'
     """
     macro = StringEncoded(Prefixed(lengthfield, GreedyBytes), encoding)
+
+    def _emitparse(code):
+        return f"io.read({lengthfield._compileparse(code)}).decode({repr(encoding)})"
+    macro._emitparse = _emitparse
+
     def _emitseq(ksy, bitwise):
         return [
             dict(id="lengthfield", type=lengthfield._compileprimitivetype(ksy, bitwise)), 
             dict(id="data", size="lengthfield", type="str", encoding=encoding),
         ]
     macro._emitseq = _emitseq
+
     return macro
 
 
@@ -1698,7 +1739,10 @@ class Flag(Construct):
         return 1
 
     def _emitparse(self, code):
-        return "(read_bytes(io, 1) != b'\\x00')"
+        return f"(io.read(1) != b'\\x00')"
+
+    def _emitbuild(self, code):
+        return f"(io.write(b'\\x01') if obj else io.write(b'\\x00'))"
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(type=("b1" if bitwise else "u1"), _construct_render="Flag")
@@ -1770,7 +1814,7 @@ class Enum(Adapter):
     """
 
     def __init__(self, subcon, *merge, **mapping):
-        super(Enum, self).__init__(subcon)
+        super().__init__(subcon)
         for enum in merge:
             for enumentry in enum:
                 mapping[enumentry.name] = enumentry.value
@@ -1798,9 +1842,14 @@ class Enum(Adapter):
             raise MappingError("building failed, no mapping for %r" % (obj,), path=path)
 
     def _emitparse(self, code):
-        fname = "factory_%s" % code.allocateId()
-        code.append("%s = %r" % (fname, self.decmapping, ))
-        return "reuse(%s, lambda x: %s.get(x, EnumInteger(x)))" % (self.subcon._compileparse(code), fname, )
+        fname = f"factory_{code.allocateId()}"
+        code.append(f"{fname} = {repr(self.decmapping)}")
+        return f"reuse(({self.subcon._compileparse(code)}), lambda x: {fname}.get(x, EnumInteger(x)))"
+
+    def _emitbuild(self, code):
+        fname = f"factory_{code.allocateId()}"
+        code.append(f"{fname} = {repr(self.encmapping)}")
+        return f"reuse({fname}.get(obj, obj), lambda obj: ({self.subcon._compilebuild(code)}))"
 
     def _emitprimitivetype(self, ksy, bitwise):
         name = "enum_%s" % ksy.allocateId()
@@ -1900,7 +1949,7 @@ class FlagsEnum(Adapter):
             raise MappingError("building failed, unknown label: %r" % (obj,), path=path)
 
     def _emitparse(self, code):
-        return "reuse(%s, lambda x: Container(%s))" % (self.subcon._compileparse(code), ", ".join("%s=bool(x & %s)" % (k,v) for k,v in self.flags.items()), )
+        return f"reuse(({self.subcon._compileparse(code)}), lambda x: Container({', '.join(f'{k}=bool(x & {v} == {v})' for k,v in self.flags.items()) }))"
 
     def _emitseq(self, ksy, bitwise):
         bitstotal = self.subcon.sizeof() * 8
@@ -1949,9 +1998,14 @@ class Mapping(Adapter):
             raise MappingError("building failed, no encoding mapping for %r" % (obj,), path=path)
 
     def _emitparse(self, code):
-        fname = "factory_%s" % code.allocateId()
-        code.append("%s = %r" % (fname, self.decmapping, ))
-        return "%s[%s]" % (fname, self.subcon._compileparse(code), )
+        fname = f"factory_{code.allocateId()}"
+        code.append(f"{fname} = {repr(self.decmapping)}")
+        return f"{fname}[{self.subcon._compileparse(code)}]"
+
+    def _emitbuild(self, code):
+        fname = f"factory_{code.allocateId()}"
+        code.append(f"{fname} = {repr(self.encmapping)}")
+        return f"reuse({fname}[obj], lambda obj: ({self.subcon._compilebuild(code)}))"
 
 
 #===============================================================================
@@ -2017,7 +2071,7 @@ class Struct(Construct):
     """
 
     def __init__(self, *subcons, **subconskw):
-        super(Struct, self).__init__()
+        super().__init__()
         self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
@@ -2074,26 +2128,50 @@ class Struct(Construct):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
-        fname = "parse_struct_%s" % code.allocateId()
-        block = """
-            def %s(io, this):
+        fname = f"parse_struct_{code.allocateId()}"
+        block = f"""
+            def {fname}(io, this):
                 result = Container()
                 this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
                 this['_root'] = this['_'].get('_root', this)
                 try:
-        """ % (fname, )
+        """
         for sc in self.subcons:
-            block += """
-                    %s%s
-            """ % ("result[%r] = this[%r] = " % (sc.name, sc.name) if sc.name else "", sc._compileparse(code))
-        block += """
+            block += f"""
+                    {f'result[{repr(sc.name)}] = this[{repr(sc.name)}] = ' if sc.name else ''}{sc._compileparse(code)}
+            """
+        block += f"""
                     pass
                 except StopFieldError:
                     pass
                 return result
         """
         code.append(block)
-        return "%s(io, this)" % (fname,)
+        return f"{fname}(io, this)"
+
+    def _emitbuild(self, code):
+        fname = f"build_struct_{code.allocateId()}"
+        block = f"""
+            def {fname}(obj, io, this):
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = False, _building = True, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
+                this['_root'] = this['_'].get('_root', this)
+                try:
+                    objdict = obj
+        """
+        for sc in self.subcons:
+            block += f"""
+                    {f'obj = objdict.get({repr(sc.name)}, None)' if sc.flagbuildnone else f'obj = objdict[{repr(sc.name)}]'}
+                    {f'this[{repr(sc.name)}] = obj' if sc.name else ''}
+                    {f'this[{repr(sc.name)}] = ' if sc.name else ''}{sc._compilebuild(code)}
+            """
+        block += f"""
+                    pass
+                except StopFieldError:
+                    pass
+                return this
+        """
+        code.append(block)
+        return f"{fname}(obj, io, this)"
 
     def _emitseq(self, ksy, bitwise):
         return [sc._compilefulltype(ksy, bitwise) for sc in self.subcons]
@@ -2149,7 +2227,7 @@ class Sequence(Construct):
     """
 
     def __init__(self, *subcons, **subconskw):
-        super(Sequence, self).__init__()
+        super().__init__()
         self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
         self.flagbuildnone = all(sc.flagbuildnone for sc in self.subcons)
@@ -2163,7 +2241,7 @@ class Sequence(Construct):
         obj = ListContainer()
         context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
-        for i,sc in enumerate(self.subcons):
+        for sc in self.subcons:
             try:
                 subobj = sc._parsereport(stream, context, path)
                 obj.append(subobj)
@@ -2179,13 +2257,14 @@ class Sequence(Construct):
         context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
         retlist = ListContainer()
-        for i,(sc,subobj) in enumerate(zip(self.subcons, obj)):
+        for sc,subobj in zip(self.subcons, obj):
             try:
                 if sc.name:
                     context[sc.name] = subobj
 
                 buildret = sc._build(subobj, stream, context, path)
                 retlist.append(buildret)
+
                 if sc.name:
                     context[sc.name] = buildret
             except StopFieldError:
@@ -2201,30 +2280,60 @@ class Sequence(Construct):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
 
     def _emitparse(self, code):
-        fname = "parse_sequence_%s" % code.allocateId()
-        block = """
-            def %s(io, this):
+        fname = f"parse_sequence_{code.allocateId()}"
+        block = f"""
+            def {fname}(io, this):
                 result = ListContainer()
                 this = Container(_ = this, _params = this['_params'], _root = None, _parsing = True, _building = False, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
                 this['_root'] = this['_'].get('_root', this)
                 try:
-        """ % (fname,)
+        """
         for sc in self.subcons:
-            block += """
-                    result.append(%s)
-            """ % (sc._compileparse(code))
+            block += f"""
+                    result.append({sc._compileparse(code)})
+            """
             if sc.name:
-                block += """
-                    this[%r] = result[-1]
-                """ % (sc.name, )
-        block += """
+                block += f"""
+                    this[{repr(sc.name)}] = result[-1]
+                """
+        block += f"""
                     pass
                 except StopFieldError:
                     pass
                 return result
         """
         code.append(block)
-        return "%s(io, this)" % (fname,)
+        return f"{fname}(io, this)"
+
+    def _emitbuild(self, code):
+        fname = f"build_sequence_{code.allocateId()}"
+        block = f"""
+            def {fname}(obj, io, this):
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = False, _building = True, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
+                this['_root'] = this['_'].get('_root', this)
+                try:
+                    objiter = iter(obj)
+                    retlist = ListContainer()
+        """
+        for sc in self.subcons:
+            block += f"""
+                    {f'obj = next(objiter)'}
+                    {f'this[{repr(sc.name)}] = obj' if sc.name else ''}
+                    {f'x = '}{sc._compilebuild(code)}
+                    {f'retlist.append(x)'}
+                    {f'this[{repr(sc.name)}] = x' if sc.name else ''}
+            """
+        block += f"""
+                    pass
+                except StopIteration:
+                    # this is because _build uses zip(subcons,obj)
+                    pass
+                except StopFieldError:
+                    pass
+                return retlist
+        """
+        code.append(block)
+        return f"{fname}(obj, io, this)"
 
     def _emitseq(self, ksy, bitwise):
         return [sc._compilefulltype(ksy, bitwise) for sc in self.subcons]
@@ -2261,14 +2370,12 @@ class Array(Subconstruct):
     """
 
     def __init__(self, count, subcon, discard=False):
-        super(Array, self).__init__(subcon)
+        super().__init__(subcon)
         self.count = count
         self.discard = discard
 
     def _parse(self, stream, context, path):
-        count = self.count
-        if callable(count):
-            count = count(context)
+        count = evaluate(self.count, context)
         if not 0 <= count:
             raise RangeError("invalid count %s" % (count,), path=path)
         obj = ListContainer()
@@ -2280,9 +2387,7 @@ class Array(Subconstruct):
         return obj
 
     def _build(self, obj, stream, context, path):
-        count = self.count
-        if callable(count):
-            count = count(context)
+        count = evaluate(self.count, context)
         if not 0 <= count:
             raise RangeError("invalid count %s" % (count,), path=path)
         if not len(obj) == count:
@@ -2296,15 +2401,16 @@ class Array(Subconstruct):
 
     def _sizeof(self, context, path):
         try:
-            count = self.count
-            if callable(count):
-                count = count(context)
+            count = evaluate(self.count, context)
         except (KeyError, AttributeError):
             raise SizeofError("cannot calculate size, key not found in context", path=path)
         return count * self.subcon._sizeof(context, path)
 
     def _emitparse(self, code):
-        return "ListContainer((this.__setitem__('_index',i),(%s))[1] for i in range(%s))" % (self.subcon._compileparse(code), self.count, )
+        return f"ListContainer(({self.subcon._compileparse(code)}) for i in range({self.count}))"
+
+    def _emitbuild(self, code):
+        return f"ListContainer(reuse(obj[i], lambda obj: ({self.subcon._compilebuild(code)})) for i in range({self.count}))"
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(type=self.subcon._compileprimitivetype(ksy, bitwise), repeat="expr", repeat_expr=self.count)
@@ -2403,7 +2509,7 @@ class RepeatUntil(Subconstruct):
     """
 
     def __init__(self, predicate, subcon, discard=False):
-        super(RepeatUntil, self).__init__(subcon)
+        super().__init__(subcon)
         self.predicate = predicate
         self.discard = discard
 
@@ -2441,19 +2547,33 @@ class RepeatUntil(Subconstruct):
         raise SizeofError("cannot calculate size, amount depends on actual data", path=path)
 
     def _emitparse(self, code):
-        fname = "parse_repeatuntil_%s" % code.allocateId()
-        block = """
-            def %s(io, this):
+        fname = f"parse_repeatuntil_{code.allocateId()}"
+        block = f"""
+            def {fname}(io, this):
                 list_ = ListContainer()
-                for i in itertools.count():
-                    this['_index'] = i
-                    obj_ = %s
+                while True:
+                    obj_ = {self.subcon._compileparse(code)}
                     list_.append(obj_)
-                    if (%s):
+                    if ({self.predicate}):
                         return list_
-        """ % (fname, self.subcon._compileparse(code), self.predicate, )
+        """
         code.append(block)
-        return "%s(io, this)" % (fname,)
+        return f"{fname}(io, this)"
+
+    def _emitbuild(self, code):
+        fname = f"build_repeatuntil_{code.allocateId()}"
+        block = f"""
+            def {fname}(obj, io, this):
+                objiter = iter(obj)
+                list_ = ListContainer()
+                while True:
+                    obj_ = reuse(next(objiter), lambda obj: {self.subcon._compilebuild(code)})
+                    list_.append(obj_)
+                    if ({self.predicate}):
+                        return list_
+        """
+        code.append(block)
+        return f"{fname}(obj, io, this)"
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(type=self.subcon._compileprimitivetype(ksy, bitwise), repeat="until", repeat_until=repr(self.predicate).replace("obj_","_"))
@@ -2504,6 +2624,9 @@ class Renamed(Subconstruct):
 
     def _emitparse(self, code):
         return self.subcon._compileparse(code)
+
+    def _emitbuild(self, code):
+        return self.subcon._compilebuild(code)
 
     def _emitseq(self, ksy, bitwise):
         return self.subcon._compileseq(ksy, bitwise)
@@ -2563,25 +2686,28 @@ class Const(Subconstruct):
 
     def _parse(self, stream, context, path):
         obj = self.subcon._parsereport(stream, context, path)
-        if obj != self.value:
-            raise ConstError("parsing expected %r but parsed %r" % (self.value, obj), path=path)
+        if not obj == self.value:
+            raise ConstError(f"parsing expected {repr(self.value)} but parsed {repr(obj)}", path=path)
         return obj
 
     def _build(self, obj, stream, context, path):
         if obj not in (None, self.value):
-            raise ConstError("building expected None or %r but got %r" % (self.value, obj), path=path)
+            raise ConstError("building expected None or {repr(self.value)} but got {repr(obj)}", path=path)
         return self.subcon._build(self.value, stream, context, path)
 
     def _sizeof(self, context, path):
         return self.subcon._sizeof(context, path)
 
     def _emitparse(self, code):
-        code.append("""
+        code.append(f"""
             def parse_const(value, expected):
                 if not value == expected: raise ConstError
                 return value
         """)
-        return "parse_const(%s, %r)" % (self.subcon._compileparse(code), self.value,)
+        return f"parse_const({self.subcon._compileparse(code)}, {repr(self.value)})"
+
+    def _emitbuild(self, code):
+        return f"reuse({repr(self.value)}, lambda obj: {self.subcon._compilebuild(code)})"
 
     def _emitfulltype(self, ksy, bitwise):
         data = self.subcon.build(self.value)
@@ -2637,7 +2763,7 @@ class Computed(Construct):
         return 0
 
     def _emitparse(self, code):
-        return "%r" % (self.func,)
+        return repr(self.func)
 
 
 @singleton
@@ -2814,11 +2940,11 @@ class Check(Construct):
         return 0
 
     def _emitparse(self, code):
-        code.append("""
+        code.append(f"""
             def parse_check(condition):
                 if not condition: raise CheckError
         """)
-        return "parse_check(%s)" % (self.func,)
+        return f"parse_check({repr(self.func)})"
 
 
 @singleton
@@ -3567,9 +3693,15 @@ def If(condfunc, subcon):
         b''
     """
     macro = IfThenElse(condfunc, subcon, Pass)
+
+    def _emitparse(code):
+        return f"(({subcon._compileparse(code)}) if ({condfunc}) else None)"
+    macro._emitparse = _emitparse
+
     def _emitfulltype(ksy, bitwise):
         return dict(type=subcon._compileprimitivetype(ksy, bitwise), if_=repr(condfunc).replace("this.",""))
     macro._emitfulltype = _emitfulltype
+
     return macro
 
 
@@ -4457,7 +4589,7 @@ class Prefixed(Subconstruct):
 
     def _emitparse(self, code):
         sub = self.lengthfield.sizeof() if self.includelength else 0
-        return "restream(read_bytes(io, (%s)-(%s)), lambda io: %s)" % (self.lengthfield._compileparse(code), sub, self.subcon._compileparse(code), )
+        return f"restream(io.read(({self.lengthfield._compileparse(code)})-({sub})), lambda io: ({self.subcon._compileparse(code)}))"
 
     def _emitseq(self, ksy, bitwise):
         return [
@@ -4576,7 +4708,7 @@ class FixedSized(Subconstruct):
         return length
 
     def _emitparse(self, code):
-        return "restream(read_bytes(io, %s), lambda io: %s)" % (self.length, self.subcon._compileparse(code), )
+        return f"restream(io.read({self.length}), lambda io: ({self.subcon._compileparse(code)}))"
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(size=repr(self.length).replace("this.",""), **self.subcon._compilefulltype(ksy, bitwise))
