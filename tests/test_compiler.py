@@ -20,12 +20,10 @@ example = Struct(
     # "bytesinteger0" / BytesInteger(0),
     # "bytesinteger1" / BytesInteger(16, signed=True),
     # "bytesinteger2" / BytesInteger(16, swapped=True),
-    # WARNING: this item fails on building integrity check
     # "bytesinteger3" / BytesInteger(this.num),
     # "bitsinteger0" / BitsInteger(0),
     # "bitsinteger1" / BitsInteger(16, signed=True),
     # "bitsinteger2" / BitsInteger(16, swapped=True),
-    # WARNING: this item fails on building integrity check
     # "bitsinteger3" / BitsInteger(this.num),
     # "int1" / Byte,
     # "int2" / Int64ub,
@@ -70,20 +68,20 @@ example = Struct(
     # "greedyrange0" / Prefixed(Byte, GreedyRange(Byte)),
     # "repeatuntil1" / RepeatUntil(obj_ == 0, Byte),
 
-    "const1" / Const(bytes(4)),
-    "const2" / Const(0, Int32ub),
-    "computed1" / Computed("string literal"),
-    "computed2" / Computed(this.num),
-    "computedarray" / Computed([1,2,3]),
-    # WARNING: _index is not supported in compiled classes
-    # "index1" / Array(3, Index),
-    # "index2" / RestreamData(b"\x00", GreedyRange(Byte >> Index)),
-    # "index3" / RestreamData(b"\x00", RepeatUntil(True, Byte >> Index)),
-    "rebuild" / Rebuild(Byte, len_(this.computedarray)),
-    "default" / Default(Byte, 0),
-    Check(this.num == 0),
-    "check" / Check(this.num == 0),
-    "error0" / If(False, Error),
+    # "const1" / Const(bytes(4)),
+    # "const2" / Const(0, Int32ub),
+    # "computed1" / Computed("string literal"),
+    # "computed2" / Computed(this.num),
+    # "computedarray" / Computed([1,2,3]),
+    # # WARNING: _index is not supported in compiled classes
+    # # "index1" / Array(3, Index),
+    # # "index2" / RestreamData(b"\x00", GreedyRange(Byte >> Index)),
+    # # "index3" / RestreamData(b"\x00", RepeatUntil(True, Byte >> Index)),
+    # "rebuild" / Rebuild(Byte, len_(this.computedarray)),
+    # "default" / Default(Byte, 0),
+    # Check(this.num == 0),
+    # "check" / Check(this.num == 0),
+    # "error0" / If(False, Error),
     # "focusedseq1" / FocusedSeq("num", Const(bytes(4)), "num"/Byte),
     # "focusedseq2_select" / Computed("num"),
     # "focusedseq2" / FocusedSeq(this._.focusedseq2_select, "num"/Byte),
@@ -103,6 +101,7 @@ example = Struct(
     # "hexdump1" / HexDump(Bytes(1)),
     # "hexdump2" / HexDump(RawCopy(Byte)),
 
+    # WARNING: emitbuild not yet implemented
     # "union1" / Union(None, "char"/Byte, "short"/Short, "int"/Int),
     # "union2" / Union(1, "char"/Byte, "short"/Short, "int"/Int),
     # "union3" / Union(0, "char1"/Byte, "char2"/Byte, "char3"/Byte),
@@ -138,7 +137,9 @@ example = Struct(
     # "bitsswapped" / BitsSwapped(BytesInteger(8)),
     # "prefixed1" / Prefixed(Byte, GreedyBytes),
     # "prefixed2" / RestreamData(b"\x01", Prefixed(Byte, GreedyBytes, includelength=True)),
+    # WARNING: this fails when emitting FocusedSeq emit, greens on own emit
     # "prefixedarray" / PrefixedArray(Byte, Byte),
+    # WARNING: no buildemit yet
     # "fixedsized" / FixedSized(10, GreedyBytes),
     # "nullterminated" / RestreamData(b'\x01\x00', NullTerminated(GreedyBytes)),
     # "nullstripped" / RestreamData(b'\x01\x00', NullStripped(GreedyBytes)),
@@ -160,16 +161,15 @@ example = Struct(
 
     # # adapters and validators
 
-    # Probe(),
-    # # - fails due to unknown causes (Expected an identifier or literal)
-    # # "probe" / Probe(),
+    # "probe" / Probe(),
     # "debugger" / Debugger(Byte),
 
     # "items1" / Computed([1,2,3]),
-    # "len_" / Computed(len_(this.items1)),
-    # # - faulty list_ implementation, compiles into correct code
-    # # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
-    # # "repeatuntil3" / RepeatUntil(list_[-1] == 0, Byte),
+    # "len1" / Computed(len_(this.items1)),
+    # Check(this.len1 == 3),
+    # WARNING: faulty list_ implementation, but compiles into correct code?
+    # "repeatuntil2" / RepeatUntil(list_ == [0], Byte),
+    # "repeatuntil3" / RepeatUntil(obj_ == 0, Byte),
 )
 exampledata = bytes(1000)
 

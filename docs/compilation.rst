@@ -4,15 +4,13 @@ Compilation feature
 
 .. warning:: This feature is fully implemented but may not be fully mature.
 
-.. warning:: COMPILED BUILDERS ARE WORK IN PROGRESS, SOME CLASSES FAIL INTEGRITY CHECKS
-
 
 Overall
 =========
 
 Construct 2.9 adds an experimental feature: compiling user made constructs into much faster (but less feature-rich) code. If you are familiar with Kaitai Struct, an alternative framework to Construct, Kaitai compiles yaml-based schemas into pure Python modules. Construct on the other hand, defines schemas in pure Python and compiles them into pure Python modules. Once you define a construct, you can use it to parse and build blobs without compilation. Compilation has only one purpose: performance.
 
-It should be made clear that currently the compiler supports only parsing and (being implemented right now) building. Sizeof is deferred to original construct, from which a compiled instance was made. Building support is being added as we speak.
+It should be made clear that currently the compiler supports only parsing and building. Sizeof is deferred to original construct, from which a compiled instance was made.
 
 
 Requirements
@@ -24,11 +22,11 @@ Compilation feature requires Construct 2.9 for compiled parsing and Construct 2.
 Restrictions
 ---------------
 
-Compiled classes only parse faster, building is in progress, and sizeof defers to core classes
+Compiled classes only parse and build faster, sizeof defers to core classes
 
 Sizeof is applied during compilation (not during parsing and building)
 
-Lambdas (unlike this expressions) are not compilable
+Lambdas (unlike this expressions) are not supported
 
 Exceptions do not include `path` information
 
@@ -38,7 +36,7 @@ _index context entry is not supported, neither is Index class
 
 Struct Sequence FocusedSeq Union LazyStruct do not support `_subcons _stream` context entries
 
-Parsed hooks are not supported, ignored
+Parsed hooks are not supported, so is discard option, ignored
 
 Debugger is not supported, ignored
 
@@ -58,10 +56,11 @@ Container(num=1)
 Performance boost can be easily measured. This method also happens to be testing the correctness of the compiled parser, by making sure that both original and compiled instance parse into same results.
 
 >>> print(st.benchmark(sampledata))
-Timeit measurements:
-parsing:           0.0000475557 sec/call
-parsing compiled:  0.0000159182 sec/call
-building:          0.0000591526 sec/call
+Compiled instance performance:
+parsing:            0.0001288388 sec/call
+parsing compiled:   0.0000452531 sec/call
+building:           0.0001240775 sec/call
+building compiled:  0.0001062776 sec/call
 
 
 Motivation
