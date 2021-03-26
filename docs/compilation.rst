@@ -32,6 +32,8 @@ Lambdas (unlike this expressions) are not compilable
 
 Exceptions do not include `path` information
 
+enum34 is not supported, plese use pure Enum constructions
+
 _index context entry is not supported, neither is Index class
 
 Struct Sequence FocusedSeq Union LazyStruct do not support `_subcons _stream` context entries
