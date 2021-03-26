@@ -2177,4 +2177,40 @@ def test_struct_copy():
     
     common(d, b"\x00\x01\x02", Container(a=1,b=2), 3)
     common(d_copy, b"\x00\x01\x02", Container(a=1,b=2), 3)
-    
+
+def test_switch_issue_913_using_enum():
+    enum = Enum(Byte, Zero=0, One=1, Two=2)
+    mapping = {
+        enum.Zero: Pass,
+        enum.One: Int8ul,
+        enum.Two: Int16ul,
+    }
+
+    d = Switch(keyfunc = this.x, cases = mapping)
+    common2(d, b"", None, 0, x="Zero")
+    common2(d, b"\xab", 171, 1, x="One")
+    common2(d, b"\x09\x00", 9, 2, x="Two")
+
+def test_switch_issue_913_using_strings():
+    mapping = {
+        "Zero": Pass,
+        "One": Int8ul,
+        "Two": Int16ul,
+    }
+
+    d = Switch(keyfunc = this.x, cases = mapping)
+    common2(d, b"", None, 0, x="Zero")
+    common2(d, b"\xab", 171, 1, x="One")
+    common2(d, b"\x09\x00", 9, 2, x="Two")
+
+def test_switch_issue_913_using_integers():
+    mapping = {
+        0: Pass,
+        1: Int8ul,
+        2: Int16ul,
+    }
+
+    d = Switch(keyfunc = this.x, cases = mapping)
+    common2(d, b"", None, 0, x=0)
+    common2(d, b"\xab", 171, 1, x=1)
+    common2(d, b"\x09\x00", 9, 2, x=2)
