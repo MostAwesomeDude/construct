@@ -30,7 +30,7 @@ Lambdas (unlike this expressions) are not supported
 
 Exceptions do not include `path` information
 
-enum34 is not supported, plese use pure Enum constructions
+enum34 is not supported, please use pure Enum constructions
 
 _index context entry is not supported, neither is Index class
 
