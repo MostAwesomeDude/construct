@@ -1497,10 +1497,12 @@ class VarInt(Construct):
         if obj < 0:
             raise IntegerError(f"VarInt cannot build from negative number {obj}", path=path)
         x = obj
+        B = bytearray()
         while x > 0b01111111:
-            stream_write(stream, int2byte(0b10000000 | (x & 0b01111111)), 1, path)
+            B.append(0b10000000 | (x & 0b01111111))
             x >>= 7
-        stream_write(stream, int2byte(x), 1, path)
+        B.append(x)
+        stream_write(stream, bytes(B), len(B), path)
         return obj
 
     def _emitprimitivetype(self, ksy, bitwise):

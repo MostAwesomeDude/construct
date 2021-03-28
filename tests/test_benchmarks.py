@@ -148,7 +148,19 @@ def test_class_bitsinteger_build_compiled(benchmark):
     d = d.compile()
     benchmark(d.build, 0)
 
-# VarInt
+def test_class_varint_parse(benchmark):
+    d = VarInt
+    benchmark(d.parse, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10")
+
+def test_class_varint_parse_compiled(benchmark):
+    d = VarInt
+    d = d.compile()
+    benchmark(d.parse, b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x10")
+
+def test_class_varint_build(benchmark):
+    d = VarInt
+    benchmark(d.build, 2**100)
+
 # ZigZag
 
 def test_class_paddedstring_parse(benchmark):
