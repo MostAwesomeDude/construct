@@ -139,7 +139,7 @@ example = Struct(
     # WARNING: this fails when emitting FocusedSeq emit, greens on own emit
     # "prefixedarray" / PrefixedArray(Byte, Byte),
     # WARNING: no buildemit yet
-    # "fixedsized" / FixedSized(10, GreedyBytes),
+    "fixedsized" / FixedSized(10, GreedyBytes),
     # "nullterminated" / RestreamData(b'\x01\x00', NullTerminated(GreedyBytes)),
     # "nullstripped" / RestreamData(b'\x01\x00', NullStripped(GreedyBytes)),
     # "restreamdata" / RestreamData(b"\xff", Byte),

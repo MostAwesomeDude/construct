@@ -4779,7 +4779,7 @@ class FixedSized(Subconstruct):
     """
 
     def __init__(self, length, subcon):
-        super(FixedSized, self).__init__(subcon)
+        super().__init__(subcon)
         self.length = length
 
     def _parse(self, stream, context, path):

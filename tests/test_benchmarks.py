@@ -886,31 +886,36 @@ def test_class_fixedsized_build(benchmark):
     d = FixedSized(100, GreedyBytes)
     benchmark(d.build, bytes(100))
 
-def test_class_nullterminated_parse(benchmark):
-    d = NullTerminated(GreedyBytes)
-    benchmark(d.parse, b'\x01'*99+b'\x00')
-
-def test_class_nullterminated_parse_compiled(benchmark):
-    d = NullTerminated(GreedyBytes)
+def test_class_fixedsized_build_compiled(benchmark):
+    d = FixedSized(100, GreedyBytes)
     d = d.compile()
-    benchmark(d.parse, b'\x01'*99+b'\x00')
-
-def test_class_nullterminated_build(benchmark):
-    d = NullTerminated(GreedyBytes)
-    benchmark(d.build, b'\x01'*99)
-
-def test_class_nullstripped_parse(benchmark):
-    d = NullStripped(GreedyBytes)
-    benchmark(d.parse, bytes(100))
-
-def test_class_nullstripped_parse_compiled(benchmark):
-    d = NullStripped(GreedyBytes)
-    d = d.compile()
-    benchmark(d.parse, bytes(100))
-
-def test_class_nullstripped_build(benchmark):
-    d = NullStripped(GreedyBytes)
     benchmark(d.build, bytes(100))
+
+# def test_class_nullterminated_parse(benchmark):
+#     d = NullTerminated(GreedyBytes)
+#     benchmark(d.parse, b'\x01'*99+b'\x00')
+
+# def test_class_nullterminated_parse_compiled(benchmark):
+#     d = NullTerminated(GreedyBytes)
+#     d = d.compile()
+#     benchmark(d.parse, b'\x01'*99+b'\x00')
+
+# def test_class_nullterminated_build(benchmark):
+#     d = NullTerminated(GreedyBytes)
+#     benchmark(d.build, b'\x01'*99)
+
+# def test_class_nullstripped_parse(benchmark):
+#     d = NullStripped(GreedyBytes)
+#     benchmark(d.parse, bytes(100))
+
+# def test_class_nullstripped_parse_compiled(benchmark):
+#     d = NullStripped(GreedyBytes)
+#     d = d.compile()
+#     benchmark(d.parse, bytes(100))
+
+# def test_class_nullstripped_build(benchmark):
+#     d = NullStripped(GreedyBytes)
+#     benchmark(d.build, bytes(100))
 
 # - measured by other fields
 # RestreamData
