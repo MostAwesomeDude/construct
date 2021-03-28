@@ -613,6 +613,11 @@ def test_class_union_build(benchmark):
     d = Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8])
     benchmark(d.build, dict(chars=[0]*8))
 
+def test_class_union_build_compiled(benchmark):
+    d = Union(0, "raw"/Bytes(8), "ints"/Int32ub[2], "shorts"/Int16ub[4], "chars"/Byte[8])
+    d = d.compile()
+    benchmark(d.build, dict(chars=[0]*8))
+
 def test_class_select_parse(benchmark):
     d = Select(Int32ub, CString("utf8"))
     benchmark(d.parse, bytes(20))
