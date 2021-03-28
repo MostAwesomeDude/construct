@@ -101,7 +101,6 @@ example = Struct(
     # "hexdump1" / HexDump(Bytes(1)),
     # "hexdump2" / HexDump(RawCopy(Byte)),
 
-    # WARNING: emitbuild not yet implemented
     # "union1" / Union(None, "char"/Byte, "short"/Short, "int"/Int),
     # "union2" / Union(1, "char"/Byte, "short"/Short, "int"/Int),
     # "union3" / Union(0, "char1"/Byte, "char2"/Byte, "char3"/Byte),

@@ -3635,6 +3635,29 @@ class Union(Construct):
         code.append(block)
         return "%s(io, this)" % (fname,)
 
+    def _emitbuild(self, code):
+        fname = f"build_union_{code.allocateId()}"
+        block = f"""
+            def {fname}(obj, io, this):
+                this = Container(_ = this, _params = this['_params'], _root = None, _parsing = False, _building = True, _sizing = False, _subcons = None, _io = io, _index = this.get('_index', None))
+                this['_root'] = this['_'].get('_root', this)
+                this.update(obj)
+                objdict = obj
+        """
+        for sc in self.subcons:
+            block += f"""
+                if {'True' if sc.flagbuildnone else f'{repr(sc.name)} in objdict'}:
+                    {f'obj = objdict.get({repr(sc.name)}, None)' if sc.flagbuildnone else f'obj = objdict[{repr(sc.name)}]'}
+                    {f'this[{repr(sc.name)}] = obj' if sc.name else ''}
+                    {f'buildret = this[{repr(sc.name)}] = ' if sc.name else ''}{sc._compilebuild(code)}
+                    {f'return Container({{ {repr(sc.name)}:buildret }})'}
+            """
+        block += f"""
+                raise UnionError('cannot build, none of subcons were found in the dictionary')
+        """
+        code.append(block)
+        return f"{fname}(obj, io, this)"
+
 
 class Select(Construct):
     r"""
