@@ -5879,8 +5879,8 @@ class ExprAdapter(Adapter):
     Generic adapter that takes `decoder` and `encoder` lambdas as parameters. You can use ExprAdapter instead of writing a full-blown class deriving from Adapter when only a simple lambda is needed.
 
     :param subcon: Construct instance, subcon to adapt
-    :param decoder: lambda that takes (obj, context) and returns an decoded version of obj
-    :param encoder: lambda that takes (obj, context) and returns an encoded version of obj
+    :param decoder: lambda that takes (obj, context, path) and returns an decoded version of obj
+    :param encoder: lambda that takes (obj, context, path) and returns an encoded version of obj
 
     Example::
 
@@ -5901,7 +5901,7 @@ class ExprSymmetricAdapter(ExprAdapter):
     Macro around :class:`~construct.core.ExprAdapter`.
 
     :param subcon: Construct instance, subcon to adapt
-    :param encoder: lambda that takes (obj, context) and returns both encoded version and decoded version of obj
+    :param encoder: lambda that takes (obj, context, path) and returns both encoded version and decoded version of obj
 
     Example::
 
