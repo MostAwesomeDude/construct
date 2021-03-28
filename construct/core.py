@@ -14,10 +14,10 @@ class ConstructError(Exception):
     def __init__(self, message='', path=None):
         self.path = path
         if path is None:
-            super(ConstructError, self).__init__(message)
+            super().__init__(message)
         else:
             message = "Error in path {}\n".format(path) + message
-            super(ConstructError, self).__init__(message)
+            super().__init__(message)
 class SizeofError(ConstructError):
     pass
 class AdaptationError(ConstructError):
@@ -679,7 +679,7 @@ class Subconstruct(Construct):
     def __init__(self, subcon):
         if not isinstance(subcon, Construct):
             raise TypeError("subcon should be a Construct field")
-        super(Subconstruct, self).__init__()
+        super().__init__()
         self.subcon = subcon
         self.flagbuildnone = subcon.flagbuildnone
 
@@ -782,7 +782,7 @@ class Compiled(Construct):
     """Used internally."""
 
     def __init__(self, parsefunc, buildfunc):
-        super(Compiled, self).__init__()
+        super().__init__()
         self.source = None
         self.defersubcon = None
         self.parsefunc = parsefunc
@@ -845,7 +845,7 @@ class Bytes(Construct):
     """
 
     def __init__(self, length):
-        super(Bytes, self).__init__()
+        super().__init__()
         self.length = length
 
     def _parse(self, stream, context, path):
@@ -1572,7 +1572,7 @@ class StringEncoded(Adapter):
     """Used internally."""
 
     def __init__(self, subcon, encoding):
-        super(StringEncoded, self).__init__(subcon)
+        super().__init__(subcon)
         if not encoding:
             raise StringError("String* classes require explicit encoding")
         self.encoding = encoding
@@ -1907,7 +1907,7 @@ class FlagsEnum(Adapter):
     """
 
     def __init__(self, subcon, *merge, **flags):
-        super(FlagsEnum, self).__init__(subcon)
+        super().__init__(subcon)
         for enum in merge:
             for enumentry in enum:
                 flags[enumentry.name] = enumentry.value
@@ -1981,7 +1981,7 @@ class Mapping(Adapter):
     """
 
     def __init__(self, subcon, mapping):
-        super(Mapping, self).__init__(subcon)
+        super().__init__(subcon)
         self.decmapping = {v:k for k,v in mapping.items()}
         self.encmapping = mapping
 
@@ -2442,7 +2442,7 @@ class GreedyRange(Subconstruct):
     """
 
     def __init__(self, subcon, discard=False):
-        super(GreedyRange, self).__init__(subcon)
+        super().__init__(subcon)
         self.discard = discard
 
     def _parse(self, stream, context, path):
@@ -2602,7 +2602,7 @@ class Renamed(Subconstruct):
     """
 
     def __init__(self, subcon, newname=None, newdocs=None, newparsed=None):
-        super(Renamed, self).__init__(subcon)
+        super().__init__(subcon)
         self.name = newname if newname else subcon.name
         self.docs = newdocs if newdocs else subcon.docs
         self.parsed = newparsed if newparsed else subcon.parsed
@@ -2801,7 +2801,7 @@ class Index(Construct):
     """
 
     def __init__(self):
-        super(self.__class__, self).__init__()
+        super().__init__()
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
@@ -2983,7 +2983,7 @@ class Error(Construct):
     """
 
     def __init__(self):
-        super(self.__class__, self).__init__()
+        super().__init__()
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
@@ -3241,7 +3241,7 @@ class NamedTuple(Adapter):
     def __init__(self, tuplename, tuplefields, subcon):
         if not isinstance(subcon, (Struct,Sequence,Array,GreedyRange)):
             raise NamedTupleError("subcon is neither Struct Sequence Array GreedyRange")
-        super(NamedTuple, self).__init__(subcon)
+        super().__init__(subcon)
         self.tuplename = tuplename
         self.tuplefields = tuplefields
         self.factory = collections.namedtuple(tuplename, tuplefields)
@@ -3685,7 +3685,7 @@ class Select(Construct):
     """
 
     def __init__(self, *subcons, **subconskw):
-        super(Select, self).__init__()
+        super().__init__()
         self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self.flagbuildnone = any(sc.flagbuildnone for sc in self.subcons)
 
@@ -3928,7 +3928,7 @@ class StopIf(Construct):
     """
 
     def __init__(self, condfunc):
-        super(StopIf, self).__init__()
+        super().__init__()
         self.condfunc = condfunc
         self.flagbuildnone = True
 
@@ -4466,7 +4466,7 @@ class Pass(Construct):
     """
 
     def __init__(self):
-        super(self.__class__, self).__init__()
+        super().__init__()
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
@@ -4506,7 +4506,7 @@ class Terminated(Construct):
     """
 
     def __init__(self):
-        super(self.__class__, self).__init__()
+        super().__init__()
         self.flagbuildnone = True
 
     def _parse(self, stream, context, path):
@@ -4652,7 +4652,7 @@ class Prefixed(Subconstruct):
     """
 
     def __init__(self, lengthfield, subcon, includelength=False):
-        super(Prefixed, self).__init__(subcon)
+        super().__init__(subcon)
         self.lengthfield = lengthfield
         self.includelength = includelength
 
@@ -4848,7 +4848,7 @@ class NullTerminated(Subconstruct):
     """
 
     def __init__(self, subcon, term=b"\x00", include=False, consume=True, require=True):
-        super(NullTerminated, self).__init__(subcon)
+        super().__init__(subcon)
         self.term = term
         self.include = include
         self.consume = consume
@@ -4918,7 +4918,7 @@ class NullStripped(Subconstruct):
     """
 
     def __init__(self, subcon, pad=b"\x00"):
-        super(NullStripped, self).__init__(subcon)
+        super().__init__(subcon)
         self.pad = pad
 
     def _parse(self, stream, context, path):
@@ -4983,7 +4983,7 @@ class RestreamData(Subconstruct):
     """
 
     def __init__(self, datafunc, subcon):
-        super(RestreamData, self).__init__(subcon)
+        super().__init__(subcon)
         self.datafunc = datafunc
         self.flagbuildnone = True
 
@@ -5045,7 +5045,7 @@ class Transformed(Subconstruct):
     """
 
     def __init__(self, subcon, decodefunc, decodeamount, encodefunc, encodeamount):
-        super(Transformed, self).__init__(subcon)
+        super().__init__(subcon)
         self.decodefunc = decodefunc
         self.decodeamount = decodeamount
         self.encodefunc = encodefunc
@@ -5109,7 +5109,7 @@ class Restreamed(Subconstruct):
     """
 
     def __init__(self, subcon, decoder, decoderunit, encoder, encoderunit, sizecomputer):
-        super(Restreamed, self).__init__(subcon)
+        super().__init__(subcon)
         self.decoder = decoder
         self.decoderunit = decoderunit
         self.encoder = encoder
@@ -5362,7 +5362,7 @@ class Checksum(Construct):
     """
 
     def __init__(self, checksumfield, hashfunc, bytesfunc):
-        super(Checksum, self).__init__()
+        super().__init__()
         self.checksumfield = checksumfield
         self.hashfunc = hashfunc
         self.bytesfunc = bytesfunc
@@ -5496,7 +5496,7 @@ class Rebuffered(Subconstruct):
     """
 
     def __init__(self, subcon, tailcutoff=None):
-        super(Rebuffered, self).__init__(subcon)
+        super().__init__(subcon)
         self.stream2 = RebufferedBytesIO(None, tailcutoff=tailcutoff)
 
     def _parse(self, stream, context, path):
@@ -5541,7 +5541,7 @@ class Lazy(Subconstruct):
     """
 
     def __init__(self, subcon):
-        super(Lazy, self).__init__(subcon)
+        super().__init__(subcon)
 
     def _parse(self, stream, context, path):
         offset = stream_tell(stream, path)
@@ -5630,7 +5630,7 @@ class LazyStruct(Construct):
     """
 
     def __init__(self, *subcons, **subconskw):
-        super(LazyStruct, self).__init__()
+        super().__init__()
         self.subcons = list(subcons) + list(k/v for k,v in subconskw.items())
         self._subcons = Container((sc.name,sc) for sc in self.subcons if sc.name)
         self._subconsindexes = Container((sc.name,i) for i,sc in enumerate(self.subcons) if sc.name)
@@ -5757,7 +5757,7 @@ class LazyArray(Subconstruct):
     """
 
     def __init__(self, count, subcon):
-        super(LazyArray, self).__init__(subcon)
+        super().__init__(subcon)
         self.count = count
 
     def _parse(self, stream, context, path):
@@ -5859,7 +5859,7 @@ class LazyBound(Construct):
     """
 
     def __init__(self, subconfunc):
-        super(LazyBound, self).__init__()
+        super().__init__()
         self.subconfunc = subconfunc
 
     def _parse(self, stream, context, path):
@@ -5891,7 +5891,7 @@ class ExprAdapter(Adapter):
         b'\x04'
     """
     def __init__(self, subcon, decoder, encoder):
-        super(ExprAdapter, self).__init__(subcon)
+        super().__init__(subcon)
         self._decode = lambda obj,ctx,path: decoder(obj,ctx)
         self._encode = lambda obj,ctx,path: encoder(obj,ctx)
 
@@ -5912,9 +5912,7 @@ class ExprSymmetricAdapter(ExprAdapter):
         b'\x0f'
     """
     def __init__(self, subcon, encoder):
-        super(ExprAdapter, self).__init__(subcon)
-        self._decode = lambda obj,ctx,path: encoder(obj,ctx)
-        self._encode = lambda obj,ctx,path: encoder(obj,ctx)
+        super().__init__(subcon, encoder, encoder)
 
 
 class ExprValidator(Validator):
@@ -5934,7 +5932,7 @@ class ExprValidator(Validator):
 
     """
     def __init__(self, subcon, validator):
-        super(ExprValidator, self).__init__(subcon)
+        super().__init__(subcon)
         self._validate = lambda obj,ctx,path: validator(obj,ctx)
 
 
@@ -6014,7 +6012,7 @@ class Slicing(Adapter):
         assert d.sizeof() == 4
     """
     def __init__(self, subcon, count, start, stop, step=1, empty=None):
-        super(Slicing, self).__init__(subcon)
+        super().__init__(subcon)
         self.count = count
         self.start = start
         self.stop = stop
@@ -6051,7 +6049,7 @@ class Indexing(Adapter):
         assert d.sizeof() == 4
     """
     def __init__(self, subcon, count, index, empty=None):
-        super(Indexing, self).__init__(subcon)
+        super().__init__(subcon)
         self.count = count
         self.index = index
         self.empty = empty
