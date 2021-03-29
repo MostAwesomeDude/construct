@@ -919,7 +919,7 @@ def Bitwise(subcon):
 
     Parsing building and size are deferred to subcon, although size gets divided by 8 (therefore the subcon's size must be a multiple of 8).
     
-    Note that by default the bit ordering is from MSB to LSB for every byte (i.e. bit-level little-endian). If you need it reversed, wrap this subcon with :class:`construct.core.BitsSwapped`. 
+    Note that by default the bit ordering is from MSB to LSB for every byte (ie. bit-level big-endian). If you need it reversed, wrap this subcon with :class:`construct.core.BitsSwapped`.
 
     :param subcon: Construct instance, any field that works with bits (like BitsInteger) or is bit-byte agnostic (like Struct or Flag)
 
@@ -936,6 +936,9 @@ def Bitwise(subcon):
         Container(a=0)(b=0.0)(c=None)
         >>> d.sizeof()
         5
+
+    Obtaining other byte or bit orderings::
+
         >>> d = Bitwise(Bytes(16))
         >>> d.parse(b'\x01\x03')
         b'\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x01\x01'
@@ -1217,6 +1220,9 @@ class BitsInteger(Construct):
         b'\xff'
         >>> d.sizeof()
         1
+
+    Obtaining other byte or bit orderings::
+
         >>> d = BitsInteger(2)
         >>> d.parse(b'\x01\x00') # Bit-Level Big-Endian
         2
