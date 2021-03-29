@@ -2564,7 +2564,8 @@ class RepeatUntil(Subconstruct):
                 list_ = ListContainer()
                 while True:
                     obj_ = {self.subcon._compileparse(code)}
-                    list_.append(obj_)
+                    if not ({self.discard}):
+                        list_.append(obj_)
                     if ({self.predicate}):
                         return list_
         """
