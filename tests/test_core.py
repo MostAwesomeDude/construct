@@ -1329,17 +1329,17 @@ def test_lazy():
 
 def test_lazy_seek():
     d = Struct(
-        "a" / Int8ul,
+        "a" / Int8ub,
         "b" / Lazy(Bytes(2)),
-        "c" / Int16ul,
+        "c" / Int16ub,
         "d" / Lazy(Bytes(4))
     )
-    obj = d.parse(b"\x01\x01\x02\x45\x67\x04\x98\x76\x65")
+    obj = d.parse(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09")
 
-    assert obj.a == 1
-    assert obj.b() == b'\x01\x02'
-    assert obj.c == 26437
-    assert obj.d() == b'\x04\x98\x76\x65'
+    assert obj.a == 0x01
+    assert obj.b() == b'\x02\x03'
+    assert obj.c == 0x0405
+    assert obj.d() == b'\x06\x07\x08\x09'
 
 def test_lazystruct():
     d = LazyStruct(
