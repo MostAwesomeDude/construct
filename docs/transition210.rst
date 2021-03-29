@@ -33,3 +33,5 @@ BytesInteger and BitsInteger are checking numbers are valid
 BitsInteger swapped semantic was fixed
 
 Compilation covers building as well, parsing slightly improved
+
+Array GreedyRange RepeatUntil builders use discard option

@@ -2380,11 +2380,12 @@ class Array(Subconstruct):
         count = evaluate(self.count, context)
         if not 0 <= count:
             raise RangeError("invalid count %s" % (count,), path=path)
+        discard = self.discard
         obj = ListContainer()
         for i in range(count):
             context._index = i
             e = self.subcon._parsereport(stream, context, path)
-            if not self.discard:
+            if not discard:
                 obj.append(e)
         return obj
 
@@ -2394,11 +2395,13 @@ class Array(Subconstruct):
             raise RangeError("invalid count %s" % (count,), path=path)
         if not len(obj) == count:
             raise RangeError("expected %d elements, found %d" % (count, len(obj)), path=path)
+        discard = self.discard
         retlist = ListContainer()
         for i,e in enumerate(obj):
             context._index = i
             buildret = self.subcon._build(e, stream, context, path)
-            retlist.append(buildret)
+            if not discard:
+                retlist.append(buildret)
         return retlist
 
     def _sizeof(self, context, path):
@@ -2448,13 +2451,14 @@ class GreedyRange(Subconstruct):
         self.discard = discard
 
     def _parse(self, stream, context, path):
+        discard = self.discard
         obj = ListContainer()
         try:
             for i in itertools.count():
                 context._index = i
                 fallback = stream_tell(stream, path)
                 e = self.subcon._parsereport(stream, context, path)
-                if not self.discard:
+                if not discard:
                     obj.append(e)
         except StopFieldError:
             pass
@@ -2465,12 +2469,14 @@ class GreedyRange(Subconstruct):
         return obj
 
     def _build(self, obj, stream, context, path):
+        discard = self.discard
         try:
             retlist = ListContainer()
             for i,e in enumerate(obj):
                 context._index = i
                 buildret = self.subcon._build(e, stream, context, path)
-                retlist.append(buildret)
+                if not discard:
+                    retlist.append(buildret)
             return retlist
         except StopFieldError:
             pass
@@ -2517,19 +2523,21 @@ class RepeatUntil(Subconstruct):
 
     def _parse(self, stream, context, path):
         predicate = self.predicate
+        discard = self.discard
         if not callable(predicate):
             predicate = lambda _1,_2,_3: predicate
         obj = ListContainer()
         for i in itertools.count():
             context._index = i
             e = self.subcon._parsereport(stream, context, path)
-            if not self.discard:
+            if not discard:
                 obj.append(e)
             if predicate(e, obj, context):
                 return obj
 
     def _build(self, obj, stream, context, path):
         predicate = self.predicate
+        discard = self.discard
         if not callable(predicate):
             predicate = lambda _1,_2,_3: predicate
         partiallist = ListContainer()
@@ -2537,8 +2545,9 @@ class RepeatUntil(Subconstruct):
         for i,e in enumerate(obj):
             context._index = i
             buildret = self.subcon._build(e, stream, context, path)
-            retlist.append(buildret)
-            partiallist.append(buildret)
+            if not discard:
+                retlist.append(buildret)
+                partiallist.append(buildret)
             if predicate(e, partiallist, context):
                 break
         else:

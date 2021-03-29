@@ -467,14 +467,14 @@ def test_array():
     common(Byte[4], b"1234", [49,50,51,52], 4)
 
     d = Array(3, Byte)
-    common(d, b"\x01\x02\x03", [1,2,3], 3)
+    common2(d, b"\x01\x02\x03", [1,2,3], 3)
     assert d.parse(b"\x01\x02\x03additionalgarbage") == [1,2,3]
     assert raises(d.parse, b"") == StreamError
     assert raises(d.build, [1,2]) == RangeError
     assert raises(d.build, [1,2,3,4,5,6,7,8]) == RangeError
 
     d = Array(this.n, Byte)
-    common(d, b"\x01\x02\x03", [1,2,3], 3, n=3)
+    common2(d, b"\x01\x02\x03", [1,2,3], 3, n=3)
     assert d.parse(b"\x01\x02\x03", n=3) == [1,2,3]
     assert d.parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
     assert raises(d.parse, b"", n=3) == StreamError
@@ -483,19 +483,31 @@ def test_array():
     assert raises(d.sizeof) == SizeofError
     assert raises(d.sizeof, n=3) == 3
 
+    d = Array(3, Byte, discard=True)
+    assert d.parse(b"\x01\x02\x03") == []
+    assert d.build([1,2,3]) == b"\x01\x02\x03"
+    assert d.sizeof() == 3
+
 @xfail(ONWINDOWS, reason="/dev/zero not available on Windows")
 def test_array_nontellable():
     assert Array(5, Byte).parse_stream(devzero) == [0,0,0,0,0]
 
 def test_greedyrange():
-    common(GreedyRange(Byte), b"", [], SizeofError)
-    common(GreedyRange(Byte), b"\x01\x02", [1,2], SizeofError)
-    assert GreedyRange(Byte, discard=False).parse(b"\x01\x02") == [1,2]
-    assert GreedyRange(Byte, discard=True).parse(b"\x01\x02") == []
+    d = GreedyRange(Byte)
+    common2(d, b"", [], SizeofError)
+    common2(d, b"\x01\x02", [1,2], SizeofError)
+
+    d = GreedyRange(Byte, discard=False)
+    assert d.parse(b"\x01\x02") == [1,2]
+    assert d.build([1,2]) == b"\x01\x02"
+
+    d = GreedyRange(Byte, discard=True)
+    assert d.parse(b"\x01\x02") == []
+    assert d.build([1,2]) == b"\x01\x02"
 
 def test_repeatuntil():
     d = RepeatUntil(obj_ == 9, Byte)
-    common(d, b"\x02\x03\x09", [2,3,9], SizeofError)
+    common2(d, b"\x02\x03\x09", [2,3,9], SizeofError)
     assert d.parse(b"\x02\x03\x09additionalgarbage") == [2,3,9]
     assert raises(d.parse, b"\x02\x03\x08") == StreamError
     assert raises(d.build, [2,3,8]) == RepeatError
@@ -507,6 +519,12 @@ def test_repeatuntil():
     d = RepeatUntil(True, Byte)
     assert d.parse(b"\x00") == [0]
     assert d.build([0]) == b"\x00"
+
+    d = RepeatUntil(obj_ == 9, Byte, discard=True)
+    assert d.parse(b"\x02\x03\x09additionalgarbage") == []
+    assert raises(d.parse, b"\x02\x03\x08") == StreamError
+    assert d.build([2,3,8,9]) == b"\x02\x03\x08\x09"
+    assert raises(d.build, [2,3,8]) == RepeatError
 
 def test_const():
     common(Const(b"MZ"), b"MZ", b"MZ", 2)
