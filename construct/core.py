@@ -227,6 +227,9 @@ class Construct(object):
     * `_actualsize`
     * `_emitparse`
     * `_emitbuild`
+    * `_emitseq`
+    * `_emitprimitivetype`
+    * `_emitfulltype`
     * `__getstate__`
     * `__setstate__`
 
