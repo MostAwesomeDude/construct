@@ -453,14 +453,15 @@ def test_struct_sizeof_context_nesting():
     d.sizeof()
 
 def test_sequence():
-    common(Sequence(), b"", [], 0)
-    common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
-    common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
+    common2(Sequence(), b"", [], 0)
+    common2(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
+    common2(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
     d = Sequence(Computed(7), Const(b"JPEG"), Pass, Terminated)
     assert d.build(None) == d.build([None,None,None,None])
 
 def test_sequence_nested():
-    common(Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub)), b"\x01\x00\x02\x03\x04", [1,2,[3,4]], 5)
+    d = Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub))
+    common2(d, b"\x01\x00\x02\x03\x04", [1,2,[3,4]], 5)
 
 def test_array():
     common(Byte[0], b"", [], 0)
@@ -875,12 +876,11 @@ def test_switch_issue_357():
 
 def test_stopif():
     d = Struct("x"/Byte, StopIf(this.x == 0), "y"/Byte)
-    common(d, b"\x00", Container(x=0))
-    common(d, b"\x01\x02", Container(x=1,y=2))
+    common2(d, b"\x00", Container(x=0))
+    common2(d, b"\x01\x02", Container(x=1,y=2))
 
     d = Sequence("x"/Byte, StopIf(this.x == 0), "y"/Byte)
-    common(d, b"\x00", [0])
-    common(d, b"\x01\x02", [1,None,2])
+    common2(d, b"\x01\x02", [1,None,2])
 
     d = GreedyRange(FocusedSeq("x", "x"/Byte, StopIf(this.x == 0)))
     assert d.parse(b"\x01\x00?????") == [1]

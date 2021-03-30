@@ -2290,9 +2290,11 @@ class Sequence(Construct):
             obj = ListContainer([None for sc in self.subcons])
         context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None))
         context._root = context._.get("_root", context)
+        objiter = iter(obj)
         retlist = ListContainer()
-        for sc,subobj in zip(self.subcons, obj):
+        for i,sc in enumerate(self.subcons):
             try:
+                subobj = next(objiter)
                 if sc.name:
                     context[sc.name] = subobj
 
@@ -2358,9 +2360,6 @@ class Sequence(Construct):
                     {f'this[{repr(sc.name)}] = x' if sc.name else ''}
             """
         block += f"""
-                    pass
-                except StopIteration:
-                    # this is because _build uses zip(subcons,obj)
                     pass
                 except StopFieldError:
                     pass
