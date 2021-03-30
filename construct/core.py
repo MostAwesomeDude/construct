@@ -839,7 +839,7 @@ class Bytes(Construct):
         ...     "data" / Bytes(this.length),
         ... )
         >>> d.parse(b"\x04beef")
-        Container(length=4)(data=b'beef')
+        Container(length=4, data=b'beef')
         >>> d.sizeof()
         construct.core.SizeofError: cannot calculate size, key not found in context
     """
@@ -933,7 +933,7 @@ def Bitwise(subcon):
         ...     'c' / Padding(4),
         ... ))
         >>> d.parse(bytes(5))
-        Container(a=0)(b=0.0)(c=None)
+        Container(a=0, b=0.0, c=None)
         >>> d.sizeof()
         5
 
@@ -982,7 +982,7 @@ def Bytewise(subcon):
         ...     'c' / Padding(4),
         ... ))
         >>> d.parse(bytes(5))
-        Container(a=0)(b=0.0)(c=None)
+        Container(a=0, b=0.0, c=None)
         >>> d.sizeof()
         5
     """
@@ -2073,7 +2073,7 @@ class Struct(Construct):
 
         >>> d = Struct("num"/Int8ub, "data"/Bytes(this.num))
         >>> d.parse(b"\x04DATA")
-        Container(num=4)(data=b"DATA")
+        Container(num=4, data=b"DATA")
         >>> d.build(dict(num=4, data=b"DATA"))
         b"\x04DATA"
 
@@ -3564,7 +3564,7 @@ class Union(Construct):
         ...     "data" / Bytes(lambda this: this._subcons.chars.sizeof()),
         ... )
         >>> d.parse(b"\x01\x02\x03\x04")
-        Container(chars=[1, 2, 3, 4])(data=b'\x01\x02\x03\x04')
+        Container(chars=[1, 2, 3, 4], data=b'\x01\x02\x03\x04')
 
         Alternative syntax, but requires Python 3.6 or any PyPy:
         >>> Union(0, raw=Bytes(8), ints=Int32ub[2], shorts=Int16ub[4], chars=Byte[8])
@@ -4248,7 +4248,7 @@ def BitStruct(*subcons, **subconskw):
         ...     "d" / Padding(1),
         ... )
         >>> d.parse(b"\xbe\xef")
-        Container(a=True)(b=7)(c=887)(d=None)
+        Container(a=True, b=7, c=887, d=None)
         >>> d.sizeof()
         2
     """
@@ -4468,7 +4468,7 @@ class Tell(Construct):
 
         >>> d = Struct("num"/VarInt, "offset"/Tell)
         >>> d.parse(b"X")
-        Container(num=88)(offset=1)
+        Container(num=88, offset=1)
         >>> d.build(dict(num=88))
         b'X'
     """
@@ -4588,7 +4588,7 @@ class RawCopy(Subconstruct):
 
         >>> d = RawCopy(Byte)
         >>> d.parse(b"\xff")
-        Container(data=b'\xff')(value=255)(offset1=0)(offset2=1)(length=1)
+        Container(data=b'\xff', value=255, offset1=0, offset2=1, length=1)
         >>> d.build(dict(data=b"\xff"))
         '\xff'
         >>> d.build(dict(value=255))
