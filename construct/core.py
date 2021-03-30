@@ -408,18 +408,10 @@ class Construct(object):
             import collections
             import itertools
 
-            # def read_bytes(io, count):
-            #     return io.read(count)
-            # def read_bytes_entire(io):
-            #     return io.read()
-
             def restream(data, func):
                 return func(BytesIO(data))
             def reuse(obj, func):
                 return func(obj)
-
-            # def write_bytes(data, io):
-            #     return io.write(data)
 
             linkedinstances = {}
             linkedparsers = {}
