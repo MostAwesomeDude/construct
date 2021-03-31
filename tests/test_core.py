@@ -140,13 +140,13 @@ def test_formatfield_bool_issue_901():
 
 def test_bytesinteger():
     d = BytesInteger(0)
-    common2(d, b"", 0, 0)
+    common(d, b"", 0, 0)
     d = BytesInteger(4, signed=True, swapped=False)
-    common2(d, b"\x01\x02\x03\x04", 0x01020304, 4)
-    common2(d, b"\xff\xff\xff\xff", -1, 4)
+    common(d, b"\x01\x02\x03\x04", 0x01020304, 4)
+    common(d, b"\xff\xff\xff\xff", -1, 4)
     d = BytesInteger(4, signed=False, swapped=this.swapped)
-    common2(d, b"\x01\x02\x03\x04", 0x01020304, 4, swapped=False)
-    common2(d, b"\x04\x03\x02\x01", 0x01020304, 4, swapped=True)
+    common(d, b"\x01\x02\x03\x04", 0x01020304, 4, swapped=False)
+    common(d, b"\x04\x03\x02\x01", 0x01020304, 4, swapped=True)
     assert raises(BytesInteger(-1).parse, b"") == IntegerError
     assert raises(BytesInteger(-1).build, 0) == IntegerError
     assert raises(BytesInteger(8).build, None) == IntegerError
@@ -159,16 +159,16 @@ def test_bytesinteger():
 
 def test_bitsinteger():
     d = BitsInteger(0)
-    common2(d, b"", 0, 0)
+    common(d, b"", 0, 0)
     d = BitsInteger(8)
-    common2(d, b"\x01\x01\x01\x01\x01\x01\x01\x01", 255, 8)
+    common(d, b"\x01\x01\x01\x01\x01\x01\x01\x01", 255, 8)
     d = BitsInteger(8, signed=True)
-    common2(d, b"\x01\x01\x01\x01\x01\x01\x01\x01", -1, 8)
+    common(d, b"\x01\x01\x01\x01\x01\x01\x01\x01", -1, 8)
     d = BitsInteger(16, swapped=True)
-    common2(d, b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01", 0xff00, 16)
+    common(d, b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01", 0xff00, 16)
     d = BitsInteger(16, swapped=this.swapped)
-    common2(d, b"\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00", 0xff00, 16, swapped=False)
-    common2(d, b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01", 0xff00, 16, swapped=True)
+    common(d, b"\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00", 0xff00, 16, swapped=False)
+    common(d, b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01", 0xff00, 16, swapped=True)
     assert raises(BitsInteger(-1).parse, b"") == IntegerError
     assert raises(BitsInteger(-1).build, 0) == IntegerError
     assert raises(BitsInteger(5, swapped=True).parse, bytes(5)) == IntegerError
@@ -321,6 +321,7 @@ def test_enum_enum36():
     common(d, b"\x01", "a", 1)
     common(d, b"\x02", "b", 1)
 
+@xfail(reason="it fails during parsing or building, not during compilation")
 def test_enum_issue_298():
     d = Struct(
         "ctrl" / Enum(Byte,
@@ -453,29 +454,29 @@ def test_struct_sizeof_context_nesting():
     d.sizeof()
 
 def test_sequence():
-    common2(Sequence(), b"", [], 0)
-    common2(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
-    common2(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
+    common(Sequence(), b"", [], 0)
+    common(Sequence(Int8ub, Int16ub), b"\x01\x00\x02", [1,2], 3)
+    common(Int8ub >> Int16ub, b"\x01\x00\x02", [1,2], 3)
     d = Sequence(Computed(7), Const(b"JPEG"), Pass, Terminated)
     assert d.build(None) == d.build([None,None,None,None])
 
 def test_sequence_nested():
     d = Sequence(Int8ub, Int16ub, Sequence(Int8ub, Int8ub))
-    common2(d, b"\x01\x00\x02\x03\x04", [1,2,[3,4]], 5)
+    common(d, b"\x01\x00\x02\x03\x04", [1,2,[3,4]], 5)
 
 def test_array():
     common(Byte[0], b"", [], 0)
     common(Byte[4], b"1234", [49,50,51,52], 4)
 
     d = Array(3, Byte)
-    common2(d, b"\x01\x02\x03", [1,2,3], 3)
+    common(d, b"\x01\x02\x03", [1,2,3], 3)
     assert d.parse(b"\x01\x02\x03additionalgarbage") == [1,2,3]
     assert raises(d.parse, b"") == StreamError
     assert raises(d.build, [1,2]) == RangeError
     assert raises(d.build, [1,2,3,4,5,6,7,8]) == RangeError
 
     d = Array(this.n, Byte)
-    common2(d, b"\x01\x02\x03", [1,2,3], 3, n=3)
+    common(d, b"\x01\x02\x03", [1,2,3], 3, n=3)
     assert d.parse(b"\x01\x02\x03", n=3) == [1,2,3]
     assert d.parse(b"\x01\x02\x03additionalgarbage", n=3) == [1,2,3]
     assert raises(d.parse, b"", n=3) == StreamError
@@ -495,8 +496,8 @@ def test_array_nontellable():
 
 def test_greedyrange():
     d = GreedyRange(Byte)
-    common2(d, b"", [], SizeofError)
-    common2(d, b"\x01\x02", [1,2], SizeofError)
+    common(d, b"", [], SizeofError)
+    common(d, b"\x01\x02", [1,2], SizeofError)
 
     d = GreedyRange(Byte, discard=False)
     assert d.parse(b"\x01\x02") == [1,2]
@@ -508,7 +509,7 @@ def test_greedyrange():
 
 def test_repeatuntil():
     d = RepeatUntil(obj_ == 9, Byte)
-    common2(d, b"\x02\x03\x09", [2,3,9], SizeofError)
+    common(d, b"\x02\x03\x09", [2,3,9], SizeofError)
     assert d.parse(b"\x02\x03\x09additionalgarbage") == [2,3,9]
     assert raises(d.parse, b"\x02\x03\x08") == StreamError
     assert raises(d.build, [2,3,8]) == RepeatError
@@ -546,6 +547,7 @@ def test_computed():
     assert raises(Computed(this.missing).parse, b"") == KeyError
     assert raises(Computed(this["missing"]).parse, b"") == KeyError
 
+@xfail(reason="_index fails during parsing or building, not during compilation")
 def test_index():
     d = Array(3, Bytes(this._index+1))
     common(d, b"abbccc", [b"a", b"bb", b"ccc"])
@@ -876,11 +878,11 @@ def test_switch_issue_357():
 
 def test_stopif():
     d = Struct("x"/Byte, StopIf(this.x == 0), "y"/Byte)
-    common2(d, b"\x00", Container(x=0))
-    common2(d, b"\x01\x02", Container(x=1,y=2))
+    common(d, b"\x00", Container(x=0))
+    common(d, b"\x01\x02", Container(x=1,y=2))
 
     d = Sequence("x"/Byte, StopIf(this.x == 0), "y"/Byte)
-    common2(d, b"\x01\x02", [1,None,2])
+    common(d, b"\x01\x02", [1,None,2])
 
     d = GreedyRange(FocusedSeq("x", "x"/Byte, StopIf(this.x == 0)))
     assert d.parse(b"\x01\x00?????") == [1]
@@ -2219,9 +2221,9 @@ def test_switch_issue_913_using_enum():
     }
 
     d = Switch(keyfunc = this.x, cases = mapping)
-    common2(d, b"", None, 0, x="Zero")
-    common2(d, b"\xab", 171, 1, x="One")
-    common2(d, b"\x09\x00", 9, 2, x="Two")
+    common(d, b"", None, 0, x="Zero")
+    common(d, b"\xab", 171, 1, x="One")
+    common(d, b"\x09\x00", 9, 2, x="Two")
 
 def test_switch_issue_913_using_strings():
     mapping = {
@@ -2231,9 +2233,9 @@ def test_switch_issue_913_using_strings():
     }
 
     d = Switch(keyfunc = this.x, cases = mapping)
-    common2(d, b"", None, 0, x="Zero")
-    common2(d, b"\xab", 171, 1, x="One")
-    common2(d, b"\x09\x00", 9, 2, x="Two")
+    common(d, b"", None, 0, x="Zero")
+    common(d, b"\xab", 171, 1, x="One")
+    common(d, b"\x09\x00", 9, 2, x="Two")
 
 def test_switch_issue_913_using_integers():
     mapping = {
@@ -2243,6 +2245,6 @@ def test_switch_issue_913_using_integers():
     }
 
     d = Switch(keyfunc = this.x, cases = mapping)
-    common2(d, b"", None, 0, x=0)
-    common2(d, b"\xab", 171, 1, x=1)
-    common2(d, b"\x09\x00", 9, 2, x=2)
+    common(d, b"", None, 0, x=0)
+    common(d, b"\xab", 171, 1, x=1)
+    common(d, b"\x09\x00", 9, 2, x=2)

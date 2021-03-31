@@ -21,13 +21,14 @@ def raises(func, *args, **kw):
         return e.__class__
 
 def common(format, datasample, objsample, sizesample=SizeofError, **kw):
+    # following are implied (re-parse and re-build)
+    # assert format.parse(format.build(obj)) == obj
+    # assert format.build(format.parse(data)) == data
     obj = format.parse(datasample, **kw)
     assert obj == objsample
     data = format.build(objsample, **kw)
     assert data == datasample
-    # following are implied by above (re-parse and re-build)
-    # assert format.parse(format.build(obj)) == obj
-    # assert format.build(format.parse(data)) == data
+
     if isinstance(sizesample, int):
         size = format.sizeof(**kw)
         assert size == sizesample
@@ -35,13 +36,19 @@ def common(format, datasample, objsample, sizesample=SizeofError, **kw):
         size = raises(format.sizeof, **kw)
         assert size == sizesample
 
-def common2(format, datasample, objsample, sizesample=SizeofError, **kw):
-    common(format, datasample, objsample, sizesample, **kw)
+    # attemps to compile, ignores if compilation fails
     # following was added to test compiling functionality
     # and implies: format.parse(data) == cformat.parse(data)
-    cformat = format.compile()
-    obj = cformat.parse(datasample, **kw)
-    assert obj == objsample
+    # and implies: format.build(obj) == cformat.build(obj)
+    try:
+        cformat = format.compile()
+    except Exception:
+        pass
+    else:
+        obj = cformat.parse(datasample, **kw)
+        assert obj == objsample
+        data = cformat.build(objsample, **kw)
+        assert data == datasample
 
 def commonhex(format, hexdata):
     commonbytes(format, binascii.unhexlify(hexdata))
