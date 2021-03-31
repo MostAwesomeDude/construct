@@ -321,7 +321,6 @@ def test_enum_enum36():
     common(d, b"\x01", "a", 1)
     common(d, b"\x02", "b", 1)
 
-@xfail(reason="it fails during parsing or building, not during compilation")
 def test_enum_issue_298():
     d = Struct(
         "ctrl" / Enum(Byte,
@@ -329,7 +328,7 @@ def test_enum_issue_298():
             STX = 0x02,
         ),
         Probe(),
-        "optional" / If(this.ctrl == "NAK", Byte),
+        "optional" / If(lambda this: this.ctrl == "NAK", Byte),
     )
     common(d, b"\x15\xff", Container(ctrl='NAK', optional=255))
     common(d, b"\x02", Container(ctrl='STX', optional=None))
