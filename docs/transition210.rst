@@ -37,3 +37,5 @@ Compilation covers building as well, parsing slightly improved
 Array GreedyRange RepeatUntil builders use discard option
 
 Sequence build fixed, no longer skips subcons on short obj
+
+Lazy class fixed, seeks the not-yet parsed subcon
