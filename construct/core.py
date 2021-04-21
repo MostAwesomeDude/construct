@@ -902,7 +902,7 @@ class GreedyBytes(Construct):
         return f"io.read()"
 
     def _emitbuild(self, code):
-        return f"io.write(obj)"
+        return f"(io.write(obj), obj)[1]"
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(size_eos=True)
@@ -1163,7 +1163,7 @@ class BytesInteger(Construct):
         return f"bytes2integer(swapbytes(io.read({self.length})) if {self.swapped} else io.read({self.length}), {self.signed})"
 
     def _emitbuild(self, code):
-        return f"io.write(swapbytes(integer2bytes(obj, {self.length}, {self.signed})) if ({self.swapped}) else integer2bytes(obj, {self.length}, {self.signed}))"
+        return f"((io.write(swapbytes(integer2bytes(obj, {self.length}, {self.signed})) if ({self.swapped}) else integer2bytes(obj, {self.length}, {self.signed}))), obj)[1]"
 
     def _emitprimitivetype(self, ksy, bitwise):
         if bitwise:
@@ -1287,7 +1287,7 @@ class BitsInteger(Construct):
         return f"bits2integer(swapbytesinbits(io.read({self.length})) if {self.swapped} else io.read({self.length}), {self.signed})"
 
     def _emitbuild(self, code):
-        return f"io.write(swapbytesinbits(integer2bits(obj, {self.length}, {self.signed})) if ({self.swapped}) else integer2bits(obj, {self.length}, {self.signed}))"
+        return f"((io.write(swapbytesinbits(integer2bits(obj, {self.length}, {self.signed})) if ({self.swapped}) else integer2bits(obj, {self.length}, {self.signed}))), obj)[1]"
 
     def _emitprimitivetype(self, ksy, bitwise):
         assert not self.signed
@@ -1771,7 +1771,7 @@ class Flag(Construct):
         return f"(io.read(1) != b'\\x00')"
 
     def _emitbuild(self, code):
-        return f"(io.write(b'\\x01') if obj else io.write(b'\\x00'))"
+        return f"((io.write(b'\\x01') if obj else io.write(b'\\x00')), obj)[1]"
 
     def _emitfulltype(self, ksy, bitwise):
         return dict(type=("b1" if bitwise else "u1"), _construct_render="Flag")
